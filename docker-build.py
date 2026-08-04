@@ -161,8 +161,7 @@ def main():
     cleanup_cmd = (
         'chown -R 1000:1000 '
         '/build/.git/modules /build/lib/pico_pio_usb /build/lib/tinyusb '
-        '/build/www /build/build 2>/dev/null || true; '
-        'rm -rf /build/www/node_modules /build/www/build 2>/dev/null || true'
+        '/build/www /build/build 2>/dev/null || true'
     )
     if args.clean:
         cleanup_cmd += '; rm -rf /build/build 2>/dev/null || true'
