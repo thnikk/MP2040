@@ -228,6 +228,9 @@
 #ifndef LED_COUNT
 #define LED_COUNT 0
 #endif
+#ifndef LED_MODE
+#define LED_MODE 0
+#endif
 #ifndef PIN_WEBCONFIG
 #define PIN_WEBCONFIG -1
 #endif
@@ -450,6 +453,7 @@ static void applyDefaults(Config& config)
     config.ledOptions.colorNormal = LED_COLOR_NORMAL;
     config.ledOptions.colorPressed = LED_COLOR_PRESSED;
     config.ledOptions.ledCount = LED_COUNT;
+    config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
@@ -506,6 +510,7 @@ void Storage::init() {
         config.ledOptions.brightnessSteps = LED_BRIGHTNESS_STEPS;
         config.ledOptions.colorNormal = LED_COLOR_NORMAL;
         config.ledOptions.colorPressed = LED_COLOR_PRESSED;
+        config.ledOptions.ledMode = LED_MODE;
     }
 
     // The web config pin is a physical board property, never a user setting.

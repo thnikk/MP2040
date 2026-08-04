@@ -30,6 +30,9 @@
 // Total number of LEDs in the strip. 0 = derive from the pin mappings / grid.
 #define LED_COUNT 2
 
+// Default LED theme mode (0=static, 1=cycle, 2=reactive, 3=bps)
+#define LED_MODE 0
+
 // Pin → LED strip index mapping. -1 = pin has no LED. The LED(s) at the
 // mapped index (LEDS_PER_KEY of them) light up when the pin is pressed.
 #define LED_INDEX_GP28 0

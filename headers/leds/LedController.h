@@ -6,12 +6,22 @@
 #include "hardware/gpio.h"
 #include "config.pb.h"
 #include "leds/LedLayout.h"
+#include "types.h"
 
 class Neopixel;
+
+// LED theme modes (matches the web config "LED Mode" dropdown)
+enum LedMode {
+    LED_MODE_STATIC = 0,
+    LED_MODE_CYCLE,    // rainbow wheel
+    LED_MODE_REACTIVE, // white -> rainbow -> off fade
+    LED_MODE_BPS,      // color tracks keypress rate
+};
 
 class LedController {
 public:
     LedController();
+    ~LedController();
     void setup();
     void update();
     // Number of LEDs currently driven on the strip
@@ -23,16 +33,35 @@ public:
 private:
     void configure();
 
+    // Theme renderers (unified-2022 ports)
+    void renderStatic();
+    void renderCycle();
+    void renderReactive();
+    void renderBps();
+
     Neopixel* neopixel;
     int32_t dataPin;
     LEDFormat_Proto ledFormat;
     uint32_t ledsPerKey;
     uint32_t ledCount;
+    uint32_t stripCount;
+    uint32_t ledMode;
     int32_t pinLedIndices[NUM_BANK0_GPIOS];
     uint32_t brightnessMaximum;
     uint32_t colorNormal;
     uint32_t colorPressed;
     absolute_time_t nextRunTime;
+
+    // Theme state
+    bool* pressedLeds;
+    int* ledSat;
+    int* ledVal;
+    int hue;
+    Mask_t prevKeyState;
+    uint32_t bpsCount;
+    uint32_t lastBpsMillis;
+    uint16_t bpsColor;
+    uint16_t lastColor;
 };
 
 #endif

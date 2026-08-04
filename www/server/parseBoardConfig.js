@@ -165,6 +165,7 @@ export function parseBoardConfig(configDir, rootDir) {
       ledFormat: LED_FORMAT_MAP[d.LED_FORMAT] ?? 0,
       ledsPerKey: parseNum(d.LEDS_PER_KEY) ?? 1,
       ledCount: parseNum(d.LED_COUNT) ?? 0,
+      ledMode: parseNum(d.LED_MODE) ?? 0,
       brightnessMaximum: parseNum(d.LED_BRIGHTNESS_MAX) ?? 255,
       brightnessSteps: parseNum(d.LED_BRIGHTNESS_STEPS) ?? 1,
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,

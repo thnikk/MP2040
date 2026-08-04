@@ -150,6 +150,8 @@ async function load() {
 
   const led = options.led || {};
 
+  document.getElementById('led-mode').value = led.ledMode ?? 0;
+
   brightnessSlider = new PillSlider({
     container: document.getElementById('led-brightness'),
     min: 0,
@@ -221,6 +223,7 @@ async function save() {
     keycodes: currentOptions.keycodes,
     modifierMasks: currentOptions.modifierMasks,
     led: {
+      ledMode: parseInt(document.getElementById('led-mode').value, 10),
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),

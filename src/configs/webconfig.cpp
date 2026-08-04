@@ -159,6 +159,7 @@ std::string getOptions()
     doc["led"]["brightnessSteps"] = ledOptions.brightnessSteps;
     doc["led"]["colorNormal"] = ledOptions.colorNormal;
     doc["led"]["colorPressed"] = ledOptions.colorPressed;
+    doc["led"]["ledMode"] = ledOptions.ledMode;
 
     JsonArray pinLedIndices = doc["led"].createNestedArray("pinLedIndices");
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
@@ -193,6 +194,7 @@ std::string setOptions()
         ledOptions.brightnessSteps = led["brightnessSteps"] | ledOptions.brightnessSteps;
         ledOptions.colorNormal = led["colorNormal"] | ledOptions.colorNormal;
         ledOptions.colorPressed = led["colorPressed"] | ledOptions.colorPressed;
+        ledOptions.ledMode = led["ledMode"] | ledOptions.ledMode;
     }
 
     if (Storage::getInstance().save(true))
