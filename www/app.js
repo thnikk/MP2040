@@ -147,10 +147,6 @@ async function load() {
   ]);
   currentOptions = options;
   document.getElementById('board-label').textContent = version.boardLabel || '';
-  document.getElementById('fw-version').textContent =
-    `v${version.firmwareVersion || ''} (${version.gitCommit || ''})`;
-  document.getElementById('footer-version').textContent =
-    `v${version.firmwareVersion || ''}`;
 
   const led = options.led || {};
 
