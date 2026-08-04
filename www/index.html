@@ -13,18 +13,11 @@
   </header>
 
   <main>
-    <div class="columns">
-      <section class="board-column">
-        <h2>Board</h2>
-        <div id="board-panel"></div>
-      </section>
-
-      <section class="grid-column">
-        <h2>Key Mapping</h2>
-        <p class="hint">For each pin, pick one key and any number of modifiers from the Modifiers group. Pressing the button emits that key with the selected modifiers held (e.g. Left Shift + A). Click a pin on the board to jump to its row.</p>
-        <div id="key-grid"></div>
-      </section>
-    </div>
+    <section>
+      <h2>Board</h2>
+      <p class="hint">Click a button on the board to set its key and modifiers.</p>
+      <div id="board-panel"></div>
+    </section>
 
     <section>
       <h2>LEDs</h2>
@@ -56,6 +49,18 @@
       <span id="status"></span>
     </div>
   </main>
+
+  <div id="key-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <h3 id="key-modal-title">GP00</h3>
+      <p class="hint">Pick one key and any number of modifiers from the Modifiers group.</p>
+      <div id="key-modal-select"></div>
+      <div class="modal-actions">
+        <button id="key-modal-cancel" class="secondary" type="button">Cancel</button>
+        <button id="key-modal-save" type="button">Save</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/multiselect.js"></script>
   <script src="/boardview.js"></script>

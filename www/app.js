@@ -57,11 +57,17 @@ const MULTISELECT_OPTIONS = [
     .map(([label, value]) => ({ group: 'keys', label, value })),
 ];
 
-// One MultiSelect instance per pin, populated by load()
-const multiSelects = new Array(30).fill(null);
+// Working copy of the config from /api/getOptions, edited via the modal
+let currentOptions = null;
 
 // Board SVG view (see boardview.js), initialized by load()
 let boardView = null;
+
+// MultiSelect used in the key modal
+let modalSelect = null;
+
+// Pin currently being edited in the modal
+let editingPin = -1;
 
 function colorToInt(hex) {
   return parseInt(hex.replace('#', ''), 16);
@@ -87,32 +93,10 @@ async function load() {
     api('/api/getOptions'),
     api('/api/getFirmwareVersion'),
   ]);
+  currentOptions = options;
   document.getElementById('board-label').textContent = version.boardLabel || '';
   document.getElementById('fw-version').textContent =
     `v${version.firmwareVersion || ''} (${version.gitCommit || ''})`;
-
-  const grid = document.getElementById('key-grid');
-  grid.innerHTML = '';
-  for (let pin = 0; pin < 30; pin++) {
-    const cell = document.createElement('div');
-    cell.className = 'key-cell';
-    cell.innerHTML = `
-      <label>GP${pin.toString().padStart(2, '0')}</label>
-      <div class="ms-host" id="ms-${pin}"></div>
-      <input type="number" id="ledidx-${pin}" placeholder="LED idx" title="LED strip index (-1 = none)">`;
-    grid.appendChild(cell);
-
-    const ms = new MultiSelect({
-      container: document.getElementById(`ms-${pin}`),
-      options: MULTISELECT_OPTIONS,
-      groups: MULTISELECT_GROUPS,
-    });
-    ms.setValue(Number(options.keycodes[pin] || 0), Number(options.modifierMasks[pin] || 0));
-    multiSelects[pin] = ms;
-
-    document.getElementById(`ledidx-${pin}`).value =
-      options.led.pinLedIndices ? (options.led.pinLedIndices[pin] ?? -1) : -1;
-  }
 
   const led = options.led || {};
   document.getElementById('led-dataPin').value = led.dataPin ?? -1;
@@ -123,50 +107,57 @@ async function load() {
   document.getElementById('led-colorNormal').value = intToColor(led.colorNormal ?? 0x00ff00);
   document.getElementById('led-colorPressed').value = intToColor(led.colorPressed ?? 0xffffff);
 
-  initBoard(options, grid);
+  modalSelect = new MultiSelect({
+    container: document.getElementById('key-modal-select'),
+    options: MULTISELECT_OPTIONS,
+    groups: MULTISELECT_GROUPS,
+  });
+
+  initBoard(options);
 }
 
-function initBoard(options, grid) {
+function initBoard(options) {
   const panel = document.getElementById('board-panel');
   if (!panel) return;
 
   boardView = new BoardView(panel, {
-    onPinClick: (pin) => {
-      if (boardView) boardView.highlightPin(pin);
-      const cell = document.getElementById(`ms-${pin}`)?.closest('.key-cell');
-      if (cell) {
-        cell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        cell.classList.add('cell-highlight');
-        setTimeout(() => cell.classList.remove('cell-highlight'), 1500);
-      }
-    },
+    onPinClick: (pin) => openKeyModal(pin),
     onTest: () => testLed(),
   });
   boardView.setOptions(options);
+}
 
-  // Sync the board when the user focuses a key cell.
-  grid.addEventListener('focusin', (e) => {
-    const cell = e.target.closest('.key-cell');
-    const input = cell && cell.querySelector('input[id^="ledidx-"]');
-    const m = input && input.id.match(/^ledidx-(\d+)$/);
-    if (m && boardView) boardView.highlightPin(Number(m[1]));
-  });
+function openKeyModal(pin) {
+  editingPin = pin;
+  document.getElementById('key-modal-title').textContent =
+    `GP${pin.toString().padStart(2, '0')}`;
+  modalSelect.setValue(
+    Number(currentOptions.keycodes[pin] || 0),
+    Number(currentOptions.modifierMasks[pin] || 0),
+  );
+  document.getElementById('key-modal').hidden = false;
+  if (boardView) boardView.highlightPin(pin);
+}
+
+function closeKeyModal() {
+  document.getElementById('key-modal').hidden = true;
+  editingPin = -1;
+  if (boardView) boardView.clearHighlight();
+}
+
+function saveKeyModal() {
+  if (editingPin < 0) return;
+  const { keycode, mask } = modalSelect.getValue();
+  currentOptions.keycodes[editingPin] = keycode;
+  currentOptions.modifierMasks[editingPin] = mask;
+  if (boardView) boardView.setOptions(currentOptions);
+  closeKeyModal();
 }
 
 async function save() {
-  const keycodes = [];
-  const modifierMasks = [];
-  const pinLedIndices = [];
-  for (let pin = 0; pin < 30; pin++) {
-    const { keycode, mask } = multiSelects[pin].getValue();
-    keycodes.push(keycode);
-    modifierMasks.push(mask);
-    pinLedIndices.push(parseInt(document.getElementById(`ledidx-${pin}`).value, 10));
-  }
-
   const body = {
-    keycodes,
-    modifierMasks,
+    keycodes: currentOptions.keycodes,
+    modifierMasks: currentOptions.modifierMasks,
     led: {
       dataPin: parseInt(document.getElementById('led-dataPin').value, 10),
       ledCount: parseInt(document.getElementById('led-ledCount').value, 10),
@@ -175,7 +166,6 @@ async function save() {
       brightnessMaximum: parseInt(document.getElementById('led-brightnessMaximum').value, 10),
       colorNormal: colorToInt(document.getElementById('led-colorNormal').value),
       colorPressed: colorToInt(document.getElementById('led-colorPressed').value),
-      pinLedIndices,
     },
   };
 
@@ -216,5 +206,15 @@ async function resetSettings() {
 document.getElementById('save').addEventListener('click', save);
 document.getElementById('test-led').addEventListener('click', testLed);
 document.getElementById('reset').addEventListener('click', resetSettings);
+document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
+document.getElementById('key-modal-cancel').addEventListener('click', closeKeyModal);
+
+// Close the modal when clicking the overlay backdrop or pressing Escape.
+document.getElementById('key-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeKeyModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !document.getElementById('key-modal').hidden) closeKeyModal();
+});
 
 load();

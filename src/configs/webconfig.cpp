@@ -195,14 +195,6 @@ std::string setOptions()
         ledOptions.brightnessSteps = led["brightnessSteps"] | ledOptions.brightnessSteps;
         ledOptions.colorNormal = led["colorNormal"] | ledOptions.colorNormal;
         ledOptions.colorPressed = led["colorPressed"] | ledOptions.colorPressed;
-
-        JsonArray pinLedIndices = led["pinLedIndices"];
-        if (!pinLedIndices.isNull())
-        {
-            for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)pinLedIndices.size(); pin++)
-                ledOptions.pinLedIndices[pin] = pinLedIndices[pin] | -1;
-            ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
-        }
     }
 
     if (Storage::getInstance().save(true))

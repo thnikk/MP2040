@@ -517,14 +517,11 @@ void Storage::init() {
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
 
-    // Fill the pin → LED index mapping from board defaults if it was never
-    // configured (e.g. first boot or an older config without the field).
-    if (config.ledOptions.pinLedIndices_count == 0)
-    {
-        config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
-        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
-            config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
-    }
+    // The pin → LED index mapping is a physical board property; always use the
+    // board defaults so it can't be changed from the web config.
+    config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
 
     // Use the board's strip length if one is defined and none was configured.
     if (config.ledOptions.ledCount == 0 && LED_COUNT != 0)
