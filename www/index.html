@@ -22,24 +22,9 @@
     <section>
       <h2>LEDs</h2>
       <div class="led-form">
-        <label>Data pin <input type="number" id="led-dataPin" min="-1" max="29" value="-1"></label>
-        <label>Total LEDs <input type="number" id="led-ledCount" min="0" max="300" value="0"></label>
-        <label>Format
-          <select id="led-ledFormat">
-            <option value="0">RGB</option>
-            <option value="1">GRB</option>
-            <option value="2">GRBW</option>
-            <option value="3">RGBW</option>
-          </select>
-        </label>
-        <label>LEDs per key <input type="number" id="led-ledsPerKey" min="1" max="8" value="1"></label>
         <div class="led-slider" id="led-brightness"></div>
         <div class="led-color-picker"><div id="led-colorNormal"></div></div>
         <div class="led-color-picker"><div id="led-colorPressed"></div></div>
-      </div>
-      <div class="test-row">
-        <button id="test-led" class="secondary" type="button">Test LEDs</button>
-        <span class="hint">Lights all LEDs in the normal color for 2 seconds.</span>
       </div>
     </section>
 

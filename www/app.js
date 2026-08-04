@@ -151,10 +151,6 @@ async function load() {
     `v${version.firmwareVersion || ''} (${version.gitCommit || ''})`;
 
   const led = options.led || {};
-  document.getElementById('led-dataPin').value = led.dataPin ?? -1;
-  document.getElementById('led-ledCount').value = led.ledCount ?? 0;
-  document.getElementById('led-ledFormat').value = led.ledFormat ?? 0;
-  document.getElementById('led-ledsPerKey').value = led.ledsPerKey ?? 1;
 
   brightnessSlider = new PillSlider({
     container: document.getElementById('led-brightness'),
@@ -191,7 +187,6 @@ function initBoard(options) {
 
   boardView = new BoardView(panel, {
     onPinClick: (pin) => openKeyModal(pin),
-    onTest: () => testLed(),
   });
   boardView.setOptions(options);
 }
@@ -228,10 +223,6 @@ async function save() {
     keycodes: currentOptions.keycodes,
     modifierMasks: currentOptions.modifierMasks,
     led: {
-      dataPin: parseInt(document.getElementById('led-dataPin').value, 10),
-      ledCount: parseInt(document.getElementById('led-ledCount').value, 10),
-      ledFormat: parseInt(document.getElementById('led-ledFormat').value, 10),
-      ledsPerKey: parseInt(document.getElementById('led-ledsPerKey').value, 10),
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
@@ -251,21 +242,6 @@ async function save() {
   }
 }
 
-async function testLed() {
-  const color = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
-  setStatus('Testing LEDs...', true);
-  try {
-    await api('/api/testLed', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ color, duration: 2000 }),
-    });
-    setStatus('Test sent!', true);
-  } catch (e) {
-    setStatus('Test failed: ' + e, false);
-  }
-}
-
 async function resetSettings() {
   if (!confirm('Reset all settings to defaults and reboot?')) return;
   await api('/api/resetSettings', { method: 'POST' });
@@ -273,7 +249,6 @@ async function resetSettings() {
 }
 
 document.getElementById('save').addEventListener('click', save);
-document.getElementById('test-led').addEventListener('click', testLed);
 document.getElementById('reset').addEventListener('click', resetSettings);
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
 document.getElementById('key-modal-cancel').addEventListener('click', closeKeyModal);

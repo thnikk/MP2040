@@ -513,19 +513,19 @@ void Storage::init() {
     // boot check at the wrong pin.
     config.webConfigPin = PIN_WEBCONFIG;
 
-    // The LED data pin and strip format are physical board properties too.
+    // The LED data pin, strip format, strip length and LEDs per key are all
+    // physical board properties; always use the board defaults so they can't
+    // be changed from the web config.
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
+    config.ledOptions.ledCount = LED_COUNT;
+    config.ledOptions.ledsPerKey = LEDS_PER_KEY;
 
     // The pin → LED index mapping is a physical board property; always use the
     // board defaults so it can't be changed from the web config.
     config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
-
-    // Use the board's strip length if one is defined and none was configured.
-    if (config.ledOptions.ledCount == 0 && LED_COUNT != 0)
-        config.ledOptions.ledCount = LED_COUNT;
 }
 
 /**
@@ -609,20 +609,4 @@ bool Storage::GetConfigButtonVisible()
 void Storage::publishKeyState(Mask_t state)
 {
     keyState = state;
-}
-
-void Storage::setLedTest(uint32_t color, uint32_t durationMs)
-{
-    ledTestColor = color;
-    ledTestUntil = to_us_since_boot(get_absolute_time()) + (uint64_t)durationMs * 1000;
-}
-
-bool Storage::getLedTest(uint32_t& color)
-{
-    if (to_us_since_boot(get_absolute_time()) < ledTestUntil)
-    {
-        color = ledTestColor;
-        return true;
-    }
-    return false;
 }

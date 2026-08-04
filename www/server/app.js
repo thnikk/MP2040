@@ -1,8 +1,8 @@
 // MP2040 Configurator mock API server.
 //
 // Serves the same endpoints the firmware exposes (/api/getOptions,
-// /api/setOptions, /api/getFirmwareVersion, /api/testLed, /api/resetSettings)
-// plus /board.svg, using data parsed from the selected board's BoardConfig.h.
+// /api/setOptions, /api/getFirmwareVersion, /api/resetSettings) plus
+// /board.svg, using data parsed from the selected board's BoardConfig.h.
 // Mounted as a Vite middleware in dev (see vite.config.js) or run standalone
 // with `node server/app.js` for the mock API on http://localhost:8080.
 //
@@ -83,7 +83,6 @@ export function createMockApp() {
     });
   });
 
-  app.post('/api/testLed', (req, res) => res.send({ success: true }));
   app.post('/api/resetSettings', (req, res) => res.send({ success: true }));
 
   app.get('/board.svg', (req, res) => {

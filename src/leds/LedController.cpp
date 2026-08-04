@@ -102,20 +102,6 @@ void LedController::update()
     // Scale colors to the configured brightness maximum (0-255)
     float scale = brightnessMaximum / 255.0f;
 
-    // LED test mode: light every LED with the requested color at full
-    // brightness, independent of the configured brightness scale.
-    uint32_t testColor;
-    if (Storage::getInstance().getLedTest(testColor))
-    {
-        uint8_t tr = static_cast<uint8_t>((testColor >> 16) & 0xFF);
-        uint8_t tg = static_cast<uint8_t>((testColor >> 8) & 0xFF);
-        uint8_t tb = static_cast<uint8_t>(testColor & 0xFF);
-        for (uint32_t i = 0; i < neopixel->getLedCount(); i++)
-            neopixel->setPixel(i, tr, tg, tb);
-        neopixel->show();
-        return;
-    }
-
     uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
     uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
     uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);

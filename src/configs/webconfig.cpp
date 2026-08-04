@@ -187,10 +187,8 @@ std::string setOptions()
     JsonObject led = doc["led"];
     if (!led.isNull())
     {
-        ledOptions.dataPin = led["dataPin"] | ledOptions.dataPin;
-        ledOptions.ledFormat = led["ledFormat"] | ledOptions.ledFormat;
-        ledOptions.ledsPerKey = led["ledsPerKey"] | ledOptions.ledsPerKey;
-        ledOptions.ledCount = led["ledCount"] | ledOptions.ledCount;
+        // dataPin/ledFormat/ledCount/ledsPerKey are board properties and are
+        // enforced from BoardConfig.h at boot; only user-tunables are editable.
         ledOptions.brightnessMaximum = led["brightnessMaximum"] | ledOptions.brightnessMaximum;
         ledOptions.brightnessSteps = led["brightnessSteps"] | ledOptions.brightnessSteps;
         ledOptions.colorNormal = led["colorNormal"] | ledOptions.colorNormal;
@@ -244,16 +242,6 @@ std::string getFirmwareVersion()
     return serialize_json(doc);
 }
 
-std::string testLed()
-{
-    DynamicJsonDocument doc = get_post_data();
-    uint32_t color = doc["color"] | 0xFFFFFF;
-    uint32_t duration = doc["duration"] | 2000;
-    Storage::getInstance().setLedTest(color, duration);
-    doc["success"] = true;
-    return serialize_json(doc);
-}
-
 std::string resetSettings()
 {
     Storage::getInstance().ResetSettings();
@@ -290,7 +278,6 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/getUsedPins", getUsedPins },
     { "/api/getPinState", getPinState },
     { "/api/getFirmwareVersion", getFirmwareVersion },
-    { "/api/testLed", testLed },
     { "/api/resetSettings", resetSettings },
     { "/api/reboot", reboot },
 };
