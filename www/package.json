@@ -1,0 +1,16 @@
+{
+  "name": "mp2040-configurator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev-board": "cross-env VITE_DEV_BASE_URL=http://192.168.7.1 vite",
+    "dev-board:2k": "cross-env VITE_DEV_BASE_URL=http://192.168.7.1 vite"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "express": "^4.19.2",
+    "vite": "^5.4.0"
+  }
+}

@@ -71,12 +71,24 @@ def c_string(data: str) -> str:
     return hex_bytes(data.encode("utf-8"))
 
 
+# Dev-only directories and files that must not be embedded in the firmware
+SKIP_DIRS = {"node_modules", "server", "__pycache__", ".vite", "dist"}
+SKIP_FILES = {
+    "package.json",
+    "package-lock.json",
+    "vite.config.js",
+    "vite.config.ts",
+    ".env",
+    ".env.local",
+}
+
+
 def gather_files(web_dir: Path):
     files = []
     for root, dirs, names in os.walk(web_dir):
-        dirs[:] = [d for d in dirs if not d.startswith(".") and d != "__pycache__"]
+        dirs[:] = [d for d in dirs if not d.startswith(".") and d not in SKIP_DIRS]
         for name in sorted(names):
-            if name.startswith("."):
+            if name.startswith(".") or name in SKIP_FILES:
                 continue
             files.append(Path(root) / name)
     return sorted(files)
