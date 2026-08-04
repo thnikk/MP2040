@@ -138,6 +138,21 @@ async function save() {
   }
 }
 
+async function testLed() {
+  const color = colorToInt(document.getElementById('led-colorNormal').value);
+  setStatus('Testing LEDs...', true);
+  try {
+    await api('/api/testLed', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color, duration: 2000 }),
+    });
+    setStatus('Test sent!', true);
+  } catch (e) {
+    setStatus('Test failed: ' + e, false);
+  }
+}
+
 async function resetSettings() {
   if (!confirm('Reset all settings to defaults and reboot?')) return;
   await api('/api/resetSettings', { method: 'POST' });
@@ -145,6 +160,7 @@ async function resetSettings() {
 }
 
 document.getElementById('save').addEventListener('click', save);
+document.getElementById('test-led').addEventListener('click', testLed);
 document.getElementById('reset').addEventListener('click', resetSettings);
 
 load();

@@ -2,6 +2,7 @@
 #define _NEOPIXEL_H_
 
 #include <stdint.h>
+#include "hardware/pio.h"
 #include "enums.pb.h"
 
 class Neopixel {
@@ -20,6 +21,8 @@ private:
     uint32_t pin;
     uint32_t numLeds;
     LEDFormat_Proto format;
+    PIO pio;
+    uint sm;
     uint8_t* ledData;   // numLeds * 3 bytes (R, G, B)
 };
 

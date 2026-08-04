@@ -14,20 +14,26 @@ Neopixel::Neopixel(int32_t pin, uint32_t numLeds, LEDFormat_Proto format)
     ledData = new uint8_t[numLeds * 3];
     memset(ledData, 0, numLeds * 3);
 
-    PIO pio = pio0;
+    pio = pio0;
     uint offset = pio_add_program(pio, &ws2812_program);
-    uint sm = pio_claim_unused_sm(pio, true);
+    sm = pio_claim_unused_sm(pio, true);
 
-    pio_sm_config c = ws2812_program_get_default_config(sm);
+    // Route the pin to PIO and explicitly drive it as an output. The side-set
+    // only sets the pin value; without this the pin is never enabled as an
+    // output and the strip sees a floating data line.
+    pio_gpio_init(pio, pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true);
+
+    pio_sm_config c = ws2812_program_get_default_config(offset);
     sm_config_set_sideset_pins(&c, pin);
-    sm_config_set_out_shift(&c, false, true, 0);
+    // Autopull after 24 bits so each pixel is exactly one 24-bit frame
+    sm_config_set_out_shift(&c, false, true, 24);
     sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
 
-    // 125 MHz system clock / 10 cycles per bit / 800 kHz bitrate
-    uint clkdiv = clock_get_hz(clk_sys) / (ws2812_T1 + ws2812_T2 + ws2812_T3) / 800000;
+    // 125 MHz / 10 cycles per bit / 800 kHz bitrate
+    float clkdiv = clock_get_hz(clk_sys) / (800000.0f * (ws2812_T1 + ws2812_T2 + ws2812_T3));
     sm_config_set_clkdiv(&c, clkdiv);
 
-    pio_gpio_init(pio, pin);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
 }
@@ -35,9 +41,7 @@ Neopixel::Neopixel(int32_t pin, uint32_t numLeds, LEDFormat_Proto format)
 Neopixel::~Neopixel()
 {
     delete[] ledData;
-    if (numLeds > 0) {
-        pio_sm_set_enabled(pio0, 0, false);
-    }
+    pio_sm_set_enabled(pio, sm, false);
 }
 
 void Neopixel::setPixel(uint32_t index, uint8_t r, uint8_t g, uint8_t b)
@@ -81,6 +85,10 @@ void Neopixel::show()
         uint32_t word = pixelWord(ledData[i * 3], ledData[i * 3 + 1], ledData[i * 3 + 2]);
         // Shift left so the 24 significant bits land in the MSBs; the PIO
         // shifts LSB-first, producing the correct wire order.
-        pio_sm_put_blocking(pio0, 0, word << 8u);
+        pio_sm_put_blocking(pio, sm, word << 8u);
     }
+
+    // Let the final bits shift out and hold the data line low for longer than
+    // the WS2812 reset period (~50us) so the strip latches the frame.
+    sleep_us(80);
 }

@@ -237,6 +237,16 @@ std::string getFirmwareVersion()
     return serialize_json(doc);
 }
 
+std::string testLed()
+{
+    DynamicJsonDocument doc = get_post_data();
+    uint32_t color = doc["color"] | 0xFFFFFF;
+    uint32_t duration = doc["duration"] | 2000;
+    Storage::getInstance().setLedTest(color, duration);
+    doc["success"] = true;
+    return serialize_json(doc);
+}
+
 std::string resetSettings()
 {
     Storage::getInstance().ResetSettings();
@@ -273,6 +283,7 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
     { "/api/getUsedPins", getUsedPins },
     { "/api/getPinState", getPinState },
     { "/api/getFirmwareVersion", getFirmwareVersion },
+    { "/api/testLed", testLed },
     { "/api/resetSettings", resetSettings },
     { "/api/reboot", reboot },
 };

@@ -114,4 +114,18 @@ button.danger {
   color: #fff;
 }
 
+button.secondary {
+  background: #37474f;
+  color: #fff;
+}
+
+.test-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.test-row .hint { margin: 0; }
+
 #status { color: var(--muted); font-size: 0.9rem; }

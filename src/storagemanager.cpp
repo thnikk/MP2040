@@ -4,6 +4,7 @@
 #include "FlashPROM.h"
 #include "config.pb.h"
 #include "hardware/watchdog.h"
+#include "pico/time.h"
 #include "CRC32.h"
 #include "types.h"
 #include "version.h"
@@ -403,6 +404,10 @@ void Storage::init() {
     // Always use the board default so a stale stored config can't point the
     // boot check at the wrong pin.
     config.webConfigPin = PIN_WEBCONFIG;
+
+    // The LED data pin and strip format are physical board properties too.
+    config.ledOptions.dataPin = LED_PIN;
+    config.ledOptions.ledFormat = LED_FORMAT;
 }
 
 /**
@@ -486,4 +491,20 @@ bool Storage::GetConfigButtonVisible()
 void Storage::publishKeyState(Mask_t state)
 {
     keyState = state;
+}
+
+void Storage::setLedTest(uint32_t color, uint32_t durationMs)
+{
+    ledTestColor = color;
+    ledTestUntil = to_us_since_boot(get_absolute_time()) + (uint64_t)durationMs * 1000;
+}
+
+bool Storage::getLedTest(uint32_t& color)
+{
+    if (to_us_since_boot(get_absolute_time()) < ledTestUntil)
+    {
+        color = ledTestColor;
+        return true;
+    }
+    return false;
 }
