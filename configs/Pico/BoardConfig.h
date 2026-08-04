@@ -59,14 +59,22 @@
 #define LED_COLOR_NORMAL 0x00FF00
 #define LED_COLOR_PRESSED 0xFFFFFF
 
-// Total number of LEDs in the strip. 0 = derive from the pin mappings below.
-#define LED_COUNT 3
+// Total number of LEDs in the strip. 0 = derive from the pin mappings / grid.
+#define LED_COUNT 6
 
 // Pin → LED strip index mapping. -1 = pin has no LED. The LED(s) at the
 // mapped index (LEDS_PER_KEY of them) light up when the pin is pressed.
 #define LED_INDEX_GP06 0
 #define LED_INDEX_GP07 1
 #define LED_INDEX_GP10 2
+
+// Spatial layout of the LED strip for 2D effects (ripple, chase, ...).
+// Each entry is the LED strip index at that (row, col); -1 = empty cell.
+// 3x2 serpentine grid: LED 0-2 on the top row, 5-3 on the bottom.
+#define BOARD_LED_POSITION_COLS 3
+#define BOARD_LED_POSITIONS \
+    { 0, 1, 2 }, \
+    { 5, 4, 3 }
 
 // Web config boot pin (hold to ground at boot to enter web config mode)
 #define PIN_WEBCONFIG 21

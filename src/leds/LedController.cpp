@@ -25,6 +25,18 @@ void LedController::setup()
     configure();
 }
 
+uint32_t LedController::getLedCount()
+{
+    return neopixel != nullptr ? neopixel->getLedCount() : 0;
+}
+
+int32_t LedController::getLedAt(uint32_t row, uint32_t col)
+{
+    if (row >= LED_GRID_ROWS || col >= LED_GRID_COLS)
+        return -1;
+    return BOARD_LED_GRID[row][col];
+}
+
 void LedController::configure()
 {
     const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
@@ -43,8 +55,16 @@ void LedController::configure()
     }
 
     // Total strip length: use the configured count, or derive from the highest
-    // mapped LED index, or fall back to one LED per key.
+    // LED index in the 2D grid, or from the pin mappings.
     uint32_t stripCount = ledCount;
+    for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
+    {
+        for (uint32_t col = 0; col < LED_GRID_COLS; col++)
+        {
+            if (BOARD_LED_GRID[row][col] >= 0)
+                stripCount = std::max(stripCount, (uint32_t)(BOARD_LED_GRID[row][col] + 1));
+        }
+    }
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (pinLedIndices[pin] >= 0)

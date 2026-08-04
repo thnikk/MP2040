@@ -5,6 +5,7 @@
 #include "pico/time.h"
 #include "hardware/gpio.h"
 #include "config.pb.h"
+#include "leds/LedLayout.h"
 
 class Neopixel;
 
@@ -13,6 +14,12 @@ public:
     LedController();
     void setup();
     void update();
+    // Number of LEDs currently driven on the strip
+    uint32_t getLedCount();
+    // LED strip index at a grid position, or -1 if the cell is empty
+    int32_t getLedAt(uint32_t row, uint32_t col);
+    uint32_t getGridRows() { return LED_GRID_ROWS; }
+    uint32_t getGridCols() { return LED_GRID_COLS; }
 private:
     void configure();
 
