@@ -18,6 +18,11 @@ message LEDOptions
     optional uint32 brightnessSteps = 5;
     optional uint32 colorNormal = 6;
     optional uint32 colorPressed = 7;
+    // Total number of LEDs in the strip. 0 = derive from pinLedIndices.
+    optional uint32 ledCount = 8;
+    // Per-pin LED strip index (index in array = pin, value = LED index).
+    // -1 = pin has no LED.
+    repeated int32 pinLedIndices = 9 [(nanopb).max_count = 30];
 }
 
 message Config

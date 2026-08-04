@@ -54,6 +54,14 @@
 #define LED_COLOR_NORMAL 0x00FF00
 #define LED_COLOR_PRESSED 0xFFFFFF
 
+// Total number of LEDs in the strip. 0 = derive from the pin mappings below.
+#define LED_COUNT 2
+
+// Pin → LED strip index mapping. -1 = pin has no LED. The LED(s) at the
+// mapped index (LEDS_PER_KEY of them) light up when the pin is pressed.
+#define LED_INDEX_GP28 0
+#define LED_INDEX_GP29 1
+
 // Web config boot pin (hold to ground at boot to enter web config mode).
 // GP27 is button 3, so holding button 3 while powering on opens the web config.
 #define PIN_WEBCONFIG 27

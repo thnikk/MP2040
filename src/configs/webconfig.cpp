@@ -154,10 +154,16 @@ std::string getOptions()
     doc["led"]["dataPin"] = ledOptions.dataPin;
     doc["led"]["ledFormat"] = ledOptions.ledFormat;
     doc["led"]["ledsPerKey"] = ledOptions.ledsPerKey;
+    doc["led"]["ledCount"] = ledOptions.ledCount;
     doc["led"]["brightnessMaximum"] = ledOptions.brightnessMaximum;
     doc["led"]["brightnessSteps"] = ledOptions.brightnessSteps;
     doc["led"]["colorNormal"] = ledOptions.colorNormal;
     doc["led"]["colorPressed"] = ledOptions.colorPressed;
+
+    JsonArray pinLedIndices = doc["led"].createNestedArray("pinLedIndices");
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        pinLedIndices.add(pin < (Pin_t)ledOptions.pinLedIndices_count ? ledOptions.pinLedIndices[pin] : -1);
+
     doc["webConfigPin"] = Storage::getInstance().getWebConfigPin();
 
     return serialize_json(doc);
@@ -184,10 +190,19 @@ std::string setOptions()
         ledOptions.dataPin = led["dataPin"] | ledOptions.dataPin;
         ledOptions.ledFormat = led["ledFormat"] | ledOptions.ledFormat;
         ledOptions.ledsPerKey = led["ledsPerKey"] | ledOptions.ledsPerKey;
+        ledOptions.ledCount = led["ledCount"] | ledOptions.ledCount;
         ledOptions.brightnessMaximum = led["brightnessMaximum"] | ledOptions.brightnessMaximum;
         ledOptions.brightnessSteps = led["brightnessSteps"] | ledOptions.brightnessSteps;
         ledOptions.colorNormal = led["colorNormal"] | ledOptions.colorNormal;
         ledOptions.colorPressed = led["colorPressed"] | ledOptions.colorPressed;
+
+        JsonArray pinLedIndices = led["pinLedIndices"];
+        if (!pinLedIndices.isNull())
+        {
+            for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)pinLedIndices.size(); pin++)
+                ledOptions.pinLedIndices[pin] = pinLedIndices[pin] | -1;
+            ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
+        }
     }
 
     if (Storage::getInstance().save(true))

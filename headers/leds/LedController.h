@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "pico/time.h"
+#include "hardware/gpio.h"
 #include "config.pb.h"
 
 class Neopixel;
@@ -19,6 +20,8 @@ private:
     int32_t dataPin;
     LEDFormat_Proto ledFormat;
     uint32_t ledsPerKey;
+    uint32_t ledCount;
+    int32_t pinLedIndices[NUM_BANK0_GPIOS];
     uint32_t brightnessMaximum;
     uint32_t colorNormal;
     uint32_t colorPressed;

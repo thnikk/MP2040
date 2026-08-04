@@ -225,8 +225,103 @@
 #ifndef LED_COLOR_PRESSED
 #define LED_COLOR_PRESSED 0xFFFFFF
 #endif
+#ifndef LED_COUNT
+#define LED_COUNT 0
+#endif
 #ifndef PIN_WEBCONFIG
 #define PIN_WEBCONFIG -1
+#endif
+
+// Pin → LED strip index defaults (from BoardConfig.h's LED_INDEX_GPxx macros)
+#ifndef LED_INDEX_GP00
+#define LED_INDEX_GP00 -1
+#endif
+#ifndef LED_INDEX_GP01
+#define LED_INDEX_GP01 -1
+#endif
+#ifndef LED_INDEX_GP02
+#define LED_INDEX_GP02 -1
+#endif
+#ifndef LED_INDEX_GP03
+#define LED_INDEX_GP03 -1
+#endif
+#ifndef LED_INDEX_GP04
+#define LED_INDEX_GP04 -1
+#endif
+#ifndef LED_INDEX_GP05
+#define LED_INDEX_GP05 -1
+#endif
+#ifndef LED_INDEX_GP06
+#define LED_INDEX_GP06 -1
+#endif
+#ifndef LED_INDEX_GP07
+#define LED_INDEX_GP07 -1
+#endif
+#ifndef LED_INDEX_GP08
+#define LED_INDEX_GP08 -1
+#endif
+#ifndef LED_INDEX_GP09
+#define LED_INDEX_GP09 -1
+#endif
+#ifndef LED_INDEX_GP10
+#define LED_INDEX_GP10 -1
+#endif
+#ifndef LED_INDEX_GP11
+#define LED_INDEX_GP11 -1
+#endif
+#ifndef LED_INDEX_GP12
+#define LED_INDEX_GP12 -1
+#endif
+#ifndef LED_INDEX_GP13
+#define LED_INDEX_GP13 -1
+#endif
+#ifndef LED_INDEX_GP14
+#define LED_INDEX_GP14 -1
+#endif
+#ifndef LED_INDEX_GP15
+#define LED_INDEX_GP15 -1
+#endif
+#ifndef LED_INDEX_GP16
+#define LED_INDEX_GP16 -1
+#endif
+#ifndef LED_INDEX_GP17
+#define LED_INDEX_GP17 -1
+#endif
+#ifndef LED_INDEX_GP18
+#define LED_INDEX_GP18 -1
+#endif
+#ifndef LED_INDEX_GP19
+#define LED_INDEX_GP19 -1
+#endif
+#ifndef LED_INDEX_GP20
+#define LED_INDEX_GP20 -1
+#endif
+#ifndef LED_INDEX_GP21
+#define LED_INDEX_GP21 -1
+#endif
+#ifndef LED_INDEX_GP22
+#define LED_INDEX_GP22 -1
+#endif
+#ifndef LED_INDEX_GP23
+#define LED_INDEX_GP23 -1
+#endif
+#ifndef LED_INDEX_GP24
+#define LED_INDEX_GP24 -1
+#endif
+#ifndef LED_INDEX_GP25
+#define LED_INDEX_GP25 -1
+#endif
+#ifndef LED_INDEX_GP26
+#define LED_INDEX_GP26 -1
+#endif
+#ifndef LED_INDEX_GP27
+#define LED_INDEX_GP27 -1
+#endif
+#ifndef LED_INDEX_GP28
+#define LED_INDEX_GP28 -1
+#endif
+#ifndef LED_INDEX_GP29
+#define LED_INDEX_GP29 -1
 #endif
 
 static const uint32_t defaultKeycodes[NUM_BANK0_GPIOS] = {
@@ -245,6 +340,15 @@ static const uint32_t defaultModifiers[NUM_BANK0_GPIOS] = {
     MODIFIER_GP15, MODIFIER_GP16, MODIFIER_GP17, MODIFIER_GP18, MODIFIER_GP19,
     MODIFIER_GP20, MODIFIER_GP21, MODIFIER_GP22, MODIFIER_GP23, MODIFIER_GP24,
     MODIFIER_GP25, MODIFIER_GP26, MODIFIER_GP27, MODIFIER_GP28, MODIFIER_GP29
+};
+
+static const int32_t defaultPinLedIndices[NUM_BANK0_GPIOS] = {
+    LED_INDEX_GP00, LED_INDEX_GP01, LED_INDEX_GP02, LED_INDEX_GP03, LED_INDEX_GP04,
+    LED_INDEX_GP05, LED_INDEX_GP06, LED_INDEX_GP07, LED_INDEX_GP08, LED_INDEX_GP09,
+    LED_INDEX_GP10, LED_INDEX_GP11, LED_INDEX_GP12, LED_INDEX_GP13, LED_INDEX_GP14,
+    LED_INDEX_GP15, LED_INDEX_GP16, LED_INDEX_GP17, LED_INDEX_GP18, LED_INDEX_GP19,
+    LED_INDEX_GP20, LED_INDEX_GP21, LED_INDEX_GP22, LED_INDEX_GP23, LED_INDEX_GP24,
+    LED_INDEX_GP25, LED_INDEX_GP26, LED_INDEX_GP27, LED_INDEX_GP28, LED_INDEX_GP29
 };
 
 // -----------------------------------------------------
@@ -345,6 +449,10 @@ static void applyDefaults(Config& config)
     config.ledOptions.brightnessSteps = LED_BRIGHTNESS_STEPS;
     config.ledOptions.colorNormal = LED_COLOR_NORMAL;
     config.ledOptions.colorPressed = LED_COLOR_PRESSED;
+    config.ledOptions.ledCount = LED_COUNT;
+    config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
     config.webConfigPin = PIN_WEBCONFIG;
 }
 
@@ -408,6 +516,19 @@ void Storage::init() {
     // The LED data pin and strip format are physical board properties too.
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
+
+    // Fill the pin → LED index mapping from board defaults if it was never
+    // configured (e.g. first boot or an older config without the field).
+    if (config.ledOptions.pinLedIndices_count == 0)
+    {
+        config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
+        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+            config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
+    }
+
+    // Use the board's strip length if one is defined and none was configured.
+    if (config.ledOptions.ledCount == 0 && LED_COUNT != 0)
+        config.ledOptions.ledCount = LED_COUNT;
 }
 
 /**

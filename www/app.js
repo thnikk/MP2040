@@ -86,17 +86,21 @@ async function load() {
       <select id="key-${pin}">${keyOptions}</select>
       <select id="mod-${pin}" title="Modifier mask">
         ${Object.entries(MODIFIER_BITS).map(([n, v]) => `<option value="${v}">${n}</option>`).join('')}
-      </select>`;
+      </select>
+      <input type="number" id="ledidx-${pin}" placeholder="LED idx" title="LED strip index (-1 = none)">`;
     grid.appendChild(cell);
 
     const keySelect = document.getElementById(`key-${pin}`);
     const modSelect = document.getElementById(`mod-${pin}`);
     keySelect.value = String(options.keycodes[pin] || 0);
     modSelect.value = String(options.modifierMasks[pin] || 0);
+    document.getElementById(`ledidx-${pin}`).value =
+      options.led.pinLedIndices ? (options.led.pinLedIndices[pin] ?? -1) : -1;
   }
 
   const led = options.led || {};
   document.getElementById('led-dataPin').value = led.dataPin ?? -1;
+  document.getElementById('led-ledCount').value = led.ledCount ?? 0;
   document.getElementById('led-ledFormat').value = led.ledFormat ?? 0;
   document.getElementById('led-ledsPerKey').value = led.ledsPerKey ?? 1;
   document.getElementById('led-brightnessMaximum').value = led.brightnessMaximum ?? 255;
@@ -107,9 +111,11 @@ async function load() {
 async function save() {
   const keycodes = [];
   const modifierMasks = [];
+  const pinLedIndices = [];
   for (let pin = 0; pin < 30; pin++) {
     keycodes.push(parseInt(document.getElementById(`key-${pin}`).value, 10));
     modifierMasks.push(parseInt(document.getElementById(`mod-${pin}`).value, 10));
+    pinLedIndices.push(parseInt(document.getElementById(`ledidx-${pin}`).value, 10));
   }
 
   const body = {
@@ -117,11 +123,13 @@ async function save() {
     modifierMasks,
     led: {
       dataPin: parseInt(document.getElementById('led-dataPin').value, 10),
+      ledCount: parseInt(document.getElementById('led-ledCount').value, 10),
       ledFormat: parseInt(document.getElementById('led-ledFormat').value, 10),
       ledsPerKey: parseInt(document.getElementById('led-ledsPerKey').value, 10),
       brightnessMaximum: parseInt(document.getElementById('led-brightnessMaximum').value, 10),
       colorNormal: colorToInt(document.getElementById('led-colorNormal').value),
       colorPressed: colorToInt(document.getElementById('led-colorPressed').value),
+      pinLedIndices,
     },
   };
 
