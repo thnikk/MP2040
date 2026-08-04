@@ -199,11 +199,26 @@ std::string setOptions()
         ledOptions.ledSpeed = led["ledSpeed"] | ledOptions.ledSpeed;
     }
 
-    if (Storage::getInstance().save(true))
+    // Persist only; the board stays in web config mode until a reboot is requested.
+    Storage::getInstance().save(true);
+
+    return serialize_json(doc);
+}
+
+std::string setLedPreview()
+{
+    DynamicJsonDocument doc = get_post_data();
+
+    LedPreview preview = {};
+    JsonObject led = doc["led"];
+    if (!led.isNull())
     {
-        // Reboot so the new key mapping / LED config takes effect
-        rebootDelayTimeout = make_timeout_time_ms(rebootDelayMs);
-        rebootMode = System::BootMode::GAMEPAD;
+        preview.ledMode = led["ledMode"] | 0;
+        preview.ledSpeed = led["ledSpeed"] | 236;
+        preview.brightnessMaximum = led["brightnessMaximum"] | 255;
+        preview.colorNormal = led["colorNormal"] | 0x00FF00;
+        preview.colorPressed = led["colorPressed"] | 0xFFFFFF;
+        Storage::getInstance().publishLedPreview(preview);
     }
 
     return serialize_json(doc);
@@ -279,6 +294,7 @@ static const std::pair<const char*, HandlerFuncPtr> handlerFuncs[] =
 {
     { "/api/getOptions", getOptions },
     { "/api/setOptions", setOptions },
+    { "/api/setLedPreview", setLedPreview },
     { "/api/getUsedPins", getUsedPins },
     { "/api/getPinState", getPinState },
     { "/api/getFirmwareVersion", getFirmwareVersion },

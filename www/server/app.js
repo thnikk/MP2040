@@ -1,10 +1,11 @@
 // MP2040 Configurator mock API server.
 //
 // Serves the same endpoints the firmware exposes (/api/getOptions,
-// /api/setOptions, /api/getFirmwareVersion, /api/resetSettings) plus
-// /board.svg, using data parsed from the selected board's BoardConfig.h.
-// Mounted as a Vite middleware in dev (see vite.config.js) or run standalone
-// with `node server/app.js` for the mock API on http://localhost:8080.
+// /api/setOptions, /api/setLedPreview, /api/getFirmwareVersion,
+// /api/resetSettings, /api/reboot) plus /board.svg, using data parsed from
+// the selected board's BoardConfig.h. Mounted as a Vite middleware in dev
+// (see vite.config.js) or run standalone with `node server/app.js` for the
+// mock API on http://localhost:8080.
 //
 // Board selection: VITE_MP2040_BOARD or MP2040_BOARDCONFIG env (default Pico).
 
@@ -77,6 +78,14 @@ export function createMockApp() {
     res.send(current);
   });
 
+  app.post('/api/setLedPreview', (req, res) => {
+    const current = store || defaultOptions();
+    const led = req.body?.led || {};
+    current.led = { ...current.led, ...led };
+    store = current;
+    res.send(current);
+  });
+
   app.get('/api/getFirmwareVersion', (req, res) => {
     res.send({
       firmwareVersion: 'dev',
@@ -86,6 +95,8 @@ export function createMockApp() {
   });
 
   app.post('/api/resetSettings', (req, res) => res.send({ success: true }));
+
+  app.post('/api/reboot', (req, res) => res.send({ success: true }));
 
   app.get('/board.svg', (req, res) => {
     if (board?.svgPath) {

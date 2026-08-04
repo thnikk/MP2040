@@ -141,6 +141,52 @@ function setStatus(msg, ok = true) {
   el.style.color = ok ? '#4caf50' : '#e57373';
 }
 
+// Debounce a function by `ms`; trailing edge fires the last call.
+function debounce(fn, ms) {
+  let timer = null;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
+// Read the current LED controls and push them to the board for a live preview.
+async function previewLed() {
+  const led = {
+    ledMode: parseInt(document.getElementById('led-mode').value, 10),
+    ledSpeed: speedSlider ? speedSlider.getValue() : 236,
+    brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
+    colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
+    colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
+  };
+  try {
+    await api('/api/setLedPreview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ led }),
+    });
+  } catch (e) {
+    setStatus('Preview failed: ' + e, false);
+  }
+}
+
+const previewLedDebounced = debounce(previewLed, 150);
+
+// Gather the current controls into a full config payload for /api/setOptions.
+function buildOptionsBody() {
+  return {
+    keycodes: currentOptions.keycodes,
+    modifierMasks: currentOptions.modifierMasks,
+    led: {
+      ledMode: parseInt(document.getElementById('led-mode').value, 10),
+      ledSpeed: speedSlider ? speedSlider.getValue() : 236,
+      brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
+      colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
+      colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
+    },
+  };
+}
+
 async function load() {
   const [options, version] = await Promise.all([
     api('/api/getOptions'),
@@ -152,6 +198,7 @@ async function load() {
   const led = options.led || {};
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
+  document.getElementById('led-mode').addEventListener('change', previewLed);
 
   brightnessSlider = new PillSlider({
     container: document.getElementById('led-brightness'),
@@ -160,7 +207,7 @@ async function load() {
     label: 'Brightness',
     value: led.brightnessMaximum ?? 255,
     padLength: 3,
-    onChange: () => {},
+    onChange: previewLed,
   });
 
   speedSlider = new PillSlider({
@@ -170,18 +217,18 @@ async function load() {
     label: 'Speed',
     value: led.ledSpeed ?? 236,
     padLength: 3,
-    onChange: () => {},
+    onChange: previewLed,
   });
 
   colorNormalPicker = createColorPicker(document.getElementById('led-colorNormal'), {
     label: 'Normal',
     value: intToColor(led.colorNormal ?? 0x00ff00),
-    onChange: () => {},
+    onChange: previewLedDebounced,
   });
   colorPressedPicker = createColorPicker(document.getElementById('led-colorPressed'), {
     label: 'Pressed',
     value: intToColor(led.colorPressed ?? 0xffffff),
-    onChange: () => {},
+    onChange: previewLedDebounced,
   });
 
   modalSelect = new MultiSelect({
@@ -231,28 +278,29 @@ function saveKeyModal() {
 }
 
 async function save() {
-  const body = {
-    keycodes: currentOptions.keycodes,
-    modifierMasks: currentOptions.modifierMasks,
-    led: {
-      ledMode: parseInt(document.getElementById('led-mode').value, 10),
-      ledSpeed: speedSlider ? speedSlider.getValue() : 236,
-      brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
-      colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
-      colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
-    },
-  };
-
   setStatus('Saving...', true);
   try {
     await api('/api/setOptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(buildOptionsBody()),
     });
-    setStatus('Saved! Rebooting...', true);
+    setStatus('Saved.');
   } catch (e) {
     setStatus('Save failed: ' + e, false);
+  }
+}
+
+async function reboot() {
+  setStatus('Rebooting...', true);
+  try {
+    await api('/api/reboot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bootMode: 0 }),
+    });
+  } catch (e) {
+    setStatus('Reboot failed: ' + e, false);
   }
 }
 
@@ -263,6 +311,7 @@ async function resetSettings() {
 }
 
 document.getElementById('save').addEventListener('click', save);
+document.getElementById('reboot').addEventListener('click', reboot);
 document.getElementById('reset').addEventListener('click', resetSettings);
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
 document.getElementById('key-modal-cancel').addEventListener('click', closeKeyModal);

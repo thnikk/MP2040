@@ -4,6 +4,7 @@
 #include "FlashPROM.h"
 #include "config.pb.h"
 #include "hardware/watchdog.h"
+#include "pico/sync.h"
 #include "pico/time.h"
 #include "CRC32.h"
 #include "types.h"
@@ -619,4 +620,24 @@ bool Storage::GetConfigButtonVisible()
 void Storage::publishKeyState(Mask_t state)
 {
     keyState = state;
+}
+
+void Storage::publishLedPreview(const LedPreview& preview)
+{
+    // Write the fields first, then publish with a memory barrier + generation
+    // bump so the consuming core never observes new state with stale fields.
+    ledPreview = preview;
+    __dmb();
+    ledPreviewGen++;
+}
+
+bool Storage::consumeLedPreview(LedPreview& out)
+{
+    const uint32_t gen = ledPreviewGen;
+    if (gen == 0 || gen == lastConsumedLedPreviewGen)
+        return false;
+    __dmb();
+    out = ledPreview;
+    lastConsumedLedPreviewGen = gen;
+    return true;
 }

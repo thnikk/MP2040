@@ -21,6 +21,9 @@ void MP2040::setup() {
 	switch (bootAction) {
 		case BootAction::ENTER_WEBCONFIG_MODE:
 			Storage::getInstance().SetConfigMode(true);
+			// Initialize key GPIOs so live LED preview (reactive / BPS) can
+			// see key presses while the web config is active.
+			this->initializeKeyGpio();
 			DriverManager::getInstance().setup(INPUT_MODE_CONFIG);
 			ConfigManager::getInstance().setup(CONFIG_TYPE_WEB);
 			return;

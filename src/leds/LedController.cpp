@@ -168,6 +168,12 @@ void LedController::configure()
 void LedController::update()
 {
     if (neopixel == nullptr) return;
+
+    // Apply any live LED options pushed from the web config (core 0).
+    LedPreview preview;
+    if (Storage::getInstance().consumeLedPreview(preview))
+        applyLedPreview(preview);
+
     if (!time_reached(nextRunTime)) return;
     nextRunTime = make_timeout_time_ms(20);
 
@@ -216,6 +222,32 @@ void LedController::update()
         case LED_MODE_BPS:      renderBps();      break;
         default:                renderStatic();   break;
     }
+}
+
+// Apply live LED options from the web config without rebuilding the strip.
+// Only user-tunable scalars; board properties stay as configured at boot.
+void LedController::applyLedPreview(const LedPreview& preview)
+{
+    ledMode = preview.ledMode;
+    // Config speed is 1-255 (higher = faster). Convert to the theme step
+    // interval in ms: 256 - speed. 236 -> 20ms (the default cadence).
+    uint32_t speed = preview.ledSpeed > 0 ? preview.ledSpeed : 236;
+    ledSpeed = 256 - speed;
+    if (ledSpeed < 1) ledSpeed = 1;
+    if (ledSpeed > 1000) ledSpeed = 1000;
+    brightnessMaximum = preview.brightnessMaximum;
+    colorNormal = preview.colorNormal;
+    colorPressed = preview.colorPressed;
+
+    // Reset theme state so the new mode starts from a clean slate.
+    hue = 0;
+    lastThemeMillis = 0;
+    if (stripCount > 0)
+    {
+        std::memset(ledSat, 0, stripCount * sizeof(int));
+        std::memset(ledVal, 0, stripCount * sizeof(int));
+    }
+    prevKeyState = Storage::getInstance().keyState;
 }
 
 // Advance the theme state one step (hue / per-LED fade state). Called at the

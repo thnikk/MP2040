@@ -9,6 +9,7 @@
 #include "types.h"
 
 class Neopixel;
+struct LedPreview;
 
 // LED theme modes (matches the web config "LED Mode" dropdown)
 enum LedMode {
@@ -32,6 +33,9 @@ public:
     uint32_t getGridCols() { return LED_GRID_COLS; }
 private:
     void configure();
+
+    // Apply live LED options from the web config (core 0 -> core 1)
+    void applyLedPreview(const LedPreview&);
 
     // Theme state advance (run at the configured animation speed)
     void advanceThemeState();
