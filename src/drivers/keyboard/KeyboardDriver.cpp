@@ -41,16 +41,17 @@ void KeyboardDriver::process() {
 	const Mask_t keyState = Storage::getInstance().keyState;
 	releaseAllKeys();
 
-	// Direct pin -> keycode mapping. Each pin with a nonzero keycode emits
-	// its key (or modifier / multimedia key) while held.
+	// Direct pin -> keycode mapping. Each pressed pin emits its key (or
+	// modifier / multimedia key) while held. A pin with no keycode but a
+	// modifier mask still acts as a pure modifier (e.g. a Shift key).
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
 		if (!(keyState & (1 << pin))) continue;
 		if (pin >= (Pin_t)keyMapping.keycodes_count) continue;
 
 		uint8_t keycode = keyMapping.keycodes[pin];
+		keyboardReport.modifier |= keyMapping.modifierMasks[pin];
 		if (keycode == 0) continue;
 
-		keyboardReport.modifier |= keyMapping.modifierMasks[pin];
 		pressKey(keycode);
 	}
 

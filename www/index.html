@@ -15,7 +15,7 @@
   <main>
     <section>
       <h2>Key Mapping</h2>
-      <p class="hint">Assign a USB HID keycode to each pin. Keycodes above 231 are treated as multimedia keys. Modifier mask is a bitfield (1=LCtrl, 2=LShift, 4=LAlt, 8=LGui, 16=RCtrl, 32=RShift, 64=RAlt, 128=RGui).</p>
+      <p class="hint">For each pin, pick one key and any number of modifiers from the Modifiers group. Pressing the button emits that key with the selected modifiers held (e.g. Left Shift + A).</p>
       <div id="key-grid"></div>
     </section>
 
@@ -50,6 +50,7 @@
     </div>
   </main>
 
+  <script src="/multiselect.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

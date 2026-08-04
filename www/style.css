@@ -69,6 +69,154 @@ select, input[type="number"] {
   width: 100%;
 }
 
+.key-cell select[multiple] {
+  height: 8.5em;
+  font-size: 0.8rem;
+  padding: 0.2rem;
+}
+
+/* MultiSelect widget */
+.ms {
+  position: relative;
+  width: 100%;
+}
+
+.ms-host {
+  width: 100%;
+}
+
+.ms-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  min-height: 2.3rem;
+  padding: 0.25rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ms-control:focus,
+.ms.open .ms-control {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ms-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.ms-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.35rem;
+}
+
+.ms-tag-x {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.ms-tag-x:hover {
+  color: var(--fg);
+}
+
+.ms-placeholder {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ms-caret {
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding-right: 0.15rem;
+}
+
+.ms-menu {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ms.open .ms-menu {
+  display: block;
+}
+
+.ms-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem;
+  background: var(--bg);
+  color: var(--fg);
+  border: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.ms-search:focus {
+  outline: none;
+}
+
+.ms-list {
+  max-height: 13em;
+  overflow-y: auto;
+}
+
+.ms-group-label {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.ms-option {
+  padding: 0.35rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.ms-option:hover,
+.ms-option.highlighted {
+  background: var(--border);
+}
+
+.ms-option.selected {
+  color: var(--accent);
+}
+
+.ms-option.selected::after {
+  content: ' \2713';
+}
+
+.ms-empty {
+  padding: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 input[type="color"] {
   width: 100%;
   height: 2.2rem;

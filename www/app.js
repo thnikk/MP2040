@@ -36,16 +36,29 @@ const KEYCODES = {
   media_volume_down: 0xf4,
 };
 
-const MODIFIER_BITS = {
-  none: 0,
+// Modifier mask bits (KEYBOARD_MODIFIER_*). A pin can hold several at once.
+const MODIFIERS = {
   leftctrl: 1, leftshift: 2, leftalt: 4, leftgui: 8,
   rightctrl: 16, rightshift: 32, rightalt: 64, rightgui: 128,
 };
 
-// Build the keycode <select> once
-const keyOptions = Object.entries(KEYCODES)
-  .map(([name, value]) => `<option value="${value}">${name}</option>`)
-  .join('');
+// MultiSelect options: one Modifiers group (multiple allowed) + one Keys group
+// (at most one). Modifier keycodes (0xE0-0xE7) are handled by the Modifiers
+// group, so they're excluded from Keys; "none" (0) is implicit as empty.
+const MULTISELECT_GROUPS = [
+  { id: 'modifiers', label: 'Modifiers' },
+  { id: 'keys', label: 'Keys' },
+];
+
+const MULTISELECT_OPTIONS = [
+  ...Object.entries(MODIFIERS).map(([label, value]) => ({ group: 'modifiers', label, value })),
+  ...Object.entries(KEYCODES)
+    .filter(([, value]) => value !== 0 && (value < 0xe0 || value > 0xe7))
+    .map(([label, value]) => ({ group: 'keys', label, value })),
+];
+
+// One MultiSelect instance per pin, populated by load()
+const multiSelects = new Array(30).fill(null);
 
 function colorToInt(hex) {
   return parseInt(hex.replace('#', ''), 16);
@@ -71,7 +84,6 @@ async function load() {
     api('/api/getOptions'),
     api('/api/getFirmwareVersion'),
   ]);
-
   document.getElementById('board-label').textContent = version.boardLabel || '';
   document.getElementById('fw-version').textContent =
     `v${version.firmwareVersion || ''} (${version.gitCommit || ''})`;
@@ -83,17 +95,18 @@ async function load() {
     cell.className = 'key-cell';
     cell.innerHTML = `
       <label>GP${pin.toString().padStart(2, '0')}</label>
-      <select id="key-${pin}">${keyOptions}</select>
-      <select id="mod-${pin}" title="Modifier mask">
-        ${Object.entries(MODIFIER_BITS).map(([n, v]) => `<option value="${v}">${n}</option>`).join('')}
-      </select>
+      <div class="ms-host" id="ms-${pin}"></div>
       <input type="number" id="ledidx-${pin}" placeholder="LED idx" title="LED strip index (-1 = none)">`;
     grid.appendChild(cell);
 
-    const keySelect = document.getElementById(`key-${pin}`);
-    const modSelect = document.getElementById(`mod-${pin}`);
-    keySelect.value = String(options.keycodes[pin] || 0);
-    modSelect.value = String(options.modifierMasks[pin] || 0);
+    const ms = new MultiSelect({
+      container: document.getElementById(`ms-${pin}`),
+      options: MULTISELECT_OPTIONS,
+      groups: MULTISELECT_GROUPS,
+    });
+    ms.setValue(Number(options.keycodes[pin] || 0), Number(options.modifierMasks[pin] || 0));
+    multiSelects[pin] = ms;
+
     document.getElementById(`ledidx-${pin}`).value =
       options.led.pinLedIndices ? (options.led.pinLedIndices[pin] ?? -1) : -1;
   }
@@ -113,8 +126,9 @@ async function save() {
   const modifierMasks = [];
   const pinLedIndices = [];
   for (let pin = 0; pin < 30; pin++) {
-    keycodes.push(parseInt(document.getElementById(`key-${pin}`).value, 10));
-    modifierMasks.push(parseInt(document.getElementById(`mod-${pin}`).value, 10));
+    const { keycode, mask } = multiSelects[pin].getValue();
+    keycodes.push(keycode);
+    modifierMasks.push(mask);
     pinLedIndices.push(parseInt(document.getElementById(`ledidx-${pin}`).value, 10));
   }
 
