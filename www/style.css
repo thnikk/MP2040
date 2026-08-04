@@ -221,6 +221,59 @@ input[type="color"] {
   padding: 2px;
 }
 
+/* Color picker pill buttons (pill + colored dot + hidden native color input) */
+.led-color-picker {
+  display: flex;
+  align-items: stretch;
+}
+
+.color-picker {
+  position: relative;
+  width: 100%;
+}
+
+.led-color-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.led-color-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg-1);
+}
+
+.led-color-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.color-picker input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .led-form {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -233,6 +286,62 @@ input[type="color"] {
   gap: 0.3rem;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+/* Pill slider (brightness) */
+.led-slider {
+  grid-column: 1 / -1;
+}
+
+.pill-slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-1);
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.pill-slider:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pill-slider-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.pill-slider-label {
+  color: var(--fg);
+  font-size: 0.95rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pill-slider-label-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg);
+  font-size: 0.95rem;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .actions {

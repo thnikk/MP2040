@@ -33,9 +33,9 @@
           </select>
         </label>
         <label>LEDs per key <input type="number" id="led-ledsPerKey" min="1" max="8" value="1"></label>
-        <label>Brightness (max) <input type="number" id="led-brightnessMaximum" min="0" max="255" value="255"></label>
-        <label>Normal color <input type="color" id="led-colorNormal" value="#00ff00"></label>
-        <label>Pressed color <input type="color" id="led-colorPressed" value="#ffffff"></label>
+        <div class="led-slider" id="led-brightness"></div>
+        <div class="led-color-picker"><div id="led-colorNormal"></div></div>
+        <div class="led-color-picker"><div id="led-colorPressed"></div></div>
       </div>
       <div class="test-row">
         <button id="test-led" class="secondary" type="button">Test LEDs</button>
@@ -64,6 +64,7 @@
 
   <script src="/multiselect.js"></script>
   <script src="/boardview.js"></script>
+  <script src="/pillslider.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

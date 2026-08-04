@@ -69,6 +69,58 @@ let modalSelect = null;
 // Pin currently being edited in the modal
 let editingPin = -1;
 
+// LED brightness pill slider (see pillslider.js)
+let brightnessSlider = null;
+
+// LED color pickers (see createColorPicker below)
+let colorNormalPicker = null;
+let colorPressedPicker = null;
+
+// Color picker pill button: a pill with a colored dot inside, with a hidden
+// native <input type="color"> overlaid so clicking opens the OS picker
+// (port of GP2040-th's LedColorPopover .led-color-btn).
+function createColorPicker(container, { label, value, onChange }) {
+  const wrap = document.createElement('div');
+  wrap.className = 'color-picker';
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'led-color-btn';
+
+  const dot = document.createElement('span');
+  dot.className = 'led-color-circle';
+  dot.style.backgroundColor = value;
+
+  const lbl = document.createElement('span');
+  lbl.textContent = label || '';
+
+  btn.appendChild(dot);
+  btn.appendChild(lbl);
+
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.value = value;
+  input.addEventListener('input', () => {
+    dot.style.backgroundColor = input.value;
+    if (onChange) onChange(input.value);
+  });
+
+  wrap.appendChild(btn);
+  wrap.appendChild(input);
+  container.classList.add('color-picker');
+  container.appendChild(wrap);
+
+  return {
+    setValue(v) {
+      input.value = v;
+      dot.style.backgroundColor = v;
+    },
+    getValue() {
+      return input.value;
+    },
+  };
+}
+
 function colorToInt(hex) {
   return parseInt(hex.replace('#', ''), 16);
 }
@@ -103,9 +155,26 @@ async function load() {
   document.getElementById('led-ledCount').value = led.ledCount ?? 0;
   document.getElementById('led-ledFormat').value = led.ledFormat ?? 0;
   document.getElementById('led-ledsPerKey').value = led.ledsPerKey ?? 1;
-  document.getElementById('led-brightnessMaximum').value = led.brightnessMaximum ?? 255;
-  document.getElementById('led-colorNormal').value = intToColor(led.colorNormal ?? 0x00ff00);
-  document.getElementById('led-colorPressed').value = intToColor(led.colorPressed ?? 0xffffff);
+
+  brightnessSlider = new PillSlider({
+    container: document.getElementById('led-brightness'),
+    min: 0,
+    max: 255,
+    label: 'Brightness',
+    value: led.brightnessMaximum ?? 255,
+    onChange: () => {},
+  });
+
+  colorNormalPicker = createColorPicker(document.getElementById('led-colorNormal'), {
+    label: 'Normal',
+    value: intToColor(led.colorNormal ?? 0x00ff00),
+    onChange: () => {},
+  });
+  colorPressedPicker = createColorPicker(document.getElementById('led-colorPressed'), {
+    label: 'Pressed',
+    value: intToColor(led.colorPressed ?? 0xffffff),
+    onChange: () => {},
+  });
 
   modalSelect = new MultiSelect({
     container: document.getElementById('key-modal-select'),
@@ -163,9 +232,9 @@ async function save() {
       ledCount: parseInt(document.getElementById('led-ledCount').value, 10),
       ledFormat: parseInt(document.getElementById('led-ledFormat').value, 10),
       ledsPerKey: parseInt(document.getElementById('led-ledsPerKey').value, 10),
-      brightnessMaximum: parseInt(document.getElementById('led-brightnessMaximum').value, 10),
-      colorNormal: colorToInt(document.getElementById('led-colorNormal').value),
-      colorPressed: colorToInt(document.getElementById('led-colorPressed').value),
+      brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
+      colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
+      colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
     },
   };
 
@@ -183,7 +252,7 @@ async function save() {
 }
 
 async function testLed() {
-  const color = colorToInt(document.getElementById('led-colorNormal').value);
+  const color = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
   setStatus('Testing LEDs...', true);
   try {
     await api('/api/testLed', {
