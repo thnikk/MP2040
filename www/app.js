@@ -158,6 +158,7 @@ async function load() {
     max: 255,
     label: 'Brightness',
     value: led.brightnessMaximum ?? 255,
+    padLength: 3,
     onChange: () => {},
   });
 

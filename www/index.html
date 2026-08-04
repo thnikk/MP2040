@@ -35,15 +35,9 @@
 
   <main>
     <section>
-      <h2>Board</h2>
-      <p class="hint">Click a button on the board to set its key and modifiers.</p>
-      <div id="board-panel"></div>
-    </section>
-
-    <section>
       <h2>LEDs</h2>
       <div class="led-form">
-        <label>LED Mode
+        <label class="led-mode-label">LED Mode
           <select id="led-mode">
             <option value="0">Static</option>
             <option value="1">Cycle</option>
@@ -52,9 +46,17 @@
           </select>
         </label>
         <div class="led-slider" id="led-brightness"></div>
-        <div class="led-color-picker"><div id="led-colorNormal"></div></div>
-        <div class="led-color-picker"><div id="led-colorPressed"></div></div>
+        <div class="led-colors">
+          <div class="led-color-picker"><div id="led-colorNormal"></div></div>
+          <div class="led-color-picker"><div id="led-colorPressed"></div></div>
+        </div>
       </div>
+    </section>
+
+    <section>
+      <h2>Board</h2>
+      <p class="hint">Click a button on the board to set its key and modifiers.</p>
+      <div id="board-panel"></div>
     </section>
 
     <div class="actions">

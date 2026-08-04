@@ -428,7 +428,25 @@ select, input[type="number"] {
   color: var(--muted);
 }
 
+.led-form .led-mode-label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.led-form .led-mode-label select {
+  flex: 1;
+}
+
 /* Color picker pill buttons */
+.led-colors {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
 .led-color-picker {
   display: flex;
   align-items: stretch;
@@ -483,7 +501,7 @@ select, input[type="number"] {
 
 /* Pill slider (brightness) */
 .led-slider {
-  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .pill-slider {
@@ -491,7 +509,8 @@ select, input[type="number"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 20px;
+  width: fit-content;
+  padding: 0.5rem 1.5rem;
   border: 1px solid var(--card-border);
   border-radius: 999px;
   background: var(--page-bg);

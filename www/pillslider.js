@@ -3,12 +3,13 @@
 // clipped copy over the fill. Drag (mouse) or arrow/Home/End keys to change.
 
 class PillSlider {
-  constructor({ container, min, max, label, unit = '', value = min, onChange }) {
+  constructor({ container, min, max, label, unit = '', value = min, padLength, onChange }) {
     this.min = min;
     this.max = max;
     this.label = label || '';
     this.unit = unit || '';
     this.value = Math.max(min, Math.min(max, value));
+    this.padLength = padLength || 0;
     this.onChange = onChange;
     this.dragging = false;
     this.buildDom(container);
@@ -89,7 +90,10 @@ class PillSlider {
   render() {
     const pct = Math.max(0, Math.min(100, ((this.value - this.min) / (this.max - this.min)) * 100));
     this.fill.style.width = `${pct}%`;
-    const text = `${this.label}: ${this.value}${this.unit}`;
+    const valueStr = this.padLength
+      ? String(this.value).padStart(this.padLength, '0')
+      : String(this.value);
+    const text = `${this.label}: ${valueStr}${this.unit}`;
     this.labelEl.textContent = text;
     this.labelFill.textContent = text;
     this.labelFill.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
