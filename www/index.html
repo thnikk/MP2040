@@ -6,12 +6,40 @@
   <meta name="color-scheme" content="light dark">
   <meta name="darkreader-lock">
   <title>MP2040 Config</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    (function () {
+      var saved = localStorage.getItem('theme') || 'auto';
+      var t = saved === 'auto'
+        ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+        : saved;
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
-  <header>
-    <h1>MP2040 <span id="board-label"></span></h1>
-    <p id="fw-version"></p>
+  <header class="navigation">
+    <div class="nav-inner">
+      <a class="logo-link" href="#" title="MP2040">
+        <svg class="nav-logo" viewBox="0 0 228.846 121.94489" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <mask id="logo-mask">
+              <rect width="228.846" height="121.94489" fill="white"/>
+              <path fill="none" stroke="black" stroke-width="20" stroke-linecap="round" d="m 141.1483,87.697756 a 37.795276,37.795276 0 1 0 0,-53.4506 l -53.4506,53.45 a 37.7953,37.7953 0 1 1 0,-53.4506"/>
+            </mask>
+          </defs>
+          <rect width="228.846" height="121.94489" rx="60.972446" fill="currentColor" mask="url(#logo-mask)"/>
+        </svg>
+      </a>
+      <div class="nav-title">
+        <h1>MP2040 <span id="board-label"></span></h1>
+      </div>
+      <p id="fw-version"></p>
+    </div>
   </header>
 
   <main>
@@ -36,6 +64,18 @@
       <span id="status"></span>
     </div>
   </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <span>MP2040</span>
+      <div class="theme-toggle">
+        <button class="theme-btn" data-theme="light" title="Light">&#9728;</button>
+        <button class="theme-btn" data-theme="dark" title="Dark">&#9788;</button>
+        <button class="theme-btn" data-theme="auto" title="Auto">&#9881;</button>
+      </div>
+      <span id="footer-version"></span>
+    </div>
+  </footer>
 
   <div id="key-modal" class="modal-overlay" hidden>
     <div class="modal">

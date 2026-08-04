@@ -149,6 +149,8 @@ async function load() {
   document.getElementById('board-label').textContent = version.boardLabel || '';
   document.getElementById('fw-version').textContent =
     `v${version.firmwareVersion || ''} (${version.gitCommit || ''})`;
+  document.getElementById('footer-version').textContent =
+    `v${version.firmwareVersion || ''}`;
 
   const led = options.led || {};
 
@@ -259,6 +261,31 @@ document.getElementById('key-modal').addEventListener('click', (e) => {
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !document.getElementById('key-modal').hidden) closeKeyModal();
+});
+
+// Theme toggle (light / dark / auto). The initial theme is applied in the head
+// to avoid a flash; here we wire up the buttons and the auto-follow behavior.
+function applyTheme(theme) {
+  const t = theme === 'auto'
+    ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+    : theme;
+  document.documentElement.setAttribute('data-theme', t);
+}
+
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {
+  if (localStorage.getItem('theme') === 'auto') applyTheme('auto');
+});
+
+const savedTheme = localStorage.getItem('theme') || 'auto';
+document.querySelectorAll('.theme-btn').forEach((btn) => {
+  if (btn.dataset.theme === savedTheme) btn.classList.add('active');
+  btn.addEventListener('click', () => {
+    localStorage.setItem('theme', btn.dataset.theme);
+    applyTheme(btn.dataset.theme);
+    document.querySelectorAll('.theme-btn').forEach((b) => {
+      b.classList.toggle('active', b === btn);
+    });
+  });
 });
 
 load();
