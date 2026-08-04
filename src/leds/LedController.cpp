@@ -43,6 +43,8 @@ LedController::LedController() :
     ledCount(0),
     stripCount(0),
     ledMode(LED_MODE_STATIC),
+    ledSpeed(20),
+    lastThemeMillis(0),
     brightnessMaximum(255),
     colorNormal(0x00FF00),
     colorPressed(0xFFFFFF),
@@ -94,6 +96,11 @@ void LedController::configure()
     ledsPerKey = ledOptions.ledsPerKey > 0 ? ledOptions.ledsPerKey : 1;
     ledCount = ledOptions.ledCount;
     ledMode = ledOptions.ledMode;
+    // Config speed is 1-255 (higher = faster). Convert to the theme step
+    // interval in ms: 256 - speed. 236 -> 20ms (the default cadence).
+    ledSpeed = 256 - (ledOptions.ledSpeed > 0 ? ledOptions.ledSpeed : 236);
+    if (ledSpeed < 1) ledSpeed = 1;
+    if (ledSpeed > 1000) ledSpeed = 1000;
     brightnessMaximum = ledOptions.brightnessMaximum;
     colorNormal = ledOptions.colorNormal;
     colorPressed = ledOptions.colorPressed;
@@ -150,6 +157,7 @@ void LedController::configure()
     std::memset(ledVal, 0, stripCount * sizeof(int));
     prevKeyState = 0;
     hue = 0;
+    lastThemeMillis = 0;
     bpsCount = 0;
     bpsColor = 0;
     lastColor = 0;
@@ -185,12 +193,63 @@ void LedController::update()
         }
     }
 
+    // Advance the theme state at the configured speed. Catch up on any missed
+    // steps so higher speeds (shorter intervals) actually run faster than the
+    // 20ms render cadence.
+    if (ledMode != LED_MODE_STATIC)
+    {
+        uint32_t now = to_ms_since_boot(get_absolute_time());
+        if (now - lastThemeMillis >= ledSpeed)
+        {
+            uint32_t elapsed = now - lastThemeMillis;
+            uint32_t steps = elapsed / ledSpeed;
+            for (uint32_t s = 0; s < steps; s++)
+                advanceThemeState();
+            lastThemeMillis = now - (elapsed % ledSpeed);
+        }
+    }
+
     switch (ledMode)
     {
         case LED_MODE_CYCLE:    renderCycle();    break;
         case LED_MODE_REACTIVE: renderReactive(); break;
         case LED_MODE_BPS:      renderBps();      break;
         default:                renderStatic();   break;
+    }
+}
+
+// Advance the theme state one step (hue / per-LED fade state). Called at the
+// configured animation speed; renderers only draw the current state.
+void LedController::advanceThemeState()
+{
+    switch (ledMode)
+    {
+        case LED_MODE_CYCLE:
+            hue--;
+            break;
+
+        case LED_MODE_REACTIVE:
+            for (uint32_t i = 0; i < stripCount; i++)
+            {
+                if (!pressedLeds[i])
+                {
+                    if (ledSat[i] < 255) ledSat[i] += 8;
+                    if (ledSat[i] > 255) ledSat[i] = 255;
+                    if (ledSat[i] == 255 && ledVal[i] > 0) ledVal[i] -= 8;
+                    if (ledVal[i] < 0) ledVal[i] = 0;
+                }
+                else
+                {
+                    ledSat[i] = 0;
+                    ledVal[i] = 255;
+                }
+            }
+            hue -= 8;
+            if (hue < 0) hue = 255;
+            break;
+
+        default:
+            break;
     }
 }
 
@@ -231,7 +290,6 @@ void LedController::renderCycle()
             neopixel->setPixel(i, r, g, b);
         }
     }
-    hue--;
     neopixel->show();
 }
 
@@ -240,26 +298,11 @@ void LedController::renderReactive()
 {
     for (uint32_t i = 0; i < stripCount; i++)
     {
-        if (!pressedLeds[i])
-        {
-            if (ledSat[i] < 255) ledSat[i] += 8;
-            if (ledSat[i] > 255) ledSat[i] = 255;
-            if (ledSat[i] == 255 && ledVal[i] > 0) ledVal[i] -= 8;
-            if (ledVal[i] < 0) ledVal[i] = 0;
-        }
-        else
-        {
-            ledSat[i] = 0;
-            ledVal[i] = 255;
-        }
-
         uint8_t r, g, b;
         hsvToRgb(static_cast<uint8_t>(hue + i * 50), ledSat[i],
                  ledVal[i] * brightnessMaximum / 255, r, g, b);
         neopixel->setPixel(i, r, g, b);
     }
-    hue -= 8;
-    if (hue < 0) hue = 255;
     neopixel->show();
 }
 

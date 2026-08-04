@@ -71,6 +71,7 @@ let editingPin = -1;
 
 // LED brightness pill slider (see pillslider.js)
 let brightnessSlider = null;
+let speedSlider = null;
 
 // LED color pickers (see createColorPicker below)
 let colorNormalPicker = null;
@@ -162,6 +163,16 @@ async function load() {
     onChange: () => {},
   });
 
+  speedSlider = new PillSlider({
+    container: document.getElementById('led-speed'),
+    min: 1,
+    max: 255,
+    label: 'Speed',
+    value: led.ledSpeed ?? 236,
+    padLength: 3,
+    onChange: () => {},
+  });
+
   colorNormalPicker = createColorPicker(document.getElementById('led-colorNormal'), {
     label: 'Normal',
     value: intToColor(led.colorNormal ?? 0x00ff00),
@@ -225,6 +236,7 @@ async function save() {
     modifierMasks: currentOptions.modifierMasks,
     led: {
       ledMode: parseInt(document.getElementById('led-mode').value, 10),
+      ledSpeed: speedSlider ? speedSlider.getValue() : 236,
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),

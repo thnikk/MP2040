@@ -33,6 +33,9 @@ public:
 private:
     void configure();
 
+    // Theme state advance (run at the configured animation speed)
+    void advanceThemeState();
+
     // Theme renderers (unified-2022 ports)
     void renderStatic();
     void renderCycle();
@@ -46,6 +49,8 @@ private:
     uint32_t ledCount;
     uint32_t stripCount;
     uint32_t ledMode;
+    uint32_t ledSpeed;        // theme step interval in ms (computed from config)
+    uint32_t lastThemeMillis; // last theme state advance time
     int32_t pinLedIndices[NUM_BANK0_GPIOS];
     uint32_t brightnessMaximum;
     uint32_t colorNormal;
