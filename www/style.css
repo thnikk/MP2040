@@ -415,33 +415,36 @@ select, input[type="number"] {
 
 /* LED form */
 .led-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.led-form label {
+.led-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  font-size: 1rem;
-  color: var(--muted);
+  align-items: center;
+  gap: 12px;
 }
 
-.led-form .led-mode-label {
-  flex-direction: row;
-  align-items: center;
-  gap: 0.5rem;
+.led-row .led-mode-label {
   white-space: nowrap;
 }
 
-.led-form .led-mode-label select {
-  flex: 1;
+.led-row .led-mode-select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.led-row .led-mode-select select {
+  width: 100%;
+}
+
+.led-row .led-slider {
+  flex: 1 1 0;
 }
 
 /* Color picker pill buttons */
 .led-colors {
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 12px;
@@ -499,9 +502,9 @@ select, input[type="number"] {
   cursor: pointer;
 }
 
-/* Pill slider (brightness) */
+/* Pill slider (brightness / speed) */
 .led-slider {
-  justify-self: start;
+  min-width: 0;
 }
 
 .pill-slider {
@@ -509,7 +512,7 @@ select, input[type="number"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: fit-content;
+  width: 100%;
   padding: 0.5rem 1.5rem;
   border: 1px solid var(--card-border);
   border-radius: 999px;

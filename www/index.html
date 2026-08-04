@@ -37,16 +37,19 @@
     <section>
       <h2>LEDs</h2>
       <div class="led-form">
-        <label class="led-mode-label">LED Mode
-          <select id="led-mode">
+        <div class="led-row">
+          <label class="led-mode-label" for="led-mode">LED Mode</label>
+          <div class="led-mode-select">
+            <select id="led-mode">
             <option value="0">Static</option>
             <option value="1">Cycle</option>
             <option value="2">Reactive</option>
             <option value="3">BPS</option>
           </select>
-        </label>
-        <div class="led-slider" id="led-brightness"></div>
-        <div class="led-slider" id="led-speed"></div>
+          </div>
+          <div class="led-slider" id="led-brightness"></div>
+          <div class="led-slider" id="led-speed"></div>
+        </div>
         <div class="led-colors">
           <div class="led-color-picker"><div id="led-colorNormal"></div></div>
           <div class="led-color-picker"><div id="led-colorPressed"></div></div>
