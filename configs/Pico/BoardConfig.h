@@ -10,11 +10,9 @@
 
 #define BOARD_CONFIG_LABEL "Pico"
 
-// Main key mapping. Each GPIO with a nonzero keycode is treated as a key that
-// emits the given USB HID keycode while pressed (active-low, internal pull-up).
-// 0 = unassigned pin.
-#define KEYCODE_GP00 0
-#define KEYCODE_GP01 0
+// Key mapping. Any GPIO with a nonzero keycode is treated as a key that emits
+// the given USB HID keycode while pressed (active-low, internal pull-up).
+// Pins not listed here default to 0 (unassigned), so only define overrides.
 #define KEYCODE_GP02 HID_KEY_ARROW_UP
 #define KEYCODE_GP03 HID_KEY_ARROW_DOWN
 #define KEYCODE_GP04 HID_KEY_ARROW_RIGHT
@@ -27,8 +25,6 @@
 #define KEYCODE_GP11 HID_KEY_D
 #define KEYCODE_GP12 HID_KEY_E
 #define KEYCODE_GP13 HID_KEY_F
-#define KEYCODE_GP14 0
-#define KEYCODE_GP15 0
 #define KEYCODE_GP16 HID_KEY_1
 #define KEYCODE_GP17 HID_KEY_2
 #define KEYCODE_GP18 HID_KEY_3
@@ -42,13 +38,10 @@
 #define KEYCODE_GP26 HID_KEY_SPACE
 #define KEYCODE_GP27 HID_KEY_ENTER
 #define KEYCODE_GP28 HID_KEY_ESCAPE
-#define KEYCODE_GP29 0
 
-// Optional modifier mask for each key pin (KEYBOARD_MODIFIER_* from tinyusb).
-// For modifier keys, set this mask; the pin keycode can then be 0.
-#ifndef MODIFIER_GP00
-#define MODIFIER_GP00 0
-#endif
+// Optional modifier mask overrides (KEYBOARD_MODIFIER_* from tinyusb).
+// For a modifier key, set the pin's mask here; its keycode can then be 0.
+// Unlisted pins default to 0.
 
 // LEDs
 #define LED_PIN 28

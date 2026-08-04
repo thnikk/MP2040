@@ -10,37 +10,10 @@
 
 #define BOARD_CONFIG_LABEL "2k"
 
-// Main key mapping. Each GPIO with a nonzero keycode is treated as a key that
-// emits the given USB HID keycode while pressed (active-low, internal pull-up).
-// 0 = unassigned pin.
-#define KEYCODE_GP00 0
-#define KEYCODE_GP01 0
-#define KEYCODE_GP02 0
-#define KEYCODE_GP03 0
-#define KEYCODE_GP04 0
-#define KEYCODE_GP05 0
-#define KEYCODE_GP06 0
-#define KEYCODE_GP07 0
-#define KEYCODE_GP08 0
-#define KEYCODE_GP09 0
-#define KEYCODE_GP10 0
-#define KEYCODE_GP11 0
-#define KEYCODE_GP12 0
-#define KEYCODE_GP13 0
-#define KEYCODE_GP14 0
-#define KEYCODE_GP15 0
-#define KEYCODE_GP16 0
-#define KEYCODE_GP17 0
-#define KEYCODE_GP18 0
-#define KEYCODE_GP19 0
-#define KEYCODE_GP20 0
-#define KEYCODE_GP21 0
-#define KEYCODE_GP22 0
-#define KEYCODE_GP23 0
-#define KEYCODE_GP24 0
-#define KEYCODE_GP25 0
-// GP26 is the WS2812 LED data line, not a key
-#define KEYCODE_GP26 0
+// Key mapping. Any GPIO with a nonzero keycode is treated as a key that emits
+// the given USB HID keycode while pressed (active-low, internal pull-up).
+// Pins not listed here default to 0 (unassigned), so only define overrides.
+// GP26 is the WS2812 LED data line, not a key.
 #define KEYCODE_GP27 HID_KEY_3
 #define KEYCODE_GP28 HID_KEY_1
 #define KEYCODE_GP29 HID_KEY_2
