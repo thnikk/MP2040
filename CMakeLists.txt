@@ -90,12 +90,17 @@ endif()
 # Generate the embedded web assets (lib/httpd/fsdata.c) from www/
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 file(GLOB WEB_SOURCES ${CMAKE_SOURCE_DIR}/www/*)
+set(BOARD_SVG ${CMAKE_SOURCE_DIR}/configs/${MP2040_BOARDCONFIG}/board.svg)
+if(NOT EXISTS ${BOARD_SVG})
+  set(BOARD_SVG "")
+endif()
 add_custom_command(
   OUTPUT ${CMAKE_SOURCE_DIR}/lib/httpd/fsdata.c
   COMMAND ${CMAKE_COMMAND} -E env
     ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/makefsdata.py
       ${CMAKE_SOURCE_DIR}/www ${CMAKE_SOURCE_DIR}/lib/httpd/fsdata.c
-  DEPENDS ${WEB_SOURCES} ${CMAKE_SOURCE_DIR}/tools/makefsdata.py
+      --board-svg ${BOARD_SVG}
+  DEPENDS ${WEB_SOURCES} ${CMAKE_SOURCE_DIR}/tools/makefsdata.py ${BOARD_SVG}
   COMMENT "Generating embedded web assets (fsdata.c)..."
   VERBATIM
 )

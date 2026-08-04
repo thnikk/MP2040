@@ -1,5 +1,8 @@
 :root {
   --bg: #14161a;
+  --bg-1: #14161a;
+  --bg-2: #1e2126;
+  --bg-4: #2c3037;
   --fg: #e6e6e6;
   --accent: #4caf50;
   --muted: #8a8f98;
@@ -26,9 +29,59 @@ header h1 span { color: var(--accent); }
 header p { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.85rem; }
 
 main {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 1.5rem;
+}
+
+.columns {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.board-column {
+  flex: 0 0 340px;
+}
+
+.grid-column {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .columns {
+    flex-direction: column;
+  }
+  .board-column {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
+
+#board-panel {
+  display: flex;
+  justify-content: center;
+}
+
+#board-panel svg {
+  width: 100%;
+  height: auto;
+  max-width: 340px;
+}
+
+.board-placeholder {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+}
+
+.key-cell.cell-highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.4);
+  transition: box-shadow 0.2s;
 }
 
 section {

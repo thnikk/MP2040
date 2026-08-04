@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 148.5906 148.59496"
+   width="148.59061"
+   height="148.59496"
+   version="1.1"
+   id="svg82"
+   sodipodi:docname="board.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview82"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="1.5483635"
+     inkscape:cx="-89.772201"
+     inkscape:cy="222.17005"
+     inkscape:window-width="1261"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer2" />
+  <desc
+     id="desc1">2k.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc>
+  <defs
+     id="defs4">
+    <marker
+       id="DistanceX"
+       orient="auto"
+       refX="0"
+       refY="0"
+       style="overflow:visible">
+      <path
+         d="M 3,-3 -3,3 M 0,-5 V 5"
+         style="stroke:#000000;stroke-width:0.5"
+         id="path1" />
+    </marker>
+    <pattern
+       id="Hatch"
+       patternUnits="userSpaceOnUse"
+       width="8"
+       height="8"
+       x="0"
+       y="0">
+      <path
+         d="M8 4 l-4,4"
+         stroke="#000000"
+         stroke-width="0.25"
+         linecap="square"
+         id="path2" />
+      <path
+         d="M6 2 l-4,4"
+         stroke="#000000"
+         stroke-width="0.25"
+         linecap="square"
+         id="path3" />
+      <path
+         d="M4 0 l-4,4"
+         stroke="#000000"
+         stroke-width="0.25"
+         linecap="square"
+         id="path4" />
+    </pattern>
+    <symbol
+       id="*MODEL_SPACE" />
+    <symbol
+       id="*PAPER_SPACE" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="Layer 1">
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
+       id="rect82"
+       width="148.59061"
+       height="148.59496"
+       x="0"
+       y="0"
+       ry="15.118111"
+       rx="15.118111"
+       inkscape:label="case" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="buttons">
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="pin28"
+       width="53.912998"
+       height="53.913399"
+       x="11.338607"
+       y="83.343002"
+       rx="3.7795277"
+       ry="3.7795277"
+       inkscape:label="pin28" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="pin29"
+       width="53.913387"
+       height="53.913399"
+       x="83.338608"
+       y="83.343002"
+       rx="3.7795277"
+       ry="3.7795277" />
+    <ellipse
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="pin27"
+       cx="38.2953"
+       cy="38.299702"
+       rx="6.169291"
+       ry="6.1692886" />
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect88"
+       width="40"
+       height="20"
+       x="91.121803"
+       y="28.999186"
+       rx="10"
+       ry="10"
+       inkscape:label="test-btn" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="leds">
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led0"
+       width="22.677166"
+       height="11.338583"
+       x="26.956715"
+       y="90.902054"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led1"
+       width="22.677166"
+       height="11.338583"
+       x="98.956718"
+       y="90.902054"
+       rx="5.6692915"
+       ry="5.6692915" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="layout"
+     style="display:none">
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect85"
+       width="7.5590553"
+       height="7.5590553"
+       x="34.51577"
+       y="83.343002" />
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect85-6"
+       width="7.5590553"
+       height="7.5590553"
+       x="106.51578"
+       y="83.343002" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer5"
+     inkscape:label="text-alignment"
+     style="display:none">
+    <path
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 83.338608,110.29971 H 137.252"
+       id="pin29-label" />
+    <path
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 11.338607,110.29971 H 65.251991"
+       id="pin28-label" />
+    <path
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="M 44.464591,38.299702 H 32.126009"
+       id="pin27-label" />
+  </g>
+</svg>

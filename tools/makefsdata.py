@@ -82,7 +82,12 @@ def gather_files(web_dir: Path):
     return sorted(files)
 
 
-def makefsdata(web_dir: Path, out_file: Path):
+def makefsdata(web_dir: Path, out_file: Path, board_svg: str = ""):
+    # List of (absolute path, URL path) pairs
+    entries = [(p, "/" + p.relative_to(web_dir).as_posix()) for p in gather_files(web_dir)]
+    if board_svg and Path(board_svg).is_file():
+        entries.append((Path(board_svg), "/board.svg"))
+    entries.sort(key=lambda e: e[1])
     fsdata = []
     fsdata.append('#include "fsdata.h"')
     fsdata.append("")
@@ -112,8 +117,7 @@ def makefsdata(web_dir: Path, out_file: Path):
     file_infos = []
     payload_alignment_counter = 0
 
-    for file_path in gather_files(web_dir):
-        rel = "/" + file_path.relative_to(web_dir).as_posix()
+    for file_path, rel in entries:
         ext = rel.split(".")[-1].lower()
         var_name = fix_filename_for_c(rel)
 
@@ -196,13 +200,15 @@ def main():
     parser = argparse.ArgumentParser(description="Generate lwIP fsdata.c from static web files")
     parser.add_argument("web_dir", type=Path, help="Directory containing the static web files")
     parser.add_argument("out_file", type=Path, help="Output path for fsdata.c")
+    parser.add_argument("--board-svg", nargs="?", const="", default="",
+                        help="Optional board.svg to embed as /board.svg")
     args = parser.parse_args()
 
     if not args.web_dir.is_dir():
         print(f"Error: {args.web_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    makefsdata(args.web_dir, args.out_file)
+    makefsdata(args.web_dir, args.out_file, args.board_svg)
 
 
 if __name__ == "__main__":

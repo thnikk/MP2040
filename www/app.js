@@ -60,6 +60,9 @@ const MULTISELECT_OPTIONS = [
 // One MultiSelect instance per pin, populated by load()
 const multiSelects = new Array(30).fill(null);
 
+// Board SVG view (see boardview.js), initialized by load()
+let boardView = null;
+
 function colorToInt(hex) {
   return parseInt(hex.replace('#', ''), 16);
 }
@@ -119,6 +122,35 @@ async function load() {
   document.getElementById('led-brightnessMaximum').value = led.brightnessMaximum ?? 255;
   document.getElementById('led-colorNormal').value = intToColor(led.colorNormal ?? 0x00ff00);
   document.getElementById('led-colorPressed').value = intToColor(led.colorPressed ?? 0xffffff);
+
+  initBoard(options, grid);
+}
+
+function initBoard(options, grid) {
+  const panel = document.getElementById('board-panel');
+  if (!panel) return;
+
+  boardView = new BoardView(panel, {
+    onPinClick: (pin) => {
+      if (boardView) boardView.highlightPin(pin);
+      const cell = document.getElementById(`ms-${pin}`)?.closest('.key-cell');
+      if (cell) {
+        cell.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        cell.classList.add('cell-highlight');
+        setTimeout(() => cell.classList.remove('cell-highlight'), 1500);
+      }
+    },
+    onTest: () => testLed(),
+  });
+  boardView.setOptions(options);
+
+  // Sync the board when the user focuses a key cell.
+  grid.addEventListener('focusin', (e) => {
+    const cell = e.target.closest('.key-cell');
+    const input = cell && cell.querySelector('input[id^="ledidx-"]');
+    const m = input && input.id.match(/^ledidx-(\d+)$/);
+    if (m && boardView) boardView.highlightPin(Number(m[1]));
+  });
 }
 
 async function save() {

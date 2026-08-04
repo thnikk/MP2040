@@ -13,11 +13,18 @@
   </header>
 
   <main>
-    <section>
-      <h2>Key Mapping</h2>
-      <p class="hint">For each pin, pick one key and any number of modifiers from the Modifiers group. Pressing the button emits that key with the selected modifiers held (e.g. Left Shift + A).</p>
-      <div id="key-grid"></div>
-    </section>
+    <div class="columns">
+      <section class="board-column">
+        <h2>Board</h2>
+        <div id="board-panel"></div>
+      </section>
+
+      <section class="grid-column">
+        <h2>Key Mapping</h2>
+        <p class="hint">For each pin, pick one key and any number of modifiers from the Modifiers group. Pressing the button emits that key with the selected modifiers held (e.g. Left Shift + A). Click a pin on the board to jump to its row.</p>
+        <div id="key-grid"></div>
+      </section>
+    </div>
 
     <section>
       <h2>LEDs</h2>
@@ -51,6 +58,7 @@
   </main>
 
   <script src="/multiselect.js"></script>
+  <script src="/boardview.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
