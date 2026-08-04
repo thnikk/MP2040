@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
     root: '.',
     server: {
       port: 3000,
-      open: env.VITE_DEV_OPEN !== 'false',
+      open: false,
       ...(proxyToBoard
         ? {
             proxy: {
