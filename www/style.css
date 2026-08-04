@@ -113,10 +113,15 @@ body {
 }
 
 .nav-logo {
-  height: 34px;
-  margin-right: 10px;
+  height: 40px;
+  margin: 0 16px;
   display: block;
   fill: currentColor;
+  filter: invert(0.85) brightness(1.3);
+}
+
+[data-theme="light"] .nav-logo {
+  filter: none;
 }
 
 .nav-title {
