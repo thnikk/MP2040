@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MP2040 Config</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>MP2040 <span id="board-label"></span></h1>
+    <p id="fw-version"></p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Key Mapping</h2>
+      <p class="hint">Assign a USB HID keycode to each pin. Keycodes above 231 are treated as multimedia keys. Modifier mask is a bitfield (1=LCtrl, 2=LShift, 4=LAlt, 8=LGui, 16=RCtrl, 32=RShift, 64=RAlt, 128=RGui).</p>
+      <div id="key-grid"></div>
+    </section>
+
+    <section>
+      <h2>LEDs</h2>
+      <div class="led-form">
+        <label>Data pin <input type="number" id="led-dataPin" min="-1" max="29" value="-1"></label>
+        <label>Format
+          <select id="led-ledFormat">
+            <option value="0">RGB</option>
+            <option value="1">GRB</option>
+            <option value="2">GRBW</option>
+            <option value="3">RGBW</option>
+          </select>
+        </label>
+        <label>LEDs per key <input type="number" id="led-ledsPerKey" min="1" max="8" value="1"></label>
+        <label>Brightness (max) <input type="number" id="led-brightnessMaximum" min="0" max="255" value="255"></label>
+        <label>Normal color <input type="color" id="led-colorNormal" value="#00ff00"></label>
+        <label>Pressed color <input type="color" id="led-colorPressed" value="#ffffff"></label>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="save">Save &amp; Reboot</button>
+      <button id="reset" class="danger">Reset Settings</button>
+      <span id="status"></span>
+    </div>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+import "nanopb.proto";
+
+enum InputMode
+{
+    option (nanopb_enumopt).long_names = false;
+
+    INPUT_MODE_CONFIG = 0;
+    INPUT_MODE_KEYBOARD = 1;
+}
+
+enum LEDFormat_Proto
+{
+    option (nanopb_enumopt).long_names = false;
+
+    LED_FORMAT_RGB = 0;
+    LED_FORMAT_GRB = 1;
+    LED_FORMAT_GRBW = 2;
+    LED_FORMAT_RGBW = 3;
+}

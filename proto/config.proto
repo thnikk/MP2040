@@ -1,0 +1,28 @@
+syntax = "proto2";
+
+import "nanopb.proto";
+import "enums.proto";
+
+message KeyMapping
+{
+    repeated uint32 keycodes = 1 [(nanopb).max_count = 30];
+    repeated uint32 modifierMasks = 2 [(nanopb).max_count = 30];
+}
+
+message LEDOptions
+{
+    optional int32 dataPin = 1;
+    optional LEDFormat_Proto ledFormat = 2;
+    optional uint32 ledsPerKey = 3;
+    optional uint32 brightnessMaximum = 4;
+    optional uint32 brightnessSteps = 5;
+    optional uint32 colorNormal = 6;
+    optional uint32 colorPressed = 7;
+}
+
+message Config
+{
+    optional KeyMapping keyMapping = 1;
+    optional LEDOptions ledOptions = 2;
+    optional int32 webConfigPin = 3;
+}
