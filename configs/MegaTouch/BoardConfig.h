@@ -61,11 +61,10 @@
 #define BOARD_LED_POSITIONS \
     { 0, 1 }
 
-// Web config boot pin. GP01 is a touch pad, so touching that pad shortly after
-// the board powers on enters web config mode instead of sending key 3. (Boot
-// calibration takes a few milliseconds, so touch it after power-on rather than
-// holding it from before power-on - the pre-touched baseline would read as
-// "not touched".)
+// Web config boot pin. GP01 is a touch pad: the keyboard doesn't start until
+// ~3 seconds after power-on (WEB_CONFIG_TOUCH_WINDOW_MS); touch and hold the
+// pad briefly within that window to enter web config mode instead of sending
+// key 3.
 #define PIN_WEBCONFIG 1
 
 #endif

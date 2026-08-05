@@ -35,9 +35,6 @@ public:
 	// Applies per-pad thresholds with release hysteresis.
 	Mask_t scan();
 
-	// Single-shot touch check for a pin (used by the boot webconfig check).
-	bool isTouched(Pin_t pin);
-
 private:
 	TouchGpio();
 	void calibrate();

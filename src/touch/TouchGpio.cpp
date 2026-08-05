@@ -245,16 +245,6 @@ Mask_t TouchGpio::scan()
     return result;
 }
 
-bool TouchGpio::isTouched(Pin_t pin)
-{
-    if (pin < 0 || pin >= (Pin_t)NUM_BANK0_GPIOS) return false;
-    if (smForPin[pin] == 0xFF || !active[pin]) return false;
-
-    uint32_t v = readPin(pin);
-    if (v >= TOUCH_TIMEOUT) return false;
-    return v > thresholdOn[pin];
-}
-
 uint32_t TouchGpio::readPin(Pin_t pin)
 {
     if (smForPin[pin] == 0xFF) return TOUCH_TIMEOUT;

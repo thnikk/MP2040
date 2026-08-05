@@ -15,6 +15,17 @@
 
 #include "tusb.h"
 
+// How long after a normal boot the touch web-config pad stays armed. Touching
+// it within this window reboots into web config mode. Overridable per board.
+#ifndef WEB_CONFIG_TOUCH_WINDOW_MS
+#define WEB_CONFIG_TOUCH_WINDOW_MS 3000
+#endif
+
+// Used for the boot-window LED cue; boards without an LED config still compile.
+#ifndef LED_COLOR_PRESSED
+#define LED_COLOR_PRESSED 0xFFFFFF
+#endif
+
 void MP2040::setup() {
 	Storage::getInstance().init();
 
@@ -39,7 +50,17 @@ void MP2040::setup() {
 			break;
 	}
 
-	// Default: keyboard mode
+	// Default: keyboard mode. Arm the touch web-config boot window so the pad
+	// can be touched before the keyboard starts to enter web config. Arming is
+	// based on the board's physical touch pins, not on which pins have a
+	// keycode assigned.
+	const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
+	const int32_t wcPin = Storage::getInstance().getWebConfigPin();
+	if (wcPin >= 0 && (touchPinMask & (1 << wcPin)))
+	{
+		webconfigTouchDeadline = getMillis() + WEB_CONFIG_TOUCH_WINDOW_MS;
+	}
+
 	DriverManager::getInstance().setup(INPUT_MODE_KEYBOARD);
 }
 
@@ -134,6 +155,58 @@ void MP2040::debounceGpioGetAll() {
 }
 
 void MP2040::run() {
+	// Boot web-config window: hold the web config pad for a moment before the
+	// keyboard starts to enter web config mode instead. The USB keyboard isn't
+	// initialized yet, so the pad can't send a key during the window. Button
+	// boards never arm this (their web config pin isn't a touch pad).
+	if (webconfigTouchDeadline != 0)
+	{
+		// Visible cue that the boot window is open: light the LEDs in the
+		// board's pressed color until the window closes (a subtler, calmer
+		// signal than the earlier rainbow). Uses the same live-preview path as
+		// the web config.
+		LedPreview boot = {};
+		boot.ledMode = 0;                 // LED_MODE_STATIC
+		boot.ledSpeed = 236;
+		boot.brightnessMaximum = 255;
+		boot.colorNormal = LED_COLOR_PRESSED;
+		boot.colorPressed = LED_COLOR_PRESSED;
+		Storage::getInstance().publishLedPreview(boot);
+
+		const int32_t wcPin = Storage::getInstance().getWebConfigPin();
+		bool seen = false;
+		uint32_t seenAt = 0;
+		while (getMillis() < webconfigTouchDeadline)
+		{
+			// Debounce so the touch goes through the same hysteresis and settle
+			// as normal key operation.
+			debounceGpioGetAll();
+			if (wcPin >= 0 && (debouncedGpio & (1 << wcPin)))
+			{
+				const uint32_t now = getMillis();
+				if (!seen) {
+					seen = true;
+					seenAt = now;
+				} else if (now - seenAt >= 40) {
+					System::reboot(System::BootMode::WEBCONFIG);
+				}
+			} else {
+				seen = false;
+			}
+		}
+		webconfigTouchDeadline = 0;
+
+		// Window passed without a touch: restore the board's normal LED mode.
+		const LEDOptions& lo = Storage::getInstance().getLedOptions();
+		LedPreview restore = {};
+		restore.ledMode = lo.ledMode;
+		restore.ledSpeed = lo.ledSpeed;
+		restore.brightnessMaximum = lo.brightnessMaximum;
+		restore.colorNormal = lo.colorNormal;
+		restore.colorPressed = lo.colorPressed;
+		Storage::getInstance().publishLedPreview(restore);
+	}
+
 	GPDriver * inputDriver = DriverManager::getInstance().getDriver();
 	bool configMode = Storage::getInstance().GetConfigMode();
 
@@ -172,32 +245,21 @@ MP2040::BootAction MP2040::getBootAction() {
 			break;
 	}
 
-	// Pin-based boot shortcut: hold the web config pin at boot. If the pin is a
-	// capacitive touch pad, "hold" means touching the pad; otherwise it means
-	// grounding the pin. Enable the pull-up, let it settle, then require the
-	// state to hold across a short window so a floating/transitioning input
-	// can't trip it.
+	// Pin-based boot shortcut: hold the web config pin at boot. This only
+	// applies to button boards; on touch boards the web config pin is a pad and
+	// is handled by the boot linger window in run() instead (a touch pad can't
+	// be held low from before power-on like a button can).
 	{
 		int32_t wcPin = Storage::getInstance().getWebConfigPin();
-		if (wcPin >= 0) {
-			if (touchGpios & (1 << wcPin)) {
-				sleep_ms(20);
-				if (TouchGpio::getInstance().isTouched(wcPin)) {
-					sleep_ms(10);
-					if (TouchGpio::getInstance().isTouched(wcPin)) {
-						return BootAction::ENTER_WEBCONFIG_MODE;
-					}
-				}
-			} else {
-				gpio_init(wcPin);
-				gpio_set_dir(wcPin, GPIO_IN);
-				gpio_pull_up(wcPin);
-				sleep_ms(20);
+		if (wcPin >= 0 && !(touchGpios & (1 << wcPin))) {
+			gpio_init(wcPin);
+			gpio_set_dir(wcPin, GPIO_IN);
+			gpio_pull_up(wcPin);
+			sleep_ms(20);
+			if (!gpio_get(wcPin)) {
+				sleep_ms(10);
 				if (!gpio_get(wcPin)) {
-					sleep_ms(10);
-					if (!gpio_get(wcPin)) {
-						return BootAction::ENTER_WEBCONFIG_MODE;
-					}
+					return BootAction::ENTER_WEBCONFIG_MODE;
 				}
 			}
 		}

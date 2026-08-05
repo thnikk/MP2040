@@ -19,6 +19,11 @@ private:
     Mask_t debouncedGpio;
     uint32_t gpioDebounceTime[NUM_BANK0_GPIOS];
 
+    // Boot web-config window for touch boards. While nonzero, run() waits up to
+    // WEB_CONFIG_TOUCH_WINDOW_MS before starting the keyboard so the web config
+    // pad can be touched to enter web config. 0 = no window (button boards).
+    uint32_t webconfigTouchDeadline = 0;
+
     enum class BootAction {
         NONE,
         ENTER_WEBCONFIG_MODE,
