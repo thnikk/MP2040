@@ -330,7 +330,7 @@ document.getElementById('save').addEventListener('click', save);
 document.getElementById('reboot').addEventListener('click', reboot);
 document.getElementById('reset').addEventListener('click', resetSettings);
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
-document.getElementById('key-modal-cancel').addEventListener('click', closeKeyModal);
+document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
 
 // Close the modal when clicking the overlay backdrop or pressing Escape.
 document.getElementById('key-modal').addEventListener('click', (e) => {
