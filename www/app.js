@@ -66,6 +66,9 @@ let boardView = null;
 // MultiSelect used in the key modal
 let modalSelect = null;
 
+// Visual keyboard picker (keyboardwidget.js) used in the key modal
+let keyboardWidget = null;
+
 // Pin currently being edited in the modal
 let editingPin = -1;
 
@@ -235,6 +238,19 @@ async function load() {
     container: document.getElementById('key-modal-select'),
     options: MULTISELECT_OPTIONS,
     groups: MULTISELECT_GROUPS,
+    onChange: () => {
+      const { keycode, mask } = modalSelect.getValue();
+      keyboardWidget.setValue(keycode, mask);
+    },
+  });
+
+  keyboardWidget = new KeyboardWidget({
+    container: document.getElementById('key-modal-keyboard'),
+    keycode: 0,
+    mask: 0,
+    onChange: (keycode, mask) => {
+      modalSelect.setValue(keycode, mask);
+    },
   });
 
   initBoard(options);
@@ -254,10 +270,10 @@ function openKeyModal(pin) {
   editingPin = pin;
   document.getElementById('key-modal-title').textContent =
     `GP${pin.toString().padStart(2, '0')}`;
-  modalSelect.setValue(
-    Number(currentOptions.keycodes[pin] || 0),
-    Number(currentOptions.modifierMasks[pin] || 0),
-  );
+  const keycode = Number(currentOptions.keycodes[pin] || 0);
+  const mask = Number(currentOptions.modifierMasks[pin] || 0);
+  modalSelect.setValue(keycode, mask);
+  keyboardWidget.setValue(keycode, mask);
   document.getElementById('key-modal').hidden = false;
   if (boardView) boardView.highlightPin(pin);
 }

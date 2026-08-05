@@ -5,9 +5,10 @@
 // second key replaces the first).
 
 class MultiSelect {
-  constructor({ container, options, groups }) {
+  constructor({ container, options, groups, onChange }) {
     this.options = options;
     this.groups = groups;
+    this.onChange = onChange || (() => {});
     this.selected = [];
     this.query = '';
     this.open = false;
@@ -124,6 +125,7 @@ class MultiSelect {
       this.selected.push(opt);
     }
     this.render();
+    this.onChange();
   }
 
   // ---- Rendering --------------------------------------------------------

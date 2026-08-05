@@ -36,6 +36,7 @@
   /* aliases used by the board SVG view */
   --bg-1: var(--page-bg);
   --bg-2: var(--card-bg);
+  --bg-3: var(--nord1);
   --bg-4: var(--card-border);
 }
 
@@ -58,6 +59,7 @@
 
   --bg-1: #eceff4;
   --bg-2: #e5e9f0;
+  --bg-3: #c8d0dc;
   --bg-4: #c8d0dc;
 }
 
@@ -648,8 +650,9 @@ button.secondary {
   border-radius: 20px;
   padding: 24px;
   width: 100%;
-  max-width: 420px;
+  max-width: 880px;
   max-height: 90vh;
+  overflow-y: auto;
 }
 
 .modal h3 {
@@ -662,4 +665,137 @@ button.secondary {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 1rem;
+}
+
+/* Keyboard widget (port of GP2040-th's KeyboardWidget) */
+.keyboard-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin-top: 16px;
+  user-select: none;
+}
+
+.kb-main-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: fit-content;
+}
+
+.f-row {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.f-cluster {
+  display: flex;
+  gap: 3px;
+}
+
+.kb-clusters-row {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: 4px;
+}
+
+.kb-cluster {
+  flex: 0 1 auto;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 6px;
+  gap: 3px;
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-cluster-label {
+  font-size: 0.6rem;
+  opacity: 0.5;
+  text-align: center;
+  padding-bottom: 2px;
+}
+
+.kb-spacer {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.keyboard-row {
+  display: flex;
+  gap: 3px;
+  height: 48px;
+  width: 100%;
+}
+
+.sz-1u { width: 48px; min-width: 48px; }
+.sz-1_25u { width: 60px; min-width: 60px; }
+.sz-1_5u { width: 72px; min-width: 72px; }
+.sz-1_75u { width: 84px; min-width: 84px; }
+.sz-2u { width: 96px; min-width: 96px; }
+.sz-2_25u { width: 108px; min-width: 108px; }
+.sz-2_75u { width: 132px; min-width: 132px; }
+.sz-6_25u { width: 300px; min-width: 300px; }
+
+.kb-key {
+  height: 48px;
+  padding: 0 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: var(--bg-3);
+  color: inherit;
+  font-size: 1rem;
+  font-family: 'Nunito', monospace;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.kb-key:hover {
+  background: var(--nord3);
+  border-color: var(--nord10);
+}
+
+.kb-key.mod:hover {
+  border-color: var(--nord12);
+}
+
+.kb-key.selected {
+  background: var(--nord10);
+  color: #fff;
+}
+
+.kb-key.mod.selected {
+  background: var(--nord12);
+}
+
+.kb-flex-spacer {
+  height: 48px;
+  flex: 1;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.kb-key-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.kb-key-sub {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.kb-key-main {
+  font-size: 1rem;
 }

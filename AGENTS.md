@@ -37,3 +37,7 @@
 - Two build-order dependencies exist: `httpd` depends on `generate_fsdata` (fs.c `#include`s fsdata.c), and `ws2812` depends on `generate_proto` (Neopixel.h uses enums.pb.h). Both are wired in CMake.
 - Modifier keys: set the pin's `MODIFIER_GPxx` mask; the keycode can then be 0. The web UI exposes both.
 - The keyboard report is a 256-key bitmap (NKRO), not the 6-key boot report.
+
+## Testing
+- When testing the web server, don't kill existing instances. Use port 1357 for testing.
+- Don't build the firmware unless necessary.

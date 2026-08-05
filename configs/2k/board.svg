@@ -21,11 +21,11 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="1.5483635"
-     inkscape:cx="88.480515"
-     inkscape:cy="206.02397"
-     inkscape:window-width="1261"
-     inkscape:window-height="1371"
+     inkscape:zoom="12.386908"
+     inkscape:cx="49.729925"
+     inkscape:cy="70.19508"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -116,13 +116,6 @@
        y="83.343002"
        rx="3.7795277"
        ry="3.7795277" />
-    <ellipse
-       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="pin27"
-       cx="38.2953"
-       cy="38.299702"
-       rx="6.169291"
-       ry="6.1692886" />
     <rect
        style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="rect88"
@@ -133,6 +126,12 @@
        rx="10"
        ry="10"
        inkscape:label="test-btn" />
+    <circle
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round"
+       id="pin27"
+       cx="38.2953"
+       cy="38.299702"
+       r="8" />
   </g>
   <g
      inkscape:groupmode="layer"
