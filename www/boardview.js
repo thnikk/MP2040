@@ -157,7 +157,6 @@ class BoardView {
     this.options = null;
     this.svgRoot = null;
     this.pinElements = [];
-    this.originalFills = new Map();
     this.highlightedPin = null;
     this.wired = false;
     this.load();
@@ -254,31 +253,10 @@ class BoardView {
     }
   }
 
-  captureOriginalFills() {
-    if (this.originalFills.size > 0) return;
-    this.pinElements.forEach(({ id }) => {
-      const el = this.container.querySelector(`#${CSS.escape(id)}`);
-      if (!el) return;
-      shapesOf(el).forEach((shape, idx) => {
-        const key = `${id}-${idx}`;
-        const s = shape;
-        let fill = s.style.fill || shape.getAttribute('fill') || '';
-        if (!fill || fill === 'none') {
-          fill = window.getComputedStyle(shape).fill;
-        }
-        const sw = s.style.strokeWidth || shape.getAttribute('stroke-width') || '';
-        if (fill && fill !== 'none') {
-          this.originalFills.set(key, { fill, strokeWidth: sw });
-        }
-      });
-    });
-  }
-
   // ---- labels -----------------------------------------------------------
 
   updateLabels() {
     if (!this.svgRoot) return;
-    this.captureOriginalFills();
 
     for (const { id, pinNumber } of this.pinElements) {
       const el = this.container.querySelector(`#${CSS.escape(id)}`);
@@ -462,16 +440,15 @@ class BoardView {
       const isActive = midiMode ? midiNote > 0 : keycode > 0;
       const isHighlighted = pinNumber === this.highlightedPin;
 
-      shapesOf(el).forEach((shape, idx) => {
+      shapesOf(el).forEach((shape) => {
         const s = shape;
-        const orig = this.originalFills.get(`${id}-${idx}`)?.fill || '';
         if (isHighlighted) {
           s.style.setProperty('fill', '#3d3d00', 'important');
           s.style.setProperty('stroke', '#ffff00', 'important');
           s.style.setProperty('stroke-width', '3', 'important');
           s.style.removeProperty('fill-opacity');
         } else if (isActive) {
-          s.style.setProperty('fill', orig || 'var(--bg-2)', 'important');
+          s.style.setProperty('fill', 'var(--bg-2)', 'important');
           s.style.removeProperty('fill-opacity');
           s.style.setProperty('stroke', 'var(--bg-4)', 'important');
           s.style.setProperty('stroke-width', '2', 'important');

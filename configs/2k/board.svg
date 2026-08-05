@@ -21,11 +21,11 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="12.386908"
-     inkscape:cx="49.729925"
-     inkscape:cy="70.19508"
-     inkscape:window-width="2560"
-     inkscape:window-height="1440"
+     inkscape:zoom="4.3794333"
+     inkscape:cx="67.931163"
+     inkscape:cy="65.076913"
+     inkscape:window-width="1261"
+     inkscape:window-height="1371"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -82,7 +82,7 @@
      inkscape:label="Layer 1"
      transform="translate(1,1)">
     <rect
-       style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#1c1f26;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="rect82"
        width="148.59061"
        height="148.59496"
@@ -98,7 +98,7 @@
      inkscape:label="buttons"
      transform="translate(1,1)">
     <rect
-       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
        id="pin28"
        width="53.912998"
        height="53.913399"
@@ -108,7 +108,7 @@
        ry="3.7795277"
        inkscape:label="pin28" />
     <rect
-       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
        id="pin29"
        width="53.913387"
        height="53.913399"
@@ -127,7 +127,7 @@
        ry="10"
        inkscape:label="test-btn" />
     <circle
-       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round"
+       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;fill-opacity:1"
        id="pin27"
        cx="38.2953"
        cy="38.299702"
