@@ -171,6 +171,7 @@ async function previewLed() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ led }),
     });
+    if (boardView) boardView.setLedParams(led);
   } catch (e) {
     setStatus('Preview failed: ' + e, false);
   }

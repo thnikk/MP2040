@@ -159,6 +159,12 @@ class BoardView {
     this.pinElements = [];
     this.heldPins = new Set();
     this.wired = false;
+    this.ledSim = null;
+    this.ledFrame = null;
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.stopLedSim();
+      else if (this.ledSim) this.startLedSim();
+    });
     this.load();
   }
 
@@ -181,11 +187,21 @@ class BoardView {
       this.applyLeds();
       this.applyPins();
     }
+    this.updateLedSim();
   }
 
   setHeldPins(pins) {
     this.heldPins = new Set(pins);
+    if (this.ledSim) this.ledSim.setHeld(pins || []);
     this.applyPins();
+  }
+
+  // Push live LED control values into the simulation (mirrors /api/setLedPreview).
+  setLedParams(led) {
+    if (!this.ledSim || !led) return;
+    // Merge with the full led options so board properties (pinLedIndices,
+    // ledsPerKey) survive preview pushes that only carry the control fields.
+    this.ledSim.setParams({ ...this.options?.led, ...led });
   }
 
   // ---- render -----------------------------------------------------------
@@ -213,6 +229,7 @@ class BoardView {
     this.applyPins();
     this.styleTestButton();
     this.wireEvents();
+    this.buildLedSim();
 
     if (typeof ResizeObserver !== 'undefined') {
       new ResizeObserver(() => {
@@ -357,6 +374,10 @@ class BoardView {
   // ---- LED slots --------------------------------------------------------
 
   applyLeds() {
+    // The live simulation paints per-LED colors every frame; keep this static
+    // fill only as the fallback / pre-sim baseline.
+    if (this.ledSim) return;
+
     const color = this.options?.led?.colorNormal != null
       ? intToCss(this.options.led.colorNormal) : '#4caf50';
 
@@ -366,6 +387,80 @@ class BoardView {
         s.style.setProperty('opacity', '0.85', 'important');
         s.style.setProperty('stroke', 'var(--bg-4)', 'important');
         s.style.setProperty('stroke-width', '1.5', 'important');
+      });
+    });
+  }
+
+  // ---- LED simulation ---------------------------------------------------
+
+  // Rebuild the LedSim from the rendered SVG (LED centers + led options).
+  buildLedSim() {
+    this.stopLedSim();
+    this.ledSim = null;
+    if (!this.svgRoot || !this.options?.led) return;
+
+    const leds = ledElements(this.container);
+    if (!leds.length) return;
+
+    const positions = [];
+    leds.forEach((el) => {
+      const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
+      const shape = shapesOf(el)[0];
+      if (!shape) return;
+      const rect = shape.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return;
+      const ctm = this.svgRoot.getScreenCTM();
+      if (!ctm) return;
+      const pt = new DOMPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        .matrixTransform(ctm.inverse());
+      positions[idx] = { x: pt.x, y: pt.y };
+    });
+
+    if (!positions.some((p) => p)) return;
+    for (let i = 0; i < positions.length; i++) {
+      if (positions[i] === undefined) positions[i] = null;
+    }
+
+    this.ledSim = new LedSim(positions);
+    this.ledSim.setParams(this.options.led);
+    this.ledSim.setHeld([...this.heldPins]);
+    this.startLedSim();
+  }
+
+  // (Re)build the sim if it hasn't been built yet (e.g. setOptions before the
+  // SVG finished loading), otherwise just refresh its parameters.
+  updateLedSim() {
+    if (this.ledSim) this.setLedParams(this.options?.led);
+    else if (this.svgRoot) this.buildLedSim();
+  }
+
+  startLedSim() {
+    if (this.ledFrame || !this.ledSim || document.hidden) return;
+    this.ledSim.resync();
+    const loop = () => {
+      this.ledFrame = requestAnimationFrame(loop);
+      this.paintLedSim();
+    };
+    this.ledFrame = requestAnimationFrame(loop);
+  }
+
+  stopLedSim() {
+    if (this.ledFrame) {
+      cancelAnimationFrame(this.ledFrame);
+      this.ledFrame = null;
+    }
+  }
+
+  paintLedSim() {
+    if (!this.ledSim) return;
+    const colors = this.ledSim.tick();
+    ledElements(this.container).forEach((el) => {
+      const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
+      const c = colors[idx];
+      if (!c) return;
+      const rgb = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+      shapesOf(el).forEach((s) => {
+        s.style.setProperty('fill', rgb, 'important');
       });
     });
   }
