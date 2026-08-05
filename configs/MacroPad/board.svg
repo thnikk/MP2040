@@ -22,14 +22,14 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="2.6055158"
-     inkscape:cx="24.371374"
-     inkscape:cy="101.32351"
-     inkscape:window-width="1261"
-     inkscape:window-height="1371"
+     inkscape:cx="-28.401286"
+     inkscape:cy="108.80763"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer3" />
   <desc
      id="desc1">macropad.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc>
   <defs
@@ -303,89 +303,8 @@
        id="led0"
        width="22.677"
        height="11.338583"
-       x="34.515415"
-       y="26.957056"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led7"
-       width="22.677166"
-       height="11.338583"
-       x="106.51543"
-       y="26.957056"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led8"
-       width="22.677166"
-       height="11.338583"
-       x="178.51541"
-       y="26.957056"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led1"
-       width="22.677166"
-       height="11.338583"
-       x="34.515415"
-       y="98.954056"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led6"
-       width="22.677166"
-       height="11.338583"
-       x="106.51543"
-       y="98.954056"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led9"
-       width="22.677166"
-       height="11.338583"
-       x="178.51541"
-       y="98.954056"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led2"
-       width="22.677166"
-       height="11.338583"
-       x="34.515415"
-       y="170.95406"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led5"
-       width="22.677166"
-       height="11.338583"
-       x="106.51543"
-       y="170.95406"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led10"
-       width="22.677166"
-       height="11.338583"
-       x="178.51541"
-       y="170.95406"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
-       id="led3"
-       width="22.677166"
-       height="11.338583"
-       x="34.515415"
-       y="242.95406"
+       x="34.515499"
+       y="24.177528"
        rx="5.6692915"
        ry="5.6692915" />
     <rect
@@ -394,7 +313,88 @@
        width="22.677166"
        height="11.338583"
        x="106.51543"
-       y="242.95406"
+       y="24.177528"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led8"
+       width="22.677166"
+       height="11.338583"
+       x="178.51541"
+       y="24.177528"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led1"
+       width="22.677166"
+       height="11.338583"
+       x="34.515415"
+       y="96.174522"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led5"
+       width="22.677166"
+       height="11.338583"
+       x="106.51543"
+       y="96.174522"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led9"
+       width="22.677166"
+       height="11.338583"
+       x="178.51541"
+       y="96.174522"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led2"
+       width="22.677166"
+       height="11.338583"
+       x="34.515415"
+       y="168.17453"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led6"
+       width="22.677166"
+       height="11.338583"
+       x="106.51543"
+       y="168.17453"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led10"
+       width="22.677166"
+       height="11.338583"
+       x="178.51541"
+       y="168.17453"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led3"
+       width="22.677166"
+       height="11.338583"
+       x="34.515415"
+       y="240.17453"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#fe0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-opacity:1"
+       id="led7"
+       width="22.677"
+       height="11.338583"
+       x="106.5155"
+       y="240.17453"
        rx="5.6692915"
        ry="5.6692915" />
     <rect
@@ -403,7 +403,7 @@
        width="22.677166"
        height="11.338583"
        x="178.51541"
-       y="242.95406"
+       y="240.17453"
        rx="5.6692915"
        ry="5.6692915" />
   </g>
