@@ -280,7 +280,7 @@ class BoardView {
         labelEl.setAttribute('class', 'pin-action-label');
         labelEl.setAttribute('text-anchor', 'middle');
         labelEl.setAttribute('dominant-baseline', 'central');
-        labelEl.setAttribute('font-family', 'monospace');
+        labelEl.setAttribute('font-family', 'Nunito');
         labelEl.setAttribute('font-size', '11');
         labelEl.setAttribute('font-weight', 'bold');
         labelEl.setAttribute('fill', 'currentColor');
@@ -407,7 +407,7 @@ class BoardView {
         const label = document.createElementNS(ns, 'text');
         label.setAttribute('text-anchor', 'middle');
         label.setAttribute('dominant-baseline', 'central');
-        label.setAttribute('font-family', 'monospace');
+        label.setAttribute('font-family', 'Nunito');
         label.setAttribute('font-size', '12');
         label.setAttribute('font-weight', 'bold');
         label.setAttribute('fill', 'currentColor');
