@@ -279,8 +279,20 @@ select, input[type="number"] {
 
 select {
 	border-radius: 999px;
-	padding: 0px 10px;
+	padding: 5px 10px;
 	font-size: 1rem;
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 2.5rem;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23d8dee9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 12px 8px;
+}
+
+/* Lighter chevron stroke for the light theme */
+html[data-theme="light"] select {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%234c566a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* MultiSelect widget */
@@ -442,27 +454,9 @@ select {
   white-space: nowrap;
 }
 
-.led-row .led-mode-select {
-  position: relative;
+.led-row select {
   flex: 1 1 0;
   min-width: 0;
-}
-
-.led-row .led-mode-select select {
-  width: 100%;
-  height: 100%;
-  appearance: none;
-  padding-right: 2.5rem;
-}
-
-.led-row .led-mode-select::after {
-  content: "\25BE";
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-  pointer-events: none;
 }
 
 .led-row .led-slider {
@@ -482,9 +476,8 @@ select {
 }
 
 .general-form select {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 10rem;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .general-form .hint {
@@ -530,9 +523,50 @@ select {
   color: var(--muted);
 }
 
-.midi-kb-control select {
-  width: auto;
-  min-width: 8rem;
+/* Spinner (numerical stepper): - [input] + */
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--page-bg);
+}
+
+.spinner-btn {
+  flex: 0 0 auto;
+	padding: 10px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0px;
+}
+
+.spinner-btn:hover {
+  background: var(--bg-3);
+}
+
+.spinner-input {
+  width: 3.2em;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: center;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+/* Spinner container on the General page (sits inline next to its label) */
+.midi-spinner {
+  display: inline-flex;
+}
+
+.general-form .midi-spinner {
+  flex: 0 0 auto;
 }
 
 .midi-kb-status {

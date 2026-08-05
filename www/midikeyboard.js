@@ -4,9 +4,11 @@
 
 const MK_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-// Full octaves only (C-1..B8 = notes 0..119), so the piano always renders a
-// complete C..B row. The top five notes of the MIDI range (C9..G9) are skipped.
-const MIDI_OCTAVES = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8];
+// Full octave range shown (C-1..B8 = notes 0..119), so the piano always
+// renders complete C..B rows. The top five notes of the MIDI range (C9..G9)
+// are skipped.
+const MIDI_OCTAVE_MIN = -1;
+const MIDI_OCTAVE_MAX = 8;
 
 const MIDI_WHITE_PC = [0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
 // Black keys: pitch class + the white-key index each one follows (C# after C,
@@ -46,7 +48,7 @@ class MidiKeyboard {
   // Per-pin accent velocity (0 = use the global velocity).
   setVelocity(v) {
     this.velocity = v || 0;
-    if (this.velocitySel) this.velocitySel.value = String(this.velocity);
+    if (this.velocitySpinner) this.velocitySpinner.setValue(this.velocity);
   }
 
   getValue() {
@@ -63,37 +65,11 @@ class MidiKeyboard {
     this.onChange(this.value);
   }
 
-  makeSelect(options, selected) {
-    const sel = document.createElement('select');
-    options.forEach((o) => {
-      const opt = document.createElement('option');
-      opt.textContent = o;
-      sel.appendChild(opt);
-    });
-    sel.selectedIndex = selected;
-    return sel;
-  }
-
-  makeVelocitySelect() {
-    const sel = document.createElement('select');
-    const def = document.createElement('option');
-    def.value = '0';
-    def.textContent = 'Default';
-    sel.appendChild(def);
-    for (let v = 1; v <= 127; v++) {
-      const opt = document.createElement('option');
-      opt.value = String(v);
-      opt.textContent = String(v);
-      sel.appendChild(opt);
-    }
-    return sel;
-  }
-
-  makeControl(text, select) {
+  makeControl(text, element) {
     const label = document.createElement('label');
     label.className = 'midi-kb-control';
     label.appendChild(document.createTextNode(text));
-    label.appendChild(select);
+    if (element) label.appendChild(element);
     return label;
   }
 
@@ -128,18 +104,28 @@ class MidiKeyboard {
     const controls = document.createElement('div');
     controls.className = 'midi-kb-controls';
 
-    const octSel = this.makeSelect(MIDI_OCTAVES.map((o) => `Octave ${o}`), 5); // octave 4
-    octSel.addEventListener('change', () => {
-      this.octave = MIDI_OCTAVES[octSel.selectedIndex];
-      this.render();
+    this.octaveSpinner = new Spinner({
+      container: document.createElement('div'),
+      min: MIDI_OCTAVE_MIN,
+      max: MIDI_OCTAVE_MAX,
+      value: 4,
+      onChange: (v) => {
+        this.octave = v;
+        this.render();
+      },
     });
-    controls.appendChild(this.makeControl('Octave', octSel));
+    controls.appendChild(this.makeControl('Octave', this.octaveSpinner.root));
 
-    this.velocitySel = this.makeVelocitySelect();
-    this.velocitySel.addEventListener('change', () => {
-      this.velocity = parseInt(this.velocitySel.value, 10);
+    this.velocitySpinner = new Spinner({
+      container: document.createElement('div'),
+      min: 0, // 0 = use the global velocity
+      max: 127,
+      value: 0,
+      onChange: (v) => {
+        this.velocity = v;
+      },
     });
-    controls.appendChild(this.makeControl('Velocity', this.velocitySel));
+    controls.appendChild(this.makeControl('Velocity', this.velocitySpinner.root));
 
     this.root.appendChild(controls);
 

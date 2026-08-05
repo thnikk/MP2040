@@ -178,18 +178,9 @@ async function previewLed() {
 
 const previewLedDebounced = debounce(previewLed, 150);
 
-// Fill a <select> with a range of numbers and select one of them.
-function populateNumberSelect(id, min, max, value) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = '';
-  for (let i = min; i <= max; i++) {
-    const opt = document.createElement('option');
-    opt.value = String(i);
-    opt.textContent = String(i);
-    sel.appendChild(opt);
-  }
-  sel.value = String(value);
-}
+// Global MIDI Channel / Velocity spinners (visible only in MIDI mode)
+let midiChannelSpinner = null;
+let midiVelocitySpinner = null;
 
 // Gather the current controls into a full config payload for /api/setOptions.
 function buildOptionsBody() {
@@ -200,8 +191,8 @@ function buildOptionsBody() {
     midiVelocities: currentOptions.midiVelocities,
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     midi: {
-      channel: parseInt(document.getElementById('midi-channel').value, 10),
-      velocity: parseInt(document.getElementById('midi-velocity').value, 10),
+      channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
+      velocity: midiVelocitySpinner ? midiVelocitySpinner.getValue() : 127,
     },
     led: {
       ledMode: parseInt(document.getElementById('led-mode').value, 10),
@@ -230,8 +221,20 @@ async function load() {
     updateModalMode();
   });
 
-  populateNumberSelect('midi-channel', 0, 15, midi.channel ?? 0);
-  populateNumberSelect('midi-velocity', 1, 127, midi.velocity ?? 127);
+  midiChannelSpinner = new Spinner({
+    container: document.getElementById('midi-channel'),
+    min: 0,
+    max: 15,
+    value: midi.channel ?? 0,
+    onChange: () => {},
+  });
+  midiVelocitySpinner = new Spinner({
+    container: document.getElementById('midi-velocity'),
+    min: 1,
+    max: 127,
+    value: midi.velocity ?? 127,
+    onChange: () => {},
+  });
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
   document.getElementById('led-mode').addEventListener('change', previewLed);

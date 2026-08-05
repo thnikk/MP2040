@@ -44,9 +44,9 @@
         </select>
         <div id="midi-settings" hidden>
           <label for="midi-channel">MIDI Channel</label>
-          <select id="midi-channel"></select>
+          <div id="midi-channel" class="midi-spinner"></div>
           <label for="midi-velocity">MIDI Velocity</label>
-          <select id="midi-velocity"></select>
+          <div id="midi-velocity" class="midi-spinner"></div>
         </div>
         <p class="hint">The pad enumerates as this device at boot. Hold the web config pin at power-on to get back here. MIDI Channel and Velocity apply in MIDI mode.</p>
       </div>
@@ -57,15 +57,13 @@
       <div class="led-form">
         <div class="led-row">
           <label class="led-mode-label" for="led-mode">LED Mode</label>
-          <div class="led-mode-select">
-            <select id="led-mode">
+          <select id="led-mode">
             <option value="0">Static</option>
             <option value="1">Cycle</option>
             <option value="2">Reactive</option>
             <option value="3">BPS</option>
             <option value="4">Ripple</option>
           </select>
-          </div>
           <div class="led-slider" id="led-brightness"></div>
           <div class="led-slider" id="led-speed"></div>
         </div>
@@ -119,6 +117,7 @@
   </div>
 
   <script src="/multiselect.js"></script>
+  <script src="/spinner.js"></script>
   <script src="/keyboardwidget.js"></script>
   <script src="/midikeyboard.js"></script>
   <script src="/boardview.js"></script>
