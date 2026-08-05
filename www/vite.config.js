@@ -24,7 +24,10 @@ export default defineConfig(({ mode }) => {
       ...(proxyToBoard
         ? {
             proxy: {
-              '/api': { target: baseUrl, changeOrigin: true },
+              // timeout/proxyTimeout 0: the board long-polls /api/getPinState
+              // (parks the request until a button changes), so don't let the
+              // proxy's default 120s socket timeout kill it.
+              '/api': { target: baseUrl, changeOrigin: true, timeout: 0, proxyTimeout: 0 },
               '/board.svg': { target: baseUrl, changeOrigin: true },
             },
           }

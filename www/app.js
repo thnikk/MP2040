@@ -299,22 +299,31 @@ async function load() {
   updateModalMode();
 
   // Live pin state: highlight buttons yellow while their physical switch is
-  // held. Polled at 10Hz, paused while the tab is hidden to keep load off the
-  // single-connection server when nobody is looking.
-  async function pollPinState() {
-    try {
-      const res = await api('/api/getPinState');
-      if (boardView) boardView.setHeldPins(res.heldPins || []);
-    } catch (e) {
-      // Ignore: transient network errors shouldn't spam the status bar.
-    }
+  // held. The board answers /api/getPinState only when a button actually
+  // changes (long-poll), so this is event-driven rather than polled. A small
+  // gap before each reconnect keeps the mock server (which answers instantly)
+  // from being hammered, and the whole loop pauses while the tab is hidden.
+  let pinStateTimer = null;
+  function pollPinState() {
+    if (document.hidden) return;
+    pinStateTimer = setTimeout(async () => {
+      try {
+        const res = await api('/api/getPinState');
+        if (boardView) boardView.setHeldPins(res.heldPins || []);
+      } catch (e) {
+        // Server closed the parked request (idle timeout); just retry.
+      }
+      pollPinState();
+    }, 20);
   }
-  const pollTimer = setInterval(pollPinState, 100);
-  pollPinState();
+  function stopPinState() {
+    clearTimeout(pinStateTimer);
+  }
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) clearInterval(pollTimer);
-    else setInterval(pollPinState, 100);
+    if (document.hidden) stopPinState();
+    else pollPinState();
   });
+  pollPinState();
 }
 
 // Show either the key/modifier pickers (keyboard mode) or the MIDI note picker

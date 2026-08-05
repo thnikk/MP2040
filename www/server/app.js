@@ -106,7 +106,10 @@ export function createMockApp() {
   });
 
   app.get('/api/getPinState', (req, res) => {
-    res.send({ heldPins: [] });
+    // The real board parks the request until a button is pressed; the mock has
+    // no buttons, so hold it briefly to mimic that cadence (the client
+    // reconnects after each answer, so returning instantly would hot-loop).
+    setTimeout(() => res.send({ heldPins: [] }), 1000);
   });
 
   app.get('/api/getFirmwareVersion', (req, res) => {

@@ -56,6 +56,14 @@
 #define LWIP_HTTPD_CGI_SSI              0
 #define LWIP_HTTPD_SSI_INCLUDE_TAG      0
 #define LWIP_HTTPD_CUSTOM_FILES         1
+// Dynamic read + async read power the long-polled /api/getPinState: the web
+// UI parks one HTTP request and httpd answers it only when a button changes.
+#define LWIP_HTTPD_DYNAMIC_FILE_READ    1
+#define LWIP_HTTPD_FS_ASYNC_READ        1
+// Parked (long-poll) connections get polled every HTTPD_POLL_INTERVAL*500ms;
+// the default retry limit (4) would close them after ~8s, so raise it. A
+// request is answered on key change, so these only linger while idle.
+#define HTTPD_MAX_RETRIES               3600
 #define LWIP_HTTPD_SUPPORT_POST         1
 #define LWIP_HTTPD_SUPPORT_V09          0
 #define LWIP_HTTPD_SUPPORT_11_KEEPALIVE 0 // Causes lockups with CGI requests
