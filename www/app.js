@@ -57,15 +57,6 @@ const MULTISELECT_OPTIONS = [
     .map(([label, value]) => ({ group: 'keys', label, value })),
 ];
 
-// MIDI note names (0-127). Note 60 is middle C (C4).
-const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-function midiNoteName(note) {
-  if (note <= 0) return 'None';
-  const n = note % 12;
-  const octave = Math.floor(note / 12) - 1;
-  return `${NOTE_NAMES[n]}${octave}`;
-}
-
 // Working copy of the config from /api/getOptions, edited via the modal
 let currentOptions = null;
 
@@ -77,6 +68,9 @@ let modalSelect = null;
 
 // Visual keyboard picker (keyboardwidget.js) used in the key modal
 let keyboardWidget = null;
+
+// MIDI note picker (midikeyboard.js) used in the key modal in MIDI mode
+let midiKeyboard = null;
 
 // Pin currently being edited in the modal
 let editingPin = -1;
@@ -270,25 +264,13 @@ async function load() {
     },
   });
 
-  populateMidiNotes();
+  midiKeyboard = new MidiKeyboard({
+    container: document.getElementById('key-modal-midi'),
+    value: 0,
+    onChange: () => {},
+  });
 
   initBoard(options);
-}
-
-// Fill the per-pin MIDI note dropdown with "None" + note names 1-127.
-function populateMidiNotes() {
-  const sel = document.getElementById('key-modal-midi');
-  sel.innerHTML = '';
-  const none = document.createElement('option');
-  none.value = '0';
-  none.textContent = 'None';
-  sel.appendChild(none);
-  for (let note = 1; note <= 127; note++) {
-    const opt = document.createElement('option');
-    opt.value = String(note);
-    opt.textContent = midiNoteName(note);
-    sel.appendChild(opt);
-  }
 }
 
 // Show either the key/modifier pickers (keyboard mode) or the MIDI note picker
@@ -297,7 +279,7 @@ function updateModalMode() {
   const midiMode = Number(currentOptions.defaultInputMode || 1) === 2;
   document.getElementById('key-modal-select').hidden = midiMode;
   document.getElementById('key-modal-keyboard').hidden = midiMode;
-  document.getElementById('key-modal-midi').closest('.midi-row').hidden = !midiMode;
+  document.getElementById('key-modal-midi').hidden = !midiMode;
   document.getElementById('key-modal-hint').textContent = midiMode
     ? 'Pick a MIDI note for this button (0 = no note).'
     : 'Pick a key and any number of modifiers from the Modifiers group, or click a key on the keyboard below.';
@@ -322,9 +304,12 @@ function openKeyModal(pin) {
   const midiNote = Number(currentOptions.midiNotes?.[pin] || 0);
   modalSelect.setValue(keycode, mask);
   keyboardWidget.setValue(keycode, mask);
-  document.getElementById('key-modal-midi').value = String(midiNote);
+  midiKeyboard.setValue(midiNote);
   updateModalMode();
   document.getElementById('key-modal').hidden = false;
+  // The widget may have been built while the modal was hidden, so re-fit the
+  // octave window now that it has a real width.
+  requestAnimationFrame(() => midiKeyboard.refresh());
   if (boardView) boardView.highlightPin(pin);
 }
 
@@ -340,7 +325,7 @@ function saveKeyModal() {
   currentOptions.keycodes[editingPin] = keycode;
   currentOptions.modifierMasks[editingPin] = mask;
   if (!currentOptions.midiNotes) currentOptions.midiNotes = new Array(30).fill(0);
-  currentOptions.midiNotes[editingPin] = parseInt(document.getElementById('key-modal-midi').value, 10);
+  currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
   if (boardView) boardView.setOptions(currentOptions);
   closeKeyModal();
 }

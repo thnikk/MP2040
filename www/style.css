@@ -491,29 +491,180 @@ select {
   flex-basis: 100%;
 }
 
-/* MIDI note picker in the key modal */
-.midi-row {
+/* MIDI keyboard picker in the key modal */
+#key-modal-midi[hidden],
+#key-modal-select[hidden],
+#key-modal-keyboard[hidden] {
+  display: none;
+}
+
+.midi-kb {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   margin-top: 16px;
 }
 
-/* .midi-row / .keyboard-widget set display:flex, which overrides the hidden
-   attribute's UA display:none — force it here so the modal can swap modes. */
-#key-modal-select[hidden],
-#key-modal-keyboard[hidden],
-.midi-row[hidden] {
-  display: none;
+.midi-kb-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.midi-row label {
+.midi-kb-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 
-.midi-row select {
+.midi-kb-control select {
+  width: auto;
+  min-width: 8rem;
+}
+
+.midi-kb-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.midi-kb-selected {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.midi-kb-clear {
+  background: var(--bg-3);
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 2px 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.midi-kb-clear:hover {
+  border-color: var(--nord11);
+  color: var(--nord11);
+}
+
+/* Piano */
+.midi-kb-piano {
+  position: relative;
+  height: 172px;
+  overflow: hidden; /* keys always fill the width; never scroll */
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--bg-1);
+  user-select: none;
+}
+
+/* White keys: flex row so they always fill the width evenly. */
+.midi-kb-whites {
+  position: absolute;
+  inset: 8px 8px 26px 8px;
+  display: flex;
+}
+
+.midi-key-white {
   flex: 1 1 0;
   min-width: 0;
+  height: 100%;
+  /* Reset the generic pill-button padding/radius/font so keys can shrink
+     to fit any number of octaves instead of being forced to a minimum
+     ~50px width by that rule's 24px horizontal padding. */
+  padding: 0 0 4px;
+  border: 1px solid var(--nord3);
+  border-radius: 4px;
+  background: var(--nord4);
+  color: var(--nord0);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* Black keys: absolutely positioned (in %) over the white-key row. */
+.midi-kb-blacks {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  height: 60%;
+  pointer-events: none;
+}
+
+.midi-key-black {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  min-width: 0;
+  /* Same reset as .midi-key-white: without this the generic button rule's
+     24px horizontal padding forces every key to ~50px wide regardless of
+     the computed inline width, which is what caused the overlap. */
+  padding: 0;
+  border: 1px solid var(--nord3);
+  border-radius: 0 0 4px 4px;
+  background: var(--nord0);
+  z-index: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.midi-key-white.inscale,
+.midi-key-black.inscale {
+  /* scale tones keep their normal piano colors; only the selected key stands out */
+}
+
+.midi-key-white.selected,
+.midi-key-black.selected {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--nord13);
+}
+
+/* Octave labels under the keys */
+.midi-kb-labels {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 6px;
+  height: 16px;
+}
+
+.midi-kb-octave {
+  position: absolute;
+  top: 0;
+  height: 16px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.midi-kb-octave.current {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.midi-key-white:disabled,
+.midi-key-black:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.midi-key-note {
+  opacity: 0.7;
+  font-size: 0.65rem;
 }
 
 /* Color picker pill buttons */
