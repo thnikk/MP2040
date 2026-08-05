@@ -39,6 +39,9 @@ public:
 	KeyMapping& getKeyMapping() { return config.keyMapping; }
 	LEDOptions& getLedOptions() { return config.ledOptions; }
 	int32_t getWebConfigPin() { return config.webConfigPin; }
+	// Capacitive touch pin mask, from the board's TOUCH_GPxx defines. A physical
+	// board property (like the web config pin), never a user setting.
+	Mask_t getTouchPinMask() { return touchPinMask; }
 
 	void init();
 	bool save();
@@ -66,6 +69,7 @@ private:
 	bool CONFIG_MODE = false; 			// Config mode (boot)
 	bool CONFIG_BUTTON_VISIBLE = false; // Config button visible (boot)
 	Config config;
+	Mask_t touchPinMask = 0; 			// Capacitive touch pins (board property)
 	volatile uint32_t ledPreviewGen = 0;
 	LedPreview ledPreview;
 	uint32_t lastConsumedLedPreviewGen = 0;

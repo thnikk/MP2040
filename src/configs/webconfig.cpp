@@ -4,6 +4,7 @@
 #include "storagemanager.h"
 #include "configmanager.h"
 #include "system.h"
+#include "touch/TouchGpio.h"
 #include "types.h"
 #include "version.h"
 #include "helper.h"
@@ -241,7 +242,11 @@ std::string getPinState()
 {
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
 
-    uint32_t newState = ~gpio_get_all();
+    // Touch pads are PIO-driven, so gpio_get_all() reports their floating
+    // discharge level. Read them through the touch driver instead.
+    const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
+    uint32_t newState = ~gpio_get_all() & ~touchPinMask;
+    newState |= TouchGpio::getInstance().scan();
     JsonArray heldPins = doc.createNestedArray("heldPins");
     for (uint32_t pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
         if (newState & (1 << pin)) {

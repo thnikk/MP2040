@@ -205,6 +205,97 @@
 #define MODIFIER_GP29 0
 #endif
 
+#ifndef TOUCH_GP00
+#define TOUCH_GP00 0
+#endif
+#ifndef TOUCH_GP01
+#define TOUCH_GP01 0
+#endif
+#ifndef TOUCH_GP02
+#define TOUCH_GP02 0
+#endif
+#ifndef TOUCH_GP03
+#define TOUCH_GP03 0
+#endif
+#ifndef TOUCH_GP04
+#define TOUCH_GP04 0
+#endif
+#ifndef TOUCH_GP05
+#define TOUCH_GP05 0
+#endif
+#ifndef TOUCH_GP06
+#define TOUCH_GP06 0
+#endif
+#ifndef TOUCH_GP07
+#define TOUCH_GP07 0
+#endif
+#ifndef TOUCH_GP08
+#define TOUCH_GP08 0
+#endif
+#ifndef TOUCH_GP09
+#define TOUCH_GP09 0
+#endif
+#ifndef TOUCH_GP10
+#define TOUCH_GP10 0
+#endif
+#ifndef TOUCH_GP11
+#define TOUCH_GP11 0
+#endif
+#ifndef TOUCH_GP12
+#define TOUCH_GP12 0
+#endif
+#ifndef TOUCH_GP13
+#define TOUCH_GP13 0
+#endif
+#ifndef TOUCH_GP14
+#define TOUCH_GP14 0
+#endif
+#ifndef TOUCH_GP15
+#define TOUCH_GP15 0
+#endif
+#ifndef TOUCH_GP16
+#define TOUCH_GP16 0
+#endif
+#ifndef TOUCH_GP17
+#define TOUCH_GP17 0
+#endif
+#ifndef TOUCH_GP18
+#define TOUCH_GP18 0
+#endif
+#ifndef TOUCH_GP19
+#define TOUCH_GP19 0
+#endif
+#ifndef TOUCH_GP20
+#define TOUCH_GP20 0
+#endif
+#ifndef TOUCH_GP21
+#define TOUCH_GP21 0
+#endif
+#ifndef TOUCH_GP22
+#define TOUCH_GP22 0
+#endif
+#ifndef TOUCH_GP23
+#define TOUCH_GP23 0
+#endif
+#ifndef TOUCH_GP24
+#define TOUCH_GP24 0
+#endif
+#ifndef TOUCH_GP25
+#define TOUCH_GP25 0
+#endif
+#ifndef TOUCH_GP26
+#define TOUCH_GP26 0
+#endif
+#ifndef TOUCH_GP27
+#define TOUCH_GP27 0
+#endif
+#ifndef TOUCH_GP28
+#define TOUCH_GP28 0
+#endif
+#ifndef TOUCH_GP29
+#define TOUCH_GP29 0
+#endif
+
 #ifndef LED_PIN
 #define LED_PIN -1
 #endif
@@ -356,6 +447,18 @@ static const int32_t defaultPinLedIndices[NUM_BANK0_GPIOS] = {
     LED_INDEX_GP15, LED_INDEX_GP16, LED_INDEX_GP17, LED_INDEX_GP18, LED_INDEX_GP19,
     LED_INDEX_GP20, LED_INDEX_GP21, LED_INDEX_GP22, LED_INDEX_GP23, LED_INDEX_GP24,
     LED_INDEX_GP25, LED_INDEX_GP26, LED_INDEX_GP27, LED_INDEX_GP28, LED_INDEX_GP29
+};
+
+// Capacitive touch pins from BoardConfig.h's TOUCH_GPxx macros. A physical
+// board property: the pads and their 1M ohm discharge resistors are soldered,
+// so this is never a user setting.
+static const uint32_t defaultTouchPins[NUM_BANK0_GPIOS] = {
+    TOUCH_GP00, TOUCH_GP01, TOUCH_GP02, TOUCH_GP03, TOUCH_GP04,
+    TOUCH_GP05, TOUCH_GP06, TOUCH_GP07, TOUCH_GP08, TOUCH_GP09,
+    TOUCH_GP10, TOUCH_GP11, TOUCH_GP12, TOUCH_GP13, TOUCH_GP14,
+    TOUCH_GP15, TOUCH_GP16, TOUCH_GP17, TOUCH_GP18, TOUCH_GP19,
+    TOUCH_GP20, TOUCH_GP21, TOUCH_GP22, TOUCH_GP23, TOUCH_GP24,
+    TOUCH_GP25, TOUCH_GP26, TOUCH_GP27, TOUCH_GP28, TOUCH_GP29
 };
 
 // -----------------------------------------------------
@@ -523,6 +626,16 @@ void Storage::init() {
     // Always use the board default so a stale stored config can't point the
     // boot check at the wrong pin.
     config.webConfigPin = PIN_WEBCONFIG;
+
+    // Capacitive touch pins are a physical board property (soldered pads and
+    // resistors); always use the board defaults so a stored config can't
+    // reassign them.
+    touchPinMask = 0;
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        if (defaultTouchPins[pin] != 0)
+            touchPinMask |= 1u << pin;
+    }
 
     // The LED data pin, strip format, strip length and LEDs per key are all
     // physical board properties; always use the board defaults so they can't

@@ -139,9 +139,13 @@ src/configs/webconfig.cpp
 src/drivers/keyboard/KeyboardDriver.cpp
 src/drivers/net/NetDriver.cpp
 src/leds/LedController.cpp
+src/touch/TouchGpio.cpp
 ${PROTO_OUTPUT_DIR}/enums.pb.c
 ${PROTO_OUTPUT_DIR}/config.pb.c
 )
+
+# Compile the touch PIO program (pioasm) into touch.pio.h
+pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/touch/touch.pio)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME ${PROJECT_NAME}_${CMAKE_PROJECT_VERSION}_${GIT_REPO_BUILD_ID}_${MP2040_BOARDCONFIG})
 
@@ -171,6 +175,7 @@ headers/drivers/shared
 headers/drivers/keyboard
 headers/drivers/net
 headers/leds
+headers/touch
 configs/${MP2040_BOARDCONFIG}
 ${PROTO_OUTPUT_DIR}
 ${CMAKE_BINARY_DIR}/headers

@@ -15,6 +15,7 @@ private:
     // GPIO debouncer
     void debounceGpioGetAll();
     Mask_t buttonGpios;
+    Mask_t touchGpios;
     Mask_t debouncedGpio;
     uint32_t gpioDebounceTime[NUM_BANK0_GPIOS];
 
