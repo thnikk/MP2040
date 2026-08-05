@@ -148,14 +148,18 @@ std::string getOptions()
     JsonArray keycodes = doc.createNestedArray("keycodes");
     JsonArray modifiers = doc.createNestedArray("modifierMasks");
     JsonArray midiNotes = doc.createNestedArray("midiNotes");
+    JsonArray midiVelocities = doc.createNestedArray("midiVelocities");
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         keycodes.add(pin < (Pin_t)keyMapping.keycodes_count ? keyMapping.keycodes[pin] : 0);
         modifiers.add(pin < (Pin_t)keyMapping.modifierMasks_count ? keyMapping.modifierMasks[pin] : 0);
         midiNotes.add(pin < (Pin_t)keyMapping.midiNotes_count ? keyMapping.midiNotes[pin] : 0);
+        midiVelocities.add(pin < (Pin_t)keyMapping.midiVelocities_count ? keyMapping.midiVelocities[pin] : 0);
     }
 
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
+    doc["midi"]["channel"] = Storage::getInstance().getMidiChannel();
+    doc["midi"]["velocity"] = Storage::getInstance().getMidiVelocity();
 
     doc["led"]["dataPin"] = ledOptions.dataPin;
     doc["led"]["ledFormat"] = ledOptions.ledFormat;
@@ -191,6 +195,7 @@ std::string setOptions()
     JsonArray keycodes = doc["keycodes"];
     JsonArray modifiers = doc["modifierMasks"];
     JsonArray midiNotes = doc["midiNotes"];
+    JsonArray midiVelocities = doc["midiVelocities"];
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)keycodes.size(); pin++)
         keyMapping.keycodes[pin] = keycodes[pin];
     keyMapping.keycodes_count = NUM_BANK0_GPIOS;
@@ -200,9 +205,21 @@ std::string setOptions()
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)midiNotes.size(); pin++)
         keyMapping.midiNotes[pin] = midiNotes[pin];
     keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)midiVelocities.size(); pin++)
+        keyMapping.midiVelocities[pin] = midiVelocities[pin];
+    keyMapping.midiVelocities_count = NUM_BANK0_GPIOS;
 
     if (doc["defaultInputMode"].is<int>())
         Storage::getInstance().setDefaultInputMode((InputMode)doc["defaultInputMode"].as<int>());
+
+    JsonObject midi = doc["midi"];
+    if (!midi.isNull())
+    {
+        if (midi["channel"].is<int>())
+            Storage::getInstance().setMidiChannel(midi["channel"].as<uint32_t>());
+        if (midi["velocity"].is<int>())
+            Storage::getInstance().setMidiVelocity(midi["velocity"].as<uint32_t>());
+    }
 
     LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
     JsonObject led = doc["led"];

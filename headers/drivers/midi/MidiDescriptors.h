@@ -3,12 +3,6 @@
 #include <stdint.h>
 #include "tusb.h"
 
-// MIDI channel used for all note messages (0-15). Hardcoded for now; a
-// configurable channel can be added later.
-#define MIDI_CHANNEL 0
-
-#define MIDI_VELOCITY 127
-
 static const uint8_t midi_string_language[]    = { 0x09, 0x04 };
 static const uint8_t midi_string_manfacturer[] = "Open Stick Community";
 static const uint8_t midi_string_product[]     = "MP2040 MIDI";

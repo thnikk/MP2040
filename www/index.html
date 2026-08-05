@@ -42,7 +42,13 @@
           <option value="1">Keyboard</option>
           <option value="2">MIDI</option>
         </select>
-        <p class="hint">The pad enumerates as this device at boot. Hold the web config pin at power-on to get back here.</p>
+        <div id="midi-settings" hidden>
+          <label for="midi-channel">MIDI Channel</label>
+          <select id="midi-channel"></select>
+          <label for="midi-velocity">MIDI Velocity</label>
+          <select id="midi-velocity"></select>
+        </div>
+        <p class="hint">The pad enumerates as this device at boot. Hold the web config pin at power-on to get back here. MIDI Channel and Velocity apply in MIDI mode.</p>
       </div>
     </section>
 

@@ -178,13 +178,31 @@ async function previewLed() {
 
 const previewLedDebounced = debounce(previewLed, 150);
 
+// Fill a <select> with a range of numbers and select one of them.
+function populateNumberSelect(id, min, max, value) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = '';
+  for (let i = min; i <= max; i++) {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = String(i);
+    sel.appendChild(opt);
+  }
+  sel.value = String(value);
+}
+
 // Gather the current controls into a full config payload for /api/setOptions.
 function buildOptionsBody() {
   return {
     keycodes: currentOptions.keycodes,
     modifierMasks: currentOptions.modifierMasks,
     midiNotes: currentOptions.midiNotes,
+    midiVelocities: currentOptions.midiVelocities,
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
+    midi: {
+      channel: parseInt(document.getElementById('midi-channel').value, 10),
+      velocity: parseInt(document.getElementById('midi-velocity').value, 10),
+    },
     led: {
       ledMode: parseInt(document.getElementById('led-mode').value, 10),
       ledSpeed: speedSlider ? speedSlider.getValue() : 236,
@@ -204,12 +222,16 @@ async function load() {
   document.getElementById('board-label').textContent = version.boardLabel || '';
 
   const led = options.led || {};
+  const midi = options.midi || {};
 
   document.getElementById('default-input-mode').value = options.defaultInputMode ?? 1;
   document.getElementById('default-input-mode').addEventListener('change', () => {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
   });
+
+  populateNumberSelect('midi-channel', 0, 15, midi.channel ?? 0);
+  populateNumberSelect('midi-velocity', 1, 127, midi.velocity ?? 127);
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
   document.getElementById('led-mode').addEventListener('change', previewLed);
@@ -271,15 +293,18 @@ async function load() {
   });
 
   initBoard(options);
+  updateModalMode();
 }
 
 // Show either the key/modifier pickers (keyboard mode) or the MIDI note picker
-// (MIDI mode) in the modal, based on the current default input mode.
+// (MIDI mode) in the modal, based on the current default input mode. Also
+// reveals the General MIDI Channel / Velocity controls only in MIDI mode.
 function updateModalMode() {
   const midiMode = Number(currentOptions.defaultInputMode || 1) === 2;
   document.getElementById('key-modal-select').hidden = midiMode;
   document.getElementById('key-modal-keyboard').hidden = midiMode;
   document.getElementById('key-modal-midi').hidden = !midiMode;
+  document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('key-modal-hint').textContent = midiMode
     ? 'Pick a MIDI note for this button (0 = no note).'
     : 'Pick a key and any number of modifiers from the Modifiers group, or click a key on the keyboard below.';
@@ -305,6 +330,7 @@ function openKeyModal(pin) {
   modalSelect.setValue(keycode, mask);
   keyboardWidget.setValue(keycode, mask);
   midiKeyboard.setValue(midiNote);
+  midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
   updateModalMode();
   document.getElementById('key-modal').hidden = false;
   // The widget may have been built while the modal was hidden, so re-fit the
@@ -325,7 +351,9 @@ function saveKeyModal() {
   currentOptions.keycodes[editingPin] = keycode;
   currentOptions.modifierMasks[editingPin] = mask;
   if (!currentOptions.midiNotes) currentOptions.midiNotes = new Array(30).fill(0);
+  if (!currentOptions.midiVelocities) currentOptions.midiVelocities = new Array(30).fill(0);
   currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
+  currentOptions.midiVelocities[editingPin] = midiKeyboard.getVelocity();
   if (boardView) boardView.setOptions(currentOptions);
   closeKeyModal();
 }

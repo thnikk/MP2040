@@ -491,6 +491,15 @@ select {
   flex-basis: 100%;
 }
 
+/* MIDI-only General controls (hidden unless the input mode is MIDI) */
+#midi-settings {
+  display: contents;
+}
+
+#midi-settings[hidden] {
+  display: none;
+}
+
 /* MIDI keyboard picker in the key modal */
 #key-modal-midi[hidden],
 #key-modal-select[hidden],
@@ -630,7 +639,6 @@ select {
 .midi-key-black.selected {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 0 0 2px var(--nord13);
 }
 
 /* Octave labels under the keys */

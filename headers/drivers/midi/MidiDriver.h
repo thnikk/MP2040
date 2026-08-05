@@ -18,7 +18,7 @@ public:
     virtual const uint8_t * get_descriptor_configuration_cb(uint8_t index);
     virtual const uint8_t * get_descriptor_device_qualifier_cb();
 private:
-    void sendNote(uint8_t cin, uint8_t note);
+    void sendNote(uint8_t cin, uint8_t note, uint8_t velocity);
     Mask_t lastKeyState = 0;
 };
 

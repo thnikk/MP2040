@@ -860,13 +860,18 @@ static void applyDefaults(Config& config)
     config.keyMapping.keycodes_count = NUM_BANK0_GPIOS;
     config.keyMapping.modifierMasks_count = NUM_BANK0_GPIOS;
     config.keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
+    config.keyMapping.midiVelocities_count = NUM_BANK0_GPIOS;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         config.keyMapping.keycodes[pin] = defaultKeycodes[pin];
         config.keyMapping.modifierMasks[pin] = defaultModifiers[pin];
         // MIDI notes default to 0 (silent) until mapped via the web config.
         config.keyMapping.midiNotes[pin] = 0;
+        // MIDI velocities default to 0 (use the global velocity).
+        config.keyMapping.midiVelocities[pin] = 0;
     }
+    config.midiOptions.channel = 0;
+    config.midiOptions.velocity = 127;
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
     config.ledOptions.ledsPerKey = LEDS_PER_KEY;
@@ -922,6 +927,14 @@ void Storage::init() {
         config.keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
         for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
             config.keyMapping.midiNotes[pin] = 0;
+    }
+    // midiVelocities default to 0 (use the global velocity) for any stored
+    // config without the field.
+    if (config.keyMapping.midiVelocities_count == 0)
+    {
+        config.keyMapping.midiVelocities_count = NUM_BANK0_GPIOS;
+        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+            config.keyMapping.midiVelocities[pin] = 0;
     }
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {

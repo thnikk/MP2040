@@ -23,6 +23,7 @@ void MidiDriver::initialize() {
 
 void MidiDriver::process() {
 	const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
+	const uint8_t globalVelocity = (uint8_t)Storage::getInstance().getMidiVelocity();
 	const Mask_t keyState = Storage::getInstance().keyState;
 
 	// Only produce note events while a host has claimed the MIDI interfaces.
@@ -41,24 +42,30 @@ void MidiDriver::process() {
 		uint8_t note = (uint8_t)keyMapping.midiNotes[pin];
 		if (note == 0) continue;
 
+		// Per-pin accent velocity overrides the global value.
+		uint8_t velocity = globalVelocity;
+		if (pin < (Pin_t)keyMapping.midiVelocities_count && keyMapping.midiVelocities[pin] != 0)
+			velocity = (uint8_t)keyMapping.midiVelocities[pin];
+
 		Mask_t pinMask = 1u << pin;
 		bool pressed = (keyState & pinMask) != 0;
 		bool wasPressed = (lastKeyState & pinMask) != 0;
 		if (pressed && !wasPressed)
-			sendNote(MIDI_CIN_NOTE_ON, note);
+			sendNote(MIDI_CIN_NOTE_ON, note, velocity);
 		else if (!pressed && wasPressed)
-			sendNote(MIDI_CIN_NOTE_OFF, note);
+			sendNote(MIDI_CIN_NOTE_OFF, note, velocity);
 	}
 
 	lastKeyState = keyState;
 }
 
-void MidiDriver::sendNote(uint8_t cin, uint8_t note) {
+void MidiDriver::sendNote(uint8_t cin, uint8_t note, uint8_t velocity) {
 	uint8_t packet[4];
-	packet[0] = (uint8_t)(0x00 | cin);              // cable number 0, code index number
-	packet[1] = (uint8_t)((cin == MIDI_CIN_NOTE_ON ? 0x90 : 0x80) | MIDI_CHANNEL);
+	packet[0] = (uint8_t)(0x00 | cin);                       // cable number 0, code index number
+	packet[1] = (uint8_t)((cin == MIDI_CIN_NOTE_ON ? 0x90 : 0x80) |
+	                      Storage::getInstance().getMidiChannel());
 	packet[2] = note;
-	packet[3] = MIDI_VELOCITY;
+	packet[3] = velocity;
 	tud_midi_packet_write(packet);
 }
 

@@ -40,6 +40,22 @@ public:
 	KeyMapping& getKeyMapping() { return config.keyMapping; }
 	LEDOptions& getLedOptions() { return config.ledOptions; }
 	int32_t getWebConfigPin() { return config.webConfigPin; }
+	// Global MIDI output options (channel 0-15, velocity 1-127). Defaults are
+	// 0 / 127 for configs without the field.
+	uint32_t getMidiChannel() {
+		return config.has_midiOptions ? config.midiOptions.channel : 0;
+	}
+	uint32_t getMidiVelocity() {
+		return config.has_midiOptions ? config.midiOptions.velocity : 127;
+	}
+	void setMidiChannel(uint32_t channel) {
+		config.midiOptions.channel = channel;
+		config.has_midiOptions = true;
+	}
+	void setMidiVelocity(uint32_t velocity) {
+		config.midiOptions.velocity = velocity;
+		config.has_midiOptions = true;
+	}
 	// Input mode used at boot when no boot-mode pin is held. INPUT_MODE_CONFIG
 	// is never a valid default (config mode is entered via the web config pin),
 	// so it maps to keyboard; this also keeps old configs without the field on

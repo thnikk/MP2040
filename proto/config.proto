@@ -10,6 +10,18 @@ message KeyMapping
     // Per-pin MIDI note numbers (0-127). 0 = no note (pin silent in MIDI
     // mode). Only consulted when the default input mode is MIDI.
     repeated uint32 midiNotes = 3 [(nanopb).max_count = 30];
+    // Per-pin note-on velocity (1-127). 0 = use the global MIDI velocity
+    // (a per-note accent).
+    repeated uint32 midiVelocities = 4 [(nanopb).max_count = 30];
+}
+
+// Global MIDI output options, used when the default input mode is MIDI.
+message MIDIOptions
+{
+    // MIDI channel for all note messages (0-15).
+    optional uint32 channel = 1;
+    // Note-on velocity (1-127).
+    optional uint32 velocity = 2;
 }
 
 message LEDOptions
@@ -43,4 +55,5 @@ message Config
     // is treated as KEYBOARD (config mode is only ever entered via the web
     // config pin). Defaults to keyboard for existing configs.
     optional InputMode defaultInputMode = 4;
+    optional MIDIOptions midiOptions = 5;
 }

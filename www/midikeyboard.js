@@ -32,6 +32,7 @@ function mkNoteName(note) {
 class MidiKeyboard {
   constructor({ container, value, onChange }) {
     this.value = value || 0;
+    this.velocity = 0; // 0 = use the global velocity
     this.onChange = onChange || (() => {});
     this.octave = 4;
     this.buildDom(container);
@@ -42,8 +43,18 @@ class MidiKeyboard {
     this.render();
   }
 
+  // Per-pin accent velocity (0 = use the global velocity).
+  setVelocity(v) {
+    this.velocity = v || 0;
+    if (this.velocitySel) this.velocitySel.value = String(this.velocity);
+  }
+
   getValue() {
     return this.value;
+  }
+
+  getVelocity() {
+    return this.velocity;
   }
 
   handleKeyClick(note) {
@@ -60,6 +71,21 @@ class MidiKeyboard {
       sel.appendChild(opt);
     });
     sel.selectedIndex = selected;
+    return sel;
+  }
+
+  makeVelocitySelect() {
+    const sel = document.createElement('select');
+    const def = document.createElement('option');
+    def.value = '0';
+    def.textContent = 'Default';
+    sel.appendChild(def);
+    for (let v = 1; v <= 127; v++) {
+      const opt = document.createElement('option');
+      opt.value = String(v);
+      opt.textContent = String(v);
+      sel.appendChild(opt);
+    }
     return sel;
   }
 
@@ -108,6 +134,12 @@ class MidiKeyboard {
       this.render();
     });
     controls.appendChild(this.makeControl('Octave', octSel));
+
+    this.velocitySel = this.makeVelocitySelect();
+    this.velocitySel.addEventListener('change', () => {
+      this.velocity = parseInt(this.velocitySel.value, 10);
+    });
+    controls.appendChild(this.makeControl('Velocity', this.velocitySel));
 
     this.root.appendChild(controls);
 
