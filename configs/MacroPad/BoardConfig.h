@@ -78,7 +78,7 @@
 #define LED_INDEX_IDX07 6
 #define LED_INDEX_IDX08 10
 #define LED_INDEX_IDX09 3
-#define LED_INDEX_IDX10 6
+#define LED_INDEX_IDX10 7
 #define LED_INDEX_IDX11 11
 
 // Spatial layout of the LED strip for 2D effects (ripple, chase, ...).
