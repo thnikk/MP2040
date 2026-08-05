@@ -859,10 +859,13 @@ static void applyDefaults(Config& config)
     config = Config Config_init_zero;
     config.keyMapping.keycodes_count = NUM_BANK0_GPIOS;
     config.keyMapping.modifierMasks_count = NUM_BANK0_GPIOS;
+    config.keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         config.keyMapping.keycodes[pin] = defaultKeycodes[pin];
         config.keyMapping.modifierMasks[pin] = defaultModifiers[pin];
+        // MIDI notes default to 0 (silent) until mapped via the web config.
+        config.keyMapping.midiNotes[pin] = 0;
     }
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
@@ -913,6 +916,13 @@ void Storage::init() {
         config.keyMapping.keycodes_count = NUM_BANK0_GPIOS;
     if (config.keyMapping.modifierMasks_count == 0)
         config.keyMapping.modifierMasks_count = NUM_BANK0_GPIOS;
+    // midiNotes default to 0 (silent) for any stored config without the field.
+    if (config.keyMapping.midiNotes_count == 0)
+    {
+        config.keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
+        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+            config.keyMapping.midiNotes[pin] = 0;
+    }
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (config.keyMapping.keycodes[pin] == 0 && defaultKeycodes[pin] != 0)

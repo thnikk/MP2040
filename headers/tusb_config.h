@@ -127,6 +127,9 @@
 #define CFG_TUD_CDC              0
 #define CFG_TUD_ECM_RNDIS        1
 #define CFG_TUD_HID              1
+#define CFG_TUD_MIDI             1
+#define CFG_TUD_MIDI_RX_BUFSIZE  64
+#define CFG_TUD_MIDI_TX_BUFSIZE  64
 
 #ifdef __cplusplus
  }

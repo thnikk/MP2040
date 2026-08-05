@@ -37,6 +37,13 @@ function keyLabel(code) {
   return KEY_LABELS[code] || '';
 }
 
+const MIDI_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function midiNoteName(note) {
+  if (note <= 0) return '';
+  const octave = Math.floor(note / 12) - 1;
+  return `${MIDI_NOTE_NAMES[note % 12]}${octave}`;
+}
+
 function isShape(el) {
   return SHAPE_TAGS.includes(el.tagName.toLowerCase());
 }
@@ -303,9 +310,13 @@ class BoardView {
 
       const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
+      const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
+      const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
 
       let lines = [];
-      if (keycode > 0) {
+      if (midiMode) {
+        if (midiNote > 0) lines.push(midiNoteName(midiNote));
+      } else if (keycode > 0) {
         for (let i = 0; i < 8; i++) {
           if (mask & (1 << i)) lines.push(MODIFIER_SHORT[0xe0 + i] || '');
         }
@@ -446,6 +457,9 @@ class BoardView {
       if (!el) return;
 
       const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
+      const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
+      const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
+      const isActive = midiMode ? midiNote > 0 : keycode > 0;
       const isHighlighted = pinNumber === this.highlightedPin;
 
       shapesOf(el).forEach((shape, idx) => {
@@ -456,7 +470,7 @@ class BoardView {
           s.style.setProperty('stroke', '#ffff00', 'important');
           s.style.setProperty('stroke-width', '3', 'important');
           s.style.removeProperty('fill-opacity');
-        } else if (keycode > 0) {
+        } else if (isActive) {
           s.style.setProperty('fill', orig || 'var(--bg-2)', 'important');
           s.style.removeProperty('fill-opacity');
           s.style.setProperty('stroke', 'var(--bg-4)', 'important');

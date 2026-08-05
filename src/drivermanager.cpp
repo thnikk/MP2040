@@ -2,6 +2,7 @@
 
 #include "drivers/net/NetDriver.h"
 #include "drivers/keyboard/KeyboardDriver.h"
+#include "drivers/midi/MidiDriver.h"
 
 void DriverManager::setup(InputMode mode) {
     switch (mode) {
@@ -10,6 +11,9 @@ void DriverManager::setup(InputMode mode) {
             break;
         case INPUT_MODE_KEYBOARD:
             driver = new KeyboardDriver();
+            break;
+        case INPUT_MODE_MIDI:
+            driver = new MidiDriver();
             break;
         default:
             return;

@@ -7,6 +7,9 @@ message KeyMapping
 {
     repeated uint32 keycodes = 1 [(nanopb).max_count = 30];
     repeated uint32 modifierMasks = 2 [(nanopb).max_count = 30];
+    // Per-pin MIDI note numbers (0-127). 0 = no note (pin silent in MIDI
+    // mode). Only consulted when the default input mode is MIDI.
+    repeated uint32 midiNotes = 3 [(nanopb).max_count = 30];
 }
 
 message LEDOptions
@@ -36,4 +39,8 @@ message Config
     optional KeyMapping keyMapping = 1;
     optional LEDOptions ledOptions = 2;
     optional int32 webConfigPin = 3;
+    // Input mode used at boot when no boot-mode pin is held. INPUT_MODE_CONFIG
+    // is treated as KEYBOARD (config mode is only ever entered via the web
+    // config pin). Defaults to keyboard for existing configs.
+    optional InputMode defaultInputMode = 4;
 }

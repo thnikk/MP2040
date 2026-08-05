@@ -42,6 +42,8 @@ function defaultOptions() {
   return {
     keycodes,
     modifierMasks,
+    midiNotes: new Array(30).fill(0),
+    defaultInputMode: 1,
     led: {
       dataPin: board?.led?.dataPin ?? -1,
       ledFormat: board?.led?.ledFormat ?? 0,
@@ -81,6 +83,8 @@ export function createMockApp() {
     const body = req.body || {};
     if (Array.isArray(body.keycodes)) current.keycodes = body.keycodes;
     if (Array.isArray(body.modifierMasks)) current.modifierMasks = body.modifierMasks;
+    if (Array.isArray(body.midiNotes)) current.midiNotes = body.midiNotes;
+    if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;
     if (body.led) current.led = { ...current.led, ...body.led };
     store = current;
     res.send(current);

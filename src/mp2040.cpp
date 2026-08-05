@@ -51,10 +51,11 @@ void MP2040::setup() {
 			break;
 	}
 
-	// Default: keyboard mode. Arm the touch boot window so a touch pad (web
-	// config or boot) can be touched before the keyboard starts to enter that
-	// mode. Arming is based on the board's physical touch pins, not on which
-	// pins have a keycode assigned.
+	// Default: the input mode stored in config (keyboard unless set to MIDI
+	// via the web config). Arm the touch boot window so a touch pad (web
+	// config or boot) can be touched before the input driver starts to enter
+	// that mode. Arming is based on the board's physical touch pins, not on
+	// which pins have a keycode assigned.
 	const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
 	const int32_t wcPin = Storage::getInstance().getWebConfigPin();
 	const int32_t bootPin = Storage::getInstance().getBootPin();
@@ -64,7 +65,7 @@ void MP2040::setup() {
 		bootTouchDeadline = getMillis() + WEB_CONFIG_TOUCH_WINDOW_MS;
 	}
 
-	DriverManager::getInstance().setup(INPUT_MODE_KEYBOARD);
+	DriverManager::getInstance().setup(Storage::getInstance().getDefaultInputMode());
 }
 
 /**
@@ -117,7 +118,11 @@ void MP2040::initializeKeyGpio() {
 
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
 	{
-		if (pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0)
+		// A pin is active if it has a keycode or a MIDI note assigned. The
+		// active mode determines which table is consulted.
+		const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
+		const bool hasNote = pin < (Pin_t)keyMapping.midiNotes_count && keyMapping.midiNotes[pin] != 0;
+		if (hasKey || hasNote)
 		{
 			if (touchPinMask & (1 << pin))
 			{
@@ -143,7 +148,9 @@ void MP2040::deinitializeKeyGpio() {
 	KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
 	{
-		if (pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0)
+		const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
+		const bool hasNote = pin < (Pin_t)keyMapping.midiNotes_count && keyMapping.midiNotes[pin] != 0;
+		if (hasKey || hasNote)
 		{
 			gpio_deinit(pin);
 		}

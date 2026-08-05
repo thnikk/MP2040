@@ -40,6 +40,19 @@ public:
 	KeyMapping& getKeyMapping() { return config.keyMapping; }
 	LEDOptions& getLedOptions() { return config.ledOptions; }
 	int32_t getWebConfigPin() { return config.webConfigPin; }
+	// Input mode used at boot when no boot-mode pin is held. INPUT_MODE_CONFIG
+	// is never a valid default (config mode is entered via the web config pin),
+	// so it maps to keyboard; this also keeps old configs without the field on
+	// keyboard mode.
+	InputMode getDefaultInputMode() {
+		if (!config.has_defaultInputMode || config.defaultInputMode == INPUT_MODE_CONFIG)
+			return INPUT_MODE_KEYBOARD;
+		return config.defaultInputMode;
+	}
+	void setDefaultInputMode(InputMode mode) {
+		config.defaultInputMode = mode;
+		config.has_defaultInputMode = true;
+	}
 	// Boot-mode shortcut pin (USB bootloader), from the board's PIN_BOOT define.
 	// A physical board property (like the web config pin), never a user setting.
 	int32_t getBootPin() { return bootPin; }

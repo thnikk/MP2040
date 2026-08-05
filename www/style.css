@@ -469,6 +469,53 @@ select {
   flex: 1 1 0;
 }
 
+/* Default input mode selector */
+.general-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.general-form label {
+  white-space: nowrap;
+}
+
+.general-form select {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 10rem;
+}
+
+.general-form .hint {
+  flex-basis: 100%;
+}
+
+/* MIDI note picker in the key modal */
+.midi-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* .midi-row / .keyboard-widget set display:flex, which overrides the hidden
+   attribute's UA display:none — force it here so the modal can swap modes. */
+#key-modal-select[hidden],
+#key-modal-keyboard[hidden],
+.midi-row[hidden] {
+  display: none;
+}
+
+.midi-row label {
+  white-space: nowrap;
+}
+
+.midi-row select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* Color picker pill buttons */
 .led-colors {
   display: grid;

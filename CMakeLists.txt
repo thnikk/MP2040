@@ -138,6 +138,7 @@ src/system.cpp
 src/configs/webconfig.cpp
 src/drivers/keyboard/KeyboardDriver.cpp
 src/drivers/net/NetDriver.cpp
+src/drivers/midi/MidiDriver.cpp
 src/leds/LedController.cpp
 src/touch/TouchGpio.cpp
 ${PROTO_OUTPUT_DIR}/enums.pb.c
@@ -174,6 +175,7 @@ headers/drivers
 headers/drivers/shared
 headers/drivers/keyboard
 headers/drivers/net
+headers/drivers/midi
 headers/leds
 headers/touch
 configs/${MP2040_BOARDCONFIG}

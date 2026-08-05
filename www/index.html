@@ -35,6 +35,18 @@
 
   <main>
     <section>
+      <h2>General</h2>
+      <div class="general-form">
+        <label for="default-input-mode">Default Input Mode</label>
+        <select id="default-input-mode">
+          <option value="1">Keyboard</option>
+          <option value="2">MIDI</option>
+        </select>
+        <p class="hint">The pad enumerates as this device at boot. Hold the web config pin at power-on to get back here.</p>
+      </div>
+    </section>
+
+    <section>
       <h2>LEDs</h2>
       <div class="led-form">
         <div class="led-row">
@@ -60,7 +72,7 @@
 
     <section>
       <h2>Board</h2>
-      <p class="hint">Click a button on the board to set its key and modifiers.</p>
+      <p class="hint">Click a button on the board to set its key and modifiers (keyboard mode) or its MIDI note (MIDI mode).</p>
       <div id="board-panel"></div>
     </section>
 
@@ -90,9 +102,13 @@
         <h3 id="key-modal-title">GP00</h3>
         <button id="key-modal-close" class="modal-close" type="button" aria-label="Close">×</button>
       </div>
-      <p class="hint">Pick a key and any number of modifiers from the Modifiers group, or click a key on the keyboard below.</p>
+      <p class="hint" id="key-modal-hint">Pick a key and any number of modifiers from the Modifiers group, or click a key on the keyboard below.</p>
       <div id="key-modal-select"></div>
       <div id="key-modal-keyboard"></div>
+      <div class="midi-row">
+        <label for="key-modal-midi">MIDI Note</label>
+        <select id="key-modal-midi"></select>
+      </div>
       <div class="modal-actions">
         <button id="key-modal-save" type="button">Save</button>
       </div>

@@ -8,6 +8,7 @@ enum InputMode
 
     INPUT_MODE_CONFIG = 0;
     INPUT_MODE_KEYBOARD = 1;
+    INPUT_MODE_MIDI = 2;
 }
 
 enum LEDFormat_Proto

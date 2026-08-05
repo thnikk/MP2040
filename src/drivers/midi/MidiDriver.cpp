@@ -1,0 +1,95 @@
+#include "drivers/midi/MidiDriver.h"
+#include "storagemanager.h"
+#include "drivers/shared/driverhelper.h"
+#include "types.h"
+
+#include "class/midi/midi_device.h"
+
+void MidiDriver::initialize() {
+	lastKeyState = 0;
+
+	class_driver = {
+	#if CFG_TUSB_DEBUG >= 2
+		.name = "MIDI",
+	#endif
+		.init = midid_init,
+		.reset = midid_reset,
+		.open = midid_open,
+		.control_xfer_cb = midid_control_xfer_cb,
+		.xfer_cb = midid_xfer_cb,
+		.sof = NULL
+	};
+}
+
+void MidiDriver::process() {
+	const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
+	const Mask_t keyState = Storage::getInstance().keyState;
+
+	// Only produce note events while a host has claimed the MIDI interfaces.
+	// Keep the previous state in sync so a later mount doesn't send spurious
+	// note-offs for keys already held down.
+	if (!tud_midi_mounted()) {
+		lastKeyState = keyState;
+		return;
+	}
+
+	// Edge-triggered: send note-on on a press, note-off on a release. This is
+	// unlike the keyboard driver's level-triggered bitmap report.
+	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+		if (pin >= (Pin_t)keyMapping.midiNotes_count) continue;
+
+		uint8_t note = (uint8_t)keyMapping.midiNotes[pin];
+		if (note == 0) continue;
+
+		Mask_t pinMask = 1u << pin;
+		bool pressed = (keyState & pinMask) != 0;
+		bool wasPressed = (lastKeyState & pinMask) != 0;
+		if (pressed && !wasPressed)
+			sendNote(MIDI_CIN_NOTE_ON, note);
+		else if (!pressed && wasPressed)
+			sendNote(MIDI_CIN_NOTE_OFF, note);
+	}
+
+	lastKeyState = keyState;
+}
+
+void MidiDriver::sendNote(uint8_t cin, uint8_t note) {
+	uint8_t packet[4];
+	packet[0] = (uint8_t)(0x00 | cin);              // cable number 0, code index number
+	packet[1] = (uint8_t)((cin == MIDI_CIN_NOTE_ON ? 0x90 : 0x80) | MIDI_CHANNEL);
+	packet[2] = note;
+	packet[3] = MIDI_VELOCITY;
+	tud_midi_packet_write(packet);
+}
+
+// tud_hid_get_report_cb
+uint16_t MidiDriver::get_report(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen) {
+	return 0;
+}
+
+void MidiDriver::set_report(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize) {}
+
+bool MidiDriver::vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request) {
+    return false;
+}
+
+const uint16_t * MidiDriver::get_descriptor_string_cb(uint8_t index, uint16_t langid) {
+	const char *value = (const char *)midi_string_descriptors[index];
+	return getStringDescriptor(value, index); // getStringDescriptor returns a static array
+}
+
+const uint8_t * MidiDriver::get_descriptor_device_cb() {
+    return midi_device_descriptor;
+}
+
+const uint8_t * MidiDriver::get_hid_descriptor_report_cb(uint8_t itf) {
+    return nullptr;
+}
+
+const uint8_t * MidiDriver::get_descriptor_configuration_cb(uint8_t index) {
+    return midi_configuration_descriptor;
+}
+
+const uint8_t * MidiDriver::get_descriptor_device_qualifier_cb() {
+	return nullptr;
+}
