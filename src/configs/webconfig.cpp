@@ -4,6 +4,7 @@
 #include "storagemanager.h"
 #include "configmanager.h"
 #include "system.h"
+#include "matrix.h"
 #include "touch/TouchGpio.h"
 #include "types.h"
 #include "version.h"
@@ -169,6 +170,12 @@ std::string getOptions()
 
     doc["webConfigPin"] = Storage::getInstance().getWebConfigPin();
 
+    // Matrix input mode geometry (board property). rows/cols are 0 when the
+    // board is in direct-pin mode.
+    doc["matrix"]["rows"] = Storage::getInstance().getMatrixRows();
+    doc["matrix"]["cols"] = Storage::getInstance().getMatrixCols();
+    doc["matrix"]["enabled"] = Storage::getInstance().isMatrixMode();
+
     return serialize_json(doc);
 }
 
@@ -242,11 +249,20 @@ std::string getPinState()
 {
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
 
-    // Touch pads are PIO-driven, so gpio_get_all() reports their floating
-    // discharge level. Read them through the touch driver instead.
-    const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
-    uint32_t newState = ~gpio_get_all() & ~touchPinMask;
-    newState |= TouchGpio::getInstance().scan();
+    // In matrix mode keys live at row/column intersections, so scan the matrix.
+    // Otherwise touch pads are PIO-driven, so gpio_get_all() reports their
+    // floating discharge level; read them through the touch driver instead.
+    uint32_t newState;
+    if (Storage::getInstance().isMatrixMode())
+    {
+        newState = matrixScanKeys();
+    }
+    else
+    {
+        const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
+        newState = ~gpio_get_all() & ~touchPinMask;
+        newState |= TouchGpio::getInstance().scan();
+    }
     JsonArray heldPins = doc.createNestedArray("heldPins");
     for (uint32_t pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
         if (newState & (1 << pin)) {

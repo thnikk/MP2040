@@ -7,6 +7,7 @@
 const SHAPE_TAGS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line'];
 const SHAPE_SEL = 'path, rect, circle, ellipse, polygon, polyline, line';
 const PIN_RE = /^pin(\d+)$/;
+const KEY_RE = /^key(\d+)$/;
 
 const MODIFIER_SHORT = {
   0xe0: 'Ctrl', 0xe1: 'Shift', 0xe2: 'Alt', 0xe3: 'Win',
@@ -191,9 +192,12 @@ class BoardView {
   render(svgText) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgText, 'image/svg+xml');
+    // Matrix boards index keys by linear matrix position (keyNN ids) rather
+    // than GPIO pins (pinNN ids); either way the array index is the key index.
+    const refRe = this.options?.matrix?.enabled ? KEY_RE : PIN_RE;
     this.pinElements = [];
     doc.querySelectorAll('[id]').forEach((el) => {
-      const m = el.id.match(PIN_RE);
+      const m = el.id.match(refRe);
       if (m) this.pinElements.push({ id: el.id, pinNumber: parseInt(m[1], 10) });
     });
     this.pinElements.sort((a, b) => a.pinNumber - b.pinNumber);

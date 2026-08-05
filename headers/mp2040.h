@@ -34,6 +34,10 @@ private:
     // GPIO manipulation for setup
     void initializeKeyGpio();
     void deinitializeKeyGpio();
+
+    // Matrix input mode: drive each row low and read the columns, producing a
+    // key-state mask where bit N = linear key (row N/COLS, col N%COLS).
+    Mask_t scanMatrix();
 };
 
 #endif

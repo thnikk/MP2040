@@ -56,6 +56,14 @@ function defaultOptions() {
       pinLedIndices,
     },
     webConfigPin: board?.webConfigPin ?? -1,
+    matrix: {
+      enabled: !!board?.matrix?.enabled,
+      rows: board?.matrix?.rows ?? 0,
+      cols: board?.matrix?.cols ?? 0,
+      rowPins: board?.matrix?.rowPins ?? [],
+      colPins: board?.matrix?.colPins ?? [],
+      activeHigh: !!board?.matrix?.activeHigh,
+    },
   };
 }
 

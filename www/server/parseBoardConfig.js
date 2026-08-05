@@ -127,6 +127,19 @@ function parseModifier(raw) {
   return 0;
 }
 
+// Parse a brace-list define like { 26, 27, 28, 29 } into an array of numbers.
+function parsePinArray(raw) {
+  const val = String(raw || '').trim().replace(/;$/, '').trim();
+  const m = val.match(/^\{(.*)\}$/s);
+  if (!m) return [];
+  return m[1]
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => parseInt(s, 10))
+    .filter((n) => !Number.isNaN(n));
+}
+
 export function parseBoardConfig(configDir, rootDir) {
   const boardConfigPath = path.join(rootDir, 'configs', configDir, 'BoardConfig.h');
   if (!fs.existsSync(boardConfigPath)) return null;
@@ -139,9 +152,11 @@ export function parseBoardConfig(configDir, rootDir) {
   const pinLedIndices = [];
   for (let i = 0; i < 30; i++) {
     const n = i.toString().padStart(2, '0');
-    keycodes.push(parseKeycode(d[`KEYCODE_GP${n}`]));
-    modifierMasks.push(parseModifier(d[`MODIFIER_GP${n}`]));
-    const ledIdx = parseNum(d[`LED_INDEX_GP${n}`]);
+    // Matrix boards define keys by linear index (KEYCODE_IDXxx); direct boards
+    // by GPIO (KEYCODE_GPxx). Prefer IDX when present.
+    keycodes.push(parseKeycode(d[`KEYCODE_IDX${n}`] ?? d[`KEYCODE_GP${n}`]));
+    modifierMasks.push(parseModifier(d[`MODIFIER_IDX${n}`] ?? d[`MODIFIER_GP${n}`]));
+    const ledIdx = parseNum(d[`LED_INDEX_IDX${n}`] ?? d[`LED_INDEX_GP${n}`]);
     pinLedIndices.push(ledIdx === undefined ? -1 : ledIdx);
   }
 
@@ -153,6 +168,11 @@ export function parseBoardConfig(configDir, rootDir) {
 
   const svgPath = path.join(rootDir, 'configs', configDir, 'board.svg');
 
+  // Matrix input mode (rows/cols > 0). In matrix mode the keycode / LED index
+  // arrays are indexed by linear matrix key (row * MATRIX_COLS + col), not GPIO.
+  const matrixRows = parseNum(d.MATRIX_ROWS) ?? 0;
+  const matrixCols = parseNum(d.MATRIX_COLS) ?? 0;
+
   return {
     boardConfigLabel,
     configDir,
@@ -160,6 +180,14 @@ export function parseBoardConfig(configDir, rootDir) {
     keycodes,
     modifierMasks,
     pinLedIndices,
+    matrix: {
+      enabled: matrixRows > 0 && matrixCols > 0,
+      rows: matrixRows,
+      cols: matrixCols,
+      rowPins: parsePinArray(d.MATRIX_ROW_PINS),
+      colPins: parsePinArray(d.MATRIX_COL_PINS),
+      activeHigh: (parseNum(d.MATRIX_ACTIVE_HIGH) ?? 0) === 1,
+    },
     led: {
       dataPin: parseNum(d.LED_PIN) ?? -1,
       ledFormat: LED_FORMAT_MAP[d.LED_FORMAT] ?? 0,

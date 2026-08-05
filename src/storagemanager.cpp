@@ -114,6 +114,101 @@
 #define KEYCODE_GP29 0
 #endif
 
+// Keycode aliases for matrix boards. "Key index" replaces "GPIO" as the unit
+// of input: in matrix mode key N = (row N/COLS, col N%COLS). Direct boards
+// define KEYCODE_GPxx (the IDX aliases fall back to those values); matrix
+// boards define KEYCODE_IDXxx directly.
+#ifndef KEYCODE_IDX00
+#define KEYCODE_IDX00 KEYCODE_GP00
+#endif
+#ifndef KEYCODE_IDX01
+#define KEYCODE_IDX01 KEYCODE_GP01
+#endif
+#ifndef KEYCODE_IDX02
+#define KEYCODE_IDX02 KEYCODE_GP02
+#endif
+#ifndef KEYCODE_IDX03
+#define KEYCODE_IDX03 KEYCODE_GP03
+#endif
+#ifndef KEYCODE_IDX04
+#define KEYCODE_IDX04 KEYCODE_GP04
+#endif
+#ifndef KEYCODE_IDX05
+#define KEYCODE_IDX05 KEYCODE_GP05
+#endif
+#ifndef KEYCODE_IDX06
+#define KEYCODE_IDX06 KEYCODE_GP06
+#endif
+#ifndef KEYCODE_IDX07
+#define KEYCODE_IDX07 KEYCODE_GP07
+#endif
+#ifndef KEYCODE_IDX08
+#define KEYCODE_IDX08 KEYCODE_GP08
+#endif
+#ifndef KEYCODE_IDX09
+#define KEYCODE_IDX09 KEYCODE_GP09
+#endif
+#ifndef KEYCODE_IDX10
+#define KEYCODE_IDX10 KEYCODE_GP10
+#endif
+#ifndef KEYCODE_IDX11
+#define KEYCODE_IDX11 KEYCODE_GP11
+#endif
+#ifndef KEYCODE_IDX12
+#define KEYCODE_IDX12 KEYCODE_GP12
+#endif
+#ifndef KEYCODE_IDX13
+#define KEYCODE_IDX13 KEYCODE_GP13
+#endif
+#ifndef KEYCODE_IDX14
+#define KEYCODE_IDX14 KEYCODE_GP14
+#endif
+#ifndef KEYCODE_IDX15
+#define KEYCODE_IDX15 KEYCODE_GP15
+#endif
+#ifndef KEYCODE_IDX16
+#define KEYCODE_IDX16 KEYCODE_GP16
+#endif
+#ifndef KEYCODE_IDX17
+#define KEYCODE_IDX17 KEYCODE_GP17
+#endif
+#ifndef KEYCODE_IDX18
+#define KEYCODE_IDX18 KEYCODE_GP18
+#endif
+#ifndef KEYCODE_IDX19
+#define KEYCODE_IDX19 KEYCODE_GP19
+#endif
+#ifndef KEYCODE_IDX20
+#define KEYCODE_IDX20 KEYCODE_GP20
+#endif
+#ifndef KEYCODE_IDX21
+#define KEYCODE_IDX21 KEYCODE_GP21
+#endif
+#ifndef KEYCODE_IDX22
+#define KEYCODE_IDX22 KEYCODE_GP22
+#endif
+#ifndef KEYCODE_IDX23
+#define KEYCODE_IDX23 KEYCODE_GP23
+#endif
+#ifndef KEYCODE_IDX24
+#define KEYCODE_IDX24 KEYCODE_GP24
+#endif
+#ifndef KEYCODE_IDX25
+#define KEYCODE_IDX25 KEYCODE_GP25
+#endif
+#ifndef KEYCODE_IDX26
+#define KEYCODE_IDX26 KEYCODE_GP26
+#endif
+#ifndef KEYCODE_IDX27
+#define KEYCODE_IDX27 KEYCODE_GP27
+#endif
+#ifndef KEYCODE_IDX28
+#define KEYCODE_IDX28 KEYCODE_GP28
+#endif
+#ifndef KEYCODE_IDX29
+#define KEYCODE_IDX29 KEYCODE_GP29
+#endif
+
 #ifndef MODIFIER_GP00
 #define MODIFIER_GP00 0
 #endif
@@ -203,6 +298,98 @@
 #endif
 #ifndef MODIFIER_GP29
 #define MODIFIER_GP29 0
+#endif
+
+// Modifier mask aliases for matrix boards (see KEYCODE_IDXxx above).
+#ifndef MODIFIER_IDX00
+#define MODIFIER_IDX00 MODIFIER_GP00
+#endif
+#ifndef MODIFIER_IDX01
+#define MODIFIER_IDX01 MODIFIER_GP01
+#endif
+#ifndef MODIFIER_IDX02
+#define MODIFIER_IDX02 MODIFIER_GP02
+#endif
+#ifndef MODIFIER_IDX03
+#define MODIFIER_IDX03 MODIFIER_GP03
+#endif
+#ifndef MODIFIER_IDX04
+#define MODIFIER_IDX04 MODIFIER_GP04
+#endif
+#ifndef MODIFIER_IDX05
+#define MODIFIER_IDX05 MODIFIER_GP05
+#endif
+#ifndef MODIFIER_IDX06
+#define MODIFIER_IDX06 MODIFIER_GP06
+#endif
+#ifndef MODIFIER_IDX07
+#define MODIFIER_IDX07 MODIFIER_GP07
+#endif
+#ifndef MODIFIER_IDX08
+#define MODIFIER_IDX08 MODIFIER_GP08
+#endif
+#ifndef MODIFIER_IDX09
+#define MODIFIER_IDX09 MODIFIER_GP09
+#endif
+#ifndef MODIFIER_IDX10
+#define MODIFIER_IDX10 MODIFIER_GP10
+#endif
+#ifndef MODIFIER_IDX11
+#define MODIFIER_IDX11 MODIFIER_GP11
+#endif
+#ifndef MODIFIER_IDX12
+#define MODIFIER_IDX12 MODIFIER_GP12
+#endif
+#ifndef MODIFIER_IDX13
+#define MODIFIER_IDX13 MODIFIER_GP13
+#endif
+#ifndef MODIFIER_IDX14
+#define MODIFIER_IDX14 MODIFIER_GP14
+#endif
+#ifndef MODIFIER_IDX15
+#define MODIFIER_IDX15 MODIFIER_GP15
+#endif
+#ifndef MODIFIER_IDX16
+#define MODIFIER_IDX16 MODIFIER_GP16
+#endif
+#ifndef MODIFIER_IDX17
+#define MODIFIER_IDX17 MODIFIER_GP17
+#endif
+#ifndef MODIFIER_IDX18
+#define MODIFIER_IDX18 MODIFIER_GP18
+#endif
+#ifndef MODIFIER_IDX19
+#define MODIFIER_IDX19 MODIFIER_GP19
+#endif
+#ifndef MODIFIER_IDX20
+#define MODIFIER_IDX20 MODIFIER_GP20
+#endif
+#ifndef MODIFIER_IDX21
+#define MODIFIER_IDX21 MODIFIER_GP21
+#endif
+#ifndef MODIFIER_IDX22
+#define MODIFIER_IDX22 MODIFIER_GP22
+#endif
+#ifndef MODIFIER_IDX23
+#define MODIFIER_IDX23 MODIFIER_GP23
+#endif
+#ifndef MODIFIER_IDX24
+#define MODIFIER_IDX24 MODIFIER_GP24
+#endif
+#ifndef MODIFIER_IDX25
+#define MODIFIER_IDX25 MODIFIER_GP25
+#endif
+#ifndef MODIFIER_IDX26
+#define MODIFIER_IDX26 MODIFIER_GP26
+#endif
+#ifndef MODIFIER_IDX27
+#define MODIFIER_IDX27 MODIFIER_GP27
+#endif
+#ifndef MODIFIER_IDX28
+#define MODIFIER_IDX28 MODIFIER_GP28
+#endif
+#ifndef MODIFIER_IDX29
+#define MODIFIER_IDX29 MODIFIER_GP29
 #endif
 
 #ifndef TOUCH_GP00
@@ -422,32 +609,154 @@
 #define LED_INDEX_GP29 -1
 #endif
 
+// Pin -> LED index aliases for matrix boards: LED_INDEX_IDXxx maps linear
+// matrix key N to its LED strip index. Direct boards use LED_INDEX_GPxx.
+#ifndef LED_INDEX_IDX00
+#define LED_INDEX_IDX00 LED_INDEX_GP00
+#endif
+#ifndef LED_INDEX_IDX01
+#define LED_INDEX_IDX01 LED_INDEX_GP01
+#endif
+#ifndef LED_INDEX_IDX02
+#define LED_INDEX_IDX02 LED_INDEX_GP02
+#endif
+#ifndef LED_INDEX_IDX03
+#define LED_INDEX_IDX03 LED_INDEX_GP03
+#endif
+#ifndef LED_INDEX_IDX04
+#define LED_INDEX_IDX04 LED_INDEX_GP04
+#endif
+#ifndef LED_INDEX_IDX05
+#define LED_INDEX_IDX05 LED_INDEX_GP05
+#endif
+#ifndef LED_INDEX_IDX06
+#define LED_INDEX_IDX06 LED_INDEX_GP06
+#endif
+#ifndef LED_INDEX_IDX07
+#define LED_INDEX_IDX07 LED_INDEX_GP07
+#endif
+#ifndef LED_INDEX_IDX08
+#define LED_INDEX_IDX08 LED_INDEX_GP08
+#endif
+#ifndef LED_INDEX_IDX09
+#define LED_INDEX_IDX09 LED_INDEX_GP09
+#endif
+#ifndef LED_INDEX_IDX10
+#define LED_INDEX_IDX10 LED_INDEX_GP10
+#endif
+#ifndef LED_INDEX_IDX11
+#define LED_INDEX_IDX11 LED_INDEX_GP11
+#endif
+#ifndef LED_INDEX_IDX12
+#define LED_INDEX_IDX12 LED_INDEX_GP12
+#endif
+#ifndef LED_INDEX_IDX13
+#define LED_INDEX_IDX13 LED_INDEX_GP13
+#endif
+#ifndef LED_INDEX_IDX14
+#define LED_INDEX_IDX14 LED_INDEX_GP14
+#endif
+#ifndef LED_INDEX_IDX15
+#define LED_INDEX_IDX15 LED_INDEX_GP15
+#endif
+#ifndef LED_INDEX_IDX16
+#define LED_INDEX_IDX16 LED_INDEX_GP16
+#endif
+#ifndef LED_INDEX_IDX17
+#define LED_INDEX_IDX17 LED_INDEX_GP17
+#endif
+#ifndef LED_INDEX_IDX18
+#define LED_INDEX_IDX18 LED_INDEX_GP18
+#endif
+#ifndef LED_INDEX_IDX19
+#define LED_INDEX_IDX19 LED_INDEX_GP19
+#endif
+#ifndef LED_INDEX_IDX20
+#define LED_INDEX_IDX20 LED_INDEX_GP20
+#endif
+#ifndef LED_INDEX_IDX21
+#define LED_INDEX_IDX21 LED_INDEX_GP21
+#endif
+#ifndef LED_INDEX_IDX22
+#define LED_INDEX_IDX22 LED_INDEX_GP22
+#endif
+#ifndef LED_INDEX_IDX23
+#define LED_INDEX_IDX23 LED_INDEX_GP23
+#endif
+#ifndef LED_INDEX_IDX24
+#define LED_INDEX_IDX24 LED_INDEX_GP24
+#endif
+#ifndef LED_INDEX_IDX25
+#define LED_INDEX_IDX25 LED_INDEX_GP25
+#endif
+#ifndef LED_INDEX_IDX26
+#define LED_INDEX_IDX26 LED_INDEX_GP26
+#endif
+#ifndef LED_INDEX_IDX27
+#define LED_INDEX_IDX27 LED_INDEX_GP27
+#endif
+#ifndef LED_INDEX_IDX28
+#define LED_INDEX_IDX28 LED_INDEX_GP28
+#endif
+#ifndef LED_INDEX_IDX29
+#define LED_INDEX_IDX29 LED_INDEX_GP29
+#endif
+
+// Matrix scanning configuration. Defining MATRIX_ROWS/COLS puts the board in
+// matrix mode: KEYCODE_IDXxx / LED_INDEX_IDXxx then index the linear matrix
+// key (row * MATRIX_COLS + col), not a GPIO. Undefined (0 rows) = direct-pin
+// mode, which behaves exactly as before.
+#ifndef MATRIX_ROWS
+#define MATRIX_ROWS 0
+#endif
+#ifndef MATRIX_COLS
+#define MATRIX_COLS 0
+#endif
+#ifndef MATRIX_ROW_PINS
+#define MATRIX_ROW_PINS {}
+#endif
+#ifndef MATRIX_COL_PINS
+#define MATRIX_COL_PINS {}
+#endif
+// Scan polarity. 0 = active-low (rows driven low to scan, columns pulled up,
+// pressed column reads low; diodes point toward the rows). 1 = active-high
+// (rows driven high to scan, columns pulled down, pressed column reads high;
+// diodes point toward the columns). Must match the board's diode orientation.
+#ifndef MATRIX_ACTIVE_HIGH
+#define MATRIX_ACTIVE_HIGH 0
+#endif
+
 static const uint32_t defaultKeycodes[NUM_BANK0_GPIOS] = {
-    KEYCODE_GP00, KEYCODE_GP01, KEYCODE_GP02, KEYCODE_GP03, KEYCODE_GP04,
-    KEYCODE_GP05, KEYCODE_GP06, KEYCODE_GP07, KEYCODE_GP08, KEYCODE_GP09,
-    KEYCODE_GP10, KEYCODE_GP11, KEYCODE_GP12, KEYCODE_GP13, KEYCODE_GP14,
-    KEYCODE_GP15, KEYCODE_GP16, KEYCODE_GP17, KEYCODE_GP18, KEYCODE_GP19,
-    KEYCODE_GP20, KEYCODE_GP21, KEYCODE_GP22, KEYCODE_GP23, KEYCODE_GP24,
-    KEYCODE_GP25, KEYCODE_GP26, KEYCODE_GP27, KEYCODE_GP28, KEYCODE_GP29
+    KEYCODE_IDX00, KEYCODE_IDX01, KEYCODE_IDX02, KEYCODE_IDX03, KEYCODE_IDX04,
+    KEYCODE_IDX05, KEYCODE_IDX06, KEYCODE_IDX07, KEYCODE_IDX08, KEYCODE_IDX09,
+    KEYCODE_IDX10, KEYCODE_IDX11, KEYCODE_IDX12, KEYCODE_IDX13, KEYCODE_IDX14,
+    KEYCODE_IDX15, KEYCODE_IDX16, KEYCODE_IDX17, KEYCODE_IDX18, KEYCODE_IDX19,
+    KEYCODE_IDX20, KEYCODE_IDX21, KEYCODE_IDX22, KEYCODE_IDX23, KEYCODE_IDX24,
+    KEYCODE_IDX25, KEYCODE_IDX26, KEYCODE_IDX27, KEYCODE_IDX28, KEYCODE_IDX29
 };
 
 static const uint32_t defaultModifiers[NUM_BANK0_GPIOS] = {
-    MODIFIER_GP00, MODIFIER_GP01, MODIFIER_GP02, MODIFIER_GP03, MODIFIER_GP04,
-    MODIFIER_GP05, MODIFIER_GP06, MODIFIER_GP07, MODIFIER_GP08, MODIFIER_GP09,
-    MODIFIER_GP10, MODIFIER_GP11, MODIFIER_GP12, MODIFIER_GP13, MODIFIER_GP14,
-    MODIFIER_GP15, MODIFIER_GP16, MODIFIER_GP17, MODIFIER_GP18, MODIFIER_GP19,
-    MODIFIER_GP20, MODIFIER_GP21, MODIFIER_GP22, MODIFIER_GP23, MODIFIER_GP24,
-    MODIFIER_GP25, MODIFIER_GP26, MODIFIER_GP27, MODIFIER_GP28, MODIFIER_GP29
+    MODIFIER_IDX00, MODIFIER_IDX01, MODIFIER_IDX02, MODIFIER_IDX03, MODIFIER_IDX04,
+    MODIFIER_IDX05, MODIFIER_IDX06, MODIFIER_IDX07, MODIFIER_IDX08, MODIFIER_IDX09,
+    MODIFIER_IDX10, MODIFIER_IDX11, MODIFIER_IDX12, MODIFIER_IDX13, MODIFIER_IDX14,
+    MODIFIER_IDX15, MODIFIER_IDX16, MODIFIER_IDX17, MODIFIER_IDX18, MODIFIER_IDX19,
+    MODIFIER_IDX20, MODIFIER_IDX21, MODIFIER_IDX22, MODIFIER_IDX23, MODIFIER_IDX24,
+    MODIFIER_IDX25, MODIFIER_IDX26, MODIFIER_IDX27, MODIFIER_IDX28, MODIFIER_IDX29
 };
 
 static const int32_t defaultPinLedIndices[NUM_BANK0_GPIOS] = {
-    LED_INDEX_GP00, LED_INDEX_GP01, LED_INDEX_GP02, LED_INDEX_GP03, LED_INDEX_GP04,
-    LED_INDEX_GP05, LED_INDEX_GP06, LED_INDEX_GP07, LED_INDEX_GP08, LED_INDEX_GP09,
-    LED_INDEX_GP10, LED_INDEX_GP11, LED_INDEX_GP12, LED_INDEX_GP13, LED_INDEX_GP14,
-    LED_INDEX_GP15, LED_INDEX_GP16, LED_INDEX_GP17, LED_INDEX_GP18, LED_INDEX_GP19,
-    LED_INDEX_GP20, LED_INDEX_GP21, LED_INDEX_GP22, LED_INDEX_GP23, LED_INDEX_GP24,
-    LED_INDEX_GP25, LED_INDEX_GP26, LED_INDEX_GP27, LED_INDEX_GP28, LED_INDEX_GP29
+    LED_INDEX_IDX00, LED_INDEX_IDX01, LED_INDEX_IDX02, LED_INDEX_IDX03, LED_INDEX_IDX04,
+    LED_INDEX_IDX05, LED_INDEX_IDX06, LED_INDEX_IDX07, LED_INDEX_IDX08, LED_INDEX_IDX09,
+    LED_INDEX_IDX10, LED_INDEX_IDX11, LED_INDEX_IDX12, LED_INDEX_IDX13, LED_INDEX_IDX14,
+    LED_INDEX_IDX15, LED_INDEX_IDX16, LED_INDEX_IDX17, LED_INDEX_IDX18, LED_INDEX_IDX19,
+    LED_INDEX_IDX20, LED_INDEX_IDX21, LED_INDEX_IDX22, LED_INDEX_IDX23, LED_INDEX_IDX24,
+    LED_INDEX_IDX25, LED_INDEX_IDX26, LED_INDEX_IDX27, LED_INDEX_IDX28, LED_INDEX_IDX29
 };
+
+// Matrix row/col pin assignments from BoardConfig.h. Sized to the max key count
+// (rows * cols <= 30); unused entries stay 0. A physical board property.
+static const Pin_t defaultMatrixRowPins[NUM_BANK0_GPIOS] = MATRIX_ROW_PINS;
+static const Pin_t defaultMatrixColPins[NUM_BANK0_GPIOS] = MATRIX_COL_PINS;
 
 // Capacitive touch pins from BoardConfig.h's TOUCH_GPxx macros. A physical
 // board property: the pads and their 1M ohm discharge resistors are soldered,
@@ -636,6 +945,20 @@ void Storage::init() {
         if (defaultTouchPins[pin] != 0)
             touchPinMask |= 1u << pin;
     }
+
+    // Matrix geometry (rows/cols and their pin assignments) is a physical
+    // board property from MATRIX_ROWS/MATRIX_COLS/MATRIX_ROW_PINS/
+    // MATRIX_COL_PINS. 0 rows = direct-pin mode. Key counts are capped at the
+    // 30 slots of the keycode/LED arrays (the debounced key state mask).
+    matrixRows = MATRIX_ROWS;
+    matrixCols = MATRIX_COLS;
+    for (Pin_t r = 0; r < (Pin_t)NUM_BANK0_GPIOS && r < (Pin_t)matrixRows; r++)
+        matrixRowPins[r] = defaultMatrixRowPins[r];
+    for (Pin_t c = 0; c < (Pin_t)NUM_BANK0_GPIOS && c < (Pin_t)matrixCols; c++)
+        matrixColPins[c] = defaultMatrixColPins[c];
+    if (matrixRows && matrixCols && matrixRows * matrixCols > NUM_BANK0_GPIOS)
+        matrixRows = matrixCols = 0; // too many keys for the key state mask
+    matrixActiveHigh = MATRIX_ACTIVE_HIGH;
 
     // The LED data pin, strip format, strip length and LEDs per key are all
     // physical board properties; always use the board defaults so they can't
