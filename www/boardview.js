@@ -157,7 +157,7 @@ class BoardView {
     this.options = null;
     this.svgRoot = null;
     this.pinElements = [];
-    this.highlightedPin = null;
+    this.heldPins = new Set();
     this.wired = false;
     this.load();
   }
@@ -183,13 +183,8 @@ class BoardView {
     }
   }
 
-  highlightPin(pin) {
-    this.highlightedPin = pin;
-    this.applyPins();
-  }
-
-  clearHighlight() {
-    this.highlightedPin = null;
+  setHeldPins(pins) {
+    this.heldPins = new Set(pins);
     this.applyPins();
   }
 
@@ -438,11 +433,11 @@ class BoardView {
       const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
       const isActive = midiMode ? midiNote > 0 : keycode > 0;
-      const isHighlighted = pinNumber === this.highlightedPin;
+      const isHeld = this.heldPins.has(pinNumber);
 
       shapesOf(el).forEach((shape) => {
         const s = shape;
-        if (isHighlighted) {
+        if (isHeld) {
           s.style.setProperty('fill', '#3d3d00', 'important');
           s.style.setProperty('stroke', '#ffff00', 'important');
           s.style.setProperty('stroke-width', '3', 'important');

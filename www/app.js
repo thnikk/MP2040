@@ -297,6 +297,24 @@ async function load() {
 
   initBoard(options);
   updateModalMode();
+
+  // Live pin state: highlight buttons yellow while their physical switch is
+  // held. Polled at 10Hz, paused while the tab is hidden to keep load off the
+  // single-connection server when nobody is looking.
+  async function pollPinState() {
+    try {
+      const res = await api('/api/getPinState');
+      if (boardView) boardView.setHeldPins(res.heldPins || []);
+    } catch (e) {
+      // Ignore: transient network errors shouldn't spam the status bar.
+    }
+  }
+  const pollTimer = setInterval(pollPinState, 100);
+  pollPinState();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearInterval(pollTimer);
+    else setInterval(pollPinState, 100);
+  });
 }
 
 // Show either the key/modifier pickers (keyboard mode) or the MIDI note picker
@@ -346,13 +364,11 @@ function openKeyModal(pin) {
   // The widget may have been built while the modal was hidden, so re-fit the
   // octave window now that it has a real width.
   requestAnimationFrame(() => midiKeyboard.refresh());
-  if (boardView) boardView.highlightPin(pin);
 }
 
 function closeKeyModal() {
   document.getElementById('key-modal').hidden = true;
   editingPin = -1;
-  if (boardView) boardView.clearHighlight();
 }
 
 function saveKeyModal() {

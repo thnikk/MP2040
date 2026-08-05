@@ -105,6 +105,10 @@ export function createMockApp() {
     res.send(current);
   });
 
+  app.get('/api/getPinState', (req, res) => {
+    res.send({ heldPins: [] });
+  });
+
   app.get('/api/getFirmwareVersion', (req, res) => {
     res.send({
       firmwareVersion: 'dev',
