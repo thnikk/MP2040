@@ -48,7 +48,7 @@
           <label for="midi-velocity">MIDI Velocity</label>
           <div id="midi-velocity" class="midi-spinner"></div>
         </div>
-        <p class="hint">The pad enumerates as this device at boot. Hold the web config pin at power-on to get back here. MIDI Channel and Velocity apply in MIDI mode.</p>
+        <p class="hint" id="general-hint">The pad enumerates as a keyboard at boot. Hold the web config pin at power-on to get back here.</p>
       </div>
     </section>
 
@@ -76,7 +76,7 @@
 
     <section>
       <h2>Board</h2>
-      <p class="hint">Click a button on the board to set its key and modifiers (keyboard mode) or its MIDI note (MIDI mode).</p>
+      <p class="hint" id="board-hint">Click a button on the board to set its key and modifiers.</p>
       <div id="board-panel"></div>
     </section>
 

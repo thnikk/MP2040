@@ -301,7 +301,8 @@ async function load() {
 
 // Show either the key/modifier pickers (keyboard mode) or the MIDI note picker
 // (MIDI mode) in the modal, based on the current default input mode. Also
-// reveals the General MIDI Channel / Velocity controls only in MIDI mode.
+// reveals the General MIDI Channel / Velocity controls and swaps the General
+// and Board card descriptions to match the mode.
 function updateModalMode() {
   const midiMode = Number(currentOptions.defaultInputMode || 1) === 2;
   document.getElementById('key-modal-select').hidden = midiMode;
@@ -311,6 +312,12 @@ function updateModalMode() {
   document.getElementById('key-modal-hint').textContent = midiMode
     ? 'Pick a MIDI note for this button (0 = no note).'
     : 'Pick a key and any number of modifiers from the Modifiers group, or click a key on the keyboard below.';
+  document.getElementById('general-hint').textContent = midiMode
+    ? 'The pad enumerates as a MIDI device at boot. Hold the web config pin at power-on to get back here. MIDI Channel and Velocity apply in MIDI mode.'
+    : 'The pad enumerates as a keyboard at boot. Hold the web config pin at power-on to get back here.';
+  document.getElementById('board-hint').textContent = midiMode
+    ? 'Click a button on the board to set its MIDI note and velocity.'
+    : 'Click a button on the board to set its key and modifiers.';
 }
 
 function initBoard(options) {
