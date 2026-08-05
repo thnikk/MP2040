@@ -343,6 +343,7 @@ select {
 .ms-placeholder {
   color: var(--muted);
   font-size: 0.85rem;
+  margin: 0px 10px;
 }
 
 .ms-caret {
@@ -698,6 +699,7 @@ button.secondary {
 .kb-clusters-row {
   display: flex;
   justify-content: space-evenly;
+  gap: 12px;
   margin-top: 4px;
 }
 
