@@ -17,6 +17,20 @@ enum LedMode {
     LED_MODE_CYCLE,    // rainbow wheel
     LED_MODE_REACTIVE, // white -> rainbow -> off fade
     LED_MODE_BPS,      // color tracks keypress rate
+    LED_MODE_RIPPLE,   // rings propagate outward from pressed keys
+};
+
+// Concurrent ripple limit: enough for full-board hammering without letting
+// ripple state grow unbounded.
+#define MAX_RIPPLES 8
+
+// A propagating ring spawned by a key press. The ring lives at the grid cell
+// (row, col) and expands outward one cell per theme step.
+struct Ripple {
+    int8_t row;
+    int8_t col;
+    int16_t radius;
+    bool active;
 };
 
 class LedController {
@@ -45,6 +59,9 @@ private:
     void renderCycle();
     void renderReactive();
     void renderBps();
+    void renderRipple();
+    int16_t maxGridDistance(int8_t row, int8_t col);
+    void spawnRipple(int8_t row, int8_t col);
 
     Neopixel* neopixel;
     int32_t dataPin;
@@ -71,6 +88,7 @@ private:
     uint32_t lastBpsMillis;
     uint16_t bpsColor;
     uint16_t lastColor;
+    Ripple ripples[MAX_RIPPLES];
 };
 
 #endif

@@ -155,6 +155,8 @@ void LedController::configure()
     std::memset(pressedLeds, 0, stripCount * sizeof(bool));
     std::memset(ledSat, 0, stripCount * sizeof(int));
     std::memset(ledVal, 0, stripCount * sizeof(int));
+    for (uint32_t i = 0; i < MAX_RIPPLES; i++)
+        ripples[i].active = false;
     prevKeyState = 0;
     hue = 0;
     lastThemeMillis = 0;
@@ -180,7 +182,8 @@ void LedController::update()
     const Mask_t keyState = Storage::getInstance().keyState;
 
     // BPS press-rate counter: count rising edges of any key.
-    if (keyState & ~prevKeyState)
+    const Mask_t rising = keyState & ~prevKeyState;
+    if (rising)
         bpsCount++;
     prevKeyState = keyState;
 
@@ -196,6 +199,29 @@ void LedController::update()
         {
             if (idx + (int32_t)l < (int32_t)stripCount)
                 pressedLeds[idx + l] = true;
+        }
+    }
+
+    // Spawn ripples at the grid position of each newly pressed key.
+    if (rising)
+    {
+        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        {
+            if (!(rising & (1 << pin))) continue;
+            int32_t idx = pinLedIndices[pin];
+            if (idx < 0) continue;
+            for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
+            {
+                for (uint32_t col = 0; col < LED_GRID_COLS; col++)
+                {
+                    if (BOARD_LED_GRID[row][col] == idx)
+                    {
+                        spawnRipple(row, col);
+                        row = LED_GRID_ROWS;
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -220,6 +246,7 @@ void LedController::update()
         case LED_MODE_CYCLE:    renderCycle();    break;
         case LED_MODE_REACTIVE: renderReactive(); break;
         case LED_MODE_BPS:      renderBps();      break;
+        case LED_MODE_RIPPLE:   renderRipple();   break;
         default:                renderStatic();   break;
     }
 }
@@ -247,6 +274,8 @@ void LedController::applyLedPreview(const LedPreview& preview)
         std::memset(ledSat, 0, stripCount * sizeof(int));
         std::memset(ledVal, 0, stripCount * sizeof(int));
     }
+    for (uint32_t i = 0; i < MAX_RIPPLES; i++)
+        ripples[i].active = false;
     prevKeyState = Storage::getInstance().keyState;
 }
 
@@ -278,6 +307,16 @@ void LedController::advanceThemeState()
             }
             hue -= 8;
             if (hue < 0) hue = 255;
+            break;
+
+        case LED_MODE_RIPPLE:
+            for (uint32_t i = 0; i < MAX_RIPPLES; i++)
+            {
+                if (!ripples[i].active) continue;
+                ripples[i].radius++;
+                if (ripples[i].radius > maxGridDistance(ripples[i].row, ripples[i].col))
+                    ripples[i].active = false;
+            }
             break;
 
         default:
@@ -374,6 +413,95 @@ void LedController::renderBps()
             uint8_t r, g, b;
             hsvToRgb(static_cast<uint8_t>(finalColor + 100), 255, brightnessMaximum, r, g, b);
             neopixel->setPixel(i, r, g, b);
+        }
+    }
+    neopixel->show();
+}
+
+// Largest Chebyshev ring a ripple can reach before it leaves the grid.
+int16_t LedController::maxGridDistance(int8_t row, int8_t col)
+{
+    int16_t maxDist = 0;
+    for (uint32_t r = 0; r < LED_GRID_ROWS; r++)
+    {
+        for (uint32_t c = 0; c < LED_GRID_COLS; c++)
+        {
+            if (BOARD_LED_GRID[r][c] < 0) continue;
+            int16_t dr = static_cast<int16_t>(r) - row;
+            if (dr < 0) dr = -dr;
+            int16_t dc = static_cast<int16_t>(c) - col;
+            if (dc < 0) dc = -dc;
+            int16_t dist = dr > dc ? dr : dc;
+            if (dist > maxDist) maxDist = dist;
+        }
+    }
+    return maxDist;
+}
+
+// Start a new ripple at (row, col). Reuse the oldest slot when all are busy.
+void LedController::spawnRipple(int8_t row, int8_t col)
+{
+    uint32_t oldest = 0;
+    for (uint32_t i = 0; i < MAX_RIPPLES; i++)
+    {
+        if (!ripples[i].active)
+        {
+            ripples[i].row = row;
+            ripples[i].col = col;
+            ripples[i].radius = 0;
+            ripples[i].active = true;
+            return;
+        }
+        if (ripples[i].radius > ripples[oldest].radius)
+            oldest = i;
+    }
+    ripples[oldest].row = row;
+    ripples[oldest].col = col;
+    ripples[oldest].radius = 0;
+}
+
+// Ripple: rings propagate outward from each pressed key, leaving a fading trail.
+void LedController::renderRipple()
+{
+    float scale = brightnessMaximum / 255.0f;
+    uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
+    uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
+    uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
+    uint8_t pr = static_cast<uint8_t>(((colorPressed >> 16) & 0xFF) * scale);
+    uint8_t pg = static_cast<uint8_t>(((colorPressed >> 8) & 0xFF) * scale);
+    uint8_t pb = static_cast<uint8_t>((colorPressed & 0xFF) * scale);
+
+    for (uint32_t i = 0; i < stripCount; i++)
+        neopixel->setPixel(i, nr, ng, nb);
+
+    for (uint32_t r = 0; r < MAX_RIPPLES; r++)
+    {
+        if (!ripples[r].active) continue;
+        const int16_t radius = ripples[r].radius;
+        for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
+        {
+            for (uint32_t col = 0; col < LED_GRID_COLS; col++)
+            {
+                int32_t idx = BOARD_LED_GRID[row][col];
+                if (idx < 0 || idx >= (int32_t)stripCount) continue;
+                int16_t dr = static_cast<int16_t>(row) - ripples[r].row;
+                if (dr < 0) dr = -dr;
+                int16_t dc = static_cast<int16_t>(col) - ripples[r].col;
+                if (dc < 0) dc = -dc;
+                int16_t dist = dr > dc ? dr : dc;
+                if (dist == radius)
+                {
+                    neopixel->setPixel(idx, pr, pg, pb);
+                }
+                else if (dist == radius - 1)
+                {
+                    neopixel->setPixel(idx, pr / 2, pg / 2, pb / 2);
+                }
+                else if (dist == radius - 2)
+                {
+                    neopixel->setPixel(idx, pr / 4, pg / 4, pb / 4);
+                }
+            }
         }
     }
     neopixel->show();

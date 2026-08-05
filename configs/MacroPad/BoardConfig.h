@@ -60,7 +60,7 @@
 // Total number of LEDs in the strip. 0 = derive from the pin mappings / grid.
 #define LED_COUNT 12
 
-// Default LED theme mode (0=static, 1=cycle, 2=reactive, 3=bps)
+// Default LED theme mode (0=static, 1=cycle, 2=reactive, 3=bps, 4=ripple)
 #define LED_MODE 0
 
 // Default LED animation speed (1-255, higher = faster; 236 = default)
@@ -83,12 +83,12 @@
 
 // Spatial layout of the LED strip for 2D effects (ripple, chase, ...).
 // Each entry is the LED strip index at that (row, col); -1 = empty cell.
-#define BOARD_LED_POSITION_COLS 3
+// This model is effectively sideways
+#define BOARD_LED_POSITION_COLS 4
 #define BOARD_LED_POSITIONS \
-    { 0, 7, 8 }, \
-    { 1, 6, 9 }, \
-    { 2, 5, 10 }, \
-    { 3, 4, 11 }
+    { 0, 1, 2, 3 }, \
+    { 4, 5, 6, 7 }, \
+    { 8, 9, 10, 11 }
 
 // Web config boot key (linear matrix key index). Hold key index 0 (the "1"
 // key at row 0, col 0) while powering on to enter web config mode.
