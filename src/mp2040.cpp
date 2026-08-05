@@ -51,15 +51,17 @@ void MP2040::setup() {
 			break;
 	}
 
-	// Default: keyboard mode. Arm the touch web-config boot window so the pad
-	// can be touched before the keyboard starts to enter web config. Arming is
-	// based on the board's physical touch pins, not on which pins have a
-	// keycode assigned.
+	// Default: keyboard mode. Arm the touch boot window so a touch pad (web
+	// config or boot) can be touched before the keyboard starts to enter that
+	// mode. Arming is based on the board's physical touch pins, not on which
+	// pins have a keycode assigned.
 	const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
 	const int32_t wcPin = Storage::getInstance().getWebConfigPin();
-	if (wcPin >= 0 && (touchPinMask & (1 << wcPin)))
+	const int32_t bootPin = Storage::getInstance().getBootPin();
+	if ((wcPin >= 0 && (touchPinMask & (1 << wcPin))) ||
+	    (bootPin >= 0 && (touchPinMask & (1 << bootPin))))
 	{
-		webconfigTouchDeadline = getMillis() + WEB_CONFIG_TOUCH_WINDOW_MS;
+		bootTouchDeadline = getMillis() + WEB_CONFIG_TOUCH_WINDOW_MS;
 	}
 
 	DriverManager::getInstance().setup(INPUT_MODE_KEYBOARD);
@@ -214,11 +216,11 @@ void MP2040::debounceGpioGetAll() {
 }
 
 void MP2040::run() {
-	// Boot web-config window: hold the web config pad for a moment before the
-	// keyboard starts to enter web config mode instead. The USB keyboard isn't
-	// initialized yet, so the pad can't send a key during the window. Button
-	// boards never arm this (their web config pin isn't a touch pad).
-	if (webconfigTouchDeadline != 0)
+	// Boot-pin window: hold a touch pad (web config or boot) for a moment
+	// before the keyboard starts to enter that mode instead. The USB keyboard
+	// isn't initialized yet, so the pads can't send keys during the window.
+	// Button boards never arm this (their boot pins aren't touch pads).
+	if (bootTouchDeadline != 0)
 	{
 		// Visible cue that the boot window is open: light the LEDs in the
 		// board's pressed color until the window closes (a subtler, calmer
@@ -233,27 +235,47 @@ void MP2040::run() {
 		Storage::getInstance().publishLedPreview(boot);
 
 		const int32_t wcPin = Storage::getInstance().getWebConfigPin();
-		bool seen = false;
-		uint32_t seenAt = 0;
-		while (getMillis() < webconfigTouchDeadline)
+		const int32_t bootPin = Storage::getInstance().getBootPin();
+		bool seenWc = false;
+		bool seenBoot = false;
+		uint32_t seenWcAt = 0;
+		uint32_t seenBootAt = 0;
+		while (getMillis() < bootTouchDeadline)
 		{
 			// Debounce so the touch goes through the same hysteresis and settle
 			// as normal key operation.
 			debounceGpioGetAll();
-			if (wcPin >= 0 && (debouncedGpio & (1 << wcPin)))
+			const bool wcHeld = wcPin >= 0 && (debouncedGpio & (1 << wcPin));
+			const bool bootHeld = bootPin >= 0 && (debouncedGpio & (1 << bootPin));
+			// Holding both pins is ambiguous (a large palm press): boot normally.
+			if (wcHeld && bootHeld)
+				break;
+			if (wcHeld)
 			{
 				const uint32_t now = getMillis();
-				if (!seen) {
-					seen = true;
-					seenAt = now;
-				} else if (now - seenAt >= 40) {
+				if (!seenWc) {
+					seenWc = true;
+					seenWcAt = now;
+				} else if (now - seenWcAt >= 40) {
 					System::reboot(System::BootMode::WEBCONFIG);
 				}
 			} else {
-				seen = false;
+				seenWc = false;
+			}
+			if (bootHeld)
+			{
+				const uint32_t now = getMillis();
+				if (!seenBoot) {
+					seenBoot = true;
+					seenBootAt = now;
+				} else if (now - seenBootAt >= 40) {
+					System::reboot(System::BootMode::USB);
+				}
+			} else {
+				seenBoot = false;
 			}
 		}
-		webconfigTouchDeadline = 0;
+		bootTouchDeadline = 0;
 
 		// Window passed without a touch: restore the board's normal LED mode.
 		const LEDOptions& lo = Storage::getInstance().getLedOptions();
@@ -304,37 +326,55 @@ MP2040::BootAction MP2040::getBootAction() {
 			break;
 	}
 
-	// Pin-based boot shortcut: hold the web config pin at boot. This only
-	// applies to button boards; on touch boards the web config pin is a pad and
-	// is handled by the boot linger window in run() instead (a touch pad can't
-	// be held low from before power-on like a button can). On matrix boards the
-	// web config pin is a linear matrix key index, so the matrix is scanned.
-	{
-		int32_t wcPin = Storage::getInstance().getWebConfigPin();
-		if (wcPin >= 0) {
-			if (Storage::getInstance().isMatrixMode()) {
-				// The web config pin is a linear matrix key index. Re-scan a few
-				// ms later so a power-on transient can't spuriously enter web
-				// config mode.
-				if (wcPin < NUM_BANK0_GPIOS && (scanMatrix() & (1u << wcPin))) {
-					sleep_ms(2);
-					if (scanMatrix() & (1u << wcPin))
-						return BootAction::ENTER_WEBCONFIG_MODE;
-				}
-			} else if (!(touchGpios & (1 << wcPin))) {
-				gpio_init(wcPin);
-				gpio_set_dir(wcPin, GPIO_IN);
-				gpio_pull_up(wcPin);
-				sleep_ms(20);
-				if (!gpio_get(wcPin)) {
-					sleep_ms(10);
-					if (!gpio_get(wcPin)) {
-						return BootAction::ENTER_WEBCONFIG_MODE;
-					}
-				}
-			}
-		}
-	}
+	// Pin-based boot shortcuts. Holding BOTH the web config and boot pins is
+	// ambiguous (a large palm press), so neither mode triggers and the board
+	// boots normally. Touch-pad pins can't be held low from power-on and are
+	// handled by the boot linger window in run() instead; they read as not
+	// held here.
+	const int32_t wcPin = Storage::getInstance().getWebConfigPin();
+	const int32_t bootPin = Storage::getInstance().getBootPin();
+	const bool wcHeld = isBootPinHeld(wcPin);
+	const bool bootHeld = isBootPinHeld(bootPin);
+	if (wcHeld && bootHeld)
+		return BootAction::NONE;
+	if (wcHeld)
+		return BootAction::ENTER_WEBCONFIG_MODE;
+	if (bootHeld)
+		return BootAction::ENTER_USB_MODE;
 
 	return BootAction::NONE;
+}
+
+// True if the given pin or linear matrix key index is held at boot. Button
+// pins are re-checked after a settle delay so a power-on transient can't
+// spuriously trigger; matrix pins are re-scanned a few ms later for the same
+// reason. Touch pads are skipped (a pad can't be held from before power-on)
+// and instead defer to the boot linger window in run(). On matrix boards the
+// pin is a linear key index, so the matrix is scanned.
+bool MP2040::isBootPinHeld(int32_t pin) {
+	if (pin < 0 || pin >= (int32_t)NUM_BANK0_GPIOS)
+		return false;
+
+	if (Storage::getInstance().isMatrixMode()) {
+		if (scanMatrix() & (1u << pin)) {
+			sleep_ms(2);
+			if (scanMatrix() & (1u << pin))
+				return true;
+		}
+		return false;
+	}
+
+	if (touchGpios & (1 << pin))
+		return false;
+
+	gpio_init(pin);
+	gpio_set_dir(pin, GPIO_IN);
+	gpio_pull_up(pin);
+	sleep_ms(20);
+	if (!gpio_get(pin)) {
+		sleep_ms(10);
+		if (!gpio_get(pin))
+			return true;
+	}
+	return false;
 }

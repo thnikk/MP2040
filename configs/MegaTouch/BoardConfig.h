@@ -67,4 +67,8 @@
 // key 3.
 #define PIN_WEBCONFIG 1
 
+// Optional boot-mode shortcut pin. For a touch pad, touch and hold the pad
+// within the boot window to enter the USB bootloader instead. -1 = disabled.
+#define PIN_BOOT 2
+
 #endif

@@ -78,4 +78,8 @@
 // Web config boot pin (hold to ground at boot to enter web config mode)
 #define PIN_WEBCONFIG 21
 
+// Optional boot-mode shortcut pin (hold to ground at boot to enter the USB
+// bootloader). -1 = disabled. Use a spare button GPIO not used as a key.
+// #define PIN_BOOT 20
+
 #endif

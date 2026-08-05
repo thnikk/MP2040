@@ -516,6 +516,9 @@
 #ifndef PIN_WEBCONFIG
 #define PIN_WEBCONFIG -1
 #endif
+#ifndef PIN_BOOT
+#define PIN_BOOT -1
+#endif
 
 // Pin → LED strip index defaults (from BoardConfig.h's LED_INDEX_GPxx macros)
 #ifndef LED_INDEX_GP00
@@ -935,6 +938,10 @@ void Storage::init() {
     // Always use the board default so a stale stored config can't point the
     // boot check at the wrong pin.
     config.webConfigPin = PIN_WEBCONFIG;
+
+    // The boot-mode shortcut pin is a physical board property; always use the
+    // board default.
+    bootPin = PIN_BOOT;
 
     // Capacitive touch pins are a physical board property (soldered pads and
     // resistors); always use the board defaults so a stored config can't

@@ -49,6 +49,10 @@
 
 // Web config boot pin (hold to ground at boot to enter web config mode).
 // GP27 is button 3, so holding button 3 while powering on opens the web config.
-#define PIN_WEBCONFIG 27
+#define PIN_WEBCONFIG 28
+
+// Optional boot-mode shortcut pin (hold to ground at boot to enter the USB
+// bootloader). -1 = disabled. Use a spare button GPIO not used as a key.
+#define PIN_BOOT 29
 
 #endif

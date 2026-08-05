@@ -40,6 +40,9 @@ public:
 	KeyMapping& getKeyMapping() { return config.keyMapping; }
 	LEDOptions& getLedOptions() { return config.ledOptions; }
 	int32_t getWebConfigPin() { return config.webConfigPin; }
+	// Boot-mode shortcut pin (USB bootloader), from the board's PIN_BOOT define.
+	// A physical board property (like the web config pin), never a user setting.
+	int32_t getBootPin() { return bootPin; }
 	// Capacitive touch pin mask, from the board's TOUCH_GPxx defines. A physical
 	// board property (like the web config pin), never a user setting.
 	Mask_t getTouchPinMask() { return touchPinMask; }
@@ -84,6 +87,7 @@ private:
 	bool CONFIG_MODE = false; 			// Config mode (boot)
 	bool CONFIG_BUTTON_VISIBLE = false; // Config button visible (boot)
 	Config config;
+	int32_t bootPin = -1; 				// Boot-mode shortcut pin (board property)
 	Mask_t touchPinMask = 0; 			// Capacitive touch pins (board property)
 	// Matrix geometry (board property). rows*cols <= 30 keys.
 	uint8_t matrixRows = 0;

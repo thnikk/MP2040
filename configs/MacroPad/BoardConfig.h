@@ -94,4 +94,8 @@
 // key at row 0, col 0) while powering on to enter web config mode.
 #define PIN_WEBCONFIG 0
 
+// Optional boot-mode shortcut key (linear matrix key index). Hold the key at
+// boot to enter the USB bootloader instead. -1 = disabled.
+#define PIN_BOOT 1
+
 #endif
