@@ -1008,6 +1008,31 @@ button:disabled {
   margin-top: 1rem;
 }
 
+/* Reboot mode picker */
+.modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 1rem;
+}
+
+.modal-options .modal-option {
+  width: 100%;
+  padding: 10px 24px;
+  text-align: center;
+}
+
+.modal-options .modal-option:last-child {
+  background: var(--nord14);
+  color: var(--nord0);
+  border-color: transparent;
+}
+
+.modal-options .modal-option:last-child:hover {
+  background: color-mix(in srgb, var(--nord14) 75%, var(--nord0));
+  border-color: transparent;
+}
+
 /* Keyboard widget (port of GP2040-th's KeyboardWidget) */
 .keyboard-widget {
   display: flex;

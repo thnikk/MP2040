@@ -115,6 +115,21 @@
     </div>
   </footer>
 
+  <div id="reboot-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Reboot</h3>
+        <button id="reboot-modal-close" class="modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <p class="hint">Choose how to reboot the board.</p>
+      <div class="modal-options">
+        <button id="reboot-normal" class="modal-option" type="button">Reboot</button>
+        <button id="reboot-bootloader" class="modal-option" type="button">Reboot to Bootloader</button>
+        <button id="reboot-webconfig" class="modal-option" type="button">Reboot to Web Config</button>
+      </div>
+    </div>
+  </div>
+
   <div id="key-modal" class="modal-overlay" hidden>
     <div class="modal">
       <div class="modal-header">

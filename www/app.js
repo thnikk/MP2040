@@ -557,20 +557,33 @@ async function save() {
   saveBtn.disabled = false;
 }
 
-async function reboot() {
+async function reboot(bootMode) {
   const rebootBtn = document.getElementById('reboot');
   rebootBtn.disabled = true;
   try {
     await api('/api/reboot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bootMode: 0 }),
+      body: JSON.stringify({ bootMode }),
     });
     Toast.show('Rebooting...', 'info');
   } catch (e) {
     Toast.show('Reboot failed: ' + e, 'error');
     rebootBtn.disabled = false;
   }
+}
+
+function openRebootModal() {
+  document.getElementById('reboot-modal').hidden = false;
+}
+
+function closeRebootModal() {
+  document.getElementById('reboot-modal').hidden = true;
+}
+
+async function rebootTo(bootMode) {
+  closeRebootModal();
+  await reboot(bootMode);
 }
 
 async function resetSettings() {
@@ -580,17 +593,26 @@ async function resetSettings() {
 }
 
 document.getElementById('save').addEventListener('click', save);
-document.getElementById('reboot').addEventListener('click', reboot);
+document.getElementById('reboot').addEventListener('click', openRebootModal);
 document.getElementById('reset').addEventListener('click', resetSettings);
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
 document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
+
+document.getElementById('reboot-modal-close').addEventListener('click', closeRebootModal);
+document.getElementById('reboot-normal').addEventListener('click', () => rebootTo(0));
+document.getElementById('reboot-bootloader').addEventListener('click', () => rebootTo(2));
+document.getElementById('reboot-webconfig').addEventListener('click', () => rebootTo(1));
 
 // Close the modal when clicking the overlay backdrop or pressing Escape.
 document.getElementById('key-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeKeyModal();
 });
+document.getElementById('reboot-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeRebootModal();
+});
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !document.getElementById('key-modal').hidden) closeKeyModal();
+  if (e.key === 'Escape' && !document.getElementById('reboot-modal').hidden) closeRebootModal();
 });
 
 // Theme toggle (light / dark / auto). The initial theme is applied in the head
