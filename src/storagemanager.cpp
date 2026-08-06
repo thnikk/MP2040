@@ -889,6 +889,63 @@ static void applyDefaults(Config& config)
 }
 
 // -----------------------------------------------------
+// Profile helpers
+// -----------------------------------------------------
+
+// Seed all profiles (0-3) as copies of the current base mapping. Runs once for
+// configs that predate profiles so the alternates always start from a known
+// state and stay editable.
+static void seedProfiles(Config& config)
+{
+    for (pb_size_t i = 0; i < config.profiles_count; i++)
+    {
+        Profile& profile = config.profiles[i];
+        profile.has_keyMapping = true;
+        profile.keyMapping = config.keyMapping;
+        profile.has_midiOptions = true;
+        profile.midiOptions = config.midiOptions;
+        profile.has_ledMode = true;
+        profile.ledMode = config.ledOptions.ledMode;
+        profile.has_ledSpeed = true;
+        profile.ledSpeed = config.ledOptions.ledSpeed;
+        profile.has_brightnessMaximum = true;
+        profile.brightnessMaximum = config.ledOptions.brightnessMaximum;
+        profile.has_brightnessSteps = true;
+        profile.brightnessSteps = config.ledOptions.brightnessSteps;
+        profile.has_colorNormal = true;
+        profile.colorNormal = config.ledOptions.colorNormal;
+        profile.has_colorPressed = true;
+        profile.colorPressed = config.ledOptions.colorPressed;
+    }
+}
+
+// Copy a profile into the working top-level fields. Only the per-profile data
+// (key map, MIDI options, LED theme scalars) is copied; the board properties
+// in LEDOptions stay authoritative.
+static void copyProfileToTopLevel(const Profile& profile, Config& config)
+{
+    if (profile.has_keyMapping)
+        config.keyMapping = profile.keyMapping;
+    if (profile.has_midiOptions)
+    {
+        config.midiOptions = profile.midiOptions;
+        config.has_midiOptions = true;
+    }
+    if (profile.has_ledMode)
+        config.ledOptions.ledMode = profile.ledMode;
+    if (profile.has_ledSpeed)
+        config.ledOptions.ledSpeed = profile.ledSpeed;
+    if (profile.has_brightnessMaximum)
+        config.ledOptions.brightnessMaximum = profile.brightnessMaximum;
+    if (profile.has_brightnessSteps)
+        config.ledOptions.brightnessSteps = profile.brightnessSteps;
+    if (profile.has_colorNormal)
+        config.ledOptions.colorNormal = profile.colorNormal;
+    if (profile.has_colorPressed)
+        config.ledOptions.colorPressed = profile.colorPressed;
+}
+
+// -----------------------------------------------------
 // Load / save
 // -----------------------------------------------------
 
@@ -961,6 +1018,14 @@ void Storage::init() {
     if (config.ledOptions.ledSpeed > 100)
         config.ledOptions.ledSpeed = LED_SPEED;
 
+    // Seed the profiles (0-3) once from the current base mapping so configs
+    // that predate profiles start with usable, editable profiles.
+    if (config.profiles_count == 0)
+    {
+        config.profiles_count = 4;
+        seedProfiles(config);
+    }
+
     // The web config pin is a physical board property, never a user setting.
     // Always use the board default so a stale stored config can't point the
     // boot check at the wrong pin.
@@ -1007,6 +1072,13 @@ void Storage::init() {
     config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
+
+    // Apply the active profile at boot by copying it into the working
+    // top-level fields (the drivers read those). Idempotent for profile 0.
+    if (config.has_activeProfile && config.activeProfile < config.profiles_count)
+    {
+        copyProfileToTopLevel(config.profiles[config.activeProfile], config);
+    }
 }
 
 /**
@@ -1015,6 +1087,15 @@ void Storage::init() {
 bool Storage::save()
 {
     return save(false);
+}
+
+/**
+ * @brief Copy the active profile into the working top-level fields.
+ */
+void Storage::applyActiveProfile()
+{
+    if (config.has_activeProfile && config.activeProfile < config.profiles_count)
+        copyProfileToTopLevel(config.profiles[config.activeProfile], config);
 }
 
 /**

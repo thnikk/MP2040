@@ -47,6 +47,23 @@ message LEDOptions
     optional uint32 ledSpeed = 11;
 }
 
+// A profile: a full key mapping plus the per-profile MIDI options and LED
+// theme scalars. profiles[0] is the base; profiles[1-3] are alternates. The
+// active profile is copied into the top-level keyMapping / midiOptions /
+// ledOptions at boot (the top-level fields act as the working copy that the
+// drivers read).
+message Profile
+{
+    optional KeyMapping keyMapping = 1;
+    optional MIDIOptions midiOptions = 2;
+    optional uint32 ledMode = 3;
+    optional uint32 ledSpeed = 4;
+    optional uint32 brightnessMaximum = 5;
+    optional uint32 brightnessSteps = 6;
+    optional uint32 colorNormal = 7;
+    optional uint32 colorPressed = 8;
+}
+
 message Config
 {
     optional KeyMapping keyMapping = 1;
@@ -57,4 +74,9 @@ message Config
     // config pin). Defaults to keyboard for existing configs.
     optional InputMode defaultInputMode = 4;
     optional MIDIOptions midiOptions = 5;
+    // All four profiles (index 0 = base). The active profile is copied into the
+    // top-level keyMapping/midiOptions/ledOptions at boot.
+    repeated Profile profiles = 6 [(nanopb).max_count = 4];
+    // Boot-time profile selection (0-3, index into profiles).
+    optional uint32 activeProfile = 7;
 }

@@ -158,6 +158,52 @@ DynamicJsonDocument get_post_data()
     return doc;
 }
 
+// -----------------------------------------------------
+// Profile JSON helpers
+// -----------------------------------------------------
+
+static void writeKeyMappingJson(JsonObject obj, const KeyMapping& km)
+{
+    JsonArray keycodes = obj.createNestedArray("keycodes");
+    JsonArray modifiers = obj.createNestedArray("modifierMasks");
+    JsonArray midiNotes = obj.createNestedArray("midiNotes");
+    JsonArray midiVelocities = obj.createNestedArray("midiVelocities");
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        keycodes.add(pin < (Pin_t)km.keycodes_count ? km.keycodes[pin] : 0);
+        modifiers.add(pin < (Pin_t)km.modifierMasks_count ? km.modifierMasks[pin] : 0);
+        midiNotes.add(pin < (Pin_t)km.midiNotes_count ? km.midiNotes[pin] : 0);
+        midiVelocities.add(pin < (Pin_t)km.midiVelocities_count ? km.midiVelocities[pin] : 0);
+    }
+}
+
+// Serialize one profile's editable fields. `profile` may be null for a slot
+// not present in flash yet; the working top-level config is used as the
+// fallback so the UI always sees editable profiles.
+static void writeProfileJson(JsonObject obj, const Profile* profile)
+{
+    const Config& config = Storage::getInstance().getConfig();
+    const KeyMapping& km = (profile && profile->has_keyMapping) ? profile->keyMapping : config.keyMapping;
+    writeKeyMappingJson(obj, km);
+
+    const uint32_t channel = (profile && profile->has_midiOptions) ? profile->midiOptions.channel
+        : (config.has_midiOptions ? config.midiOptions.channel : 0);
+    const uint32_t velocity = (profile && profile->has_midiOptions) ? profile->midiOptions.velocity
+        : (config.has_midiOptions ? config.midiOptions.velocity : 127);
+    JsonObject midi = obj.createNestedObject("midi");
+    midi["channel"] = channel;
+    midi["velocity"] = velocity;
+
+    const LEDOptions& lo = config.ledOptions;
+    JsonObject led = obj.createNestedObject("led");
+    led["brightnessMaximum"] = (profile && profile->has_brightnessMaximum) ? profile->brightnessMaximum : lo.brightnessMaximum;
+    led["brightnessSteps"] = (profile && profile->has_brightnessSteps) ? profile->brightnessSteps : lo.brightnessSteps;
+    led["colorNormal"] = (profile && profile->has_colorNormal) ? profile->colorNormal : lo.colorNormal;
+    led["colorPressed"] = (profile && profile->has_colorPressed) ? profile->colorPressed : lo.colorPressed;
+    led["ledMode"] = (profile && profile->has_ledMode) ? profile->ledMode : lo.ledMode;
+    led["ledSpeed"] = (profile && profile->has_ledSpeed) ? profile->ledSpeed : lo.ledSpeed;
+}
+
 std::string serialize_json(JsonDocument &doc)
 {
     string data;
@@ -214,6 +260,16 @@ std::string getOptions()
     doc["matrix"]["cols"] = Storage::getInstance().getMatrixCols();
     doc["matrix"]["enabled"] = Storage::getInstance().isMatrixMode();
 
+    // Profiles: the active profile index plus all four editable profiles. The
+    // top-level arrays above are the working copy of the active profile.
+    doc["activeProfile"] = Storage::getInstance().getActiveProfile();
+    JsonArray profiles = doc.createNestedArray("profiles");
+    for (pb_size_t i = 0; i < 4; i++)
+    {
+        JsonObject profileJson = profiles.createNestedObject();
+        writeProfileJson(profileJson, Storage::getInstance().getProfile(i));
+    }
+
     return serialize_json(doc);
 }
 
@@ -221,7 +277,29 @@ std::string setOptions()
 {
     DynamicJsonDocument doc = get_post_data();
 
-    KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
+    // Which profile is being edited? Defaults to the active profile so old
+    // clients without the field keep editing the profile in use.
+    uint32_t profileIndex = Storage::getInstance().getActiveProfile();
+    if (doc["profileIndex"].is<int>())
+        profileIndex = doc["profileIndex"].as<uint32_t>();
+    if (profileIndex >= 4)
+        profileIndex = 0;
+
+    Config& config = Storage::getInstance().getConfig();
+    if (config.profiles_count <= profileIndex)
+    {
+        // Guard against a missing slot (init() normally seeds all four); copy
+        // the base profile into any gaps.
+        for (pb_size_t i = config.profiles_count; i <= profileIndex && i < 4; i++)
+        {
+            config.profiles[i] = config.profiles[0];
+        }
+        config.profiles_count = profileIndex + 1;
+    }
+
+    Profile& profile = config.profiles[profileIndex];
+    profile.has_keyMapping = true;
+    KeyMapping& keyMapping = profile.keyMapping;
     JsonArray keycodes = doc["keycodes"];
     JsonArray modifiers = doc["modifierMasks"];
     JsonArray midiNotes = doc["midiNotes"];
@@ -245,25 +323,42 @@ std::string setOptions()
     JsonObject midi = doc["midi"];
     if (!midi.isNull())
     {
+        profile.has_midiOptions = true;
         if (midi["channel"].is<int>())
-            Storage::getInstance().setMidiChannel(midi["channel"].as<uint32_t>());
+            profile.midiOptions.channel = midi["channel"].as<uint32_t>();
         if (midi["velocity"].is<int>())
-            Storage::getInstance().setMidiVelocity(midi["velocity"].as<uint32_t>());
+            profile.midiOptions.velocity = midi["velocity"].as<uint32_t>();
     }
 
-    LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
     JsonObject led = doc["led"];
     if (!led.isNull())
     {
         // dataPin/ledFormat/ledCount/ledsPerKey are board properties and are
         // enforced from BoardConfig.h at boot; only user-tunables are editable.
-        ledOptions.brightnessMaximum = led["brightnessMaximum"] | ledOptions.brightnessMaximum;
-        ledOptions.brightnessSteps = led["brightnessSteps"] | ledOptions.brightnessSteps;
-        ledOptions.colorNormal = led["colorNormal"] | ledOptions.colorNormal;
-        ledOptions.colorPressed = led["colorPressed"] | ledOptions.colorPressed;
-        ledOptions.ledMode = led["ledMode"] | ledOptions.ledMode;
-        ledOptions.ledSpeed = led["ledSpeed"] | ledOptions.ledSpeed;
+        profile.has_ledMode = true;
+        profile.ledMode = led["ledMode"] | profile.ledMode;
+        profile.has_ledSpeed = true;
+        profile.ledSpeed = led["ledSpeed"] | profile.ledSpeed;
+        profile.has_brightnessMaximum = true;
+        profile.brightnessMaximum = led["brightnessMaximum"] | profile.brightnessMaximum;
+        profile.has_brightnessSteps = true;
+        profile.brightnessSteps = led["brightnessSteps"] | profile.brightnessSteps;
+        profile.has_colorNormal = true;
+        profile.colorNormal = led["colorNormal"] | profile.colorNormal;
+        profile.has_colorPressed = true;
+        profile.colorPressed = led["colorPressed"] | profile.colorPressed;
     }
+
+    if (doc["activeProfile"].is<int>())
+    {
+        uint32_t activeProfile = doc["activeProfile"].as<uint32_t>();
+        if (activeProfile < 4)
+            Storage::getInstance().setActiveProfile(activeProfile);
+    }
+
+    // Refresh the working top-level fields so the board reflects the active
+    // profile (idempotent; only the active profile lands in the working copy).
+    Storage::getInstance().applyActiveProfile();
 
     // Persist only; the board stays in web config mode until a reboot is requested.
     Storage::getInstance().save(true);

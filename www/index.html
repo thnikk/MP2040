@@ -45,6 +45,13 @@
           <option value="1">Keyboard</option>
           <option value="2">MIDI</option>
         </select>
+        <label for="active-profile">Active Profile on Boot</label>
+        <select id="active-profile">
+          <option value="0">Profile 1</option>
+          <option value="1">Profile 2</option>
+          <option value="2">Profile 3</option>
+          <option value="3">Profile 4</option>
+        </select>
         <div id="midi-settings" hidden>
           <label for="midi-channel">MIDI Channel</label>
           <div id="midi-channel" class="midi-spinner"></div>
@@ -56,6 +63,11 @@
           <button id="reset" class="danger">Reset Settings</button>
         </div>
       </div>
+    </section>
+
+    <section>
+      <h2>Profile</h2>
+      <div class="profile-tabs" id="profile-tabs"></div>
     </section>
 
     <section>

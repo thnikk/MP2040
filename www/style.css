@@ -276,6 +276,53 @@ section h2 {
   margin: 0;
 }
 
+/* Profile tabs */
+.profile-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.profile-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1 1 0;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 0.9rem;
+}
+
+.profile-tab-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex: none;
+  transition: background 0.15s;
+}
+
+.profile-tab.boot .profile-tab-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.profile-tab.active {
+  background: var(--accent);
+  color: var(--page-bg);
+  border-color: transparent;
+}
+
+.profile-tab.active .profile-tab-dot {
+  background: var(--page-bg);
+  box-shadow: none;
+}
+
+.profile-tab.active.boot .profile-tab-dot {
+  background: var(--page-bg);
+}
+
 select, input[type="number"] {
   background: var(--page-bg);
   color: var(--text);

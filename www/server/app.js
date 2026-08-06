@@ -30,6 +30,35 @@ console.log(`MP2040 mock server → board: ${board?.boardConfigLabel ?? boardId}
 
 let store = null;
 
+// Build a profile object. `src` provides the starting arrays/scalars (e.g. the
+// base options) so alternates default to a copy of the base.
+function makeProfile(src = {}) {
+  const keycodes = [];
+  const modifierMasks = [];
+  for (let i = 0; i < 30; i++) {
+    keycodes.push(src.keycodes?.[i] ?? 0);
+    modifierMasks.push(src.modifierMasks?.[i] ?? 0);
+  }
+  return {
+    keycodes,
+    modifierMasks,
+    midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(30).fill(0),
+    midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(30).fill(0),
+    midi: {
+      channel: src.midi?.channel ?? 0,
+      velocity: src.midi?.velocity ?? 127,
+    },
+    led: {
+      ledMode: src.led?.ledMode ?? 0,
+      ledSpeed: src.led?.ledSpeed ?? 50,
+      brightnessMaximum: src.led?.brightnessMaximum ?? 255,
+      brightnessSteps: src.led?.brightnessSteps ?? 1,
+      colorNormal: src.led?.colorNormal ?? 0x00ff00,
+      colorPressed: src.led?.colorPressed ?? 0xffffff,
+    },
+  };
+}
+
 function defaultOptions() {
   const keycodes = [];
   const modifierMasks = [];
@@ -39,7 +68,7 @@ function defaultOptions() {
     modifierMasks.push(board?.modifierMasks?.[i] ?? 0);
     pinLedIndices.push(board?.pinLedIndices?.[i] ?? -1);
   }
-  return {
+  const base = {
     keycodes,
     modifierMasks,
     midiNotes: new Array(30).fill(0),
@@ -72,6 +101,11 @@ function defaultOptions() {
       activeHigh: !!board?.matrix?.activeHigh,
     },
   };
+  return {
+    ...base,
+    activeProfile: 0,
+    profiles: [0, 1, 2, 3].map(() => makeProfile(base)),
+  };
 }
 
 export function createMockApp() {
@@ -86,13 +120,36 @@ export function createMockApp() {
   app.post('/api/setOptions', (req, res) => {
     const current = store || defaultOptions();
     const body = req.body || {};
-    if (Array.isArray(body.keycodes)) current.keycodes = body.keycodes;
-    if (Array.isArray(body.modifierMasks)) current.modifierMasks = body.modifierMasks;
-    if (Array.isArray(body.midiNotes)) current.midiNotes = body.midiNotes;
-    if (Array.isArray(body.midiVelocities)) current.midiVelocities = body.midiVelocities;
+
+    // Which profile is being edited? Defaults to the active profile.
+    let profileIndex = Number.isInteger(body.profileIndex)
+      ? body.profileIndex
+      : current.activeProfile;
+    if (!Number.isInteger(profileIndex) || profileIndex < 0 || profileIndex > 3)
+      profileIndex = 0;
+    const profile = current.profiles[profileIndex] || makeProfile(current);
+
+    if (Array.isArray(body.keycodes)) profile.keycodes = body.keycodes;
+    if (Array.isArray(body.modifierMasks)) profile.modifierMasks = body.modifierMasks;
+    if (Array.isArray(body.midiNotes)) profile.midiNotes = body.midiNotes;
+    if (Array.isArray(body.midiVelocities)) profile.midiVelocities = body.midiVelocities;
+    if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
+    if (body.led) profile.led = { ...profile.led, ...body.led };
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;
-    if (body.midi) current.midi = { ...current.midi, ...body.midi };
-    if (body.led) current.led = { ...current.led, ...body.led };
+    if (Number.isInteger(body.activeProfile)) {
+      current.activeProfile = Math.min(3, Math.max(0, body.activeProfile));
+    }
+    current.profiles[profileIndex] = profile;
+
+    // Refresh the top-level working copy to mirror the active profile.
+    const active = current.profiles[current.activeProfile] || makeProfile(current);
+    current.keycodes = active.keycodes;
+    current.modifierMasks = active.modifierMasks;
+    current.midiNotes = active.midiNotes;
+    current.midiVelocities = active.midiVelocities;
+    current.midi = { ...current.midi, ...active.midi };
+    current.led = { ...current.led, ...active.led };
+
     store = current;
     res.send(current);
   });

@@ -60,6 +60,15 @@ const MULTISELECT_OPTIONS = [
 // Working copy of the config from /api/getOptions, edited via the modal
 let currentOptions = null;
 
+// Profile support (see proto/config.proto): all four profiles live in
+// `profiles`; `currentOptions` is the working copy of the profile currently
+// being edited (its per-profile fields are mirrored into the full options
+// shape the rest of the UI expects). Switching takes effect at boot.
+const PROFILE_COUNT = 4;
+let profiles = [];
+let currentProfileIndex = 0;
+let activeProfile = 0;
+
 // Board SVG view (see boardview.js), initialized by load()
 let boardView = null;
 
@@ -136,6 +145,111 @@ function intToColor(value) {
   return '#' + value.toString(16).padStart(6, '0');
 }
 
+// ---- profile helpers ----------------------------------------------------
+
+// Deep-ish copy of a profile's editable fields.
+function cloneProfile(p) {
+  p = p || {};
+  return {
+    keycodes: (p.keycodes || []).slice(),
+    modifierMasks: (p.modifierMasks || []).slice(),
+    midiNotes: (p.midiNotes || new Array(30).fill(0)).slice(),
+    midiVelocities: (p.midiVelocities || new Array(30).fill(0)).slice(),
+    midi: { channel: p.midi?.channel ?? 0, velocity: p.midi?.velocity ?? 127 },
+    led: {
+      ledMode: p.led?.ledMode ?? 0,
+      ledSpeed: p.led?.ledSpeed ?? 50,
+      brightnessMaximum: p.led?.brightnessMaximum ?? 255,
+      brightnessSteps: p.led?.brightnessSteps ?? 1,
+      colorNormal: p.led?.colorNormal ?? 0x00ff00,
+      colorPressed: p.led?.colorPressed ?? 0xffffff,
+    },
+  };
+}
+
+// Mirror a profile's per-profile fields into `options`, preserving the
+// full-options shape (matrix, led.pinLedIndices, board properties, ...).
+function applyProfileToOptions(profile, options) {
+  options.keycodes = profile.keycodes.slice();
+  options.modifierMasks = profile.modifierMasks.slice();
+  options.midiNotes = profile.midiNotes.slice();
+  options.midiVelocities = profile.midiVelocities.slice();
+  options.midi = { ...(options.midi || {}), ...profile.midi };
+  options.led = { ...(options.led || {}), ...profile.led };
+}
+
+// Copy `options`' per-profile fields back into a profile (opposite of above).
+function applyOptionsToProfile(options, profile) {
+  profile.keycodes = options.keycodes.slice();
+  profile.modifierMasks = options.modifierMasks.slice();
+  profile.midiNotes = options.midiNotes.slice();
+  profile.midiVelocities = options.midiVelocities.slice();
+  profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
+  profile.led = { ...(profile.led || {}), ...(options.led || {}) };
+}
+
+// Save any unsaved edits of the current tab back into its profile slot.
+function syncCurrentToProfile() {
+  if (!profiles[currentProfileIndex]) return;
+  applyOptionsToProfile(currentOptions, profiles[currentProfileIndex]);
+}
+
+// Refresh the LED/MIDI controls from the current profile's values.
+function refreshPerProfileControls() {
+  const midi = currentOptions.midi || {};
+  if (midiChannelSpinner) midiChannelSpinner.setValue(midi.channel ?? 0);
+  if (midiVelocitySpinner) midiVelocitySpinner.setValue(midi.velocity ?? 127);
+  const led = currentOptions.led || {};
+  const ledModeEl = document.getElementById('led-mode');
+  if (ledModeEl) ledModeEl.value = led.ledMode ?? 0;
+  if (brightnessSlider) brightnessSlider.setValue(led.brightnessMaximum ?? 255);
+  if (speedSlider) speedSlider.setValue(led.ledSpeed ?? 50);
+  if (colorNormalPicker) colorNormalPicker.setValue(intToColor(led.colorNormal ?? 0x00ff00));
+  if (colorPressedPicker) colorPressedPicker.setValue(intToColor(led.colorPressed ?? 0xffffff));
+}
+
+function updateProfileTabs() {
+  const tabs = document.querySelectorAll('#profile-tabs .profile-tab');
+  tabs.forEach((btn, i) => {
+    btn.classList.toggle('active', i === currentProfileIndex);
+    btn.classList.toggle('boot', i === activeProfile);
+  });
+}
+
+function buildProfileTabs() {
+  const tabs = document.getElementById('profile-tabs');
+  if (!tabs) return;
+  tabs.innerHTML = '';
+  for (let i = 0; i < PROFILE_COUNT; i++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'profile-tab';
+    const dot = document.createElement('span');
+    dot.className = 'profile-tab-dot';
+    btn.appendChild(dot);
+    btn.appendChild(document.createTextNode(`Profile ${i + 1}`));
+    btn.addEventListener('click', () => switchProfile(i));
+    tabs.appendChild(btn);
+  }
+  updateProfileTabs();
+}
+
+function switchProfile(i) {
+  if (i === currentProfileIndex || !currentOptions) return;
+  syncCurrentToProfile();
+  currentProfileIndex = i;
+  loadProfileIntoUi();
+  updateProfileTabs();
+}
+
+function loadProfileIntoUi() {
+  if (!currentOptions) return;
+  const profile = profiles[currentProfileIndex] || cloneProfile(profiles[0]);
+  applyProfileToOptions(profile, currentOptions);
+  refreshPerProfileControls();
+  if (boardView) boardView.setOptions(currentOptions);
+}
+
 async function api(path, options) {
   const res = await fetch(path, options);
   return res.json();
@@ -184,6 +298,7 @@ let midiChannelSpinner = null;
 let midiVelocitySpinner = null;
 
 // Gather the current controls into a full config payload for /api/setOptions.
+// Includes the profile being edited (profileIndex) and the boot profile.
 function buildOptionsBody() {
   return {
     keycodes: currentOptions.keycodes,
@@ -202,6 +317,8 @@ function buildOptionsBody() {
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
     },
+    profileIndex: currentProfileIndex,
+    activeProfile,
   };
 }
 
@@ -299,6 +416,28 @@ async function load() {
 
   initBoard(options);
   updateModalMode();
+
+  // Profiles: default the editor to the active profile so what the user sees
+  // matches what boots. Tabs and the boot-profile selector are wired below.
+  profiles = Array.isArray(options.profiles) && options.profiles.length >= PROFILE_COUNT
+    ? options.profiles.map(cloneProfile)
+    : [options, options, options, options].map(cloneProfile);
+  activeProfile = Number(options.activeProfile ?? 0);
+  if (activeProfile < 0 || activeProfile >= PROFILE_COUNT) activeProfile = 0;
+  currentProfileIndex = activeProfile;
+
+  buildProfileTabs();
+
+  const activeSelect = document.getElementById('active-profile');
+  if (activeSelect) {
+    activeSelect.value = String(activeProfile);
+    activeSelect.addEventListener('change', () => {
+      activeProfile = parseInt(activeSelect.value, 10) || 0;
+      updateProfileTabs();
+    });
+  }
+
+  loadProfileIntoUi();
 
   // Live pin state: highlight buttons yellow while their physical switch is
   // held. The board answers /api/getPinState only when a button actually
@@ -398,11 +537,24 @@ function saveKeyModal() {
 async function save() {
   setStatus('Saving...', true);
   try {
-    await api('/api/setOptions', {
+    syncCurrentToProfile();
+    const res = await api('/api/setOptions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(buildOptionsBody()),
     });
+    // Refresh the local profile pool from the server response so switching
+    // tabs never shows stale data, and mirror the active profile back into
+    // the working copy (the board stays in config mode until reboot).
+    if (res && Array.isArray(res.profiles)) {
+      profiles = res.profiles.map(cloneProfile);
+      activeProfile = Number(res.activeProfile ?? activeProfile);
+      if (activeProfile < 0 || activeProfile >= PROFILE_COUNT) activeProfile = 0;
+      const edited = profiles[currentProfileIndex] || cloneProfile();
+      applyProfileToOptions(edited, currentOptions);
+      refreshPerProfileControls();
+      updateProfileTabs();
+    }
     setStatus('Saved.');
   } catch (e) {
     setStatus('Save failed: ' + e, false);

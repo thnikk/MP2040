@@ -69,6 +69,21 @@ public:
 		config.defaultInputMode = mode;
 		config.has_defaultInputMode = true;
 	}
+	// Profile support: all four profiles live in config.profiles (index 0 =
+	// base, 1-3 = alternates). The active profile is copied into the working
+	// top-level fields (keyMapping / midiOptions / ledOptions) at boot, which
+	// is what the drivers read. Switching takes effect on the next boot.
+	uint32_t getActiveProfile() {
+		return config.has_activeProfile ? config.activeProfile : 0;
+	}
+	void setActiveProfile(uint32_t profile) {
+		config.activeProfile = profile;
+		config.has_activeProfile = true;
+	}
+	Profile* getProfile(uint32_t index) {
+		return (index < config.profiles_count) ? &config.profiles[index] : nullptr;
+	}
+	pb_size_t getProfileCount() { return config.profiles_count; }
 	// Boot-mode shortcut pin (USB bootloader), from the board's PIN_BOOT define.
 	// A physical board property (like the web config pin), never a user setting.
 	int32_t getBootPin() { return bootPin; }
@@ -93,7 +108,10 @@ public:
 	void init();
 	bool save();
 	bool save(const bool force);
-
+	// Copy the active profile into the working top-level fields the drivers
+	// read. Called at boot and after the active profile is edited via the web
+	// config.
+	void applyActiveProfile();
 	void SetConfigMode(bool); 			// Config Mode (on-boot)
 	bool GetConfigMode();
 
