@@ -110,19 +110,12 @@
 
     <div id="page-settings" class="page" hidden>
       <section>
-        <h2><img class="heading-icon" src="/icons/auto.svg" alt="">Settings</h2>
+        <h2><img class="heading-icon" src="/icons/auto.svg" alt="">Input Mode</h2>
         <div class="general-form">
           <label for="default-input-mode">Default Input Mode</label>
           <select id="default-input-mode">
             <option value="1">Keyboard</option>
             <option value="2">MIDI</option>
-          </select>
-          <label for="active-profile">Active Profile on Boot</label>
-          <select id="active-profile">
-            <option value="0">Profile 1</option>
-            <option value="1">Profile 2</option>
-            <option value="2">Profile 3</option>
-            <option value="3">Profile 4</option>
           </select>
           <div id="midi-settings" hidden>
             <label for="midi-channel">MIDI Channel</label>
@@ -130,9 +123,33 @@
             <label for="midi-velocity">MIDI Velocity</label>
             <div id="midi-velocity" class="midi-spinner"></div>
           </div>
+        </div>
+      </section>
+
+      <section>
+        <h2><img class="heading-icon" src="/icons/bulb.svg" alt="">LED Settings</h2>
+        <div class="general-form">
           <label for="led-timeout">LED Timeout</label>
           <div id="led-timeout" class="midi-spinner"></div>
-          <p class="hint" id="general-hint">The pad enumerates as a keyboard at boot. Hold the web config pin at power-on to get back here.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profiles</h2>
+        <div class="general-form">
+          <label for="active-profile">Boot Profile</label>
+          <select id="active-profile">
+            <option value="0">Profile 1</option>
+            <option value="1">Profile 2</option>
+            <option value="2">Profile 3</option>
+            <option value="3">Profile 4</option>
+          </select>
+        </div>
+      </section>
+
+      <section>
+        <h2><img class="heading-icon" src="/icons/importexport.svg" alt="">Import/Export</h2>
+        <div class="general-form">
           <div class="general-reset">
             <button id="reset" class="danger">Reset Settings</button>
           </div>

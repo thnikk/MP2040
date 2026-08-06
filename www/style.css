@@ -393,7 +393,7 @@ section h2 {
 
 .landing-card:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
+  /* transform: translateY(-2px); */
 }
 
 .landing-card-icon {
@@ -694,9 +694,14 @@ html[data-theme="light"] select {
   justify-content: flex-end;
 }
 
-/* MIDI-only General controls (hidden unless the input mode is MIDI) */
+/* MIDI-only General controls (hidden unless the input mode is MIDI).
+   Full-width so they sit on their own row below Default Input Mode. */
 #midi-settings {
-  display: contents;
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 #midi-settings[hidden] {
