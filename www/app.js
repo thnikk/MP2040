@@ -255,12 +255,6 @@ async function api(path, options) {
   return res.json();
 }
 
-function setStatus(msg, ok = true) {
-  const el = document.getElementById('status');
-  el.textContent = msg;
-  el.style.color = ok ? '#4caf50' : '#e57373';
-}
-
 // Debounce a function by `ms`; trailing edge fires the last call.
 function debounce(fn, ms) {
   let timer = null;
@@ -287,7 +281,7 @@ async function previewLed() {
     });
     if (boardView) boardView.setLedParams(led);
   } catch (e) {
-    setStatus('Preview failed: ' + e, false);
+    Toast.show('Preview failed: ' + e, 'error');
   }
 }
 
@@ -535,7 +529,8 @@ function saveKeyModal() {
 }
 
 async function save() {
-  setStatus('Saving...', true);
+  const saveBtn = document.getElementById('save');
+  saveBtn.disabled = true;
   try {
     syncCurrentToProfile();
     const res = await api('/api/setOptions', {
@@ -555,29 +550,33 @@ async function save() {
       refreshPerProfileControls();
       updateProfileTabs();
     }
-    setStatus('Saved.');
+    Toast.show('Saved.', 'success');
   } catch (e) {
-    setStatus('Save failed: ' + e, false);
+    Toast.show('Save failed: ' + e, 'error');
   }
+  saveBtn.disabled = false;
 }
 
 async function reboot() {
-  setStatus('Rebooting...', true);
+  const rebootBtn = document.getElementById('reboot');
+  rebootBtn.disabled = true;
   try {
     await api('/api/reboot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bootMode: 0 }),
     });
+    Toast.show('Rebooting...', 'info');
   } catch (e) {
-    setStatus('Reboot failed: ' + e, false);
+    Toast.show('Reboot failed: ' + e, 'error');
+    rebootBtn.disabled = false;
   }
 }
 
 async function resetSettings() {
   if (!confirm('Reset all settings to defaults and reboot?')) return;
   await api('/api/resetSettings', { method: 'POST' });
-  setStatus('Settings reset. Rebooting...', true);
+  Toast.show('Settings reset. Rebooting...', 'info');
 }
 
 document.getElementById('save').addEventListener('click', save);

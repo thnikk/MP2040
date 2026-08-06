@@ -103,7 +103,6 @@ body {
 
 .nav-logo {
   height: 40px;
-  margin: 0 16px;
   display: block;
   fill: currentColor;
   filter: invert(0.85) brightness(1.3);
@@ -939,9 +938,9 @@ button.secondary {
   color: inherit;
 }
 
-#status {
-  color: var(--muted);
-  font-size: 0.9rem;
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Key edit modal */
@@ -1141,4 +1140,79 @@ button.secondary {
 
 .kb-key-main {
   font-size: 1rem;
+}
+
+/* Toast / Notification (port of GP2040-th's toast styles) */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+.toast {
+  pointer-events: auto;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
+  font-weight: 500;
+  cursor: pointer;
+  animation: toast-in 0.3s ease forwards;
+  background-color: color-mix(in srgb, var(--bg-2) 80%, transparent);
+  backdrop-filter: blur(8px);
+  user-select: none;
+}
+
+.toast.exiting {
+  animation: toast-out 0.3s ease forwards;
+}
+
+.toast-success {
+  color: var(--nord14);
+  border: 1px solid var(--nord14);
+}
+
+.toast-error {
+  color: var(--nord11);
+  border: 1px solid var(--nord11);
+}
+
+.toast-info {
+  color: var(--nord10);
+  border: 1px solid var(--nord10);
+}
+
+.toast-warning {
+  color: var(--nord13);
+  border: 1px solid var(--nord13);
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
