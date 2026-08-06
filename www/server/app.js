@@ -197,6 +197,12 @@ export function createMockApp() {
     }
   });
 
+  // The web UI is one HTML file routed client-side (/, /layout, /settings);
+  // mirror the firmware's route mapping so those paths work in dev too.
+  app.get(['/', '/layout', '/settings'], (req, res) => {
+    res.type('html').send(readFileSync(path.join(__dirname, '..', 'index.html')));
+  });
+
   return app;
 }
 

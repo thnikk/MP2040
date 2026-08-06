@@ -692,6 +692,19 @@ static int openPinState(struct fs_file *file)
 
 int fs_open_custom(struct fs_file *file, const char *name)
 {
+    // The web UI is a single HTML file routed client-side. Serve index.html
+    // for the /layout and /settings pages so deep links and refreshes work;
+    // mirror what fs_open does for a real fsdata entry.
+    if (strcmp(name, "/layout") == 0 || strcmp(name, "/settings") == 0)
+    {
+        file->data = (const char *)file__index_html->data;
+        file->len = file__index_html->len;
+        file->index = file__index_html->len;
+        file->pextension = NULL;
+        file->http_header_included = file__index_html->http_header_included;
+        return 1;
+    }
+
     for (const auto& handlerFunc : handlerFuncs)
     {
         if (strcmp(handlerFunc.first, name) == 0)

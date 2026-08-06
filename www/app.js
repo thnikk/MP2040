@@ -321,6 +321,73 @@ function buildOptionsBody() {
   };
 }
 
+// ---- routing ----------------------------------------------------------
+// Single HTML file, three routes: the landing page (/), the layout editor
+// (/layout) and the settings page (/settings). The firmware httpd serves
+// index.html for /layout and /settings (fs_open_custom in webconfig.cpp);
+// here we switch which page is visible and keep the URL in sync via
+// history.pushState.
+const ROUTES = ['/', '/layout', '/settings'];
+
+function currentRoute() {
+  return ROUTES.includes(location.pathname) ? location.pathname : '/';
+}
+
+function renderRoute() {
+  const route = currentRoute();
+  document.getElementById('page-home').hidden = route !== '/';
+  document.getElementById('page-layout').hidden = route !== '/layout';
+  document.getElementById('page-settings').hidden = route !== '/settings';
+  document.querySelectorAll('.nav-link').forEach((el) => {
+    el.classList.toggle('active', el.dataset.route === route);
+  });
+  // The board SVG is laid out while hidden; re-fit it when the layout page
+  // becomes visible, and only long-poll pin state there.
+  if (route === '/layout') {
+    if (boardView) boardView.refresh();
+    pollPinState();
+  } else {
+    stopPinState();
+  }
+}
+
+function navigate(path, event) {
+  if (event) event.preventDefault();
+  if (location.pathname === path) return;
+  history.pushState({}, '', path);
+  renderRoute();
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener('popstate', renderRoute);
+
+// Live pin state: highlight buttons yellow while their physical switch is
+// held. The board answers /api/getPinState only when a button actually
+// changes (long-poll), so this is event-driven rather than polled. A small
+// gap before each reconnect keeps the mock server (which answers instantly)
+// from being hammered, and the whole loop pauses while the tab is hidden or
+// the layout page isn't shown.
+let pinStateTimer = null;
+function pollPinState() {
+  if (document.hidden) return;
+  pinStateTimer = setTimeout(async () => {
+    try {
+      const res = await api('/api/getPinState');
+      if (boardView) boardView.setHeldPins(res.heldPins || []);
+    } catch (e) {
+      // Server closed the parked request (idle timeout); just retry.
+    }
+    pollPinState();
+  }, 20);
+}
+function stopPinState() {
+  clearTimeout(pinStateTimer);
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopPinState();
+  else if (currentRoute() === '/layout') pollPinState();
+});
+
 async function load() {
   const [options, version] = await Promise.all([
     api('/api/getOptions'),
@@ -328,6 +395,10 @@ async function load() {
   ]);
   currentOptions = options;
   document.getElementById('board-label').textContent = version.boardLabel || '';
+  document.getElementById('board-label-hero').textContent = version.boardLabel || '';
+  document.getElementById('landing-version').textContent = version.firmwareVersion
+    ? `Firmware ${version.firmwareVersion} · ${version.gitCommit || ''}`.trim()
+    : '';
 
   const led = options.led || {};
   const midi = options.midi || {};
@@ -446,32 +517,7 @@ async function load() {
 
   loadProfileIntoUi();
 
-  // Live pin state: highlight buttons yellow while their physical switch is
-  // held. The board answers /api/getPinState only when a button actually
-  // changes (long-poll), so this is event-driven rather than polled. A small
-  // gap before each reconnect keeps the mock server (which answers instantly)
-  // from being hammered, and the whole loop pauses while the tab is hidden.
-  let pinStateTimer = null;
-  function pollPinState() {
-    if (document.hidden) return;
-    pinStateTimer = setTimeout(async () => {
-      try {
-        const res = await api('/api/getPinState');
-        if (boardView) boardView.setHeldPins(res.heldPins || []);
-      } catch (e) {
-        // Server closed the parked request (idle timeout); just retry.
-      }
-      pollPinState();
-    }, 20);
-  }
-  function stopPinState() {
-    clearTimeout(pinStateTimer);
-  }
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopPinState();
-    else pollPinState();
-  });
-  pollPinState();
+  renderRoute();
 }
 
 // Show either the key/modifier pickers (keyboard mode) or the MIDI note picker
@@ -606,6 +652,13 @@ async function resetSettings() {
 }
 
 document.getElementById('save').addEventListener('click', save);
+document.getElementById('save-settings').addEventListener('click', save);
+document.querySelectorAll('[data-route]').forEach((el) => {
+  el.addEventListener('click', (e) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    navigate(el.dataset.route, e);
+  });
+});
 document.getElementById('reboot').addEventListener('click', openRebootModal);
 document.getElementById('reset').addEventListener('click', resetSettings);
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);

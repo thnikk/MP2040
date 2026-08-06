@@ -24,12 +24,16 @@
 <body>
   <header class="navigation">
     <div class="nav-inner">
-      <a class="logo-link" href="#" title="MP2040">
+      <a class="logo-link" href="/" data-route="/" title="MP2040">
         <img class="nav-logo" src="/icons/logo.svg" alt="MP2040">
       </a>
       <div class="nav-title">
         <h1>MP2040 <span id="board-label"></span></h1>
       </div>
+      <nav class="nav-links">
+        <a class="nav-link" href="/layout" data-route="/layout"><img src="/icons/layout.svg" alt="">Layout</a>
+        <a class="nav-link" href="/settings" data-route="/settings"><img src="/icons/auto.svg" alt="">Settings</a>
+      </nav>
       <button id="reboot" class="nav-reboot" title="Reboot">
         <img src="/icons/reboot.svg" alt="">
       </button>
@@ -37,72 +41,107 @@
   </header>
 
   <main>
-    <section>
-      <h2><img class="heading-icon" src="/icons/auto.svg" alt="">Settings</h2>
-      <div class="general-form">
-        <label for="default-input-mode">Default Input Mode</label>
-        <select id="default-input-mode">
-          <option value="1">Keyboard</option>
-          <option value="2">MIDI</option>
-        </select>
-        <label for="active-profile">Active Profile on Boot</label>
-        <select id="active-profile">
-          <option value="0">Profile 1</option>
-          <option value="1">Profile 2</option>
-          <option value="2">Profile 3</option>
-          <option value="3">Profile 4</option>
-        </select>
-        <div id="midi-settings" hidden>
-          <label for="midi-channel">MIDI Channel</label>
-          <div id="midi-channel" class="midi-spinner"></div>
-          <label for="midi-velocity">MIDI Velocity</label>
-          <div id="midi-velocity" class="midi-spinner"></div>
-        </div>
-        <label for="led-timeout">LED Timeout</label>
-        <div id="led-timeout" class="midi-spinner"></div>
-        <p class="hint" id="general-hint">The pad enumerates as a keyboard at boot. Hold the web config pin at power-on to get back here.</p>
-        <div class="general-reset">
-          <button id="reset" class="danger">Reset Settings</button>
-        </div>
+    <div id="page-home" class="page">
+      <section class="hero">
+        <img class="hero-logo" src="/icons/logo.svg" alt="MP2040">
+        <h2>MP2040 <span id="board-label-hero"></span></h2>
+        <p class="hint">Configure your pad over USB.</p>
+      </section>
+
+      <div class="landing-cards">
+        <a class="landing-card" href="/layout" data-route="/layout">
+          <img class="landing-card-icon" src="/icons/layout.svg" alt="">
+          <div>
+            <h3>Layout</h3>
+            <p>Keys, modifiers, profiles, and LEDs.</p>
+          </div>
+        </a>
+        <a class="landing-card" href="/settings" data-route="/settings">
+          <img class="landing-card-icon" src="/icons/auto.svg" alt="">
+          <div>
+            <h3>Settings</h3>
+            <p>Input mode, MIDI, LED timeout, and reset.</p>
+          </div>
+        </a>
       </div>
-    </section>
 
-    <section>
-      <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profile</h2>
-      <div class="profile-tabs" id="profile-tabs"></div>
-    </section>
+      <p class="hint landing-version" id="landing-version"></p>
+    </div>
 
-    <section>
-      <h2><img class="heading-icon" src="/icons/bulb.svg" alt="">LEDs</h2>
-      <div class="led-form">
-        <div class="led-row">
-          <label class="led-mode-label" for="led-mode">LED Mode</label>
-          <select id="led-mode">
-            <option value="0">Static</option>
-            <option value="1">Cycle</option>
-            <option value="2">Reactive</option>
-            <option value="3">BPS</option>
-            <option value="4">Ripple</option>
-            <option value="5">Rain</option>
+    <div id="page-layout" class="page" hidden>
+      <section>
+        <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profile</h2>
+        <div class="profile-tabs" id="profile-tabs"></div>
+      </section>
+
+      <section>
+        <h2><img class="heading-icon" src="/icons/bulb.svg" alt="">LEDs</h2>
+        <div class="led-form">
+          <div class="led-row">
+            <label class="led-mode-label" for="led-mode">LED Mode</label>
+            <select id="led-mode">
+              <option value="0">Static</option>
+              <option value="1">Cycle</option>
+              <option value="2">Reactive</option>
+              <option value="3">BPS</option>
+              <option value="4">Ripple</option>
+              <option value="5">Rain</option>
+            </select>
+            <div class="led-slider" id="led-brightness"></div>
+            <div class="led-slider" id="led-speed"></div>
+          </div>
+          <div class="led-colors">
+            <div class="led-color-picker"><div id="led-colorNormal"></div></div>
+            <div class="led-color-picker"><div id="led-colorPressed"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2><img class="heading-icon" src="/icons/layout.svg" alt="">Board</h2>
+        <p class="hint" id="board-hint">Click a button on the board to set its key and modifiers.</p>
+        <div id="board-panel"></div>
+      </section>
+
+      <div class="actions">
+        <button id="save">Save</button>
+      </div>
+    </div>
+
+    <div id="page-settings" class="page" hidden>
+      <section>
+        <h2><img class="heading-icon" src="/icons/auto.svg" alt="">Settings</h2>
+        <div class="general-form">
+          <label for="default-input-mode">Default Input Mode</label>
+          <select id="default-input-mode">
+            <option value="1">Keyboard</option>
+            <option value="2">MIDI</option>
           </select>
-          <div class="led-slider" id="led-brightness"></div>
-          <div class="led-slider" id="led-speed"></div>
+          <label for="active-profile">Active Profile on Boot</label>
+          <select id="active-profile">
+            <option value="0">Profile 1</option>
+            <option value="1">Profile 2</option>
+            <option value="2">Profile 3</option>
+            <option value="3">Profile 4</option>
+          </select>
+          <div id="midi-settings" hidden>
+            <label for="midi-channel">MIDI Channel</label>
+            <div id="midi-channel" class="midi-spinner"></div>
+            <label for="midi-velocity">MIDI Velocity</label>
+            <div id="midi-velocity" class="midi-spinner"></div>
+          </div>
+          <label for="led-timeout">LED Timeout</label>
+          <div id="led-timeout" class="midi-spinner"></div>
+          <p class="hint" id="general-hint">The pad enumerates as a keyboard at boot. Hold the web config pin at power-on to get back here.</p>
+          <div class="general-reset">
+            <button id="reset" class="danger">Reset Settings</button>
+          </div>
         </div>
-        <div class="led-colors">
-          <div class="led-color-picker"><div id="led-colorNormal"></div></div>
-          <div class="led-color-picker"><div id="led-colorPressed"></div></div>
-        </div>
+      </section>
+
+      <div class="actions">
+        <button id="save-settings">Save</button>
       </div>
-    </section>
-
-    <section>
-      <h2><img class="heading-icon" src="/icons/layout.svg" alt="">Board</h2>
-      <p class="hint" id="board-hint">Click a button on the board to set its key and modifiers.</p>
-      <div id="board-panel"></div>
-    </section>
-
-    <div class="actions">
-      <button id="save">Save</button>
     </div>
   </main>
 
