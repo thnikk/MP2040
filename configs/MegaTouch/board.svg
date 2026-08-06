@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   viewBox="0 0 319.48049 138.06"
-   width="319.4805"
-   height="138.06"
+   viewBox="0 0 320.48 139.06"
+   width="320.48001"
+   height="139.06"
    version="1.1"
    id="svg69"
    sodipodi:docname="board.svg"
@@ -21,11 +21,11 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="4"
-     inkscape:cx="171"
-     inkscape:cy="-11.5"
-     inkscape:window-width="2536"
-     inkscape:window-height="1371"
+     inkscape:zoom="2"
+     inkscape:cx="21.5"
+     inkscape:cy="136.25"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -80,9 +80,9 @@
      inkscape:groupmode="layer"
      id="layer1"
      inkscape:label="Layer 1"
-     transform="translate(69.0315,-1053.49)">
+     transform="translate(69.031502,-1053.49)">
     <rect
-       style="fill:#1c1f26;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
+       style="fill:#1c1f26;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="case"
        width="318.48001"
        height="137.06"
@@ -91,7 +91,7 @@
        rx="15.118111"
        ry="15.118111" />
     <rect
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
        id="pin26"
        width="113.386"
        height="113.38"
@@ -100,7 +100,7 @@
        rx="3.7795277"
        ry="3.7795277" />
     <rect
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
        id="pin27"
        width="113.386"
        height="113.38"
@@ -109,7 +109,7 @@
        rx="3.7795277"
        ry="3.7795277" />
     <rect
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
        id="pin01"
        width="52.912998"
        height="52.91"
@@ -118,7 +118,7 @@
        rx="3.7795277"
        ry="3.7795277" />
     <rect
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
        id="pin02"
        width="52.912998"
        height="52.91"
@@ -131,8 +131,8 @@
        id="led0"
        width="37.795277"
        height="15.118111"
-       x="-21.812019"
-       y="1077.1686"
+       x="-21.812023"
+       y="1072.4993"
        rx="7.5590553"
        ry="7.5590553" />
     <rect
@@ -141,7 +141,7 @@
        width="37.795277"
        height="15.118111"
        x="102.04736"
-       y="1077.1686"
+       y="1072.4993"
        rx="7.5590553"
        ry="7.5590553" />
   </g>

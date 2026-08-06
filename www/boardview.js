@@ -1,13 +1,28 @@
 // BoardView — a vanilla port of GP2040-th's BoardSVG component.
 //
 // Loads the board's SVG (served as /board.svg), styles it dark, labels each
-// #pinNN element with its key assignment (key + modifiers), colors the #led-N
-// slots that are mapped in pinLedIndices, and wires pin / LED / test clicks.
+// button element (identified by "pin"/"key" in its id or inkscape:label) with
+// its key assignment (key + modifiers), colors the #led-N slots that are
+// mapped in pinLedIndices, and wires pin / LED / test clicks.
 
 const SHAPE_TAGS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line'];
 const SHAPE_SEL = 'path, rect, circle, ellipse, polygon, polyline, line';
-const PIN_RE = /^pin(\d+)$/;
-const KEY_RE = /^key(\d+)$/;
+const LABEL_RE = /-label$/i;
+
+// Returns { pinNumber, name } if el is a button: the element id or its
+// inkscape:label starts with "pin"/"key" followed by digits (matrix boards
+// use "keyNN", direct-pin boards "pinNN"). Skips "-label" guide elements
+// (e.g. "pin27-label"), which are label-positioning paths, not buttons.
+// name is the matched id or inkscape:label (used to find the "-label" guide).
+function matchButtonIndex(el, isMatrix) {
+  const re = isMatrix ? /^key(\d+)/i : /^pin(\d+)/i;
+  for (const name of [el.id, el.getAttribute('inkscape:label')]) {
+    if (!name || LABEL_RE.test(name)) continue;
+    const m = name.match(re);
+    if (m) return { pinNumber: parseInt(m[1], 10), name };
+  }
+  return null;
+}
 
 const MODIFIER_SHORT = {
   0xe0: 'Ctrl', 0xe1: 'Shift', 0xe2: 'Alt', 0xe3: 'Win',
@@ -209,13 +224,15 @@ class BoardView {
   render(svgText) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgText, 'image/svg+xml');
-    // Matrix boards index keys by linear matrix position (keyNN ids) rather
-    // than GPIO pins (pinNN ids); either way the array index is the key index.
-    const refRe = this.options?.matrix?.enabled ? KEY_RE : PIN_RE;
+    // Matrix boards index keys by linear matrix position (keyNN names) rather
+    // than GPIO pins (pinNN names); either way the array index is the key
+    // index. Buttons are found by "pin"/"key" in their id or inkscape:label,
+    // skipping the "*-label" guide elements.
+    const isMatrix = !!this.options?.matrix?.enabled;
     this.pinElements = [];
     doc.querySelectorAll('[id]').forEach((el) => {
-      const m = el.id.match(refRe);
-      if (m) this.pinElements.push({ id: el.id, pinNumber: parseInt(m[1], 10) });
+      const match = matchButtonIndex(el, isMatrix);
+      if (match) this.pinElements.push({ id: el.id, ...match });
     });
     this.pinElements.sort((a, b) => a.pinNumber - b.pinNumber);
 
@@ -270,7 +287,7 @@ class BoardView {
   updateLabels() {
     if (!this.svgRoot) return;
 
-    for (const { id, pinNumber } of this.pinElements) {
+    for (const { id, pinNumber, name } of this.pinElements) {
       const el = this.container.querySelector(`#${CSS.escape(id)}`);
       if (!el) continue;
 
@@ -313,8 +330,10 @@ class BoardView {
         lines.push(keycode < 0xe0 ? keyLabel(keycode) : (MODIFIER_SHORT[keycode] || keyLabel(keycode)));
       }
 
-      // Position: use the -label guide path if present, else shape center.
-      const guidePath = this.container.querySelector(`#${CSS.escape(id + '-label')}`);
+      // Position: use the <name>-label guide path if present, else shape
+      // center. Looked up by id or inkscape:label so buttons named either way
+      // still land their label on the guide.
+      const guidePath = findByRef(this.container, `${name}-label`);
       let cx, cy, rotation = null;
       if (guidePath) {
         const ep = parsePathEndpoints(guidePath.getAttribute('d') || '');
@@ -524,12 +543,10 @@ class BoardView {
       const el = this.container.querySelector(`#${CSS.escape(id)}`);
       if (!el) return;
 
-      const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
-      const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
-      const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
-      const isActive = midiMode ? midiNote > 0 : keycode > 0;
       const isHeld = this.heldPins.has(pinNumber);
 
+      // All buttons get the same base fill (mapping is shown by the label
+      // text); only held pins are highlighted differently.
       shapesOf(el).forEach((shape) => {
         const s = shape;
         if (isHeld) {
@@ -537,14 +554,9 @@ class BoardView {
           s.style.setProperty('stroke', '#ffff00', 'important');
           s.style.setProperty('stroke-width', '3', 'important');
           s.style.removeProperty('fill-opacity');
-        } else if (isActive) {
+        } else {
           s.style.setProperty('fill', 'var(--bg-2)', 'important');
           s.style.removeProperty('fill-opacity');
-          s.style.setProperty('stroke', 'var(--bg-4)', 'important');
-          s.style.setProperty('stroke-width', '2', 'important');
-        } else {
-          s.style.setProperty('fill', 'var(--bg-1)', 'important');
-          s.style.setProperty('fill-opacity', '0.2', 'important');
           s.style.setProperty('stroke', 'var(--bg-4)', 'important');
           s.style.setProperty('stroke-width', '2', 'important');
         }
