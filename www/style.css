@@ -128,7 +128,6 @@ body {
 
 .nav-title {
   margin-left: auto;
-  margin-right: 20px;
 }
 
 .nav-title h1 {
@@ -139,6 +138,28 @@ body {
 
 .nav-title h1 span {
   color: var(--accent);
+}
+
+/* Navbar reboot button (green = success action) */
+.nav-reboot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: var(--nord14);
+  color: var(--nord0);
+  border-color: transparent;
+}
+
+.nav-reboot:hover {
+  background: color-mix(in srgb, var(--nord14) 75%, var(--nord0));
+  border-color: transparent;
+}
+
+.nav-reboot img {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .theme-btn img {
@@ -485,6 +506,13 @@ html[data-theme="light"] select {
 
 .general-form .hint {
   flex-basis: 100%;
+}
+
+/* Reset Settings row at the bottom of the General card */
+.general-reset {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* MIDI-only General controls (hidden unless the input mode is MIDI) */
@@ -834,6 +862,7 @@ html[data-theme="light"] select {
   max-width: 1000px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -856,7 +885,7 @@ button:hover {
 
 button.danger {
   background: var(--nord11);
-  color: var(--nord0);
+  color: var(--nord6);
   border-color: transparent;
 }
 

@@ -30,6 +30,9 @@
       <div class="nav-title">
         <h1>MP2040 <span id="board-label"></span></h1>
       </div>
+      <button id="reboot" class="nav-reboot" title="Reboot">
+        <img src="/icons/reboot.svg" alt="">
+      </button>
     </div>
   </header>
 
@@ -49,6 +52,9 @@
           <div id="midi-velocity" class="midi-spinner"></div>
         </div>
         <p class="hint" id="general-hint">The pad enumerates as a keyboard at boot. Hold the web config pin at power-on to get back here.</p>
+        <div class="general-reset">
+          <button id="reset" class="danger">Reset Settings</button>
+        </div>
       </div>
     </section>
 
@@ -81,10 +87,8 @@
     </section>
 
     <div class="actions">
-      <button id="save">Save</button>
-      <button id="reboot">Reboot</button>
-      <button id="reset" class="danger">Reset Settings</button>
       <span id="status"></span>
+      <button id="save">Save</button>
     </div>
   </main>
 
