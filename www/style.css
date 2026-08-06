@@ -17,50 +17,37 @@
   --nord14: #a3be8c;
   --nord15: #b48ead;
 
-  --page-bg: var(--nord-dark-bg);
+  --bg-1: var(--nord-dark-bg);
+  --bg-2: var(--nord0);
+  --bg-3: var(--nord1);
+  --bg-4: var(--nord2);
+
+  --page-bg: var(--bg-1);
   --text: var(--nord4);
   --muted: color-mix(in srgb, var(--text) 60%, transparent);
-  --card-bg: var(--nord0);
-  --card-border: var(--nord1);
-  --btn-bg: var(--nord0);
-  --btn-text: var(--nord4);
-  --btn-border: var(--nord1);
-  --btn-hover-border: var(--nord2);
-  --toggle-active-bg: var(--nord1);
-  --hover-bg: var(--nord2);
+  --card-bg: var(--bg-2);
+  --card-border: var(--bg-3);
+  --btn-bg: var(--bg-3);
+  --btn-text: var(--text);
+  --btn-border: var(--bg-4);
+  --btn-hover-border: var(--bg-4);
+  --toggle-active-bg: var(--bg-4);
+  --hover-bg: var(--bg-4);
   --accent: var(--nord14);
-  --logo-color: var(--nord4);
-  --footer-bg: var(--nord0);
-  --footer-border: var(--nord1);
-
-  /* aliases used by the board SVG view */
-  --bg-1: var(--page-bg);
-  --bg-2: var(--card-bg);
-  --bg-3: var(--nord1);
-  --bg-4: var(--card-border);
+  --logo-color: var(--text);
+  --footer-bg: var(--bg-2);
+  --footer-border: var(--bg-3);
 }
 
 [data-theme="light"] {
-  --page-bg: #eceff4;
-  --text: #2e3440;
-  --muted: #4c566a;
-  --card-bg: #e5e9f0;
-  --card-border: #c8d0dc;
-  --btn-bg: #e5e9f0;
-  --btn-text: #2e3440;
-  --btn-border: #c8d0dc;
-  --btn-hover-border: #c8d0dc;
-  --toggle-active-bg: #c8d0dc;
-  --hover-bg: #c8d0dc;
-  --accent: var(--nord10);
-  --logo-color: #2e3440;
-  --footer-bg: #e5e9f0;
-  --footer-border: #c8d0dc;
+  --bg-1: #ffffff;
+  --bg-2: var(--nord6);
+  --bg-3: var(--nord5);
+  --bg-4: var(--nord4);
 
-  --bg-1: #eceff4;
-  --bg-2: #e5e9f0;
-  --bg-3: #c8d0dc;
-  --bg-4: #c8d0dc;
+  --text: var(--nord0);
+  --muted: var(--nord3);
+  --accent: var(--nord10);
 }
 
 * { box-sizing: border-box; }
@@ -126,10 +113,6 @@ body {
   filter: none;
 }
 
-.nav-title {
-  margin-left: auto;
-}
-
 .nav-title h1 {
   margin: 0;
   font-size: 20px;
@@ -145,6 +128,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: auto;
   padding: 10px;
   background: var(--nord14);
   color: var(--nord0);
@@ -255,6 +239,7 @@ main {
   max-height: 600px;
   min-width: 300px;
   max-width: 800px;
+  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.1));
 }
 
 .board-placeholder {
@@ -1058,7 +1043,7 @@ button.secondary {
 }
 
 .kb-key:hover {
-  background: var(--nord3);
+  background: var(--hover-bg);
   border-color: var(--nord10);
 }
 
