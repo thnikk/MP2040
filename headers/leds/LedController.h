@@ -18,6 +18,7 @@ enum LedMode {
     LED_MODE_REACTIVE, // white -> rainbow -> off fade
     LED_MODE_BPS,      // color tracks keypress rate
     LED_MODE_RIPPLE,   // rings propagate outward from pressed keys
+    LED_MODE_RAIN,     // random drops light up and fade back to black
 };
 
 // Concurrent ripple limit: enough for full-board hammering without letting
@@ -72,8 +73,10 @@ private:
     void renderReactive();
     void renderBps();
     void renderRipple();
+    void renderRain();
     int16_t maxGridDistance(int8_t row, int8_t col);
     void spawnRipple(int8_t row, int8_t col);
+    uint32_t rainRandom();
 
     Neopixel* neopixel;
     int32_t dataPin;
@@ -102,6 +105,8 @@ private:
     uint16_t bpsColor;
     uint16_t lastColor;
     Ripple ripples[MAX_RIPPLES];
+    uint32_t rainDropMillis; // next random drop time (ms since boot)
+    uint32_t rainRandState;  // xorshift PRNG state for drop selection
 };
 
 #endif

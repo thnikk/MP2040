@@ -10,14 +10,20 @@
 // Theme step interval (ms) bounds per effect, indexed by LedMode. The 0-100%
 // speed slider maps exponentially into these: 0% = slowest, 100% = fastest.
 // STATIC is unused (no animation); BPS steps on the fixed render cadence and
-// is handled separately in renderBps().
+// is handled separately in renderBps(). RAIN uses the interval for its fade
+// step; the drop interval itself is a fixed random 1-3s (see update()).
 static const SpeedRange speedRanges[] = {
     { 0, 0 },    // LED_MODE_STATIC
     { 6, 117 },  // LED_MODE_CYCLE   (256-step wheel: ~1.5s .. ~30s / rev)
     { 16, 250 }, // LED_MODE_REACTIVE (32-step fade: ~0.5s .. ~8s)
     { 0, 0 },    // LED_MODE_BPS     (handled separately)
     { 50, 660 }, // LED_MODE_RIPPLE  (radius +1/step: ~0.3s .. ~4s cross)
+    { 25, 200 }, // LED_MODE_RAIN    (32-step fade: ~0.8s .. ~6.4s)
 };
+
+// Rain drop interval bounds (ms): a random drop fires every 0.2-2 seconds.
+#define RAIN_DROP_MIN_MS 200
+#define RAIN_DROP_MAX_MS 2000
 
 // HSV -> RGB matching Adafruit's ColorHSV() as used by unified-2022.
 // hue is 0-255 here (unified passes hue*256 as the 16-bit hue); sat/val 0-255.
@@ -71,7 +77,9 @@ LedController::LedController() :
     bpsCount(0),
     lastBpsMillis(0),
     bpsColor(0),
-    lastColor(0)
+    lastColor(0),
+    rainDropMillis(0),
+    rainRandState(0)
 {
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
         pinLedIndices[pin] = -1;
@@ -176,6 +184,8 @@ void LedController::configure()
     bpsCount = 0;
     bpsColor = 0;
     lastColor = 0;
+    rainRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
+    rainDropMillis = 0;
 
     nextRunTime = make_timeout_time_ms(0);
 }
@@ -254,12 +264,50 @@ void LedController::update()
         }
     }
 
+    // Rain: fire a random drop every 1-3 seconds, lighting one unpressed LED
+    // at full brightness (it then fades in advanceThemeState). Held LEDs are
+    // skipped so presses never act as drops.
+    if (ledMode == LED_MODE_RAIN)
+    {
+        uint32_t now = to_ms_since_boot(get_absolute_time());
+        rainRandState ^= now; // stir the PRNG so drops stay varied
+        if (now >= rainDropMillis && stripCount > 0)
+        {
+            // Uniformly pick among unpressed LEDs (two-pass: count, then
+            // select the kth). If every LED is held, skip the drop.
+            uint32_t unpressed = 0;
+            for (uint32_t i = 0; i < stripCount; i++)
+            {
+                if (!pressedLeds[i]) unpressed++;
+            }
+            if (unpressed > 0)
+            {
+                uint32_t pick = rainRandom() % unpressed;
+                for (uint32_t i = 0; i < stripCount; i++)
+                {
+                    if (!pressedLeds[i])
+                    {
+                        if (pick == 0)
+                        {
+                            ledVal[i] = 255;
+                            break;
+                        }
+                        pick--;
+                    }
+                }
+            }
+            rainDropMillis = now + RAIN_DROP_MIN_MS
+                + (rainRandom() % (RAIN_DROP_MAX_MS - RAIN_DROP_MIN_MS + 1));
+        }
+    }
+
     switch (ledMode)
     {
         case LED_MODE_CYCLE:    renderCycle();    break;
         case LED_MODE_REACTIVE: renderReactive(); break;
         case LED_MODE_BPS:      renderBps();      break;
         case LED_MODE_RIPPLE:   renderRipple();   break;
+        case LED_MODE_RAIN:     renderRain();     break;
         default:                renderStatic();   break;
     }
 }
@@ -288,6 +336,8 @@ void LedController::applyLedPreview(const LedPreview& preview)
     for (uint32_t i = 0; i < MAX_RIPPLES; i++)
         ripples[i].active = false;
     prevKeyState = Storage::getInstance().keyState;
+    rainRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
+    rainDropMillis = 0;
 }
 
 // Map the 0-100% speed to a theme step interval (ms) for the current mode.
@@ -350,6 +400,19 @@ void LedController::advanceThemeState()
                 ripples[i].radius++;
                 if (ripples[i].radius > maxGridDistance(ripples[i].row, ripples[i].col))
                     ripples[i].active = false;
+            }
+            break;
+
+        case LED_MODE_RAIN:
+            for (uint32_t i = 0; i < stripCount; i++)
+            {
+                // Held LEDs show the pressed color in renderRain() and are not
+                // treated as drops; freeze their fade while pressed.
+                if (!pressedLeds[i] && ledVal[i] > 0)
+                {
+                    ledVal[i] -= 8;
+                    if (ledVal[i] < 0) ledVal[i] = 0;
+                }
             }
             break;
 
@@ -539,6 +602,49 @@ void LedController::renderRipple()
                     neopixel->setPixel(idx, pr / 4, pg / 4, pb / 4);
                 }
             }
+        }
+    }
+    neopixel->show();
+}
+
+// xorshift32 PRNG for rain drop selection. Deterministic and dependency-free;
+// the seed is (re)initialized from the boot clock and stirred each drop.
+uint32_t LedController::rainRandom()
+{
+    uint32_t x = rainRandState;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    rainRandState = x;
+    return x;
+}
+
+// Rain: LEDs default to black. update() periodically lights a random LED at
+// full normal color; advanceThemeState() fades it back to black. Pressed LEDs
+// always show the pressed color.
+void LedController::renderRain()
+{
+    float scale = brightnessMaximum / 255.0f;
+    uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
+    uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
+    uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
+    uint8_t pr = static_cast<uint8_t>(((colorPressed >> 16) & 0xFF) * scale);
+    uint8_t pg = static_cast<uint8_t>(((colorPressed >> 8) & 0xFF) * scale);
+    uint8_t pb = static_cast<uint8_t>((colorPressed & 0xFF) * scale);
+
+    for (uint32_t i = 0; i < stripCount; i++)
+    {
+        if (pressedLeds[i])
+        {
+            neopixel->setPixel(i, pr, pg, pb);
+        }
+        else
+        {
+            uint32_t v = ledVal[i] > 0 ? static_cast<uint32_t>(ledVal[i]) : 0;
+            neopixel->setPixel(i,
+                static_cast<uint8_t>(nr * v / 255),
+                static_cast<uint8_t>(ng * v / 255),
+                static_cast<uint8_t>(nb * v / 255));
         }
     }
     neopixel->show();

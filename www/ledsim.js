@@ -7,8 +7,13 @@ const LED_MODE_CYCLE = 1;
 const LED_MODE_REACTIVE = 2;
 const LED_MODE_BPS = 3;
 const LED_MODE_RIPPLE = 4;
+const LED_MODE_RAIN = 5;
 
 const MAX_RIPPLES = 8;
+
+// Rain drop interval bounds (ms): a random drop fires every 0.2-2 seconds.
+const RAIN_DROP_MIN_MS = 200;
+const RAIN_DROP_MAX_MS = 2000;
 
 // Theme step interval (ms) bounds per mode, indexed by LED_MODE_* (mirrors
 // speedRanges[] in LedController.cpp). The 0-100% speed maps exponentially
@@ -20,6 +25,7 @@ const speedRanges = [
   { min: 16, max: 250 },  // LED_MODE_REACTIVE
   { min: 0, max: 0 },     // LED_MODE_BPS
   { min: 50, max: 660 },  // LED_MODE_RIPPLE
+  { min: 25, max: 200 },  // LED_MODE_RAIN (fade step; drop interval is fixed 1-3s)
 ];
 
 // HSV -> RGB matching the firmware's hsvToRgb (Adafruit ColorHSV variant).
@@ -62,6 +68,8 @@ class LedSim {
     this.bpsColor = 0;
     this.lastColor = 0;
     this.ripples = [];
+    this.rainDropMillis = 0;
+    this.rainRandState = 0;
 
     this.mode = LED_MODE_STATIC;
     this.themeInterval = 20;
@@ -129,6 +137,8 @@ class LedSim {
     this.bpsColor = 0;
     this.lastColor = 0;
     this.prevHeld = new Set();
+    this.rainRandState = (Math.floor(performance.now()) ^ 0x9e3779b9) | 0;
+    this.rainDropMillis = 0;
     this.resync();
   }
 
@@ -230,7 +240,27 @@ class LedSim {
             this.ripples[i].active = false;
         }
         break;
+
+      case LED_MODE_RAIN:
+        for (let i = 0; i < this.count; i++) {
+          // Held LEDs show the pressed color in renderRain() and are not
+          // treated as drops; freeze their fade while pressed.
+          if (!this.pressed[i] && this.ledVal[i] > 0) {
+            this.ledVal[i] = Math.max(0, this.ledVal[i] - 8);
+          }
+        }
+        break;
     }
+  }
+
+  // xorshift32 PRNG mirroring LedController::rainRandom().
+  rainRandom() {
+    let x = this.rainRandState | 0;
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    this.rainRandState = x | 0;
+    return x >>> 0;
   }
 
   scaled(color, scale) {
@@ -319,10 +349,55 @@ class LedSim {
     return out;
   }
 
+  renderRain() {
+    const scale = this.brightness / 255;
+    const n = this.scaled(this.colorNormal, scale);
+    const p = this.scaled(this.colorPressed, scale);
+    const out = [];
+    for (let i = 0; i < this.count; i++) {
+      if (this.pressed[i]) {
+        out.push(p.slice());
+      } else {
+        const v = Math.max(0, this.ledVal[i]);
+        out.push([
+          Math.floor((n[0] * v) / 255),
+          Math.floor((n[1] * v) / 255),
+          Math.floor((n[2] * v) / 255),
+        ]);
+      }
+    }
+    return out;
+  }
+
   // Advance theme state (catching up missed steps like the firmware) and
   // return the per-LED RGB array for the current frame.
   tick() {
     const now = performance.now();
+    if (this.mode === LED_MODE_RAIN) {
+      // Fire a random drop every 1-3 seconds on an unpressed LED, mirroring
+      // update() in firmware. Held LEDs are skipped so presses never act as drops.
+      this.rainRandState ^= Math.floor(now) | 0;
+      if (now >= this.rainDropMillis && this.count > 0) {
+        // Uniformly pick among unpressed LEDs (count, then select the kth).
+        // If every LED is held, skip the drop.
+        let unpressed = 0;
+        for (let i = 0; i < this.count; i++) {
+          if (!this.pressed[i]) unpressed++;
+        }
+        if (unpressed > 0) {
+          let pick = this.rainRandom() % unpressed;
+          for (let i = 0; i < this.count; i++) {
+            if (!this.pressed[i]) {
+              if (pick === 0) { this.ledVal[i] = 255; break; }
+              pick--;
+            }
+          }
+        }
+        this.rainDropMillis =
+          now + RAIN_DROP_MIN_MS +
+          (this.rainRandom() % (RAIN_DROP_MAX_MS - RAIN_DROP_MIN_MS + 1));
+      }
+    }
     if (this.mode !== LED_MODE_STATIC) {
       if (now - this.lastThemeMillis >= this.themeInterval) {
         const elapsed = now - this.lastThemeMillis;
@@ -336,6 +411,7 @@ class LedSim {
       case LED_MODE_REACTIVE: return this.renderReactive();
       case LED_MODE_BPS: return this.renderBps();
       case LED_MODE_RIPPLE: return this.renderRipple();
+      case LED_MODE_RAIN: return this.renderRain();
       default: return this.renderStatic();
     }
   }
