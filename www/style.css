@@ -727,9 +727,8 @@ html[data-theme="light"] select {
 
 /* Color picker pill buttons */
 .led-colors {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
+  display: flex;
+  gap: 10px;
 }
 
 .led-color-picker {
