@@ -85,6 +85,7 @@ function defaultOptions() {
       ledCount: board?.led?.ledCount ?? 0,
       ledMode: board?.led?.ledMode ?? 0,
       ledSpeed: board?.led?.ledSpeed ?? 50,
+      ledTimeout: board?.led?.ledTimeout ?? 0,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
       brightnessSteps: board?.led?.brightnessSteps ?? 1,
       colorNormal: board?.led?.colorNormal ?? 0x00ff00,
@@ -134,7 +135,14 @@ export function createMockApp() {
     if (Array.isArray(body.midiNotes)) profile.midiNotes = body.midiNotes;
     if (Array.isArray(body.midiVelocities)) profile.midiVelocities = body.midiVelocities;
     if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
-    if (body.led) profile.led = { ...profile.led, ...body.led };
+    if (body.led) {
+      // ledTimeout is a global (non-profile) LED option, like the firmware.
+      const { ledTimeout, ...profileLed } = body.led;
+      profile.led = { ...profile.led, ...profileLed };
+      if (ledTimeout !== undefined) {
+        current.led.ledTimeout = Math.max(0, Math.min(600, Number(ledTimeout) || 0));
+      }
+    }
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;
     if (Number.isInteger(body.activeProfile)) {
       current.activeProfile = Math.min(3, Math.max(0, body.activeProfile));

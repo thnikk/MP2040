@@ -42,6 +42,15 @@ struct Ripple {
     bool active;
 };
 
+// Inactivity-timeout state. The strip fades out when the timeout expires and
+// fades back in on the next press, so the transition isn't an abrupt cut.
+enum class LedState {
+    ON,          // rendering at full brightness
+    FADING_OUT,  // timeout expired; dimming toward off
+    OFF,         // dark; render loop paused until the next press
+    FADING_IN,   // a press woke the strip; brightening toward ON
+};
+
 class LedController {
 public:
     LedController();
@@ -77,6 +86,9 @@ private:
     int16_t maxGridDistance(int8_t row, int8_t col);
     void spawnRipple(int8_t row, int8_t col);
     uint32_t rainRandom();
+    // BrightnessMaximum scaled by the fade multiplier (ledDim). Full when the
+    // timeout is disabled or the strip is awake; less while fading.
+    uint32_t effBrightness() const { return brightnessMaximum * ledDim / 255; }
 
     Neopixel* neopixel;
     int32_t dataPin;
@@ -88,6 +100,12 @@ private:
     uint32_t ledSpeedPercent; // config 0-100 (higher = faster)
     uint32_t ledSpeed;        // theme step interval in ms (computed from percent)
     uint32_t lastThemeMillis; // last theme state advance time
+    // Inactivity timeout: LEDs go dark after ledTimeoutMs with no key held (a
+    // held key keeps them on; any press wakes them). 0 = always on.
+    uint32_t ledTimeoutMs;
+    uint32_t ledLastActivityMillis; // last time a key was held (ms since boot)
+    LedState ledState;              // timeout state machine (see above)
+    uint8_t ledDim;                 // 0-255 fade multiplier applied to all output
     int32_t pinLedIndices[NUM_BANK0_GPIOS];
     uint32_t brightnessMaximum;
     uint32_t colorNormal;

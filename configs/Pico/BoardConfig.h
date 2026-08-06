@@ -61,6 +61,10 @@
 // Default LED animation speed (0-100 percent, higher = faster; 50 = default)
 #define LED_SPEED 50
 
+// LED inactivity timeout (seconds): strip turns off after this long with no
+// key held (any press wakes it). 0 = always on.
+#define LED_TIMEOUT 0
+
 // Pin → LED strip index mapping. -1 = pin has no LED. The LED(s) at the
 // mapped index (LEDS_PER_KEY of them) light up when the pin is pressed.
 #define LED_INDEX_GP06 0

@@ -513,6 +513,10 @@
 #ifndef LED_SPEED
 #define LED_SPEED 50
 #endif
+// Inactivity timeout (seconds) before the LEDs turn off. 0 = always on.
+#ifndef LED_TIMEOUT
+#define LED_TIMEOUT 0
+#endif
 #ifndef PIN_WEBCONFIG
 #define PIN_WEBCONFIG -1
 #endif
@@ -882,6 +886,7 @@ static void applyDefaults(Config& config)
     config.ledOptions.ledCount = LED_COUNT;
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
+    config.ledOptions.ledTimeout = LED_TIMEOUT;
     config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
@@ -1012,6 +1017,7 @@ void Storage::init() {
         config.ledOptions.colorPressed = LED_COLOR_PRESSED;
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
+        config.ledOptions.ledTimeout = LED_TIMEOUT;
     }
     // ledSpeed changed from a 1-255 scale to 0-100 percent. Discard any
     // legacy stored value (out of the new range) in favor of the board default.

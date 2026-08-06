@@ -45,6 +45,9 @@ message LEDOptions
     // into a theme step interval; each effect defines its own min/max speed.
     // Default from the board's LED_SPEED (0-100).
     optional uint32 ledSpeed = 11;
+    // Inactivity timeout in seconds: LEDs turn off after this long with no key
+    // held (any press wakes them). 0 = always on. Clamped to 0-600 at runtime.
+    optional uint32 ledTimeout = 12;
 }
 
 // A profile: a full key mapping plus the per-profile MIDI options and LED

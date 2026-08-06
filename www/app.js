@@ -84,9 +84,11 @@ let midiKeyboard = null;
 // Pin currently being edited in the modal
 let editingPin = -1;
 
-// LED brightness pill slider (see pillslider.js)
+// LED brightness / speed pill sliders (see pillslider.js) and the LED timeout
+// spinner (see spinner.js, in the Settings card)
 let brightnessSlider = null;
 let speedSlider = null;
+let timeoutSpinner = null;
 
 // LED color pickers (see createColorPicker below)
 let colorNormalPicker = null;
@@ -204,6 +206,7 @@ function refreshPerProfileControls() {
   if (ledModeEl) ledModeEl.value = led.ledMode ?? 0;
   if (brightnessSlider) brightnessSlider.setValue(led.brightnessMaximum ?? 255);
   if (speedSlider) speedSlider.setValue(led.ledSpeed ?? 50);
+  if (timeoutSpinner) timeoutSpinner.setValue(led.ledTimeout ?? 0);
   if (colorNormalPicker) colorNormalPicker.setValue(intToColor(led.colorNormal ?? 0x00ff00));
   if (colorPressedPicker) colorPressedPicker.setValue(intToColor(led.colorPressed ?? 0xffffff));
 }
@@ -270,6 +273,7 @@ async function previewLed() {
     ledMode: parseInt(document.getElementById('led-mode').value, 10),
     ledSpeed: speedSlider ? speedSlider.getValue() : 50,
     brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
+    ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
     colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
     colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
   };
@@ -306,8 +310,9 @@ function buildOptionsBody() {
     },
     led: {
       ledMode: parseInt(document.getElementById('led-mode').value, 10),
-    ledSpeed: speedSlider ? speedSlider.getValue() : 50,
+      ledSpeed: speedSlider ? speedSlider.getValue() : 50,
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
+      ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
     },
@@ -369,6 +374,14 @@ async function load() {
     label: 'Speed',
     value: led.ledSpeed ?? 50,
     padLength: 3,
+    onChange: previewLed,
+  });
+
+  timeoutSpinner = new Spinner({
+    container: document.getElementById('led-timeout'),
+    min: 0,
+    max: 600,
+    value: led.ledTimeout ?? 0,
     onChange: previewLed,
   });
 

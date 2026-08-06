@@ -292,6 +292,7 @@ void MP2040::run() {
 		restore.brightnessMaximum = lo.brightnessMaximum;
 		restore.colorNormal = lo.colorNormal;
 		restore.colorPressed = lo.colorPressed;
+		restore.ledTimeout = lo.ledTimeout;
 		Storage::getInstance().publishLedPreview(restore);
 	}
 

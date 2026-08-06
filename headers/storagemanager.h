@@ -23,6 +23,7 @@ struct LedPreview
     uint32_t brightnessMaximum;
     uint32_t colorNormal;
     uint32_t colorPressed;
+    uint32_t ledTimeout;       // inactivity timeout in seconds (0 = always on)
 };
 
 // Storage manager for board config, LED options, and thread-safe settings

@@ -25,6 +25,10 @@ static const SpeedRange speedRanges[] = {
 #define RAIN_DROP_MIN_MS 200
 #define RAIN_DROP_MAX_MS 2000
 
+// Suspend/wake fade step (0-255 per 20ms render tick). 255/10 = ~25 ticks,
+// so the fade in/out takes roughly half a second.
+#define LED_FADE_STEP 10
+
 // HSV -> RGB matching Adafruit's ColorHSV() as used by unified-2022.
 // hue is 0-255 here (unified passes hue*256 as the 16-bit hue); sat/val 0-255.
 static void hsvToRgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, uint8_t& b)
@@ -65,6 +69,10 @@ LedController::LedController() :
     ledSpeedPercent(50),
     ledSpeed(20),
     lastThemeMillis(0),
+    ledTimeoutMs(0),
+    ledLastActivityMillis(0),
+    ledState(LedState::ON),
+    ledDim(255),
     brightnessMaximum(255),
     colorNormal(0x00FF00),
     colorPressed(0xFFFFFF),
@@ -125,6 +133,13 @@ void LedController::configure()
     brightnessMaximum = ledOptions.brightnessMaximum;
     colorNormal = ledOptions.colorNormal;
     colorPressed = ledOptions.colorPressed;
+    // Inactivity timeout (0-600s), 0 = always on. Clamp defensively against
+    // hand-edited configs. The clock starts at boot so fresh boards stay lit
+    // until the first release.
+    ledTimeoutMs = (ledOptions.ledTimeout > 600 ? 600 : ledOptions.ledTimeout) * 1000u;
+    ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
+    ledState = LedState::ON;
+    ledDim = 255;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         pinLedIndices[pin] = pin < (Pin_t)ledOptions.pinLedIndices_count
@@ -204,6 +219,83 @@ void LedController::update()
 
     const Mask_t keyState = Storage::getInstance().keyState;
 
+    // Inactivity timeout: any held key keeps the LEDs on; once the last key
+    // is released the strip fades out after ledTimeoutMs and a fresh press
+    // fades it back in. While fully off we skip rendering entirely (no show()
+    // calls), so the only per-tick work is the timestamp bookkeeping below.
+    const uint32_t now = to_ms_since_boot(get_absolute_time());
+    if (ledTimeoutMs > 0)
+    {
+        if (keyState != 0)
+            ledLastActivityMillis = now;
+
+        switch (ledState)
+        {
+            case LedState::ON:
+                if (now - ledLastActivityMillis >= ledTimeoutMs)
+                    ledState = LedState::FADING_OUT;
+                break;
+
+            case LedState::FADING_OUT:
+                // A press mid-fade cancels the suspend and ramps back up.
+                if (keyState != 0)
+                    ledState = LedState::FADING_IN;
+                break;
+
+            case LedState::OFF:
+                if (keyState != 0)
+                {
+                    ledState = LedState::FADING_IN;
+                    ledDim = 0;
+                }
+                else
+                {
+                    prevKeyState = keyState; // stay consistent for wake-up
+                    return;
+                }
+                break;
+
+            case LedState::FADING_IN:
+                break;
+        }
+    }
+    else
+    {
+        ledState = LedState::ON;
+    }
+
+    // Step the fade; the ON state holds full brightness.
+    switch (ledState)
+    {
+        case LedState::FADING_OUT:
+            if (ledDim <= LED_FADE_STEP)
+            {
+                ledDim = 0;
+                ledState = LedState::OFF;
+                neopixel->off();
+                prevKeyState = keyState; // stay consistent for wake-up
+                return;
+            }
+            ledDim -= LED_FADE_STEP;
+            break;
+
+        case LedState::FADING_IN:
+            if (ledDim >= 255 - LED_FADE_STEP)
+            {
+                ledDim = 255;
+                ledState = LedState::ON;
+            }
+            else
+            {
+                ledDim += LED_FADE_STEP;
+            }
+            break;
+
+        default:
+            ledDim = 255;
+            break;
+    }
+
     // BPS press-rate counter: count rising edges of any key.
     const Mask_t rising = keyState & ~prevKeyState;
     if (rising)
@@ -253,7 +345,6 @@ void LedController::update()
     // 20ms render cadence.
     if (ledMode != LED_MODE_STATIC)
     {
-        uint32_t now = to_ms_since_boot(get_absolute_time());
         if (now - lastThemeMillis >= ledSpeed)
         {
             uint32_t elapsed = now - lastThemeMillis;
@@ -269,7 +360,6 @@ void LedController::update()
     // skipped so presses never act as drops.
     if (ledMode == LED_MODE_RAIN)
     {
-        uint32_t now = to_ms_since_boot(get_absolute_time());
         rainRandState ^= now; // stir the PRNG so drops stay varied
         if (now >= rainDropMillis && stripCount > 0)
         {
@@ -324,6 +414,11 @@ void LedController::applyLedPreview(const LedPreview& preview)
     brightnessMaximum = preview.brightnessMaximum;
     colorNormal = preview.colorNormal;
     colorPressed = preview.colorPressed;
+    // Inactivity timeout (0-600s), 0 = always on; clamp defensively.
+    ledTimeoutMs = (preview.ledTimeout > 600 ? 600 : preview.ledTimeout) * 1000u;
+    ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
+    ledState = LedState::ON;
+    ledDim = 255;
 
     // Reset theme state so the new mode starts from a clean slate.
     hue = 0;
@@ -424,7 +519,7 @@ void LedController::advanceThemeState()
 // Static: normal color, pressed LEDs show the pressed color.
 void LedController::renderStatic()
 {
-    float scale = brightnessMaximum / 255.0f;
+    float scale = effBrightness() / 255.0f;
     uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
     uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
     uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
@@ -445,16 +540,17 @@ void LedController::renderStatic()
 // Cycle: rainbow wheel, each LED offset by index; pressed LEDs flash white.
 void LedController::renderCycle()
 {
+    const uint32_t brightness = effBrightness();
     for (uint32_t i = 0; i < stripCount; i++)
     {
         if (pressedLeds[i])
         {
-            neopixel->setPixel(i, brightnessMaximum, brightnessMaximum, brightnessMaximum);
+            neopixel->setPixel(i, brightness, brightness, brightness);
         }
         else
         {
             uint8_t r, g, b;
-            hsvToRgb(static_cast<uint8_t>(hue + i * 20), 255, brightnessMaximum, r, g, b);
+            hsvToRgb(static_cast<uint8_t>(hue + i * 20), 255, brightness, r, g, b);
             neopixel->setPixel(i, r, g, b);
         }
     }
@@ -468,7 +564,7 @@ void LedController::renderReactive()
     {
         uint8_t r, g, b;
         hsvToRgb(static_cast<uint8_t>(hue + i * 50), ledSat[i],
-                 ledVal[i] * brightnessMaximum / 255, r, g, b);
+                 ledVal[i] * effBrightness() / 255, r, g, b);
         neopixel->setPixel(i, r, g, b);
     }
     neopixel->show();
@@ -502,16 +598,17 @@ void LedController::renderBps()
     }
 
     uint8_t finalColor = static_cast<uint8_t>(lastColor % 256);
+    const uint32_t brightness = effBrightness();
     for (uint32_t i = 0; i < stripCount; i++)
     {
         if (pressedLeds[i])
         {
-            neopixel->setPixel(i, brightnessMaximum, brightnessMaximum, brightnessMaximum);
+            neopixel->setPixel(i, brightness, brightness, brightness);
         }
         else
         {
             uint8_t r, g, b;
-            hsvToRgb(static_cast<uint8_t>(finalColor + 100), 255, brightnessMaximum, r, g, b);
+            hsvToRgb(static_cast<uint8_t>(finalColor + 100), 255, brightness, r, g, b);
             neopixel->setPixel(i, r, g, b);
         }
     }
@@ -563,7 +660,7 @@ void LedController::spawnRipple(int8_t row, int8_t col)
 // Ripple: rings propagate outward from each pressed key, leaving a fading trail.
 void LedController::renderRipple()
 {
-    float scale = brightnessMaximum / 255.0f;
+    float scale = effBrightness() / 255.0f;
     uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
     uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
     uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
@@ -624,7 +721,7 @@ uint32_t LedController::rainRandom()
 // always show the pressed color.
 void LedController::renderRain()
 {
-    float scale = brightnessMaximum / 255.0f;
+    float scale = effBrightness() / 255.0f;
     uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
     uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
     uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);

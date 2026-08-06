@@ -247,6 +247,7 @@ std::string getOptions()
     doc["led"]["colorPressed"] = ledOptions.colorPressed;
     doc["led"]["ledMode"] = ledOptions.ledMode;
     doc["led"]["ledSpeed"] = ledOptions.ledSpeed;
+    doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
 
     JsonArray pinLedIndices = doc["led"].createNestedArray("pinLedIndices");
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
@@ -347,6 +348,13 @@ std::string setOptions()
         profile.colorNormal = led["colorNormal"] | profile.colorNormal;
         profile.has_colorPressed = true;
         profile.colorPressed = led["colorPressed"] | profile.colorPressed;
+        // The LED timeout is a global (non-profile) LED option; clamp to the
+        // 0-600s range accepted by the web UI.
+        if (led["ledTimeout"].is<int>())
+        {
+            uint32_t timeout = led["ledTimeout"].as<uint32_t>();
+            config.ledOptions.ledTimeout = timeout > 600 ? 600 : timeout;
+        }
     }
 
     if (doc["activeProfile"].is<int>())
@@ -379,6 +387,11 @@ std::string setLedPreview()
         preview.brightnessMaximum = led["brightnessMaximum"] | 255;
         preview.colorNormal = led["colorNormal"] | 0x00FF00;
         preview.colorPressed = led["colorPressed"] | 0xFFFFFF;
+        if (led["ledTimeout"].is<int>())
+        {
+            uint32_t timeout = led["ledTimeout"].as<uint32_t>();
+            preview.ledTimeout = timeout > 600 ? 600 : timeout;
+        }
         Storage::getInstance().publishLedPreview(preview);
     }
 
