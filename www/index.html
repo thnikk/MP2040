@@ -70,7 +70,9 @@
 
     <div id="page-layout" class="page" hidden>
       <section>
-        <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profile</h2>
+        <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profile
+          <button id="set-boot-profile" class="section-header-btn" type="button">Set as Default</button>
+        </h2>
         <div class="profile-tabs" id="profile-tabs"></div>
       </section>
 
@@ -131,19 +133,6 @@
         <div class="general-form">
           <label for="led-timeout">LED Timeout</label>
           <div id="led-timeout" class="midi-spinner"></div>
-        </div>
-      </section>
-
-      <section>
-        <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profiles</h2>
-        <div class="general-form">
-          <label for="active-profile">Boot Profile</label>
-          <select id="active-profile">
-            <option value="0">Profile 1</option>
-            <option value="1">Profile 2</option>
-            <option value="2">Profile 3</option>
-            <option value="3">Profile 4</option>
-          </select>
         </div>
       </section>
 

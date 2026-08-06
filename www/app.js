@@ -227,9 +227,6 @@ function buildProfileTabs() {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'profile-tab';
-    const dot = document.createElement('span');
-    dot.className = 'profile-tab-dot';
-    btn.appendChild(dot);
     btn.appendChild(document.createTextNode(`Profile ${i + 1}`));
     btn.addEventListener('click', () => switchProfile(i));
     tabs.appendChild(btn);
@@ -496,7 +493,8 @@ async function load() {
   updateModalMode();
 
   // Profiles: default the editor to the active profile so what the user sees
-  // matches what boots. Tabs and the boot-profile selector are wired below.
+  // matches what boots. Tabs and the "Set as Default" header button are wired
+  // below.
   profiles = Array.isArray(options.profiles) && options.profiles.length >= PROFILE_COUNT
     ? options.profiles.map(cloneProfile)
     : [options, options, options, options].map(cloneProfile);
@@ -505,15 +503,6 @@ async function load() {
   currentProfileIndex = activeProfile;
 
   buildProfileTabs();
-
-  const activeSelect = document.getElementById('active-profile');
-  if (activeSelect) {
-    activeSelect.value = String(activeProfile);
-    activeSelect.addEventListener('change', () => {
-      activeProfile = parseInt(activeSelect.value, 10) || 0;
-      updateProfileTabs();
-    });
-  }
 
   loadProfileIntoUi();
 
@@ -658,6 +647,10 @@ document.querySelectorAll('[data-route]').forEach((el) => {
 });
 document.getElementById('reboot').addEventListener('click', openRebootModal);
 document.getElementById('reset').addEventListener('click', resetSettings);
+document.getElementById('set-boot-profile').addEventListener('click', () => {
+  activeProfile = currentProfileIndex;
+  updateProfileTabs();
+});
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
 document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
 

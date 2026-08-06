@@ -335,6 +335,15 @@ section h2 {
   filter: none;
 }
 
+/* Action button in a card header, aligned to the right */
+.section-header-btn {
+  margin-left: auto;
+  padding: 4px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
 .hint {
   color: var(--muted);
   font-size: 1rem;
@@ -431,6 +440,7 @@ section h2 {
 }
 
 .profile-tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -441,33 +451,22 @@ section h2 {
   font-size: 0.9rem;
 }
 
-.profile-tab-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--muted);
-  flex: none;
-  transition: background 0.15s;
-}
-
-.profile-tab.boot .profile-tab-dot {
+.profile-tab.boot::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -12px;
+  width: 80%;
+  height: 4px;
+  border-radius: 999px;
   background: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .profile-tab.active {
   background: var(--accent);
   color: var(--page-bg);
   border-color: transparent;
-}
-
-.profile-tab.active .profile-tab-dot {
-  background: var(--page-bg);
-  box-shadow: none;
-}
-
-.profile-tab.active.boot .profile-tab-dot {
-  background: var(--page-bg);
 }
 
 select, input[type="number"] {
