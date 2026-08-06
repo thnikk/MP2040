@@ -211,6 +211,15 @@ class BoardView {
     this.applyPins();
   }
 
+  // Refresh button labels after a config change that doesn't affect the LED
+  // sim (e.g. input mode toggle). Cheaper than setOptions: leaves the running
+  // LED preview untouched.
+  refresh() {
+    if (!this.svgRoot) return;
+    this.updateLabels();
+    this.applyPins();
+  }
+
   // Push live LED control values into the simulation (mirrors /api/setLedPreview).
   setLedParams(led) {
     if (!this.ledSim || !led) return;

@@ -220,6 +220,7 @@ async function load() {
   document.getElementById('default-input-mode').addEventListener('change', () => {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
+    if (boardView) boardView.refresh();
   });
 
   midiChannelSpinner = new Spinner({
