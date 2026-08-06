@@ -1,8 +1,10 @@
 # MP2040
 
 A stripped-down firmware for keyboards and macro pads based on
-[GP2040-th](https://github.com/OpenStickCommunity/GP2040-CE). It keeps the
-parts that are useful for keyboard-style devices and drops everything else:
+[GP2040-th](https://github.com/thnikk/GP2040-th). It keeps the
+parts that are useful for keyboard-style devices and drops everything else.
+The intention is to have a more stripped down and stable base
+to work with and focus on usability.
 
 - **Keyboard input** — each GPIO maps directly to a USB HID keycode (or
   modifier / multimedia key), sent as a full 256-key NKRO report.
