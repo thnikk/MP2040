@@ -55,7 +55,7 @@ function defaultOptions() {
       ledsPerKey: board?.led?.ledsPerKey ?? 1,
       ledCount: board?.led?.ledCount ?? 0,
       ledMode: board?.led?.ledMode ?? 0,
-      ledSpeed: board?.led?.ledSpeed ?? 236,
+      ledSpeed: board?.led?.ledSpeed ?? 50,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
       brightnessSteps: board?.led?.brightnessSteps ?? 1,
       colorNormal: board?.led?.colorNormal ?? 0x00ff00,

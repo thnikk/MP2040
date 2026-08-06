@@ -41,8 +41,9 @@ message LEDOptions
     // LED theme mode (0=static, 1=cycle, 2=reactive, 3=bps). Default from
     // the board's LED_MODE define; editable via the web config.
     optional uint32 ledMode = 10;
-    // LED animation speed (1-255, higher = faster). 236 is about 20ms per
-    // theme step (the default cadence). Default from the board's LED_SPEED.
+    // LED animation speed (0-100 percent, higher = faster). Maps per-effect
+    // into a theme step interval; each effect defines its own min/max speed.
+    // Default from the board's LED_SPEED (0-100).
     optional uint32 ledSpeed = 11;
 }
 

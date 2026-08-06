@@ -4,7 +4,20 @@
 #include "Neopixel.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
+
+// Theme step interval (ms) bounds per effect, indexed by LedMode. The 0-100%
+// speed slider maps exponentially into these: 0% = slowest, 100% = fastest.
+// STATIC is unused (no animation); BPS steps on the fixed render cadence and
+// is handled separately in renderBps().
+static const SpeedRange speedRanges[] = {
+    { 0, 0 },    // LED_MODE_STATIC
+    { 6, 117 },  // LED_MODE_CYCLE   (256-step wheel: ~1.5s .. ~30s / rev)
+    { 16, 250 }, // LED_MODE_REACTIVE (32-step fade: ~0.5s .. ~8s)
+    { 0, 0 },    // LED_MODE_BPS     (handled separately)
+    { 50, 660 }, // LED_MODE_RIPPLE  (radius +1/step: ~0.3s .. ~4s cross)
+};
 
 // HSV -> RGB matching Adafruit's ColorHSV() as used by unified-2022.
 // hue is 0-255 here (unified passes hue*256 as the 16-bit hue); sat/val 0-255.
@@ -43,6 +56,7 @@ LedController::LedController() :
     ledCount(0),
     stripCount(0),
     ledMode(LED_MODE_STATIC),
+    ledSpeedPercent(50),
     ledSpeed(20),
     lastThemeMillis(0),
     brightnessMaximum(255),
@@ -96,11 +110,10 @@ void LedController::configure()
     ledsPerKey = ledOptions.ledsPerKey > 0 ? ledOptions.ledsPerKey : 1;
     ledCount = ledOptions.ledCount;
     ledMode = ledOptions.ledMode;
-    // Config speed is 1-255 (higher = faster). Convert to the theme step
-    // interval in ms: 256 - speed. 236 -> 20ms (the default cadence).
-    ledSpeed = 256 - (ledOptions.ledSpeed > 0 ? ledOptions.ledSpeed : 236);
-    if (ledSpeed < 1) ledSpeed = 1;
-    if (ledSpeed > 1000) ledSpeed = 1000;
+    // Config speed is 0-100 percent (higher = faster). recomputeLedSpeed()
+    // maps it to a per-effect theme step interval in ms.
+    ledSpeedPercent = ledOptions.ledSpeed <= 100 ? ledOptions.ledSpeed : 50;
+    recomputeLedSpeed();
     brightnessMaximum = ledOptions.brightnessMaximum;
     colorNormal = ledOptions.colorNormal;
     colorPressed = ledOptions.colorPressed;
@@ -256,12 +269,10 @@ void LedController::update()
 void LedController::applyLedPreview(const LedPreview& preview)
 {
     ledMode = preview.ledMode;
-    // Config speed is 1-255 (higher = faster). Convert to the theme step
-    // interval in ms: 256 - speed. 236 -> 20ms (the default cadence).
-    uint32_t speed = preview.ledSpeed > 0 ? preview.ledSpeed : 236;
-    ledSpeed = 256 - speed;
-    if (ledSpeed < 1) ledSpeed = 1;
-    if (ledSpeed > 1000) ledSpeed = 1000;
+    // Config speed is 0-100 percent (higher = faster). recomputeLedSpeed()
+    // maps it to a per-effect theme step interval in ms.
+    ledSpeedPercent = preview.ledSpeed <= 100 ? preview.ledSpeed : 50;
+    recomputeLedSpeed();
     brightnessMaximum = preview.brightnessMaximum;
     colorNormal = preview.colorNormal;
     colorPressed = preview.colorPressed;
@@ -277,6 +288,29 @@ void LedController::applyLedPreview(const LedPreview& preview)
     for (uint32_t i = 0; i < MAX_RIPPLES; i++)
         ripples[i].active = false;
     prevKeyState = Storage::getInstance().keyState;
+}
+
+// Map the 0-100% speed to a theme step interval (ms) for the current mode.
+// Exponential interpolation so each percent step feels similar across the
+// whole range: 0% = slowest (maxInterval), 100% = fastest (minInterval).
+void LedController::recomputeLedSpeed()
+{
+    uint32_t minInterval = 0, maxInterval = 0;
+    if (ledMode < sizeof(speedRanges) / sizeof(speedRanges[0]))
+    {
+        minInterval = speedRanges[ledMode].minIntervalMs;
+        maxInterval = speedRanges[ledMode].maxIntervalMs;
+    }
+    if (minInterval == 0 || maxInterval == 0)
+    {
+        ledSpeed = 20; // STATIC (or unknown mode): no animation, default cadence
+        return;
+    }
+    uint32_t pct = ledSpeedPercent > 100 ? 100 : ledSpeedPercent;
+    float t = powf((float)minInterval / (float)maxInterval, (float)pct / 100.0f);
+    ledSpeed = (uint32_t)((float)maxInterval * t);
+    if (ledSpeed < 1) ledSpeed = 1;
+    if (ledSpeed > 1000) ledSpeed = 1000;
 }
 
 // Advance the theme state one step (hue / per-LED fade state). Called at the
@@ -389,7 +423,10 @@ void LedController::renderBps()
         lastBpsMillis = now;
     }
 
-    const uint16_t bpsSpeed = 3;
+    // Color-smoothing step per render (fixed 20ms cadence). The 0-100% speed
+    // maps linearly to 1..8: 0% = slow (~5s full swing), 100% = fast.
+    uint32_t pct = ledSpeedPercent > 100 ? 100 : ledSpeedPercent;
+    const uint16_t bpsSpeed = (uint16_t)(1 + (pct * 7) / 100);
     if (lastColor > bpsColor)
     {
         lastColor -= bpsSpeed;

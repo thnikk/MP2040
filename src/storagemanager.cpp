@@ -511,7 +511,7 @@
 #define LED_MODE 0
 #endif
 #ifndef LED_SPEED
-#define LED_SPEED 236
+#define LED_SPEED 50
 #endif
 #ifndef PIN_WEBCONFIG
 #define PIN_WEBCONFIG -1
@@ -956,6 +956,10 @@ void Storage::init() {
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
     }
+    // ledSpeed changed from a 1-255 scale to 0-100 percent. Discard any
+    // legacy stored value (out of the new range) in favor of the board default.
+    if (config.ledOptions.ledSpeed > 100)
+        config.ledOptions.ledSpeed = LED_SPEED;
 
     // The web config pin is a physical board property, never a user setting.
     // Always use the board default so a stale stored config can't point the

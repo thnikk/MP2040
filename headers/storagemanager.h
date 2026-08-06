@@ -19,7 +19,7 @@
 struct LedPreview
 {
     uint32_t ledMode;
-    uint32_t ledSpeed;         // raw 1-255 config value
+    uint32_t ledSpeed;         // raw 0-100 percent config value
     uint32_t brightnessMaximum;
     uint32_t colorNormal;
     uint32_t colorPressed;

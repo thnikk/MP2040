@@ -280,7 +280,7 @@ std::string setLedPreview()
     if (!led.isNull())
     {
         preview.ledMode = led["ledMode"] | 0;
-        preview.ledSpeed = led["ledSpeed"] | 236;
+        preview.ledSpeed = led["ledSpeed"] | 50;
         preview.brightnessMaximum = led["brightnessMaximum"] | 255;
         preview.colorNormal = led["colorNormal"] | 0x00FF00;
         preview.colorPressed = led["colorPressed"] | 0xFFFFFF;

@@ -24,6 +24,14 @@ enum LedMode {
 // ripple state grow unbounded.
 #define MAX_RIPPLES 8
 
+// Theme step interval (ms) range per effect. The 0-100% speed slider maps
+// exponentially into [min, max]: 0% = slowest, 100% = fastest. BPS is handled
+// separately (it steps on the fixed render cadence, not the interval).
+struct SpeedRange {
+    uint32_t minIntervalMs;
+    uint32_t maxIntervalMs;
+};
+
 // A propagating ring spawned by a key press. The ring lives at the grid cell
 // (row, col) and expands outward one cell per theme step.
 struct Ripple {
@@ -51,6 +59,10 @@ private:
     // Apply live LED options from the web config (core 0 -> core 1)
     void applyLedPreview(const LedPreview&);
 
+    // Map the current 0-100% speed to a theme step interval for the current
+    // mode. Called from configure() and applyLedPreview().
+    void recomputeLedSpeed();
+
     // Theme state advance (run at the configured animation speed)
     void advanceThemeState();
 
@@ -70,7 +82,8 @@ private:
     uint32_t ledCount;
     uint32_t stripCount;
     uint32_t ledMode;
-    uint32_t ledSpeed;        // theme step interval in ms (computed from config)
+    uint32_t ledSpeedPercent; // config 0-100 (higher = faster)
+    uint32_t ledSpeed;        // theme step interval in ms (computed from percent)
     uint32_t lastThemeMillis; // last theme state advance time
     int32_t pinLedIndices[NUM_BANK0_GPIOS];
     uint32_t brightnessMaximum;

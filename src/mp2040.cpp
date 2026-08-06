@@ -235,7 +235,7 @@ void MP2040::run() {
 		// the web config.
 		LedPreview boot = {};
 		boot.ledMode = 0;                 // LED_MODE_STATIC
-		boot.ledSpeed = 236;
+		boot.ledSpeed = 50;
 		boot.brightnessMaximum = 255;
 		boot.colorNormal = LED_COLOR_PRESSED;
 		boot.colorPressed = LED_COLOR_PRESSED;

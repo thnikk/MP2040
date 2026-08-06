@@ -10,6 +10,18 @@ const LED_MODE_RIPPLE = 4;
 
 const MAX_RIPPLES = 8;
 
+// Theme step interval (ms) bounds per mode, indexed by LED_MODE_* (mirrors
+// speedRanges[] in LedController.cpp). The 0-100% speed maps exponentially
+// into these: 0% = slowest, 100% = fastest. BPS steps on the fixed render
+// cadence and is handled separately in renderBps().
+const speedRanges = [
+  { min: 0, max: 0 },     // LED_MODE_STATIC
+  { min: 6, max: 117 },   // LED_MODE_CYCLE
+  { min: 16, max: 250 },  // LED_MODE_REACTIVE
+  { min: 0, max: 0 },     // LED_MODE_BPS
+  { min: 50, max: 660 },  // LED_MODE_RIPPLE
+];
+
 // HSV -> RGB matching the firmware's hsvToRgb (Adafruit ColorHSV variant).
 // hue/sat/val are 0-255; integer math mirrors the C++ exactly.
 function hsvToRgb(h, s, v) {
@@ -83,10 +95,8 @@ class LedSim {
   // applyLedPreview (LedController.cpp:256).
   setParams(p) {
     this.mode = p.ledMode ?? LED_MODE_STATIC;
-    const speed = (p.ledSpeed ?? 236) > 0 ? p.ledSpeed : 236;
-    this.themeInterval = 256 - speed;
-    if (this.themeInterval < 1) this.themeInterval = 1;
-    if (this.themeInterval > 1000) this.themeInterval = 1000;
+    this.ledSpeedPercent = (p.ledSpeed ?? 50) <= 100 ? p.ledSpeed : 50;
+    this.recomputeInterval();
     // Always render at full brightness in the config UI so colors are easy to
     // see; brightnessMaximum still dims the physical board via setLedPreview.
     this.brightness = 255;
@@ -95,6 +105,19 @@ class LedSim {
     this.ledsPerKey = Math.max(1, p.ledsPerKey || 1);
     this.pinLedIndices = p.pinLedIndices || [];
     this.resetTheme();
+  }
+
+  // Map the 0-100% speed to a theme step interval for the current mode
+  // (exponential, mirroring LedController::recomputeLedSpeed()).
+  recomputeInterval() {
+    const r = speedRanges[this.mode] || { min: 0, max: 0 };
+    if (!r.min || !r.max) {
+      this.themeInterval = 20; // STATIC (or unknown mode)
+      return;
+    }
+    const pct = Math.max(0, Math.min(100, this.ledSpeedPercent));
+    const t = Math.pow(r.min / r.max, pct / 100);
+    this.themeInterval = Math.max(1, Math.min(1000, Math.round(r.max * t)));
   }
 
   resetTheme() {
@@ -254,7 +277,10 @@ class LedSim {
       this.bpsCount = 0;
       this.lastBpsMillis = now;
     }
-    const bpsSpeed = 3;
+    // Color-smoothing step per render (fixed cadence); 0-100% maps linearly
+    // to 1..8, mirroring renderBps() in LedController.cpp.
+    const pct = Math.max(0, Math.min(100, this.ledSpeedPercent));
+    const bpsSpeed = 1 + Math.floor((pct * 7) / 100);
     if (this.lastColor > this.bpsColor) {
       this.lastColor -= bpsSpeed;
       if (this.lastColor - this.bpsColor < bpsSpeed) this.lastColor = this.bpsColor;

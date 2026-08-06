@@ -160,7 +160,7 @@ function debounce(fn, ms) {
 async function previewLed() {
   const led = {
     ledMode: parseInt(document.getElementById('led-mode').value, 10),
-    ledSpeed: speedSlider ? speedSlider.getValue() : 236,
+    ledSpeed: speedSlider ? speedSlider.getValue() : 50,
     brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
     colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
     colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
@@ -197,7 +197,7 @@ function buildOptionsBody() {
     },
     led: {
       ledMode: parseInt(document.getElementById('led-mode').value, 10),
-      ledSpeed: speedSlider ? speedSlider.getValue() : 236,
+    ledSpeed: speedSlider ? speedSlider.getValue() : 50,
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
@@ -252,10 +252,10 @@ async function load() {
 
   speedSlider = new PillSlider({
     container: document.getElementById('led-speed'),
-    min: 1,
-    max: 255,
+    min: 0,
+    max: 100,
     label: 'Speed',
-    value: led.ledSpeed ?? 236,
+    value: led.ledSpeed ?? 50,
     padLength: 3,
     onChange: previewLed,
   });
