@@ -112,6 +112,10 @@ function defaultOptions() {
 export function createMockApp() {
   const app = express();
   app.use(express.json());
+  // The firmware sends no ETags; without this Express would answer every
+  // repeated GET (e.g. the /api/getPinState long-poll) with a 304 instead
+  // of the JSON body.
+  app.set('etag', false);
 
   app.get('/api/getOptions', (req, res) => {
     if (!store) store = defaultOptions();
@@ -171,10 +175,9 @@ export function createMockApp() {
   });
 
   app.get('/api/getPinState', (req, res) => {
-    // The real board parks the request until a button is pressed; the mock has
-    // no buttons, so hold it briefly to mimic that cadence (the client
-    // reconnects after each answer, so returning instantly would hot-loop).
-    setTimeout(() => res.send({ heldPins: [] }), 1000);
+    // The real board parks the request and only answers when the key state
+    // changes (WebConfig::loop()). The mock has no buttons, so it never
+    // changes: hold the connection open without responding.
   });
 
   app.get('/api/getFirmwareVersion', (req, res) => {
