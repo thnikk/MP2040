@@ -212,12 +212,15 @@ class BoardView {
   }
 
   // Refresh button labels after a config change that doesn't affect the LED
-  // sim (e.g. input mode toggle). Cheaper than setOptions: leaves the running
-  // LED preview untouched.
+  // sim (e.g. input mode toggle). Cheaper than setOptions: leaves a running
+  // LED preview untouched, but builds the sim if it was skipped because the
+  // layout page was hidden when the SVG rendered (getBoundingClientRect
+  // returns zero-size boxes for display:none elements).
   refresh() {
     if (!this.svgRoot) return;
     this.updateLabels();
     this.applyPins();
+    if (!this.ledSim) this.updateLedSim();
   }
 
   // Push live LED control values into the simulation (mirrors /api/setLedPreview).

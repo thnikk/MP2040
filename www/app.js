@@ -339,9 +339,13 @@ function renderRoute() {
     el.classList.toggle('active', el.dataset.route === route);
   });
   // The board SVG is laid out while hidden; re-fit it when the layout page
-  // becomes visible, and only long-poll pin state there.
+  // becomes visible, and only long-poll pin state there. updateLedSim()
+  // (re)builds the LED simulation now that the page has real dimensions.
   if (route === '/layout') {
-    if (boardView) boardView.refresh();
+    if (boardView) {
+      boardView.refresh();
+      boardView.updateLedSim();
+    }
     pollPinState();
   } else {
     stopPinState();
