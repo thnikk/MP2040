@@ -344,7 +344,7 @@ section {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 20px;
-  padding: 24px 28px;
+  padding: 20px ;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -1194,7 +1194,7 @@ button:disabled {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 20px;
-  padding: 24px;
+  padding: 20px;
   width: 100%;
   max-width: 880px;
   max-height: 90vh;
