@@ -463,6 +463,22 @@ section h2 {
   text-align: center;
 }
 
+/* Landing credit: heart centered, text mirrored on either side */
+.landing-credit {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.landing-credit .credit-left {
+  text-align: right;
+}
+
+.landing-credit .credit-right {
+  text-align: left;
+}
+
 /* Profile tabs */
 .profile-tabs {
   display: flex;
