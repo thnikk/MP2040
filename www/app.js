@@ -393,9 +393,10 @@ async function load() {
   currentOptions = options;
   document.getElementById('board-label').textContent = version.boardLabel || '';
   document.getElementById('board-label-hero').textContent = version.boardLabel || '';
-  document.getElementById('landing-version').textContent = version.firmwareVersion
-    ? `Firmware ${version.firmwareVersion} · ${version.gitCommit || ''}`.trim()
+  document.getElementById('footer-version').textContent = version.firmwareVersion
+    ? `${version.firmwareVersion}${version.gitCommit ? ` · ${version.gitCommit}` : ''}`
     : '';
+  document.getElementById('landing-year').textContent = new Date().getFullYear();
 
   const led = options.led || {};
   const midi = options.midi || {};
