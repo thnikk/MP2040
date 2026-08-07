@@ -105,15 +105,22 @@ body {
   filter: brightness(0.7);
 }
 
-.nav-logo {
-  height: 40px;
+/* Brand logo: .logo defines the colors (the SVG's alpha channel painted in
+   the theme's foreground color); sizing lives in .nav-logo / .hero-logo. */
+.logo {
   display: block;
-  fill: currentColor;
-  filter: invert(0.85) brightness(1.3);
+  background-color: var(--text);
+  -webkit-mask-image: url("/icons/logo.svg");
+  mask-image: url("/icons/logo.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  aspect-ratio: 228.846 / 121.94489;
 }
 
-[data-theme="light"] .nav-logo {
-  filter: none;
+.nav-logo {
+  height: 40px;
 }
 
 .nav-title h1 {
@@ -390,11 +397,6 @@ section h2 {
   width: 120px;
   height: auto;
   margin-bottom: 12px;
-  filter: invert(0.85) brightness(1.3);
-}
-
-[data-theme="light"] .hero-logo {
-  filter: none;
 }
 
 .hero h2 {

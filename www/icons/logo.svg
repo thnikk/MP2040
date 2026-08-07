@@ -5,5 +5,5 @@
       <path fill="none" stroke="black" stroke-width="20" stroke-linecap="round" d="m 141.1483,87.697756 a 37.795276,37.795276 0 1 0 0,-53.4506 l -53.4506,53.45 a 37.7953,37.7953 0 1 1 0,-53.4506"/>
     </mask>
   </defs>
-  <rect width="228.846" height="121.94489" rx="60.972446" fill="currentColor" mask="url(#logo-mask)"/>
+  <rect width="228.846" height="121.94489" rx="60.972446" fill="#bf616a" mask="url(#logo-mask)"/>
 </svg>
