@@ -1,5 +1,9 @@
 # MP2040
 
+Firmare for new RP2040-based keypads. This is a replacement for the old
+[Unified 2022](https://github.com/thnikk/unified-2022) firmware, utilizing
+the advantages of GP2040 like the RNDIS web server.
+
 A stripped-down firmware for keyboards and macro pads based on
 [GP2040-th](https://github.com/thnikk/GP2040-th). It keeps the
 parts that are useful for keyboard-style devices and drops everything else.
@@ -37,11 +41,8 @@ MP2040 uses a simple raw html+css+js web config. No typescript, react, or bootst
 ## Build (Docker)
 
 ```sh
-# build the Docker image (once)
-docker build -t gp2040-ce-builder .
-
 # build the firmware
-python3 docker-build.py -b Pico
+python3 docker-build.py -b 2k
 ```
 
 Output: `build/MP2040_<version>_<sha>_<Board>.uf2`

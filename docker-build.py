@@ -43,6 +43,31 @@ def log_msg(msg, log_file=None):
             f.write(msg + "\n")
 
 
+def image_exists(image):
+    try:
+        subprocess.run(["docker", "image", "inspect", image],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       check=True)
+        return True
+    except (subprocess.CalledProcessError, OSError):
+        return False
+
+
+def build_image(image, log_file=None):
+    cmd = ["docker", "build", "-t", image, "."]
+    with subprocess.Popen(
+        cmd, cwd=REPO_ROOT, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, text=True
+    ) as proc:
+        for line in proc.stdout:
+            if log_file:
+                with open(log_file, "a") as f:
+                    f.write(line)
+            print(line, end="", flush=True)
+        proc.wait()
+        return proc.returncode
+
+
 def run_docker(image, command, extra_args=None, log_file=None, verbose=False):
     cmd = [
         "docker", "run", "--rm",
@@ -106,6 +131,8 @@ def main():
                         help="Save stdout+stderr to file")
     parser.add_argument("-i", "--image", default=DEFAULT_IMAGE,
                         help=f"Docker image tag (default: {DEFAULT_IMAGE})")
+    parser.add_argument("-r", "--rebuild", action="store_true",
+                        help="Force rebuilding the Docker image")
     parser.add_argument("-c", "--clean", action="store_true",
                         help="Force cleanup step")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -155,6 +182,13 @@ def main():
                 log_msg("Nuke sent", args.output)
             except Exception as e:
                 log_msg(f"Warning: nuke failed: {e}", args.output)
+
+    # --- Image ---
+    if args.rebuild or not image_exists(args.image):
+        log_msg("Building Docker image...", args.output)
+        ret = build_image(args.image, args.output)
+        if ret != 0:
+            sys.exit(ret)
 
     # --- Cleanup ---
     log_msg("Cleaning...", args.output)
