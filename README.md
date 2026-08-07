@@ -18,6 +18,11 @@ to work with and focus on usability.
 Everything else from GP2040-th (console drivers, display, USB host, the React
 configurator, the addon system) has been removed.
 
+## Web Config
+MP2040 uses a simple raw html+css+js web config. No typescript, react, or bootstap.
+
+![Web Config](assets/web-config.png)
+
 ## Build (Docker)
 
 ```sh
@@ -45,13 +50,3 @@ board, `-n` nuke first, `-p <path>` flash mount.
 - `lib/` — vendored libs (tinyusb, nanopb, rndis, httpd, ws2812, ...)
 - `www/` + `tools/makefsdata.py` — static config page, embedded into the
   firmware as `lib/httpd/fsdata.c` at build time
-
-## Web config
-
-Hold `PIN_WEBCONFIG` to ground while powering on. On touch boards the
-web-config pin is a touch pad: the keyboard doesn't start for 3 seconds after
-power-on, and touching the pad within that window enters web config instead.
-The device enumerates as a RNDIS network device; the config page and API are
-served over its network interface (defaults to 192.168.7.1 as in GP2040). The
-page lets you assign a keycode + modifier to each of the 30 GPIO pins and
-adjust LED settings.
