@@ -6,8 +6,8 @@
 // (replacing the previous selection) and modifier keys (0xE0-0xE7) toggle
 // modifier bits. Press "Add" to append the current key/combo as a step; press
 // "Add" repeatedly to keep appending. Each step chip shows its key and
-// per-step hold/delay spinners (ms) plus a remove button. Macros play
-// (loop-while-held) when a key mapped to them is pressed.
+// per-step hold/delay spinners (ms) plus a remove button. A press plays the
+// whole macro once; holding the button repeats it until released.
 //
 //   new MacroBuilder({ container, macros, onChange })
 //   builder.getValue() -> [{ steps: [{keycode, modifiers, holdMs, delayMs}] } x8]

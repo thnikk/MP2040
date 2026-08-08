@@ -595,7 +595,7 @@ function updateModalMode() {
   document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('key-modal-hint').textContent = midiMode
     ? 'Pick a MIDI note for this button (0 = no note).'
-    : 'Pick a key and any number of modifiers from the Modifiers group, click a key on the keyboard below, or pick a macro from the Macros group (or an M1-M8 slot) to run it while held.';
+    : 'Pick a key and any number of modifiers from the Modifiers group, click a key on the keyboard below, or pick a macro from the Macros group (or an M1-M8 slot). A press plays the whole macro; holding the button repeats it.';
   document.getElementById('board-hint').textContent = midiMode
     ? 'Click a button on the board to set its MIDI note and velocity.'
     : 'Click a button on the board to set its key and modifiers.';

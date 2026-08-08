@@ -131,22 +131,16 @@ void KeyboardDriver::pressKey(uint8_t code) {
 }
 
 // Advance macro playback and apply the currently-held steps to the report.
-// Edge-triggered on the macro pins: a rising edge starts a playback, a falling
-// edge stops it. Each active playback steps through its macro (holding each
-// step's key for holdMs, then waiting delayMs) and loops while its pin is held.
+// Edge-triggered on the macro pins: a rising edge starts (or restarts) a
+// playback. A press plays the macro through once even if the button is
+// released mid-way; only at a cycle boundary does release stop it, and if the
+// button is still held then the macro starts another pass.
 void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState, uint32_t now) {
 	const Macro* macros = config.macros;
 	const pb_size_t macroCount = config.macros_count;
 
-	// Stop playbacks whose pin has been released (or fell out of range).
-	for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++) {
-		MacroPlayback& m = activeMacros[i];
-		if (m.macroIndex == 0) continue;
-		if (m.pin < MAX_KEYS && keyState.test(m.pin)) continue;
-		m.macroIndex = 0;
-	}
-
-	// Start playback on the rising edge of each macro pin.
+	// Start (or restart) playback on the rising edge of each macro pin. A
+	// re-press while a run is still finishing resets it back to step 0.
 	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++) {
 		const uint32_t macroIndex = pin < (Pin_t)MAX_KEYS ? config.macroIndices[pin] : 0;
 		if (macroIndex == 0 || macroIndex > macroCount) continue;
@@ -154,7 +148,16 @@ void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState,
 
 		MacroPlayback* slot = nullptr;
 		for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++) {
-			if (activeMacros[i].macroIndex == 0) { slot = &activeMacros[i]; break; }
+			if (activeMacros[i].macroIndex != 0 && activeMacros[i].pin == (uint8_t)pin)
+			{
+				slot = &activeMacros[i]; // restart an in-flight run
+				break;
+			}
+		}
+		if (slot == nullptr) {
+			for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++) {
+				if (activeMacros[i].macroIndex == 0) { slot = &activeMacros[i]; break; }
+			}
 		}
 		if (slot == nullptr) continue;
 
@@ -199,8 +202,15 @@ void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState,
 				m.until = now + delayOf(m.step);
 			}
 		} else if (now >= m.until) {
-			// Delay finished: move to the next step (looping at the end).
+			// Delay finished: move to the next step (looping at the end). A
+			// completed pass keeps going only if the button is still held;
+			// otherwise the run stops at the cycle boundary.
 			m.step = (m.step + 1) % stepCount;
+			if (m.step == 0 && !keyState.test(m.pin))
+			{
+				m.macroIndex = 0;
+				continue;
+			}
 			m.holding = true;
 			m.started = false;
 			m.until = now;
