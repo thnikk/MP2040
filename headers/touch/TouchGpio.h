@@ -29,11 +29,11 @@ public:
 
 	// Claim PIO state machines for every set bit in touchMask and calibrate
 	// their thresholds. Safe to call once at boot.
-	void setup(Mask_t touchMask);
+	void setup(GpioMask touchMask);
 
 	// Measure all configured pads and return a mask of currently-touched pins.
 	// Applies per-pad thresholds with release hysteresis.
-	Mask_t scan();
+	GpioMask scan();
 
 private:
 	TouchGpio();
@@ -42,7 +42,7 @@ private:
 
 	PIO pio;
 	uint32_t smOffset;
-	Mask_t mask;
+	GpioMask mask;
 	uint8_t smForPin[NUM_BANK0_GPIOS];      // 0xFF = pin not configured
 	uint32_t thresholdOn[NUM_BANK0_GPIOS];
 	uint32_t thresholdOff[NUM_BANK0_GPIOS];

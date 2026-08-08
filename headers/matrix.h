@@ -2,6 +2,7 @@
 #define _MATRIX_H_
 
 #include "types.h"
+#include "keymask.h"
 #include "hardware/gpio.h"
 #include "pico/time.h"
 
@@ -29,23 +30,24 @@
 // bits can never leak into the key state mask.
 //
 // The row/column pins must already be initialized (see MP2040::initializeKeyGpio).
-// Returns 0 when the board is not in matrix mode.
-static inline Mask_t matrixScanKeys()
+// Returns an empty mask when the board is not in matrix mode.
+static inline KeyMask matrixScanKeys()
 {
     const uint8_t rows = Storage::getInstance().getMatrixRows();
     const uint8_t cols = Storage::getInstance().getMatrixCols();
     if (rows == 0 || cols == 0)
-        return 0;
+        return KeyMask();
 
     const bool activeHigh = Storage::getInstance().isMatrixActiveHigh();
     const Pin_t* rowPins = Storage::getInstance().getMatrixRowPins();
     const Pin_t* colPins = Storage::getInstance().getMatrixColPins();
+    const uint32_t keys = (uint32_t)rows * cols;
 
-    Mask_t colMask = 0;
+    GpioMask colMask = 0;
     for (uint8_t c = 0; c < cols; c++)
         colMask |= 1u << colPins[c];
 
-    Mask_t state = 0;
+    KeyMask state;
     for (uint8_t r = 0; r < rows; r++)
     {
         // Drive the row to the active level and give it time to settle. Each
@@ -53,18 +55,18 @@ static inline Mask_t matrixScanKeys()
         // noisy read can't register as a press.
         gpio_put(rowPins[r], activeHigh ? 1 : 0);
         busy_wait_us(MATRIX_SETTLE_US);
-        const Mask_t sample1 = gpio_get_all() & colMask;
+        const GpioMask sample1 = gpio_get_all() & colMask;
         busy_wait_us(MATRIX_SETTLE_US);
-        const Mask_t sample2 = gpio_get_all() & colMask;
+        const GpioMask sample2 = gpio_get_all() & colMask;
         // Columns at the pressed level in both samples.
-        const Mask_t pressed = activeHigh
+        const GpioMask pressed = activeHigh
             ? (sample1 & sample2)
             : (~sample1 & ~sample2 & colMask);
         for (uint8_t c = 0; c < cols; c++)
         {
-            const Pin_t idx = r * cols + c;
-            if (idx < NUM_BANK0_GPIOS && (pressed & (1u << colPins[c])))
-                state |= 1u << idx;
+            const uint32_t idx = r * cols + c;
+            if (idx < keys && (pressed & (1u << colPins[c])))
+                state.set(idx);
         }
         // Return the row to the idle level and let the columns settle before
         // the next row is driven.

@@ -68,7 +68,8 @@ struct PinStateFile
 };
 
 static PinStateFile *pendingPinState[MAX_PENDING_PIN_STATE] = {};
-static Mask_t lastDeliveredPinState = 0xFFFFFFFF; // force a snapshot on first request
+static KeyMask lastDeliveredPinState;
+static bool hasDeliveredPinState = false; // force a snapshot on first request
 
 static void deliverPinState();
 
@@ -168,7 +169,7 @@ static void writeKeyMappingJson(JsonObject obj, const KeyMapping& km)
     JsonArray modifiers = obj.createNestedArray("modifierMasks");
     JsonArray midiNotes = obj.createNestedArray("midiNotes");
     JsonArray midiVelocities = obj.createNestedArray("midiVelocities");
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         keycodes.add(pin < (Pin_t)km.keycodes_count ? km.keycodes[pin] : 0);
         modifiers.add(pin < (Pin_t)km.modifierMasks_count ? km.modifierMasks[pin] : 0);
@@ -202,6 +203,14 @@ static void writeProfileJson(JsonObject obj, const Profile* profile)
     led["colorPressed"] = (profile && profile->has_colorPressed) ? profile->colorPressed : lo.colorPressed;
     led["ledMode"] = (profile && profile->has_ledMode) ? profile->ledMode : lo.ledMode;
     led["ledSpeed"] = (profile && profile->has_ledSpeed) ? profile->ledSpeed : lo.ledSpeed;
+    // Per-key colors for custom mode. Emitted up to the stored count (0 for
+    // legacy configs = the UI falls back to the global colors).
+    JsonArray ledNormalColors = led.createNestedArray("ledNormalColors");
+    JsonArray ledPressedColors = led.createNestedArray("ledPressedColors");
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
+        ledNormalColors.add(km.ledNormalColors[pin]);
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
+        ledPressedColors.add(km.ledPressedColors[pin]);
 }
 
 std::string serialize_json(JsonDocument &doc)
@@ -225,7 +234,7 @@ std::string getOptions()
     JsonArray modifiers = doc.createNestedArray("modifierMasks");
     JsonArray midiNotes = doc.createNestedArray("midiNotes");
     JsonArray midiVelocities = doc.createNestedArray("midiVelocities");
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         keycodes.add(pin < (Pin_t)keyMapping.keycodes_count ? keyMapping.keycodes[pin] : 0);
         modifiers.add(pin < (Pin_t)keyMapping.modifierMasks_count ? keyMapping.modifierMasks[pin] : 0);
@@ -249,8 +258,17 @@ std::string getOptions()
     doc["led"]["ledSpeed"] = ledOptions.ledSpeed;
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
 
+    // Per-key colors for custom mode. Emitted up to the stored count (0 for
+    // legacy configs = the UI falls back to the global colors).
+    JsonArray ledNormalColors = doc["led"].createNestedArray("ledNormalColors");
+    JsonArray ledPressedColors = doc["led"].createNestedArray("ledPressedColors");
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)keyMapping.ledNormalColors_count; pin++)
+        ledNormalColors.add(keyMapping.ledNormalColors[pin]);
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)keyMapping.ledPressedColors_count; pin++)
+        ledPressedColors.add(keyMapping.ledPressedColors[pin]);
+
     JsonArray pinLedIndices = doc["led"].createNestedArray("pinLedIndices");
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         pinLedIndices.add(pin < (Pin_t)ledOptions.pinLedIndices_count ? ledOptions.pinLedIndices[pin] : -1);
 
     doc["webConfigPin"] = Storage::getInstance().getWebConfigPin();
@@ -305,18 +323,18 @@ std::string setOptions()
     JsonArray modifiers = doc["modifierMasks"];
     JsonArray midiNotes = doc["midiNotes"];
     JsonArray midiVelocities = doc["midiVelocities"];
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)keycodes.size(); pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)keycodes.size(); pin++)
         keyMapping.keycodes[pin] = keycodes[pin];
-    keyMapping.keycodes_count = NUM_BANK0_GPIOS;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)modifiers.size(); pin++)
+    keyMapping.keycodes_count = MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)modifiers.size(); pin++)
         keyMapping.modifierMasks[pin] = modifiers[pin];
-    keyMapping.modifierMasks_count = NUM_BANK0_GPIOS;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)midiNotes.size(); pin++)
+    keyMapping.modifierMasks_count = MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)midiNotes.size(); pin++)
         keyMapping.midiNotes[pin] = midiNotes[pin];
-    keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS && pin < (Pin_t)midiVelocities.size(); pin++)
+    keyMapping.midiNotes_count = MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)midiVelocities.size(); pin++)
         keyMapping.midiVelocities[pin] = midiVelocities[pin];
-    keyMapping.midiVelocities_count = NUM_BANK0_GPIOS;
+    keyMapping.midiVelocities_count = MAX_KEYS;
 
     if (doc["defaultInputMode"].is<int>())
         Storage::getInstance().setDefaultInputMode((InputMode)doc["defaultInputMode"].as<int>());
@@ -348,6 +366,18 @@ std::string setOptions()
         profile.colorNormal = led["colorNormal"] | profile.colorNormal;
         profile.has_colorPressed = true;
         profile.colorPressed = led["colorPressed"] | profile.colorPressed;
+        // Per-key colors for custom mode. The UI always sends the full array
+        // once edited; an empty/absent array keeps the global fallback.
+        JsonArray ledNormalColors = led["ledNormalColors"];
+        JsonArray ledPressedColors = led["ledPressedColors"];
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)ledNormalColors.size(); pin++)
+            keyMapping.ledNormalColors[pin] = ledNormalColors[pin];
+        keyMapping.ledNormalColors_count = ledNormalColors.size() > MAX_KEYS
+            ? MAX_KEYS : ledNormalColors.size();
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)ledPressedColors.size(); pin++)
+            keyMapping.ledPressedColors[pin] = ledPressedColors[pin];
+        keyMapping.ledPressedColors_count = ledPressedColors.size() > MAX_KEYS
+            ? MAX_KEYS : ledPressedColors.size();
         // The LED timeout is a global (non-profile) LED option; clamp to the
         // 0-600s range accepted by the web UI.
         if (led["ledTimeout"].is<int>())
@@ -378,7 +408,10 @@ std::string setLedPreview()
 {
     DynamicJsonDocument doc = get_post_data();
 
-    LedPreview preview = {};
+    // Static (not on the 4KB core-0 stack): the per-key color arrays make
+    // LedPreview ~1KB, and this handler runs on the deep lwIP httpd call path.
+    static LedPreview preview;
+    std::memset(&preview, 0, sizeof(preview));
     JsonObject led = doc["led"];
     if (!led.isNull())
     {
@@ -392,6 +425,19 @@ std::string setLedPreview()
             uint32_t timeout = led["ledTimeout"].as<uint32_t>();
             preview.ledTimeout = timeout > 600 ? 600 : timeout;
         }
+        // Per-key colors for custom mode (0 = literal black, so an empty
+        // array keeps the global fallback).
+        JsonArray normalColors = led["ledNormalColors"];
+        JsonArray pressedColors = led["ledPressedColors"];
+        preview.ledNormalColorCount = (uint32_t)normalColors.size();
+        preview.ledPressedColorCount = (uint32_t)pressedColors.size();
+        for (uint32_t i = 0; i < MAX_KEYS; i++)
+        {
+            if (i < (uint32_t)normalColors.size())
+                preview.ledNormalColors[i] = normalColors[i];
+            if (i < (uint32_t)pressedColors.size())
+                preview.ledPressedColors[i] = pressedColors[i];
+        }
         Storage::getInstance().publishLedPreview(preview);
     }
 
@@ -403,7 +449,7 @@ std::string getUsedPins()
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
     const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
     auto usedPins = doc.createNestedArray("usedPins");
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         if (pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0)
             usedPins.add(pin);
@@ -418,20 +464,21 @@ std::string getPinState()
     // In matrix mode keys live at row/column intersections, so scan the matrix.
     // Otherwise touch pads are PIO-driven, so gpio_get_all() reports their
     // floating discharge level; read them through the touch driver instead.
-    uint32_t newState;
+    KeyMask newState;
     if (Storage::getInstance().isMatrixMode())
     {
         newState = matrixScanKeys();
     }
     else
     {
-        const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
-        newState = ~gpio_get_all() & ~touchPinMask;
-        newState |= TouchGpio::getInstance().scan();
+        const GpioMask touchPinMask = Storage::getInstance().getTouchPinMask();
+        newState = fromGpioMask(~gpio_get_all() & ~touchPinMask);
+        newState |= fromGpioMask(TouchGpio::getInstance().scan());
     }
     JsonArray heldPins = doc.createNestedArray("heldPins");
-    for (uint32_t pin = 0; pin < NUM_BANK0_GPIOS; pin++) {
-        if (newState & (1 << pin)) {
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (uint32_t pin = 0; pin < keyCount; pin++) {
+        if (newState.test(pin)) {
             heldPins.add(pin);
         }
     }
@@ -557,18 +604,19 @@ void httpd_post_finished(void *connection, char *response_uri, uint16_t response
 
 // ---- long-poll helpers --------------------------------------------------
 
-static Mask_t readKeyState()
+static KeyMask readKeyState()
 {
     return Storage::getInstance().keyState;
 }
 
-static std::string pinStateJson(Mask_t state)
+static std::string pinStateJson(const KeyMask& state)
 {
     std::string json = "{\"heldPins\":[";
     bool first = true;
-    for (uint32_t pin = 0; pin < NUM_BANK0_GPIOS; pin++)
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (uint32_t pin = 0; pin < keyCount; pin++)
     {
-        if (state & (1 << pin))
+        if (state.test(pin))
         {
             if (!first)
                 json += ',';
@@ -580,7 +628,7 @@ static std::string pinStateJson(Mask_t state)
     return json;
 }
 
-static int fillPinStateResponse(PinStateFile *ctx, Mask_t state)
+static int fillPinStateResponse(PinStateFile *ctx, const KeyMask& state)
 {
     const std::string body = pinStateJson(state);
     int n = snprintf(ctx->data, sizeof(ctx->data),
@@ -597,7 +645,7 @@ static int fillPinStateResponse(PinStateFile *ctx, Mask_t state)
 
 // Fill every parked request's file with the current state and let httpd send.
 // The callback (httpd's http_continue) resumes the parked connection.
-static void deliverToParked(Mask_t state)
+static void deliverToParked(const KeyMask& state)
 {
     for (int i = 0; i < MAX_PENDING_PIN_STATE; i++)
     {
@@ -627,8 +675,8 @@ static void deliverToParked(Mask_t state)
 // Answer parked getPinState requests when the debounced key state changes.
 static void deliverPinState()
 {
-    const Mask_t state = readKeyState();
-    if (state == lastDeliveredPinState)
+    const KeyMask state = readKeyState();
+    if (hasDeliveredPinState && state == lastDeliveredPinState)
         return;
 
     bool hasParked = false;
@@ -645,6 +693,7 @@ static void deliverPinState()
 
     deliverToParked(state);
     lastDeliveredPinState = state;
+    hasDeliveredPinState = true;
 }
 
 // Open a /api/getPinState request. Normally park it until the key state
@@ -652,12 +701,13 @@ static void deliverPinState()
 // slots are taken.
 static int openPinState(struct fs_file *file)
 {
-    const Mask_t state = readKeyState();
+    const KeyMask state = readKeyState();
 
-    if (state != lastDeliveredPinState)
+    if (!hasDeliveredPinState || state != lastDeliveredPinState)
     {
         deliverToParked(state); // don't leave parked clients on a stale change
         lastDeliveredPinState = state;
+        hasDeliveredPinState = true;
         return set_file_data(file, DataAndStatusCode(std::move(pinStateJson(state)), HttpStatusCode::_200));
     }
 

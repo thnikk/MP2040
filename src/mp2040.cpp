@@ -16,6 +16,8 @@
 
 #include "tusb.h"
 
+#include <cstring>
+
 // How long after a normal boot the touch web-config pad stays armed. Touching
 // it within this window reboots into web config mode. Overridable per board.
 #ifndef WEB_CONFIG_TOUCH_WINDOW_MS
@@ -56,7 +58,7 @@ void MP2040::setup() {
 	// config or boot) can be touched before the input driver starts to enter
 	// that mode. Arming is based on the board's physical touch pins, not on
 	// which pins have a keycode assigned.
-	const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
+	const GpioMask touchPinMask = Storage::getInstance().getTouchPinMask();
 	const int32_t wcPin = Storage::getInstance().getWebConfigPin();
 	const int32_t bootPin = Storage::getInstance().getBootPin();
 	if ((wcPin >= 0 && (touchPinMask & (1 << wcPin))) ||
@@ -81,10 +83,10 @@ void MP2040::setup() {
  */
 void MP2040::initializeKeyGpio() {
 	KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
-	const Mask_t touchPinMask = Storage::getInstance().getTouchPinMask();
+	const GpioMask touchPinMask = Storage::getInstance().getTouchPinMask();
 	buttonGpios = 0;
 	touchGpios = 0;
-	debouncedGpio = 0;
+	debouncedGpio = KeyMask();
 
 	if (Storage::getInstance().isMatrixMode())
 	{
@@ -163,7 +165,7 @@ void MP2040::deinitializeKeyGpio() {
  * See matrixScanKeys() in matrix.h. Key N = (row N/COLS, col N%COLS), matching
  * the keycode / LED index arrays.
  */
-Mask_t MP2040::scanMatrix() {
+KeyMask MP2040::scanMatrix() {
 	return matrixScanKeys();
 }
 
@@ -180,21 +182,19 @@ Mask_t MP2040::scanMatrix() {
  * mode the raw mask comes from scanMatrix() instead.
  */
 void MP2040::debounceGpioGetAll() {
-	Mask_t raw_gpio;
-	Mask_t keyGpios;
+	KeyMask raw_gpio;
+	KeyMask keyGpios;
 	if (Storage::getInstance().isMatrixMode())
 	{
-		const uint8_t keys = Storage::getInstance().getMatrixRows() *
-		                     Storage::getInstance().getMatrixCols();
 		raw_gpio = scanMatrix();
-		keyGpios = (keys >= 32) ? ~0u : ((1u << keys) - 1u);
+		keyGpios = lowKeysMask(Storage::getInstance().getKeyCount());
 	}
 	else
 	{
-		raw_gpio = ~gpio_get_all();
-		raw_gpio &= buttonGpios;
-		raw_gpio |= TouchGpio::getInstance().scan();
-		keyGpios = buttonGpios | touchGpios;
+		raw_gpio = fromGpioMask(~gpio_get_all());
+		raw_gpio &= fromGpioMask(buttonGpios);
+		raw_gpio |= fromGpioMask(TouchGpio::getInstance().scan());
+		keyGpios = fromGpioMask(buttonGpios | touchGpios);
 	}
 
 	// return if state isn't different than the actual
@@ -208,14 +208,14 @@ void MP2040::debounceGpioGetAll() {
 	}
 
 	uint32_t now = getMillis();
-	// check each key GPIO for state
-	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
-		Mask_t pin_mask = 1 << pin;
-		if (keyGpios & pin_mask) {
+	// check each key for state
+	const uint32_t keyCount = Storage::getInstance().getKeyCount();
+	for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++) {
+		if (keyGpios.test(pin)) {
 			// Allow debouncer to change state if key state changed and debounce delay threshold met
-			if ((debouncedGpio & pin_mask) != \
-					(raw_gpio & pin_mask) && ((now - gpioDebounceTime[pin]) > debounceDelay)) {
-				debouncedGpio ^= pin_mask;
+			if (debouncedGpio.test(pin) != raw_gpio.test(pin) &&
+			    ((now - gpioDebounceTime[pin]) > debounceDelay)) {
+				debouncedGpio ^= keyMaskBit(pin);
 				gpioDebounceTime[pin] = now;
 			}
 		}
@@ -232,9 +232,10 @@ void MP2040::run() {
 		// Visible cue that the boot window is open: light the LEDs in the
 		// board's pressed color until the window closes (a subtler, calmer
 		// signal than the earlier rainbow). Uses the same live-preview path as
-		// the web config.
-		LedPreview boot = {};
-		boot.ledMode = 0;                 // LED_MODE_STATIC
+		// the web config. Static: LedPreview is ~1KB and this runs on core 0.
+		static LedPreview boot;
+		std::memset(&boot, 0, sizeof(boot));
+		boot.ledMode = 0;                 // LED_MODE_CUSTOM (global fallback)
 		boot.ledSpeed = 50;
 		boot.brightnessMaximum = 255;
 		boot.colorNormal = LED_COLOR_PRESSED;
@@ -252,8 +253,8 @@ void MP2040::run() {
 			// Debounce so the touch goes through the same hysteresis and settle
 			// as normal key operation.
 			debounceGpioGetAll();
-			const bool wcHeld = wcPin >= 0 && (debouncedGpio & (1 << wcPin));
-			const bool bootHeld = bootPin >= 0 && (debouncedGpio & (1 << bootPin));
+			const bool wcHeld = wcPin >= 0 && (debouncedGpio & keyMaskBit(wcPin)).any();
+			const bool bootHeld = bootPin >= 0 && (debouncedGpio & keyMaskBit(bootPin)).any();
 			// Holding both pins is ambiguous (a large palm press): boot normally.
 			if (wcHeld && bootHeld)
 				break;
@@ -286,13 +287,21 @@ void MP2040::run() {
 
 		// Window passed without a touch: restore the board's normal LED mode.
 		const LEDOptions& lo = Storage::getInstance().getLedOptions();
-		LedPreview restore = {};
+		const KeyMapping& km = Storage::getInstance().getKeyMapping();
+		static LedPreview restore;
+		std::memset(&restore, 0, sizeof(restore));
 		restore.ledMode = lo.ledMode;
 		restore.ledSpeed = lo.ledSpeed;
 		restore.brightnessMaximum = lo.brightnessMaximum;
 		restore.colorNormal = lo.colorNormal;
 		restore.colorPressed = lo.colorPressed;
 		restore.ledTimeout = lo.ledTimeout;
+		restore.ledNormalColorCount = km.ledNormalColors_count;
+		for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
+			restore.ledNormalColors[pin] = km.ledNormalColors[pin];
+		restore.ledPressedColorCount = km.ledPressedColors_count;
+		for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
+			restore.ledPressedColors[pin] = km.ledPressedColors[pin];
 		Storage::getInstance().publishLedPreview(restore);
 	}
 
@@ -360,13 +369,14 @@ MP2040::BootAction MP2040::getBootAction() {
 // and instead defer to the boot linger window in run(). On matrix boards the
 // pin is a linear key index, so the matrix is scanned.
 bool MP2040::isBootPinHeld(int32_t pin) {
-	if (pin < 0 || pin >= (int32_t)NUM_BANK0_GPIOS)
+	const uint32_t keyCount = Storage::getInstance().getKeyCount();
+	if (pin < 0 || pin >= (int32_t)keyCount)
 		return false;
 
 	if (Storage::getInstance().isMatrixMode()) {
-		if (scanMatrix() & (1u << pin)) {
+		if (scanMatrix().test(pin)) {
 			sleep_ms(2);
-			if (scanMatrix() & (1u << pin))
+			if (scanMatrix().test(pin))
 				return true;
 		}
 		return false;

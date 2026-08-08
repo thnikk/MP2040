@@ -94,6 +94,10 @@ let timeoutSpinner = null;
 let colorNormalPicker = null;
 let colorPressedPicker = null;
 
+// Per-key color pickers in the key modal (custom LED mode)
+let keyNormalColorPicker = null;
+let keyPressedColorPicker = null;
+
 // Color picker pill button: a pill with a colored dot inside, with a hidden
 // native <input type="color"> overlaid so clicking opens the OS picker
 // (port of GP2040-th's LedColorPopover .led-color-btn).
@@ -165,6 +169,8 @@ function cloneProfile(p) {
       brightnessSteps: p.led?.brightnessSteps ?? 1,
       colorNormal: p.led?.colorNormal ?? 0x00ff00,
       colorPressed: p.led?.colorPressed ?? 0xffffff,
+      ledNormalColors: (p.led?.ledNormalColors || []).slice(),
+      ledPressedColors: (p.led?.ledPressedColors || []).slice(),
     },
   };
 }
@@ -194,6 +200,20 @@ function applyOptionsToProfile(options, profile) {
 function syncCurrentToProfile() {
   if (!profiles[currentProfileIndex]) return;
   applyOptionsToProfile(currentOptions, profiles[currentProfileIndex]);
+}
+
+// Make the per-key color arrays dense so they can round-trip through JSON and
+// flash: fill any missing entries with the global colors. A no-op once the
+// arrays are populated (e.g. an all-black custom config stays all-black).
+// Returns the (now populated) led options object.
+function materializeLedColors() {
+  const led = currentOptions.led || {};
+  const keyCount = (currentOptions.keycodes || []).length;
+  if (!Array.isArray(led.ledNormalColors) || led.ledNormalColors.length < keyCount)
+    led.ledNormalColors = new Array(keyCount).fill(led.colorNormal ?? 0x00ff00);
+  if (!Array.isArray(led.ledPressedColors) || led.ledPressedColors.length < keyCount)
+    led.ledPressedColors = new Array(keyCount).fill(led.colorPressed ?? 0xffffff);
+  return led;
 }
 
 // Refresh the LED/MIDI controls from the current profile's values.
@@ -265,22 +285,35 @@ function debounce(fn, ms) {
 }
 
 // Read the current LED controls and push them to the board for a live preview.
+// The control values are also written back into currentOptions.led so the sim
+// and any later setOptions stay in sync (the led-mode dropdown change used to
+// only fire a preview, leaving currentOptions.led.ledMode stale).
 async function previewLed() {
-  const led = {
-    ledMode: parseInt(document.getElementById('led-mode').value, 10),
-    ledSpeed: speedSlider ? speedSlider.getValue() : 50,
-    brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
-    ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
-    colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
-    colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
+  if (!currentOptions.led) currentOptions.led = {};
+  const led = currentOptions.led;
+  led.ledMode = parseInt(document.getElementById('led-mode').value, 10);
+  led.ledSpeed = speedSlider ? speedSlider.getValue() : 50;
+  led.brightnessMaximum = brightnessSlider ? brightnessSlider.getValue() : 255;
+  led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
+  led.colorNormal = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
+  led.colorPressed = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
+  const preview = {
+    ledMode: led.ledMode,
+    ledSpeed: led.ledSpeed,
+    brightnessMaximum: led.brightnessMaximum,
+    ledTimeout: led.ledTimeout,
+    colorNormal: led.colorNormal,
+    colorPressed: led.colorPressed,
+    ledNormalColors: led.ledNormalColors || [],
+    ledPressedColors: led.ledPressedColors || [],
   };
   try {
     await api('/api/setLedPreview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ led }),
+      body: JSON.stringify({ led: preview }),
     });
-    if (boardView) boardView.setLedParams(led);
+    if (boardView) boardView.setLedParams(preview);
   } catch (e) {
     Toast.show('Preview failed: ' + e, 'error');
   }
@@ -312,6 +345,8 @@ function buildOptionsBody() {
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
       colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
+      ledNormalColors: currentOptions.led?.ledNormalColors || [],
+      ledPressedColors: currentOptions.led?.ledPressedColors || [],
     },
     profileIndex: currentProfileIndex,
     activeProfile,
@@ -469,6 +504,30 @@ async function load() {
     onChange: previewLedDebounced,
   });
 
+  // Per-key colors in the key modal (custom LED mode). Editing a key's color
+  // materializes the per-key arrays (filling the rest with the globals) and
+  // live-previews the change.
+  keyNormalColorPicker = createColorPicker(document.getElementById('key-led-colorNormal'), {
+    label: 'Normal',
+    value: '#00ff00',
+    onChange: (value) => {
+      if (editingPin < 0) return;
+      const ledOpts = materializeLedColors();
+      ledOpts.ledNormalColors[editingPin] = colorToInt(value);
+      previewLedDebounced();
+    },
+  });
+  keyPressedColorPicker = createColorPicker(document.getElementById('key-led-colorPressed'), {
+    label: 'Pressed',
+    value: '#ffffff',
+    onChange: (value) => {
+      if (editingPin < 0) return;
+      const ledOpts = materializeLedColors();
+      ledOpts.ledPressedColors[editingPin] = colorToInt(value);
+      previewLedDebounced();
+    },
+  });
+
   modalSelect = new MultiSelect({
     container: document.getElementById('key-modal-select'),
     options: MULTISELECT_OPTIONS,
@@ -553,6 +612,13 @@ function openKeyModal(pin) {
   keyboardWidget.setValue(keycode, mask);
   midiKeyboard.setValue(midiNote);
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
+  // Per-key colors: show the key's own color, falling back to the global
+  // color until the user edits it (custom LED mode).
+  const led = currentOptions.led || {};
+  const normal = led.ledNormalColors?.[pin] ?? led.colorNormal ?? 0x00ff00;
+  const pressed = led.ledPressedColors?.[pin] ?? led.colorPressed ?? 0xffffff;
+  if (keyNormalColorPicker) keyNormalColorPicker.setValue(intToColor(normal));
+  if (keyPressedColorPicker) keyPressedColorPicker.setValue(intToColor(pressed));
   updateModalMode();
   document.getElementById('key-modal').hidden = false;
   // The widget may have been built while the modal was hidden, so re-fit the
@@ -652,6 +718,16 @@ document.querySelectorAll('[data-route]').forEach((el) => {
 });
 document.getElementById('reboot').addEventListener('click', openRebootModal);
 document.getElementById('reset').addEventListener('click', resetSettings);
+document.getElementById('led-fill-all').addEventListener('click', () => {
+  const ledOpts = materializeLedColors();
+  const normal = currentOptions.led?.colorNormal ?? 0x00ff00;
+  const pressed = currentOptions.led?.colorPressed ?? 0xffffff;
+  for (let i = 0; i < ledOpts.ledNormalColors.length; i++) {
+    ledOpts.ledNormalColors[i] = normal;
+    ledOpts.ledPressedColors[i] = pressed;
+  }
+  previewLed();
+});
 document.getElementById('set-boot-profile').addEventListener('click', () => {
   activeProfile = currentProfileIndex;
   updateProfileTabs();

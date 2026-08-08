@@ -32,18 +32,19 @@ let store = null;
 
 // Build a profile object. `src` provides the starting arrays/scalars (e.g. the
 // base options) so alternates default to a copy of the base.
+const KEY_COUNT = 128;
 function makeProfile(src = {}) {
   const keycodes = [];
   const modifierMasks = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < KEY_COUNT; i++) {
     keycodes.push(src.keycodes?.[i] ?? 0);
     modifierMasks.push(src.modifierMasks?.[i] ?? 0);
   }
   return {
     keycodes,
     modifierMasks,
-    midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(30).fill(0),
-    midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(30).fill(0),
+    midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(KEY_COUNT).fill(0),
+    midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(KEY_COUNT).fill(0),
     midi: {
       channel: src.midi?.channel ?? 0,
       velocity: src.midi?.velocity ?? 127,
@@ -55,6 +56,8 @@ function makeProfile(src = {}) {
       brightnessSteps: src.led?.brightnessSteps ?? 1,
       colorNormal: src.led?.colorNormal ?? 0x00ff00,
       colorPressed: src.led?.colorPressed ?? 0xffffff,
+      ledNormalColors: Array.isArray(src.led?.ledNormalColors) ? src.led.ledNormalColors.slice() : [],
+      ledPressedColors: Array.isArray(src.led?.ledPressedColors) ? src.led.ledPressedColors.slice() : [],
     },
   };
 }
@@ -63,7 +66,7 @@ function defaultOptions() {
   const keycodes = [];
   const modifierMasks = [];
   const pinLedIndices = [];
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < KEY_COUNT; i++) {
     keycodes.push(board?.keycodes?.[i] ?? 0);
     modifierMasks.push(board?.modifierMasks?.[i] ?? 0);
     pinLedIndices.push(board?.pinLedIndices?.[i] ?? -1);
@@ -71,8 +74,8 @@ function defaultOptions() {
   const base = {
     keycodes,
     modifierMasks,
-    midiNotes: new Array(30).fill(0),
-    midiVelocities: new Array(30).fill(0),
+    midiNotes: new Array(KEY_COUNT).fill(0),
+    midiVelocities: new Array(KEY_COUNT).fill(0),
     defaultInputMode: 1,
     midi: {
       channel: 0,
@@ -90,6 +93,10 @@ function defaultOptions() {
       brightnessSteps: board?.led?.brightnessSteps ?? 1,
       colorNormal: board?.led?.colorNormal ?? 0x00ff00,
       colorPressed: board?.led?.colorPressed ?? 0xffffff,
+      // Empty per-key color arrays = "use the global colors" (legacy config),
+      // matching the firmware.
+      ledNormalColors: [],
+      ledPressedColors: [],
       pinLedIndices,
     },
     webConfigPin: board?.webConfigPin ?? -1,

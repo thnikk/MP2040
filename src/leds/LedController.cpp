@@ -9,11 +9,11 @@
 
 // Theme step interval (ms) bounds per effect, indexed by LedMode. The 0-100%
 // speed slider maps exponentially into these: 0% = slowest, 100% = fastest.
-// STATIC is unused (no animation); BPS steps on the fixed render cadence and
+// CUSTOM is unused (no animation); BPS steps on the fixed render cadence and
 // is handled separately in renderBps(). RAIN uses the interval for its fade
 // step; the drop interval itself is a fixed random 1-3s (see update()).
 static const SpeedRange speedRanges[] = {
-    { 0, 0 },    // LED_MODE_STATIC
+    { 0, 0 },    // LED_MODE_CUSTOM
     { 6, 117 },  // LED_MODE_CYCLE   (256-step wheel: ~1.5s .. ~30s / rev)
     { 16, 250 }, // LED_MODE_REACTIVE (32-step fade: ~0.5s .. ~8s)
     { 0, 0 },    // LED_MODE_BPS     (handled separately)
@@ -65,7 +65,7 @@ LedController::LedController() :
     ledsPerKey(1),
     ledCount(0),
     stripCount(0),
-    ledMode(LED_MODE_STATIC),
+    ledMode(LED_MODE_CUSTOM),
     ledSpeedPercent(50),
     ledSpeed(20),
     lastThemeMillis(0),
@@ -76,6 +76,7 @@ LedController::LedController() :
     brightnessMaximum(255),
     colorNormal(0x00FF00),
     colorPressed(0xFFFFFF),
+    ledColorCount(0),
     nextRunTime(nil_time),
     pressedLeds(nullptr),
     ledSat(nullptr),
@@ -89,7 +90,7 @@ LedController::LedController() :
     rainDropMillis(0),
     rainRandState(0)
 {
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         pinLedIndices[pin] = -1;
 }
 
@@ -140,10 +141,20 @@ void LedController::configure()
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;
     ledDim = 255;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         pinLedIndices[pin] = pin < (Pin_t)ledOptions.pinLedIndices_count
             ? ledOptions.pinLedIndices[pin] : -1;
+    }
+
+    // Mirror the active profile's per-key colors for custom mode.
+    const KeyMapping& km = Storage::getInstance().getKeyMapping();
+    ledColorCount = km.ledNormalColors_count < MAX_KEYS ? km.ledNormalColors_count : MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)ledColorCount; pin++)
+    {
+        ledNormalColors[pin] = km.ledNormalColors[pin];
+        ledPressedColors[pin] = pin < (Pin_t)km.ledPressedColors_count
+            ? km.ledPressedColors[pin] : colorNormal;
     }
 
     // Total strip length: use the configured count, or derive from the highest
@@ -157,7 +168,7 @@ void LedController::configure()
                 total = std::max(total, (uint32_t)(BOARD_LED_GRID[row][col] + 1));
         }
     }
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         if (pinLedIndices[pin] >= 0)
             total = std::max(total, (uint32_t)(pinLedIndices[pin] + ledsPerKey));
@@ -165,7 +176,7 @@ void LedController::configure()
     if (total == 0)
     {
         const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
-        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         {
             if (pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0)
                 total += ledsPerKey;
@@ -210,14 +221,16 @@ void LedController::update()
     if (neopixel == nullptr) return;
 
     // Apply any live LED options pushed from the web config (core 0).
-    LedPreview preview;
+    // Static scratch buffer: LedPreview is ~1KB (per-key color arrays), too
+    // large to keep on the 4KB core-1 stack for the whole update() frame.
+    static LedPreview preview;
     if (Storage::getInstance().consumeLedPreview(preview))
         applyLedPreview(preview);
 
     if (!time_reached(nextRunTime)) return;
     nextRunTime = make_timeout_time_ms(20);
 
-    const Mask_t keyState = Storage::getInstance().keyState;
+    const KeyMask keyState = Storage::getInstance().getKeyState();
 
     // Inactivity timeout: any held key keeps the LEDs on; once the last key
     // is released the strip fades out after ledTimeoutMs and a fresh press
@@ -226,7 +239,7 @@ void LedController::update()
     const uint32_t now = to_ms_since_boot(get_absolute_time());
     if (ledTimeoutMs > 0)
     {
-        if (keyState != 0)
+        if (keyState.any())
             ledLastActivityMillis = now;
 
         switch (ledState)
@@ -238,12 +251,12 @@ void LedController::update()
 
             case LedState::FADING_OUT:
                 // A press mid-fade cancels the suspend and ramps back up.
-                if (keyState != 0)
+                if (keyState.any())
                     ledState = LedState::FADING_IN;
                 break;
 
             case LedState::OFF:
-                if (keyState != 0)
+                if (keyState.any())
                 {
                     ledState = LedState::FADING_IN;
                     ledDim = 0;
@@ -297,17 +310,18 @@ void LedController::update()
     }
 
     // BPS press-rate counter: count rising edges of any key.
-    const Mask_t rising = keyState & ~prevKeyState;
-    if (rising)
+    const KeyMask rising = keyState & ~prevKeyState;
+    if (rising.any())
         bpsCount++;
     prevKeyState = keyState;
 
     // Build per-LED pressed state from the pin -> LED mapping.
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
     for (uint32_t i = 0; i < stripCount; i++)
         pressedLeds[i] = false;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
     {
-        if (!(keyState & (1 << pin))) continue;
+        if (!keyState.test(pin)) continue;
         int32_t idx = pinLedIndices[pin];
         if (idx < 0) continue;
         for (uint32_t l = 0; l < ledsPerKey; l++)
@@ -318,11 +332,11 @@ void LedController::update()
     }
 
     // Spawn ripples at the grid position of each newly pressed key.
-    if (rising)
+    if (rising.any())
     {
-        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
         {
-            if (!(rising & (1 << pin))) continue;
+            if (!rising.test(pin)) continue;
             int32_t idx = pinLedIndices[pin];
             if (idx < 0) continue;
             for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
@@ -343,7 +357,7 @@ void LedController::update()
     // Advance the theme state at the configured speed. Catch up on any missed
     // steps so higher speeds (shorter intervals) actually run faster than the
     // 20ms render cadence.
-    if (ledMode != LED_MODE_STATIC)
+    if (ledMode != LED_MODE_CUSTOM)
     {
         if (now - lastThemeMillis >= ledSpeed)
         {
@@ -398,7 +412,7 @@ void LedController::update()
         case LED_MODE_BPS:      renderBps();      break;
         case LED_MODE_RIPPLE:   renderRipple();   break;
         case LED_MODE_RAIN:     renderRain();     break;
-        default:                renderStatic();   break;
+        default:                renderCustom();   break;
     }
 }
 
@@ -414,6 +428,15 @@ void LedController::applyLedPreview(const LedPreview& preview)
     brightnessMaximum = preview.brightnessMaximum;
     colorNormal = preview.colorNormal;
     colorPressed = preview.colorPressed;
+    // Per-key colors for custom mode; a count of 0 keeps the global fallback.
+    ledColorCount = preview.ledNormalColorCount < MAX_KEYS
+        ? preview.ledNormalColorCount : MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)ledColorCount; pin++)
+    {
+        ledNormalColors[pin] = preview.ledNormalColors[pin];
+        ledPressedColors[pin] = pin < (Pin_t)preview.ledPressedColorCount
+            ? preview.ledPressedColors[pin] : colorNormal;
+    }
     // Inactivity timeout (0-600s), 0 = always on; clamp defensively.
     ledTimeoutMs = (preview.ledTimeout > 600 ? 600 : preview.ledTimeout) * 1000u;
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
@@ -430,7 +453,7 @@ void LedController::applyLedPreview(const LedPreview& preview)
     }
     for (uint32_t i = 0; i < MAX_RIPPLES; i++)
         ripples[i].active = false;
-    prevKeyState = Storage::getInstance().keyState;
+    prevKeyState = Storage::getInstance().getKeyState();
     rainRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
     rainDropMillis = 0;
 }
@@ -448,7 +471,7 @@ void LedController::recomputeLedSpeed()
     }
     if (minInterval == 0 || maxInterval == 0)
     {
-        ledSpeed = 20; // STATIC (or unknown mode): no animation, default cadence
+        ledSpeed = 20; // CUSTOM (or unknown mode): no animation, default cadence
         return;
     }
     uint32_t pct = ledSpeedPercent > 100 ? 100 : ledSpeedPercent;
@@ -516,23 +539,45 @@ void LedController::advanceThemeState()
     }
 }
 
-// Static: normal color, pressed LEDs show the pressed color.
-void LedController::renderStatic()
+// Custom: per-key colors. Each key's LEDs show its normal color, brightening
+// to its pressed color while held. Keys without a per-key entry (or an empty
+// array) fall back to the global colorNormal / colorPressed.
+void LedController::renderCustom()
 {
     float scale = effBrightness() / 255.0f;
     uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
     uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
     uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
-    uint8_t pr = static_cast<uint8_t>(((colorPressed >> 16) & 0xFF) * scale);
-    uint8_t pg = static_cast<uint8_t>(((colorPressed >> 8) & 0xFF) * scale);
-    uint8_t pb = static_cast<uint8_t>((colorPressed & 0xFF) * scale);
 
+    // Unmapped LEDs show the global normal color.
     for (uint32_t i = 0; i < stripCount; i++)
+        neopixel->setPixel(i, nr, ng, nb);
+
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
     {
-        if (pressedLeds[i])
-            neopixel->setPixel(i, pr, pg, pb);
-        else
-            neopixel->setPixel(i, nr, ng, nb);
+        int32_t idx = pinLedIndices[pin];
+        if (idx < 0) continue;
+
+        const bool hasCustom = pin < (Pin_t)ledColorCount;
+        uint32_t normal = hasCustom ? ledNormalColors[pin] : colorNormal;
+        uint32_t pressed = hasCustom ? ledPressedColors[pin] : colorPressed;
+        uint8_t kR = static_cast<uint8_t>(((normal >> 16) & 0xFF) * scale);
+        uint8_t kG = static_cast<uint8_t>(((normal >> 8) & 0xFF) * scale);
+        uint8_t kB = static_cast<uint8_t>((normal & 0xFF) * scale);
+        uint8_t pR = static_cast<uint8_t>(((pressed >> 16) & 0xFF) * scale);
+        uint8_t pG = static_cast<uint8_t>(((pressed >> 8) & 0xFF) * scale);
+        uint8_t pB = static_cast<uint8_t>((pressed & 0xFF) * scale);
+
+        for (uint32_t l = 0; l < ledsPerKey; l++)
+        {
+            uint32_t i = idx + l;
+            if (i >= stripCount) break;
+            if (pressedLeds[i])
+                neopixel->setPixel(i, pR, pG, pB);
+            else
+                neopixel->setPixel(i, kR, kG, kB);
+        }
     }
     neopixel->show();
 }

@@ -4,6 +4,7 @@
 #include "gpdriver.h"
 #include "drivers/midi/MidiDescriptors.h"
 #include "types.h"
+#include "keymask.h"
 
 class MidiDriver : public GPDriver {
 public:
@@ -19,7 +20,7 @@ public:
     virtual const uint8_t * get_descriptor_device_qualifier_cb();
 private:
     void sendNote(uint8_t cin, uint8_t note, uint8_t velocity);
-    Mask_t lastKeyState = 0;
+    KeyMask lastKeyState;
 };
 
 #endif

@@ -38,15 +38,14 @@ uint8_t KeyboardDriver::getMultimedia(uint8_t code) {
 
 void KeyboardDriver::process() {
 	const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
-	const Mask_t keyState = Storage::getInstance().keyState;
+	const KeyMask& keyState = Storage::getInstance().keyState;
 	releaseAllKeys();
 
 	// Direct pin -> keycode mapping. Each pressed pin emits its key (or
 	// modifier / multimedia key) while held. A pin with no keycode but a
 	// modifier mask still acts as a pure modifier (e.g. a Shift key).
-	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
-		if (!(keyState & (1 << pin))) continue;
-		if (pin >= (Pin_t)keyMapping.keycodes_count) continue;
+	for (Pin_t pin = 0; pin < (Pin_t)keyMapping.keycodes_count; pin++) {
+		if (!keyState.test(pin)) continue;
 
 		uint8_t keycode = keyMapping.keycodes[pin];
 		keyboardReport.modifier |= keyMapping.modifierMasks[pin];

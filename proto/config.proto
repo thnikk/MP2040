@@ -5,14 +5,20 @@ import "enums.proto";
 
 message KeyMapping
 {
-    repeated uint32 keycodes = 1 [(nanopb).max_count = 30];
-    repeated uint32 modifierMasks = 2 [(nanopb).max_count = 30];
+    repeated uint32 keycodes = 1 [(nanopb).max_count = 128];
+    repeated uint32 modifierMasks = 2 [(nanopb).max_count = 128];
     // Per-pin MIDI note numbers (0-127). 0 = no note (pin silent in MIDI
     // mode). Only consulted when the default input mode is MIDI.
-    repeated uint32 midiNotes = 3 [(nanopb).max_count = 30];
+    repeated uint32 midiNotes = 3 [(nanopb).max_count = 128];
     // Per-pin note-on velocity (1-127). 0 = use the global MIDI velocity
     // (a per-note accent).
-    repeated uint32 midiVelocities = 4 [(nanopb).max_count = 30];
+    repeated uint32 midiVelocities = 4 [(nanopb).max_count = 128];
+    // Per-key LED colors for custom mode (LED_MODE_CUSTOM). Indexed by key
+    // like the other per-key arrays. A value of 0 means literal black; keys
+    // without an entry (count < MAX_KEYS) fall back to the global
+    // colorNormal / colorPressed.
+    repeated uint32 ledNormalColors = 5 [(nanopb).max_count = 128];
+    repeated uint32 ledPressedColors = 6 [(nanopb).max_count = 128];
 }
 
 // Global MIDI output options, used when the default input mode is MIDI.
@@ -37,7 +43,7 @@ message LEDOptions
     optional uint32 ledCount = 8;
     // Per-pin LED strip index (index in array = pin, value = LED index).
     // -1 = pin has no LED.
-    repeated int32 pinLedIndices = 9 [(nanopb).max_count = 30];
+    repeated int32 pinLedIndices = 9 [(nanopb).max_count = 128];
     // LED theme mode (0=static, 1=cycle, 2=reactive, 3=bps). Default from
     // the board's LED_MODE define; editable via the web config.
     optional uint32 ledMode = 10;

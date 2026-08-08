@@ -122,8 +122,12 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_compile_definitions(PICO_USE_STACK_GUARDS=1)
 endif()
 
-# We want a larger stack of 4kb per core instead of the default 2kb
-add_compile_definitions(PICO_STACK_SIZE=0x1000)
+# Larger stacks than the pico-sdk default. Core 0 (main loop, web config /
+# lwIP httpd) gets 8kb in main SRAM; core 1's stack lives in the 4kb
+# SCRATCH_X region, so it stays at 4kb (set via PICO_CORE1_STACK_SIZE so the
+# .stack1 section fits).
+add_compile_definitions(PICO_STACK_SIZE=0x2000)
+add_compile_definitions(PICO_CORE1_STACK_SIZE=0x1000)
 
 add_executable(${PROJECT_NAME}
 src/main.cpp

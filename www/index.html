@@ -106,7 +106,7 @@
           <div class="led-row">
             <label class="led-mode-label" for="led-mode">LED Mode</label>
             <select id="led-mode">
-              <option value="0">Static</option>
+              <option value="0">Custom</option>
               <option value="1">Cycle</option>
               <option value="2">Reactive</option>
               <option value="3">BPS</option>
@@ -119,6 +119,9 @@
           <div class="led-colors">
             <div class="led-color-picker"><div id="led-colorNormal"></div></div>
             <div class="led-color-picker"><div id="led-colorPressed"></div></div>
+          </div>
+          <div class="led-fill">
+            <button id="led-fill-all" type="button">Fill all with default colors</button>
           </div>
         </div>
       </section>
@@ -219,6 +222,10 @@
       <div id="key-modal-select"></div>
       <div id="key-modal-keyboard"></div>
       <div id="key-modal-midi"></div>
+      <div class="key-modal-colors">
+        <div class="led-color-picker"><div id="key-led-colorNormal"></div></div>
+        <div class="led-color-picker"><div id="key-led-colorPressed"></div></div>
+      </div>
       <div class="modal-actions">
         <button id="key-modal-save" type="button">Save</button>
       </div>

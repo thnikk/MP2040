@@ -24,7 +24,7 @@ void MidiDriver::initialize() {
 void MidiDriver::process() {
 	const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
 	const uint8_t globalVelocity = (uint8_t)Storage::getInstance().getMidiVelocity();
-	const Mask_t keyState = Storage::getInstance().keyState;
+	const KeyMask& keyState = Storage::getInstance().keyState;
 
 	// Only produce note events while a host has claimed the MIDI interfaces.
 	// Keep the previous state in sync so a later mount doesn't send spurious
@@ -36,7 +36,7 @@ void MidiDriver::process() {
 
 	// Edge-triggered: send note-on on a press, note-off on a release. This is
 	// unlike the keyboard driver's level-triggered bitmap report.
-	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++) {
+	for (Pin_t pin = 0; pin < (Pin_t)keyMapping.midiNotes_count; pin++) {
 		if (pin >= (Pin_t)keyMapping.midiNotes_count) continue;
 
 		uint8_t note = (uint8_t)keyMapping.midiNotes[pin];
@@ -47,9 +47,8 @@ void MidiDriver::process() {
 		if (pin < (Pin_t)keyMapping.midiVelocities_count && keyMapping.midiVelocities[pin] != 0)
 			velocity = (uint8_t)keyMapping.midiVelocities[pin];
 
-		Mask_t pinMask = 1u << pin;
-		bool pressed = (keyState & pinMask) != 0;
-		bool wasPressed = (lastKeyState & pinMask) != 0;
+		bool pressed = keyState.test(pin);
+		bool wasPressed = lastKeyState.test(pin);
 		if (pressed && !wasPressed)
 			sendNote(MIDI_CIN_NOTE_ON, note, velocity);
 		else if (!pressed && wasPressed)

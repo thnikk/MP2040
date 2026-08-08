@@ -150,7 +150,9 @@ export function parseBoardConfig(configDir, rootDir) {
   const keycodes = [];
   const modifierMasks = [];
   const pinLedIndices = [];
-  for (let i = 0; i < 30; i++) {
+  // Key index arrays are MAX_KEYS (128) long; matrix boards can use indices
+  // beyond the GPIO count. Direct boards only use the first 30.
+  for (let i = 0; i < 128; i++) {
     const n = i.toString().padStart(2, '0');
     // Matrix boards define keys by linear index (KEYCODE_IDXxx); direct boards
     // by GPIO (KEYCODE_GPxx). Prefer IDX when present.

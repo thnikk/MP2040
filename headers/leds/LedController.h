@@ -7,13 +7,14 @@
 #include "config.pb.h"
 #include "leds/LedLayout.h"
 #include "types.h"
+#include "keymask.h"
 
 class Neopixel;
 struct LedPreview;
 
 // LED theme modes (matches the web config "LED Mode" dropdown)
 enum LedMode {
-    LED_MODE_STATIC = 0,
+    LED_MODE_CUSTOM = 0, // per-key colors (falls back to colorNormal/Pressed)
     LED_MODE_CYCLE,    // rainbow wheel
     LED_MODE_REACTIVE, // white -> rainbow -> off fade
     LED_MODE_BPS,      // color tracks keypress rate
@@ -77,7 +78,7 @@ private:
     void advanceThemeState();
 
     // Theme renderers (unified-2022 ports)
-    void renderStatic();
+    void renderCustom();
     void renderCycle();
     void renderReactive();
     void renderBps();
@@ -106,10 +107,16 @@ private:
     uint32_t ledLastActivityMillis; // last time a key was held (ms since boot)
     LedState ledState;              // timeout state machine (see above)
     uint8_t ledDim;                 // 0-255 fade multiplier applied to all output
-    int32_t pinLedIndices[NUM_BANK0_GPIOS];
+    int32_t pinLedIndices[MAX_KEYS];
     uint32_t brightnessMaximum;
     uint32_t colorNormal;
     uint32_t colorPressed;
+    // Per-key colors for custom mode, mirrored from the active key mapping.
+    // ledColorCount is the number of populated entries; keys >= count (or a
+    // count of 0) fall back to colorNormal / colorPressed.
+    uint32_t ledColorCount;
+    uint32_t ledNormalColors[MAX_KEYS];
+    uint32_t ledPressedColors[MAX_KEYS];
     absolute_time_t nextRunTime;
 
     // Theme state
@@ -117,7 +124,7 @@ private:
     int* ledSat;
     int* ledVal;
     int hue;
-    Mask_t prevKeyState;
+    KeyMask prevKeyState;
     uint32_t bpsCount;
     uint32_t lastBpsMillis;
     uint16_t bpsColor;

@@ -2,6 +2,7 @@
 #define MP2040_H_
 
 #include "types.h"
+#include "keymask.h"
 #include "pico/types.h"
 #include "hardware/gpio.h"
 
@@ -14,10 +15,10 @@ public:
 private:
     // GPIO debouncer
     void debounceGpioGetAll();
-    Mask_t buttonGpios;
-    Mask_t touchGpios;
-    Mask_t debouncedGpio;
-    uint32_t gpioDebounceTime[NUM_BANK0_GPIOS];
+    GpioMask buttonGpios;
+    GpioMask touchGpios;
+    KeyMask debouncedGpio;
+    uint32_t gpioDebounceTime[MAX_KEYS];
 
     // Boot-pin window for touch boards. While nonzero, run() waits up to
     // WEB_CONFIG_TOUCH_WINDOW_MS before starting the keyboard so a touch pad
@@ -41,7 +42,7 @@ private:
 
     // Matrix input mode: drive each row low and read the columns, producing a
     // key-state mask where bit N = linear key (row N/COLS, col N%COLS).
-    Mask_t scanMatrix();
+    KeyMask scanMatrix();
 };
 
 #endif

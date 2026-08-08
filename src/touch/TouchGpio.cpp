@@ -145,7 +145,7 @@ TouchGpio::TouchGpio()
     }
 }
 
-void TouchGpio::setup(Mask_t touchMask)
+void TouchGpio::setup(GpioMask touchMask)
 {
     mask = touchMask & ((1u << NUM_BANK0_GPIOS) - 1u);
     if (mask == 0) return;
@@ -221,11 +221,11 @@ void TouchGpio::calibrate()
     }
 }
 
-Mask_t TouchGpio::scan()
+GpioMask TouchGpio::scan()
 {
     if (mask == 0) return 0;
 
-    Mask_t result = 0;
+    GpioMask result = 0;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (smForPin[pin] == 0xFF || !active[pin]) continue;

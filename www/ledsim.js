@@ -2,7 +2,7 @@
 // (src/leds/LedController.cpp). Mirrors each mode on the board SVG so the web
 // configurator shows what the physical strip is doing, even without a board.
 
-const LED_MODE_STATIC = 0;
+const LED_MODE_CUSTOM = 0;
 const LED_MODE_CYCLE = 1;
 const LED_MODE_REACTIVE = 2;
 const LED_MODE_BPS = 3;
@@ -20,7 +20,7 @@ const RAIN_DROP_MAX_MS = 2000;
 // into these: 0% = slowest, 100% = fastest. BPS steps on the fixed render
 // cadence and is handled separately in renderBps().
 const speedRanges = [
-  { min: 0, max: 0 },     // LED_MODE_STATIC
+  { min: 0, max: 0 },     // LED_MODE_CUSTOM
   { min: 6, max: 117 },   // LED_MODE_CYCLE
   { min: 16, max: 250 },  // LED_MODE_REACTIVE
   { min: 0, max: 0 },     // LED_MODE_BPS
@@ -71,7 +71,7 @@ class LedSim {
     this.rainDropMillis = 0;
     this.rainRandState = 0;
 
-    this.mode = LED_MODE_STATIC;
+    this.mode = LED_MODE_CUSTOM;
     this.themeInterval = 20;
     this.brightness = 255;
     this.colorNormal = 0x00ff00;
@@ -102,7 +102,7 @@ class LedSim {
   // Apply live LED options; resets theme state like the firmware's
   // applyLedPreview (LedController.cpp:256).
   setParams(p) {
-    this.mode = p.ledMode ?? LED_MODE_STATIC;
+    this.mode = p.ledMode ?? LED_MODE_CUSTOM;
     this.ledSpeedPercent = (p.ledSpeed ?? 50) <= 100 ? p.ledSpeed : 50;
     this.recomputeInterval();
     // Always render at full brightness in the config UI so colors are easy to
@@ -110,6 +110,8 @@ class LedSim {
     this.brightness = 255;
     this.colorNormal = p.colorNormal ?? 0x00ff00;
     this.colorPressed = p.colorPressed ?? 0xffffff;
+    this.normalColors = p.ledNormalColors || [];
+    this.pressedColors = p.ledPressedColors || [];
     this.ledsPerKey = Math.max(1, p.ledsPerKey || 1);
     this.pinLedIndices = p.pinLedIndices || [];
     this.resetTheme();
@@ -120,7 +122,7 @@ class LedSim {
   recomputeInterval() {
     const r = speedRanges[this.mode] || { min: 0, max: 0 };
     if (!r.min || !r.max) {
-      this.themeInterval = 20; // STATIC (or unknown mode)
+      this.themeInterval = 20; // CUSTOM (or unknown mode)
       return;
     }
     const pct = Math.max(0, Math.min(100, this.ledSpeedPercent));
@@ -271,11 +273,33 @@ class LedSim {
     ];
   }
 
-  renderStatic() {
+  renderCustom() {
     const scale = this.brightness / 255;
     const n = this.scaled(this.colorNormal, scale);
     const p = this.scaled(this.colorPressed, scale);
-    return this.pressed.map((isPressed) => (isPressed ? p.slice() : n.slice()));
+
+    // Unmapped LEDs (and keys without a per-key color) show the global colors.
+    const out = [];
+    for (let i = 0; i < this.count; i++) {
+      out.push(this.pressed[i] ? p.slice() : n.slice());
+    }
+
+    // Per-key colors override the global fallback for mapped keys.
+    for (let pin = 0; pin < this.pinLedIndices.length; pin++) {
+      const idx = this.pinLedIndices[pin];
+      if (idx === undefined || idx < 0) continue;
+      const hasCustom = pin < this.normalColors.length;
+      const normal = hasCustom ? this.normalColors[pin] : this.colorNormal;
+      const pressed = hasCustom ? this.pressedColors[pin] : this.colorPressed;
+      const ns = this.scaled(normal, scale);
+      const ps = this.scaled(pressed, scale);
+      for (let l = 0; l < this.ledsPerKey; l++) {
+        const i = idx + l;
+        if (i >= this.count) break;
+        out[i] = this.pressed[i] ? ps.slice() : ns.slice();
+      }
+    }
+    return out;
   }
 
   renderCycle() {
@@ -398,7 +422,7 @@ class LedSim {
           (this.rainRandom() % (RAIN_DROP_MAX_MS - RAIN_DROP_MIN_MS + 1));
       }
     }
-    if (this.mode !== LED_MODE_STATIC) {
+    if (this.mode !== LED_MODE_CUSTOM) {
       if (now - this.lastThemeMillis >= this.themeInterval) {
         const elapsed = now - this.lastThemeMillis;
         const steps = Math.floor(elapsed / this.themeInterval);
@@ -412,7 +436,7 @@ class LedSim {
       case LED_MODE_BPS: return this.renderBps();
       case LED_MODE_RIPPLE: return this.renderRipple();
       case LED_MODE_RAIN: return this.renderRain();
-      default: return this.renderStatic();
+      default: return this.renderCustom();
     }
   }
 }

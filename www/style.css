@@ -1072,6 +1072,33 @@ html[data-theme="light"] select {
   cursor: pointer;
 }
 
+/* Per-key colors in the key modal: same pill pickers, side by side. */
+.key-modal-colors {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* "Fill all with default colors" action under the LED color pickers. */
+.led-fill {
+  margin-top: 12px;
+}
+
+.led-fill button {
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.led-fill button:hover {
+  background: var(--btn-hover);
+}
+
 /* Pill slider (brightness / speed) */
 .led-slider {
   min-width: 0;

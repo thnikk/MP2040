@@ -208,6 +208,300 @@
 #ifndef KEYCODE_IDX29
 #define KEYCODE_IDX29 KEYCODE_GP29
 #endif
+#ifndef KEYCODE_IDX30
+#define KEYCODE_IDX30 0
+#endif
+#ifndef KEYCODE_IDX31
+#define KEYCODE_IDX31 0
+#endif
+#ifndef KEYCODE_IDX32
+#define KEYCODE_IDX32 0
+#endif
+#ifndef KEYCODE_IDX33
+#define KEYCODE_IDX33 0
+#endif
+#ifndef KEYCODE_IDX34
+#define KEYCODE_IDX34 0
+#endif
+#ifndef KEYCODE_IDX35
+#define KEYCODE_IDX35 0
+#endif
+#ifndef KEYCODE_IDX36
+#define KEYCODE_IDX36 0
+#endif
+#ifndef KEYCODE_IDX37
+#define KEYCODE_IDX37 0
+#endif
+#ifndef KEYCODE_IDX38
+#define KEYCODE_IDX38 0
+#endif
+#ifndef KEYCODE_IDX39
+#define KEYCODE_IDX39 0
+#endif
+#ifndef KEYCODE_IDX40
+#define KEYCODE_IDX40 0
+#endif
+#ifndef KEYCODE_IDX41
+#define KEYCODE_IDX41 0
+#endif
+#ifndef KEYCODE_IDX42
+#define KEYCODE_IDX42 0
+#endif
+#ifndef KEYCODE_IDX43
+#define KEYCODE_IDX43 0
+#endif
+#ifndef KEYCODE_IDX44
+#define KEYCODE_IDX44 0
+#endif
+#ifndef KEYCODE_IDX45
+#define KEYCODE_IDX45 0
+#endif
+#ifndef KEYCODE_IDX46
+#define KEYCODE_IDX46 0
+#endif
+#ifndef KEYCODE_IDX47
+#define KEYCODE_IDX47 0
+#endif
+#ifndef KEYCODE_IDX48
+#define KEYCODE_IDX48 0
+#endif
+#ifndef KEYCODE_IDX49
+#define KEYCODE_IDX49 0
+#endif
+#ifndef KEYCODE_IDX50
+#define KEYCODE_IDX50 0
+#endif
+#ifndef KEYCODE_IDX51
+#define KEYCODE_IDX51 0
+#endif
+#ifndef KEYCODE_IDX52
+#define KEYCODE_IDX52 0
+#endif
+#ifndef KEYCODE_IDX53
+#define KEYCODE_IDX53 0
+#endif
+#ifndef KEYCODE_IDX54
+#define KEYCODE_IDX54 0
+#endif
+#ifndef KEYCODE_IDX55
+#define KEYCODE_IDX55 0
+#endif
+#ifndef KEYCODE_IDX56
+#define KEYCODE_IDX56 0
+#endif
+#ifndef KEYCODE_IDX57
+#define KEYCODE_IDX57 0
+#endif
+#ifndef KEYCODE_IDX58
+#define KEYCODE_IDX58 0
+#endif
+#ifndef KEYCODE_IDX59
+#define KEYCODE_IDX59 0
+#endif
+#ifndef KEYCODE_IDX60
+#define KEYCODE_IDX60 0
+#endif
+#ifndef KEYCODE_IDX61
+#define KEYCODE_IDX61 0
+#endif
+#ifndef KEYCODE_IDX62
+#define KEYCODE_IDX62 0
+#endif
+#ifndef KEYCODE_IDX63
+#define KEYCODE_IDX63 0
+#endif
+#ifndef KEYCODE_IDX64
+#define KEYCODE_IDX64 0
+#endif
+#ifndef KEYCODE_IDX65
+#define KEYCODE_IDX65 0
+#endif
+#ifndef KEYCODE_IDX66
+#define KEYCODE_IDX66 0
+#endif
+#ifndef KEYCODE_IDX67
+#define KEYCODE_IDX67 0
+#endif
+#ifndef KEYCODE_IDX68
+#define KEYCODE_IDX68 0
+#endif
+#ifndef KEYCODE_IDX69
+#define KEYCODE_IDX69 0
+#endif
+#ifndef KEYCODE_IDX70
+#define KEYCODE_IDX70 0
+#endif
+#ifndef KEYCODE_IDX71
+#define KEYCODE_IDX71 0
+#endif
+#ifndef KEYCODE_IDX72
+#define KEYCODE_IDX72 0
+#endif
+#ifndef KEYCODE_IDX73
+#define KEYCODE_IDX73 0
+#endif
+#ifndef KEYCODE_IDX74
+#define KEYCODE_IDX74 0
+#endif
+#ifndef KEYCODE_IDX75
+#define KEYCODE_IDX75 0
+#endif
+#ifndef KEYCODE_IDX76
+#define KEYCODE_IDX76 0
+#endif
+#ifndef KEYCODE_IDX77
+#define KEYCODE_IDX77 0
+#endif
+#ifndef KEYCODE_IDX78
+#define KEYCODE_IDX78 0
+#endif
+#ifndef KEYCODE_IDX79
+#define KEYCODE_IDX79 0
+#endif
+#ifndef KEYCODE_IDX80
+#define KEYCODE_IDX80 0
+#endif
+#ifndef KEYCODE_IDX81
+#define KEYCODE_IDX81 0
+#endif
+#ifndef KEYCODE_IDX82
+#define KEYCODE_IDX82 0
+#endif
+#ifndef KEYCODE_IDX83
+#define KEYCODE_IDX83 0
+#endif
+#ifndef KEYCODE_IDX84
+#define KEYCODE_IDX84 0
+#endif
+#ifndef KEYCODE_IDX85
+#define KEYCODE_IDX85 0
+#endif
+#ifndef KEYCODE_IDX86
+#define KEYCODE_IDX86 0
+#endif
+#ifndef KEYCODE_IDX87
+#define KEYCODE_IDX87 0
+#endif
+#ifndef KEYCODE_IDX88
+#define KEYCODE_IDX88 0
+#endif
+#ifndef KEYCODE_IDX89
+#define KEYCODE_IDX89 0
+#endif
+#ifndef KEYCODE_IDX90
+#define KEYCODE_IDX90 0
+#endif
+#ifndef KEYCODE_IDX91
+#define KEYCODE_IDX91 0
+#endif
+#ifndef KEYCODE_IDX92
+#define KEYCODE_IDX92 0
+#endif
+#ifndef KEYCODE_IDX93
+#define KEYCODE_IDX93 0
+#endif
+#ifndef KEYCODE_IDX94
+#define KEYCODE_IDX94 0
+#endif
+#ifndef KEYCODE_IDX95
+#define KEYCODE_IDX95 0
+#endif
+#ifndef KEYCODE_IDX96
+#define KEYCODE_IDX96 0
+#endif
+#ifndef KEYCODE_IDX97
+#define KEYCODE_IDX97 0
+#endif
+#ifndef KEYCODE_IDX98
+#define KEYCODE_IDX98 0
+#endif
+#ifndef KEYCODE_IDX99
+#define KEYCODE_IDX99 0
+#endif
+#ifndef KEYCODE_IDX100
+#define KEYCODE_IDX100 0
+#endif
+#ifndef KEYCODE_IDX101
+#define KEYCODE_IDX101 0
+#endif
+#ifndef KEYCODE_IDX102
+#define KEYCODE_IDX102 0
+#endif
+#ifndef KEYCODE_IDX103
+#define KEYCODE_IDX103 0
+#endif
+#ifndef KEYCODE_IDX104
+#define KEYCODE_IDX104 0
+#endif
+#ifndef KEYCODE_IDX105
+#define KEYCODE_IDX105 0
+#endif
+#ifndef KEYCODE_IDX106
+#define KEYCODE_IDX106 0
+#endif
+#ifndef KEYCODE_IDX107
+#define KEYCODE_IDX107 0
+#endif
+#ifndef KEYCODE_IDX108
+#define KEYCODE_IDX108 0
+#endif
+#ifndef KEYCODE_IDX109
+#define KEYCODE_IDX109 0
+#endif
+#ifndef KEYCODE_IDX110
+#define KEYCODE_IDX110 0
+#endif
+#ifndef KEYCODE_IDX111
+#define KEYCODE_IDX111 0
+#endif
+#ifndef KEYCODE_IDX112
+#define KEYCODE_IDX112 0
+#endif
+#ifndef KEYCODE_IDX113
+#define KEYCODE_IDX113 0
+#endif
+#ifndef KEYCODE_IDX114
+#define KEYCODE_IDX114 0
+#endif
+#ifndef KEYCODE_IDX115
+#define KEYCODE_IDX115 0
+#endif
+#ifndef KEYCODE_IDX116
+#define KEYCODE_IDX116 0
+#endif
+#ifndef KEYCODE_IDX117
+#define KEYCODE_IDX117 0
+#endif
+#ifndef KEYCODE_IDX118
+#define KEYCODE_IDX118 0
+#endif
+#ifndef KEYCODE_IDX119
+#define KEYCODE_IDX119 0
+#endif
+#ifndef KEYCODE_IDX120
+#define KEYCODE_IDX120 0
+#endif
+#ifndef KEYCODE_IDX121
+#define KEYCODE_IDX121 0
+#endif
+#ifndef KEYCODE_IDX122
+#define KEYCODE_IDX122 0
+#endif
+#ifndef KEYCODE_IDX123
+#define KEYCODE_IDX123 0
+#endif
+#ifndef KEYCODE_IDX124
+#define KEYCODE_IDX124 0
+#endif
+#ifndef KEYCODE_IDX125
+#define KEYCODE_IDX125 0
+#endif
+#ifndef KEYCODE_IDX126
+#define KEYCODE_IDX126 0
+#endif
+#ifndef KEYCODE_IDX127
+#define KEYCODE_IDX127 0
+#endif
 
 #ifndef MODIFIER_GP00
 #define MODIFIER_GP00 0
@@ -390,6 +684,300 @@
 #endif
 #ifndef MODIFIER_IDX29
 #define MODIFIER_IDX29 MODIFIER_GP29
+#endif
+#ifndef MODIFIER_IDX30
+#define MODIFIER_IDX30 0
+#endif
+#ifndef MODIFIER_IDX31
+#define MODIFIER_IDX31 0
+#endif
+#ifndef MODIFIER_IDX32
+#define MODIFIER_IDX32 0
+#endif
+#ifndef MODIFIER_IDX33
+#define MODIFIER_IDX33 0
+#endif
+#ifndef MODIFIER_IDX34
+#define MODIFIER_IDX34 0
+#endif
+#ifndef MODIFIER_IDX35
+#define MODIFIER_IDX35 0
+#endif
+#ifndef MODIFIER_IDX36
+#define MODIFIER_IDX36 0
+#endif
+#ifndef MODIFIER_IDX37
+#define MODIFIER_IDX37 0
+#endif
+#ifndef MODIFIER_IDX38
+#define MODIFIER_IDX38 0
+#endif
+#ifndef MODIFIER_IDX39
+#define MODIFIER_IDX39 0
+#endif
+#ifndef MODIFIER_IDX40
+#define MODIFIER_IDX40 0
+#endif
+#ifndef MODIFIER_IDX41
+#define MODIFIER_IDX41 0
+#endif
+#ifndef MODIFIER_IDX42
+#define MODIFIER_IDX42 0
+#endif
+#ifndef MODIFIER_IDX43
+#define MODIFIER_IDX43 0
+#endif
+#ifndef MODIFIER_IDX44
+#define MODIFIER_IDX44 0
+#endif
+#ifndef MODIFIER_IDX45
+#define MODIFIER_IDX45 0
+#endif
+#ifndef MODIFIER_IDX46
+#define MODIFIER_IDX46 0
+#endif
+#ifndef MODIFIER_IDX47
+#define MODIFIER_IDX47 0
+#endif
+#ifndef MODIFIER_IDX48
+#define MODIFIER_IDX48 0
+#endif
+#ifndef MODIFIER_IDX49
+#define MODIFIER_IDX49 0
+#endif
+#ifndef MODIFIER_IDX50
+#define MODIFIER_IDX50 0
+#endif
+#ifndef MODIFIER_IDX51
+#define MODIFIER_IDX51 0
+#endif
+#ifndef MODIFIER_IDX52
+#define MODIFIER_IDX52 0
+#endif
+#ifndef MODIFIER_IDX53
+#define MODIFIER_IDX53 0
+#endif
+#ifndef MODIFIER_IDX54
+#define MODIFIER_IDX54 0
+#endif
+#ifndef MODIFIER_IDX55
+#define MODIFIER_IDX55 0
+#endif
+#ifndef MODIFIER_IDX56
+#define MODIFIER_IDX56 0
+#endif
+#ifndef MODIFIER_IDX57
+#define MODIFIER_IDX57 0
+#endif
+#ifndef MODIFIER_IDX58
+#define MODIFIER_IDX58 0
+#endif
+#ifndef MODIFIER_IDX59
+#define MODIFIER_IDX59 0
+#endif
+#ifndef MODIFIER_IDX60
+#define MODIFIER_IDX60 0
+#endif
+#ifndef MODIFIER_IDX61
+#define MODIFIER_IDX61 0
+#endif
+#ifndef MODIFIER_IDX62
+#define MODIFIER_IDX62 0
+#endif
+#ifndef MODIFIER_IDX63
+#define MODIFIER_IDX63 0
+#endif
+#ifndef MODIFIER_IDX64
+#define MODIFIER_IDX64 0
+#endif
+#ifndef MODIFIER_IDX65
+#define MODIFIER_IDX65 0
+#endif
+#ifndef MODIFIER_IDX66
+#define MODIFIER_IDX66 0
+#endif
+#ifndef MODIFIER_IDX67
+#define MODIFIER_IDX67 0
+#endif
+#ifndef MODIFIER_IDX68
+#define MODIFIER_IDX68 0
+#endif
+#ifndef MODIFIER_IDX69
+#define MODIFIER_IDX69 0
+#endif
+#ifndef MODIFIER_IDX70
+#define MODIFIER_IDX70 0
+#endif
+#ifndef MODIFIER_IDX71
+#define MODIFIER_IDX71 0
+#endif
+#ifndef MODIFIER_IDX72
+#define MODIFIER_IDX72 0
+#endif
+#ifndef MODIFIER_IDX73
+#define MODIFIER_IDX73 0
+#endif
+#ifndef MODIFIER_IDX74
+#define MODIFIER_IDX74 0
+#endif
+#ifndef MODIFIER_IDX75
+#define MODIFIER_IDX75 0
+#endif
+#ifndef MODIFIER_IDX76
+#define MODIFIER_IDX76 0
+#endif
+#ifndef MODIFIER_IDX77
+#define MODIFIER_IDX77 0
+#endif
+#ifndef MODIFIER_IDX78
+#define MODIFIER_IDX78 0
+#endif
+#ifndef MODIFIER_IDX79
+#define MODIFIER_IDX79 0
+#endif
+#ifndef MODIFIER_IDX80
+#define MODIFIER_IDX80 0
+#endif
+#ifndef MODIFIER_IDX81
+#define MODIFIER_IDX81 0
+#endif
+#ifndef MODIFIER_IDX82
+#define MODIFIER_IDX82 0
+#endif
+#ifndef MODIFIER_IDX83
+#define MODIFIER_IDX83 0
+#endif
+#ifndef MODIFIER_IDX84
+#define MODIFIER_IDX84 0
+#endif
+#ifndef MODIFIER_IDX85
+#define MODIFIER_IDX85 0
+#endif
+#ifndef MODIFIER_IDX86
+#define MODIFIER_IDX86 0
+#endif
+#ifndef MODIFIER_IDX87
+#define MODIFIER_IDX87 0
+#endif
+#ifndef MODIFIER_IDX88
+#define MODIFIER_IDX88 0
+#endif
+#ifndef MODIFIER_IDX89
+#define MODIFIER_IDX89 0
+#endif
+#ifndef MODIFIER_IDX90
+#define MODIFIER_IDX90 0
+#endif
+#ifndef MODIFIER_IDX91
+#define MODIFIER_IDX91 0
+#endif
+#ifndef MODIFIER_IDX92
+#define MODIFIER_IDX92 0
+#endif
+#ifndef MODIFIER_IDX93
+#define MODIFIER_IDX93 0
+#endif
+#ifndef MODIFIER_IDX94
+#define MODIFIER_IDX94 0
+#endif
+#ifndef MODIFIER_IDX95
+#define MODIFIER_IDX95 0
+#endif
+#ifndef MODIFIER_IDX96
+#define MODIFIER_IDX96 0
+#endif
+#ifndef MODIFIER_IDX97
+#define MODIFIER_IDX97 0
+#endif
+#ifndef MODIFIER_IDX98
+#define MODIFIER_IDX98 0
+#endif
+#ifndef MODIFIER_IDX99
+#define MODIFIER_IDX99 0
+#endif
+#ifndef MODIFIER_IDX100
+#define MODIFIER_IDX100 0
+#endif
+#ifndef MODIFIER_IDX101
+#define MODIFIER_IDX101 0
+#endif
+#ifndef MODIFIER_IDX102
+#define MODIFIER_IDX102 0
+#endif
+#ifndef MODIFIER_IDX103
+#define MODIFIER_IDX103 0
+#endif
+#ifndef MODIFIER_IDX104
+#define MODIFIER_IDX104 0
+#endif
+#ifndef MODIFIER_IDX105
+#define MODIFIER_IDX105 0
+#endif
+#ifndef MODIFIER_IDX106
+#define MODIFIER_IDX106 0
+#endif
+#ifndef MODIFIER_IDX107
+#define MODIFIER_IDX107 0
+#endif
+#ifndef MODIFIER_IDX108
+#define MODIFIER_IDX108 0
+#endif
+#ifndef MODIFIER_IDX109
+#define MODIFIER_IDX109 0
+#endif
+#ifndef MODIFIER_IDX110
+#define MODIFIER_IDX110 0
+#endif
+#ifndef MODIFIER_IDX111
+#define MODIFIER_IDX111 0
+#endif
+#ifndef MODIFIER_IDX112
+#define MODIFIER_IDX112 0
+#endif
+#ifndef MODIFIER_IDX113
+#define MODIFIER_IDX113 0
+#endif
+#ifndef MODIFIER_IDX114
+#define MODIFIER_IDX114 0
+#endif
+#ifndef MODIFIER_IDX115
+#define MODIFIER_IDX115 0
+#endif
+#ifndef MODIFIER_IDX116
+#define MODIFIER_IDX116 0
+#endif
+#ifndef MODIFIER_IDX117
+#define MODIFIER_IDX117 0
+#endif
+#ifndef MODIFIER_IDX118
+#define MODIFIER_IDX118 0
+#endif
+#ifndef MODIFIER_IDX119
+#define MODIFIER_IDX119 0
+#endif
+#ifndef MODIFIER_IDX120
+#define MODIFIER_IDX120 0
+#endif
+#ifndef MODIFIER_IDX121
+#define MODIFIER_IDX121 0
+#endif
+#ifndef MODIFIER_IDX122
+#define MODIFIER_IDX122 0
+#endif
+#ifndef MODIFIER_IDX123
+#define MODIFIER_IDX123 0
+#endif
+#ifndef MODIFIER_IDX124
+#define MODIFIER_IDX124 0
+#endif
+#ifndef MODIFIER_IDX125
+#define MODIFIER_IDX125 0
+#endif
+#ifndef MODIFIER_IDX126
+#define MODIFIER_IDX126 0
+#endif
+#ifndef MODIFIER_IDX127
+#define MODIFIER_IDX127 0
 #endif
 
 #ifndef TOUCH_GP00
@@ -708,6 +1296,300 @@
 #ifndef LED_INDEX_IDX29
 #define LED_INDEX_IDX29 LED_INDEX_GP29
 #endif
+#ifndef LED_INDEX_IDX30
+#define LED_INDEX_IDX30 -1
+#endif
+#ifndef LED_INDEX_IDX31
+#define LED_INDEX_IDX31 -1
+#endif
+#ifndef LED_INDEX_IDX32
+#define LED_INDEX_IDX32 -1
+#endif
+#ifndef LED_INDEX_IDX33
+#define LED_INDEX_IDX33 -1
+#endif
+#ifndef LED_INDEX_IDX34
+#define LED_INDEX_IDX34 -1
+#endif
+#ifndef LED_INDEX_IDX35
+#define LED_INDEX_IDX35 -1
+#endif
+#ifndef LED_INDEX_IDX36
+#define LED_INDEX_IDX36 -1
+#endif
+#ifndef LED_INDEX_IDX37
+#define LED_INDEX_IDX37 -1
+#endif
+#ifndef LED_INDEX_IDX38
+#define LED_INDEX_IDX38 -1
+#endif
+#ifndef LED_INDEX_IDX39
+#define LED_INDEX_IDX39 -1
+#endif
+#ifndef LED_INDEX_IDX40
+#define LED_INDEX_IDX40 -1
+#endif
+#ifndef LED_INDEX_IDX41
+#define LED_INDEX_IDX41 -1
+#endif
+#ifndef LED_INDEX_IDX42
+#define LED_INDEX_IDX42 -1
+#endif
+#ifndef LED_INDEX_IDX43
+#define LED_INDEX_IDX43 -1
+#endif
+#ifndef LED_INDEX_IDX44
+#define LED_INDEX_IDX44 -1
+#endif
+#ifndef LED_INDEX_IDX45
+#define LED_INDEX_IDX45 -1
+#endif
+#ifndef LED_INDEX_IDX46
+#define LED_INDEX_IDX46 -1
+#endif
+#ifndef LED_INDEX_IDX47
+#define LED_INDEX_IDX47 -1
+#endif
+#ifndef LED_INDEX_IDX48
+#define LED_INDEX_IDX48 -1
+#endif
+#ifndef LED_INDEX_IDX49
+#define LED_INDEX_IDX49 -1
+#endif
+#ifndef LED_INDEX_IDX50
+#define LED_INDEX_IDX50 -1
+#endif
+#ifndef LED_INDEX_IDX51
+#define LED_INDEX_IDX51 -1
+#endif
+#ifndef LED_INDEX_IDX52
+#define LED_INDEX_IDX52 -1
+#endif
+#ifndef LED_INDEX_IDX53
+#define LED_INDEX_IDX53 -1
+#endif
+#ifndef LED_INDEX_IDX54
+#define LED_INDEX_IDX54 -1
+#endif
+#ifndef LED_INDEX_IDX55
+#define LED_INDEX_IDX55 -1
+#endif
+#ifndef LED_INDEX_IDX56
+#define LED_INDEX_IDX56 -1
+#endif
+#ifndef LED_INDEX_IDX57
+#define LED_INDEX_IDX57 -1
+#endif
+#ifndef LED_INDEX_IDX58
+#define LED_INDEX_IDX58 -1
+#endif
+#ifndef LED_INDEX_IDX59
+#define LED_INDEX_IDX59 -1
+#endif
+#ifndef LED_INDEX_IDX60
+#define LED_INDEX_IDX60 -1
+#endif
+#ifndef LED_INDEX_IDX61
+#define LED_INDEX_IDX61 -1
+#endif
+#ifndef LED_INDEX_IDX62
+#define LED_INDEX_IDX62 -1
+#endif
+#ifndef LED_INDEX_IDX63
+#define LED_INDEX_IDX63 -1
+#endif
+#ifndef LED_INDEX_IDX64
+#define LED_INDEX_IDX64 -1
+#endif
+#ifndef LED_INDEX_IDX65
+#define LED_INDEX_IDX65 -1
+#endif
+#ifndef LED_INDEX_IDX66
+#define LED_INDEX_IDX66 -1
+#endif
+#ifndef LED_INDEX_IDX67
+#define LED_INDEX_IDX67 -1
+#endif
+#ifndef LED_INDEX_IDX68
+#define LED_INDEX_IDX68 -1
+#endif
+#ifndef LED_INDEX_IDX69
+#define LED_INDEX_IDX69 -1
+#endif
+#ifndef LED_INDEX_IDX70
+#define LED_INDEX_IDX70 -1
+#endif
+#ifndef LED_INDEX_IDX71
+#define LED_INDEX_IDX71 -1
+#endif
+#ifndef LED_INDEX_IDX72
+#define LED_INDEX_IDX72 -1
+#endif
+#ifndef LED_INDEX_IDX73
+#define LED_INDEX_IDX73 -1
+#endif
+#ifndef LED_INDEX_IDX74
+#define LED_INDEX_IDX74 -1
+#endif
+#ifndef LED_INDEX_IDX75
+#define LED_INDEX_IDX75 -1
+#endif
+#ifndef LED_INDEX_IDX76
+#define LED_INDEX_IDX76 -1
+#endif
+#ifndef LED_INDEX_IDX77
+#define LED_INDEX_IDX77 -1
+#endif
+#ifndef LED_INDEX_IDX78
+#define LED_INDEX_IDX78 -1
+#endif
+#ifndef LED_INDEX_IDX79
+#define LED_INDEX_IDX79 -1
+#endif
+#ifndef LED_INDEX_IDX80
+#define LED_INDEX_IDX80 -1
+#endif
+#ifndef LED_INDEX_IDX81
+#define LED_INDEX_IDX81 -1
+#endif
+#ifndef LED_INDEX_IDX82
+#define LED_INDEX_IDX82 -1
+#endif
+#ifndef LED_INDEX_IDX83
+#define LED_INDEX_IDX83 -1
+#endif
+#ifndef LED_INDEX_IDX84
+#define LED_INDEX_IDX84 -1
+#endif
+#ifndef LED_INDEX_IDX85
+#define LED_INDEX_IDX85 -1
+#endif
+#ifndef LED_INDEX_IDX86
+#define LED_INDEX_IDX86 -1
+#endif
+#ifndef LED_INDEX_IDX87
+#define LED_INDEX_IDX87 -1
+#endif
+#ifndef LED_INDEX_IDX88
+#define LED_INDEX_IDX88 -1
+#endif
+#ifndef LED_INDEX_IDX89
+#define LED_INDEX_IDX89 -1
+#endif
+#ifndef LED_INDEX_IDX90
+#define LED_INDEX_IDX90 -1
+#endif
+#ifndef LED_INDEX_IDX91
+#define LED_INDEX_IDX91 -1
+#endif
+#ifndef LED_INDEX_IDX92
+#define LED_INDEX_IDX92 -1
+#endif
+#ifndef LED_INDEX_IDX93
+#define LED_INDEX_IDX93 -1
+#endif
+#ifndef LED_INDEX_IDX94
+#define LED_INDEX_IDX94 -1
+#endif
+#ifndef LED_INDEX_IDX95
+#define LED_INDEX_IDX95 -1
+#endif
+#ifndef LED_INDEX_IDX96
+#define LED_INDEX_IDX96 -1
+#endif
+#ifndef LED_INDEX_IDX97
+#define LED_INDEX_IDX97 -1
+#endif
+#ifndef LED_INDEX_IDX98
+#define LED_INDEX_IDX98 -1
+#endif
+#ifndef LED_INDEX_IDX99
+#define LED_INDEX_IDX99 -1
+#endif
+#ifndef LED_INDEX_IDX100
+#define LED_INDEX_IDX100 -1
+#endif
+#ifndef LED_INDEX_IDX101
+#define LED_INDEX_IDX101 -1
+#endif
+#ifndef LED_INDEX_IDX102
+#define LED_INDEX_IDX102 -1
+#endif
+#ifndef LED_INDEX_IDX103
+#define LED_INDEX_IDX103 -1
+#endif
+#ifndef LED_INDEX_IDX104
+#define LED_INDEX_IDX104 -1
+#endif
+#ifndef LED_INDEX_IDX105
+#define LED_INDEX_IDX105 -1
+#endif
+#ifndef LED_INDEX_IDX106
+#define LED_INDEX_IDX106 -1
+#endif
+#ifndef LED_INDEX_IDX107
+#define LED_INDEX_IDX107 -1
+#endif
+#ifndef LED_INDEX_IDX108
+#define LED_INDEX_IDX108 -1
+#endif
+#ifndef LED_INDEX_IDX109
+#define LED_INDEX_IDX109 -1
+#endif
+#ifndef LED_INDEX_IDX110
+#define LED_INDEX_IDX110 -1
+#endif
+#ifndef LED_INDEX_IDX111
+#define LED_INDEX_IDX111 -1
+#endif
+#ifndef LED_INDEX_IDX112
+#define LED_INDEX_IDX112 -1
+#endif
+#ifndef LED_INDEX_IDX113
+#define LED_INDEX_IDX113 -1
+#endif
+#ifndef LED_INDEX_IDX114
+#define LED_INDEX_IDX114 -1
+#endif
+#ifndef LED_INDEX_IDX115
+#define LED_INDEX_IDX115 -1
+#endif
+#ifndef LED_INDEX_IDX116
+#define LED_INDEX_IDX116 -1
+#endif
+#ifndef LED_INDEX_IDX117
+#define LED_INDEX_IDX117 -1
+#endif
+#ifndef LED_INDEX_IDX118
+#define LED_INDEX_IDX118 -1
+#endif
+#ifndef LED_INDEX_IDX119
+#define LED_INDEX_IDX119 -1
+#endif
+#ifndef LED_INDEX_IDX120
+#define LED_INDEX_IDX120 -1
+#endif
+#ifndef LED_INDEX_IDX121
+#define LED_INDEX_IDX121 -1
+#endif
+#ifndef LED_INDEX_IDX122
+#define LED_INDEX_IDX122 -1
+#endif
+#ifndef LED_INDEX_IDX123
+#define LED_INDEX_IDX123 -1
+#endif
+#ifndef LED_INDEX_IDX124
+#define LED_INDEX_IDX124 -1
+#endif
+#ifndef LED_INDEX_IDX125
+#define LED_INDEX_IDX125 -1
+#endif
+#ifndef LED_INDEX_IDX126
+#define LED_INDEX_IDX126 -1
+#endif
+#ifndef LED_INDEX_IDX127
+#define LED_INDEX_IDX127 -1
+#endif
 
 // Matrix scanning configuration. Defining MATRIX_ROWS/COLS puts the board in
 // matrix mode: KEYCODE_IDXxx / LED_INDEX_IDXxx then index the linear matrix
@@ -733,35 +1615,96 @@
 #define MATRIX_ACTIVE_HIGH 0
 #endif
 
-static const uint32_t defaultKeycodes[NUM_BANK0_GPIOS] = {
+static const uint32_t defaultKeycodes[MAX_KEYS] = {
     KEYCODE_IDX00, KEYCODE_IDX01, KEYCODE_IDX02, KEYCODE_IDX03, KEYCODE_IDX04,
     KEYCODE_IDX05, KEYCODE_IDX06, KEYCODE_IDX07, KEYCODE_IDX08, KEYCODE_IDX09,
     KEYCODE_IDX10, KEYCODE_IDX11, KEYCODE_IDX12, KEYCODE_IDX13, KEYCODE_IDX14,
     KEYCODE_IDX15, KEYCODE_IDX16, KEYCODE_IDX17, KEYCODE_IDX18, KEYCODE_IDX19,
     KEYCODE_IDX20, KEYCODE_IDX21, KEYCODE_IDX22, KEYCODE_IDX23, KEYCODE_IDX24,
-    KEYCODE_IDX25, KEYCODE_IDX26, KEYCODE_IDX27, KEYCODE_IDX28, KEYCODE_IDX29
+    KEYCODE_IDX25, KEYCODE_IDX26, KEYCODE_IDX27, KEYCODE_IDX28, KEYCODE_IDX29,
+    KEYCODE_IDX30, KEYCODE_IDX31, KEYCODE_IDX32, KEYCODE_IDX33, KEYCODE_IDX34,
+    KEYCODE_IDX35, KEYCODE_IDX36, KEYCODE_IDX37, KEYCODE_IDX38, KEYCODE_IDX39,
+    KEYCODE_IDX40, KEYCODE_IDX41, KEYCODE_IDX42, KEYCODE_IDX43, KEYCODE_IDX44,
+    KEYCODE_IDX45, KEYCODE_IDX46, KEYCODE_IDX47, KEYCODE_IDX48, KEYCODE_IDX49,
+    KEYCODE_IDX50, KEYCODE_IDX51, KEYCODE_IDX52, KEYCODE_IDX53, KEYCODE_IDX54,
+    KEYCODE_IDX55, KEYCODE_IDX56, KEYCODE_IDX57, KEYCODE_IDX58, KEYCODE_IDX59,
+    KEYCODE_IDX60, KEYCODE_IDX61, KEYCODE_IDX62, KEYCODE_IDX63, KEYCODE_IDX64,
+    KEYCODE_IDX65, KEYCODE_IDX66, KEYCODE_IDX67, KEYCODE_IDX68, KEYCODE_IDX69,
+    KEYCODE_IDX70, KEYCODE_IDX71, KEYCODE_IDX72, KEYCODE_IDX73, KEYCODE_IDX74,
+    KEYCODE_IDX75, KEYCODE_IDX76, KEYCODE_IDX77, KEYCODE_IDX78, KEYCODE_IDX79,
+    KEYCODE_IDX80, KEYCODE_IDX81, KEYCODE_IDX82, KEYCODE_IDX83, KEYCODE_IDX84,
+    KEYCODE_IDX85, KEYCODE_IDX86, KEYCODE_IDX87, KEYCODE_IDX88, KEYCODE_IDX89,
+    KEYCODE_IDX90, KEYCODE_IDX91, KEYCODE_IDX92, KEYCODE_IDX93, KEYCODE_IDX94,
+    KEYCODE_IDX95, KEYCODE_IDX96, KEYCODE_IDX97, KEYCODE_IDX98, KEYCODE_IDX99,
+    KEYCODE_IDX100, KEYCODE_IDX101, KEYCODE_IDX102, KEYCODE_IDX103, KEYCODE_IDX104,
+    KEYCODE_IDX105, KEYCODE_IDX106, KEYCODE_IDX107, KEYCODE_IDX108, KEYCODE_IDX109,
+    KEYCODE_IDX110, KEYCODE_IDX111, KEYCODE_IDX112, KEYCODE_IDX113, KEYCODE_IDX114,
+    KEYCODE_IDX115, KEYCODE_IDX116, KEYCODE_IDX117, KEYCODE_IDX118, KEYCODE_IDX119,
+    KEYCODE_IDX120, KEYCODE_IDX121, KEYCODE_IDX122, KEYCODE_IDX123, KEYCODE_IDX124,
+    KEYCODE_IDX125, KEYCODE_IDX126, KEYCODE_IDX127
 };
 
-static const uint32_t defaultModifiers[NUM_BANK0_GPIOS] = {
+static const uint32_t defaultModifiers[MAX_KEYS] = {
     MODIFIER_IDX00, MODIFIER_IDX01, MODIFIER_IDX02, MODIFIER_IDX03, MODIFIER_IDX04,
     MODIFIER_IDX05, MODIFIER_IDX06, MODIFIER_IDX07, MODIFIER_IDX08, MODIFIER_IDX09,
     MODIFIER_IDX10, MODIFIER_IDX11, MODIFIER_IDX12, MODIFIER_IDX13, MODIFIER_IDX14,
     MODIFIER_IDX15, MODIFIER_IDX16, MODIFIER_IDX17, MODIFIER_IDX18, MODIFIER_IDX19,
     MODIFIER_IDX20, MODIFIER_IDX21, MODIFIER_IDX22, MODIFIER_IDX23, MODIFIER_IDX24,
-    MODIFIER_IDX25, MODIFIER_IDX26, MODIFIER_IDX27, MODIFIER_IDX28, MODIFIER_IDX29
+    MODIFIER_IDX25, MODIFIER_IDX26, MODIFIER_IDX27, MODIFIER_IDX28, MODIFIER_IDX29,
+    MODIFIER_IDX30, MODIFIER_IDX31, MODIFIER_IDX32, MODIFIER_IDX33, MODIFIER_IDX34,
+    MODIFIER_IDX35, MODIFIER_IDX36, MODIFIER_IDX37, MODIFIER_IDX38, MODIFIER_IDX39,
+    MODIFIER_IDX40, MODIFIER_IDX41, MODIFIER_IDX42, MODIFIER_IDX43, MODIFIER_IDX44,
+    MODIFIER_IDX45, MODIFIER_IDX46, MODIFIER_IDX47, MODIFIER_IDX48, MODIFIER_IDX49,
+    MODIFIER_IDX50, MODIFIER_IDX51, MODIFIER_IDX52, MODIFIER_IDX53, MODIFIER_IDX54,
+    MODIFIER_IDX55, MODIFIER_IDX56, MODIFIER_IDX57, MODIFIER_IDX58, MODIFIER_IDX59,
+    MODIFIER_IDX60, MODIFIER_IDX61, MODIFIER_IDX62, MODIFIER_IDX63, MODIFIER_IDX64,
+    MODIFIER_IDX65, MODIFIER_IDX66, MODIFIER_IDX67, MODIFIER_IDX68, MODIFIER_IDX69,
+    MODIFIER_IDX70, MODIFIER_IDX71, MODIFIER_IDX72, MODIFIER_IDX73, MODIFIER_IDX74,
+    MODIFIER_IDX75, MODIFIER_IDX76, MODIFIER_IDX77, MODIFIER_IDX78, MODIFIER_IDX79,
+    MODIFIER_IDX80, MODIFIER_IDX81, MODIFIER_IDX82, MODIFIER_IDX83, MODIFIER_IDX84,
+    MODIFIER_IDX85, MODIFIER_IDX86, MODIFIER_IDX87, MODIFIER_IDX88, MODIFIER_IDX89,
+    MODIFIER_IDX90, MODIFIER_IDX91, MODIFIER_IDX92, MODIFIER_IDX93, MODIFIER_IDX94,
+    MODIFIER_IDX95, MODIFIER_IDX96, MODIFIER_IDX97, MODIFIER_IDX98, MODIFIER_IDX99,
+    MODIFIER_IDX100, MODIFIER_IDX101, MODIFIER_IDX102, MODIFIER_IDX103, MODIFIER_IDX104,
+    MODIFIER_IDX105, MODIFIER_IDX106, MODIFIER_IDX107, MODIFIER_IDX108, MODIFIER_IDX109,
+    MODIFIER_IDX110, MODIFIER_IDX111, MODIFIER_IDX112, MODIFIER_IDX113, MODIFIER_IDX114,
+    MODIFIER_IDX115, MODIFIER_IDX116, MODIFIER_IDX117, MODIFIER_IDX118, MODIFIER_IDX119,
+    MODIFIER_IDX120, MODIFIER_IDX121, MODIFIER_IDX122, MODIFIER_IDX123, MODIFIER_IDX124,
+    MODIFIER_IDX125, MODIFIER_IDX126, MODIFIER_IDX127
 };
 
-static const int32_t defaultPinLedIndices[NUM_BANK0_GPIOS] = {
+static const int32_t defaultPinLedIndices[MAX_KEYS] = {
     LED_INDEX_IDX00, LED_INDEX_IDX01, LED_INDEX_IDX02, LED_INDEX_IDX03, LED_INDEX_IDX04,
     LED_INDEX_IDX05, LED_INDEX_IDX06, LED_INDEX_IDX07, LED_INDEX_IDX08, LED_INDEX_IDX09,
     LED_INDEX_IDX10, LED_INDEX_IDX11, LED_INDEX_IDX12, LED_INDEX_IDX13, LED_INDEX_IDX14,
     LED_INDEX_IDX15, LED_INDEX_IDX16, LED_INDEX_IDX17, LED_INDEX_IDX18, LED_INDEX_IDX19,
     LED_INDEX_IDX20, LED_INDEX_IDX21, LED_INDEX_IDX22, LED_INDEX_IDX23, LED_INDEX_IDX24,
-    LED_INDEX_IDX25, LED_INDEX_IDX26, LED_INDEX_IDX27, LED_INDEX_IDX28, LED_INDEX_IDX29
+    LED_INDEX_IDX25, LED_INDEX_IDX26, LED_INDEX_IDX27, LED_INDEX_IDX28, LED_INDEX_IDX29,
+    LED_INDEX_IDX30, LED_INDEX_IDX31, LED_INDEX_IDX32, LED_INDEX_IDX33, LED_INDEX_IDX34,
+    LED_INDEX_IDX35, LED_INDEX_IDX36, LED_INDEX_IDX37, LED_INDEX_IDX38, LED_INDEX_IDX39,
+    LED_INDEX_IDX40, LED_INDEX_IDX41, LED_INDEX_IDX42, LED_INDEX_IDX43, LED_INDEX_IDX44,
+    LED_INDEX_IDX45, LED_INDEX_IDX46, LED_INDEX_IDX47, LED_INDEX_IDX48, LED_INDEX_IDX49,
+    LED_INDEX_IDX50, LED_INDEX_IDX51, LED_INDEX_IDX52, LED_INDEX_IDX53, LED_INDEX_IDX54,
+    LED_INDEX_IDX55, LED_INDEX_IDX56, LED_INDEX_IDX57, LED_INDEX_IDX58, LED_INDEX_IDX59,
+    LED_INDEX_IDX60, LED_INDEX_IDX61, LED_INDEX_IDX62, LED_INDEX_IDX63, LED_INDEX_IDX64,
+    LED_INDEX_IDX65, LED_INDEX_IDX66, LED_INDEX_IDX67, LED_INDEX_IDX68, LED_INDEX_IDX69,
+    LED_INDEX_IDX70, LED_INDEX_IDX71, LED_INDEX_IDX72, LED_INDEX_IDX73, LED_INDEX_IDX74,
+    LED_INDEX_IDX75, LED_INDEX_IDX76, LED_INDEX_IDX77, LED_INDEX_IDX78, LED_INDEX_IDX79,
+    LED_INDEX_IDX80, LED_INDEX_IDX81, LED_INDEX_IDX82, LED_INDEX_IDX83, LED_INDEX_IDX84,
+    LED_INDEX_IDX85, LED_INDEX_IDX86, LED_INDEX_IDX87, LED_INDEX_IDX88, LED_INDEX_IDX89,
+    LED_INDEX_IDX90, LED_INDEX_IDX91, LED_INDEX_IDX92, LED_INDEX_IDX93, LED_INDEX_IDX94,
+    LED_INDEX_IDX95, LED_INDEX_IDX96, LED_INDEX_IDX97, LED_INDEX_IDX98, LED_INDEX_IDX99,
+    LED_INDEX_IDX100, LED_INDEX_IDX101, LED_INDEX_IDX102, LED_INDEX_IDX103, LED_INDEX_IDX104,
+    LED_INDEX_IDX105, LED_INDEX_IDX106, LED_INDEX_IDX107, LED_INDEX_IDX108, LED_INDEX_IDX109,
+    LED_INDEX_IDX110, LED_INDEX_IDX111, LED_INDEX_IDX112, LED_INDEX_IDX113, LED_INDEX_IDX114,
+    LED_INDEX_IDX115, LED_INDEX_IDX116, LED_INDEX_IDX117, LED_INDEX_IDX118, LED_INDEX_IDX119,
+    LED_INDEX_IDX120, LED_INDEX_IDX121, LED_INDEX_IDX122, LED_INDEX_IDX123, LED_INDEX_IDX124,
+    LED_INDEX_IDX125, LED_INDEX_IDX126, LED_INDEX_IDX127
 };
 
-// Matrix row/col pin assignments from BoardConfig.h. Sized to the max key count
-// (rows * cols <= 30); unused entries stay 0. A physical board property.
+// Matrix row/col pin assignments from BoardConfig.h. Sized to the max row/col
+// pin count (each still a real GPIO, so at most NUM_BANK0_GPIOS); unused
+// entries stay 0. A physical board property.
 static const Pin_t defaultMatrixRowPins[NUM_BANK0_GPIOS] = MATRIX_ROW_PINS;
 static const Pin_t defaultMatrixColPins[NUM_BANK0_GPIOS] = MATRIX_COL_PINS;
 
@@ -861,11 +1804,11 @@ static void setHasFlags(const pb_msgdesc_t* fields, void* s)
 static void applyDefaults(Config& config)
 {
     config = Config Config_init_zero;
-    config.keyMapping.keycodes_count = NUM_BANK0_GPIOS;
-    config.keyMapping.modifierMasks_count = NUM_BANK0_GPIOS;
-    config.keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
-    config.keyMapping.midiVelocities_count = NUM_BANK0_GPIOS;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    config.keyMapping.keycodes_count = MAX_KEYS;
+    config.keyMapping.modifierMasks_count = MAX_KEYS;
+    config.keyMapping.midiNotes_count = MAX_KEYS;
+    config.keyMapping.midiVelocities_count = MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         config.keyMapping.keycodes[pin] = defaultKeycodes[pin];
         config.keyMapping.modifierMasks[pin] = defaultModifiers[pin];
@@ -887,8 +1830,8 @@ static void applyDefaults(Config& config)
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
     config.ledOptions.ledTimeout = LED_TIMEOUT;
-    config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    config.ledOptions.pinLedIndices_count = MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
     config.webConfigPin = PIN_WEBCONFIG;
 }
@@ -970,7 +1913,10 @@ void Storage::init() {
         if (CRC32::calculate(dataPtr, footer.dataSize) == footer.dataCrc)
         {
             pb_istream_t inputStream = pb_istream_from_buffer(dataPtr, footer.dataSize);
-            Config loaded = Config Config_init_zero;
+            // Static: Config is ~25KB (128-key arrays), far larger than the
+            // 8KB core-0 stack. init() runs once at boot, so reuse a buffer.
+            static Config loaded;
+            loaded = Config Config_init_zero;
             if (pb_decode(&inputStream, Config_fields, &loaded))
             {
                 config = loaded;
@@ -980,25 +1926,25 @@ void Storage::init() {
 
     // Fill any unset / unconfigured fields from board defaults
     if (config.keyMapping.keycodes_count == 0)
-        config.keyMapping.keycodes_count = NUM_BANK0_GPIOS;
+        config.keyMapping.keycodes_count = MAX_KEYS;
     if (config.keyMapping.modifierMasks_count == 0)
-        config.keyMapping.modifierMasks_count = NUM_BANK0_GPIOS;
+        config.keyMapping.modifierMasks_count = MAX_KEYS;
     // midiNotes default to 0 (silent) for any stored config without the field.
     if (config.keyMapping.midiNotes_count == 0)
     {
-        config.keyMapping.midiNotes_count = NUM_BANK0_GPIOS;
-        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        config.keyMapping.midiNotes_count = MAX_KEYS;
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
             config.keyMapping.midiNotes[pin] = 0;
     }
     // midiVelocities default to 0 (use the global velocity) for any stored
     // config without the field.
     if (config.keyMapping.midiVelocities_count == 0)
     {
-        config.keyMapping.midiVelocities_count = NUM_BANK0_GPIOS;
-        for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+        config.keyMapping.midiVelocities_count = MAX_KEYS;
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
             config.keyMapping.midiVelocities[pin] = 0;
     }
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         if (config.keyMapping.keycodes[pin] == 0 && defaultKeycodes[pin] != 0)
         {
@@ -1053,15 +1999,15 @@ void Storage::init() {
 
     // Matrix geometry (rows/cols and their pin assignments) is a physical
     // board property from MATRIX_ROWS/MATRIX_COLS/MATRIX_ROW_PINS/
-    // MATRIX_COL_PINS. 0 rows = direct-pin mode. Key counts are capped at the
-    // 30 slots of the keycode/LED arrays (the debounced key state mask).
+    // MATRIX_COL_PINS. 0 rows = direct-pin mode. Key counts are capped at
+    // MAX_KEYS (the keycode/LED arrays and the key state mask width).
     matrixRows = MATRIX_ROWS;
     matrixCols = MATRIX_COLS;
     for (Pin_t r = 0; r < (Pin_t)NUM_BANK0_GPIOS && r < (Pin_t)matrixRows; r++)
         matrixRowPins[r] = defaultMatrixRowPins[r];
     for (Pin_t c = 0; c < (Pin_t)NUM_BANK0_GPIOS && c < (Pin_t)matrixCols; c++)
         matrixColPins[c] = defaultMatrixColPins[c];
-    if (matrixRows && matrixCols && matrixRows * matrixCols > NUM_BANK0_GPIOS)
+    if (matrixRows && matrixCols && matrixRows * matrixCols > MAX_KEYS)
         matrixRows = matrixCols = 0; // too many keys for the key state mask
     matrixActiveHigh = MATRIX_ACTIVE_HIGH;
 
@@ -1075,8 +2021,8 @@ void Storage::init() {
 
     // The pin → LED index mapping is a physical board property; always use the
     // board defaults so it can't be changed from the web config.
-    config.ledOptions.pinLedIndices_count = NUM_BANK0_GPIOS;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    config.ledOptions.pinLedIndices_count = MAX_KEYS;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
 
     // Apply the active profile at boot by copying it into the working
@@ -1174,9 +2120,32 @@ bool Storage::GetConfigButtonVisible()
     return CONFIG_BUTTON_VISIBLE;
 }
 
-void Storage::publishKeyState(Mask_t state)
+void Storage::publishKeyState(const KeyMask& state)
 {
+    // Seqlock write: mark the write in progress (odd), store the mask, then
+    // release (even). Readers on core1 retry until the sequence is stable, so
+    // they never observe a torn multi-word mask.
+    keyStateSeq++;
+    __dmb();
     keyState = state;
+    __dmb();
+    keyStateSeq++;
+}
+
+KeyMask Storage::getKeyState()
+{
+    uint32_t s1, s2;
+    KeyMask state;
+    uint32_t attempts = 0;
+    do
+    {
+        s1 = keyStateSeq;
+        __dmb();
+        state = keyState;
+        __dmb();
+        s2 = keyStateSeq;
+    } while ((s1 != s2 || (s1 & 1u)) && ++attempts < 8);
+    return state;
 }
 
 void Storage::publishLedPreview(const LedPreview& preview)

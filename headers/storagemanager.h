@@ -8,6 +8,7 @@
 #include "enums.h"
 #include "helper.h"
 #include "types.h"
+#include "keymask.h"
 
 #include "config.pb.h"
 
@@ -24,6 +25,12 @@ struct LedPreview
     uint32_t colorNormal;
     uint32_t colorPressed;
     uint32_t ledTimeout;       // inactivity timeout in seconds (0 = always on)
+    // Per-key colors for custom mode (0 = literal black). A count of 0 keeps
+    // the global colorNormal/colorPressed fallback for every key.
+    uint32_t ledNormalColorCount;
+    uint32_t ledNormalColors[MAX_KEYS];
+    uint32_t ledPressedColorCount;
+    uint32_t ledPressedColors[MAX_KEYS];
 };
 
 // Storage manager for board config, LED options, and thread-safe settings
@@ -90,7 +97,7 @@ public:
 	int32_t getBootPin() { return bootPin; }
 	// Capacitive touch pin mask, from the board's TOUCH_GPxx defines. A physical
 	// board property (like the web config pin), never a user setting.
-	Mask_t getTouchPinMask() { return touchPinMask; }
+	GpioMask getTouchPinMask() { return touchPinMask; }
 	// Matrix input mode (rows/cols > 0) is a physical board property from the
 	// MATRIX_* defines. In matrix mode the key state mask bit N is the linear
 	// matrix key (row N/COLS, col N%COLS) rather than a GPIO.
@@ -106,6 +113,16 @@ public:
 	// (diodes point toward the column pins).
 	bool isMatrixActiveHigh() { return matrixActiveHigh; }
 
+	// Total number of keys the board can report: rows*cols for matrix boards,
+	// NUM_BANK0_GPIOS for direct boards. Bounds the debounce / driver / web
+	// config loops (direct boards never exceed the GPIO count even though the
+	// key-state mask can hold MAX_KEYS).
+	uint32_t getKeyCount() {
+		return isMatrixMode()
+			? (uint32_t)matrixRows * matrixCols
+			: (uint32_t)NUM_BANK0_GPIOS;
+	}
+
 	void init();
 	bool save();
 	bool save(const bool force);
@@ -119,9 +136,13 @@ public:
 	void SetConfigButtonVisible(bool);	// Config button visibility (on-boot)
 	bool GetConfigButtonVisible();
 
-	// Core0 -> Core1 key state sharing. Volatile 32-bit mask is atomic on RP2040.
-	void publishKeyState(Mask_t);
-	volatile Mask_t keyState;
+	// Core0 -> Core1 key state sharing. The mask is wider than a single word,
+	// so writes use a seqlock (keyStateSeq) instead of relying on atomic 32-bit
+	// stores. core0 readers share the writer's core and can read keyState
+	// directly; core1 (LED controller) must go through getKeyState().
+	void publishKeyState(const KeyMask&);
+	KeyMask getKeyState();
+	KeyMask keyState;
 
 	// Core0 -> Core1 live LED preview (web config, not persisted). Publish from
 	// the web config handler; the LED controller consumes on its update loop.
@@ -131,18 +152,21 @@ public:
 	void ResetSettings(); 				// EEPROM Reset Feature
 
 private:
-	Storage() : keyState(0) {}
+	Storage() : keyState(), keyStateSeq(0) {}
 	bool CONFIG_MODE = false; 			// Config mode (boot)
 	bool CONFIG_BUTTON_VISIBLE = false; // Config button visible (boot)
 	Config config;
 	int32_t bootPin = -1; 				// Boot-mode shortcut pin (board property)
-	Mask_t touchPinMask = 0; 			// Capacitive touch pins (board property)
-	// Matrix geometry (board property). rows*cols <= 30 keys.
+	GpioMask touchPinMask = 0; 			// Capacitive touch pins (board property)
+	// Matrix geometry (board property). rows*cols <= MAX_KEYS keys.
 	uint8_t matrixRows = 0;
 	uint8_t matrixCols = 0;
 	Pin_t matrixRowPins[NUM_BANK0_GPIOS] = {};
 	Pin_t matrixColPins[NUM_BANK0_GPIOS] = {};
 	bool matrixActiveHigh = false; 	// scan polarity (board property)
+	// Key-state seqlock: bumped by publishKeyState so core1 readers can detect
+	// a torn multi-word mask. Even = stable, odd = write in progress.
+	volatile uint32_t keyStateSeq = 0;
 	volatile uint32_t ledPreviewGen = 0;
 	LedPreview ledPreview;
 	uint32_t lastConsumedLedPreviewGen = 0;
