@@ -602,7 +602,7 @@ class BoardView {
       if (!m) return;
       el.addEventListener('click', () => {
         const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
-        this.callbacks.onLedClick?.(idx);
+        this.callbacks.onLedClick?.(idx, el);
       });
     });
 

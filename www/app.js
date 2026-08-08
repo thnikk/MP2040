@@ -94,9 +94,14 @@ let timeoutSpinner = null;
 let colorNormalPicker = null;
 let colorPressedPicker = null;
 
-// Per-key color pickers in the key modal (custom LED mode)
-let keyNormalColorPicker = null;
-let keyPressedColorPicker = null;
+// Per-LED color popover (custom LED mode): the currently-open popover state,
+// the LED element it's anchored to, and the pin whose colors it edits.
+let ledColorPopover = null; // { ledIdx, pin, element } or null
+let ledPopoverEl = null;
+let ledPopoverNormalDot = null;
+let ledPopoverPressedDot = null;
+let ledPopoverNormalInput = null;
+let ledPopoverPressedInput = null;
 
 // Color picker pill button: a pill with a colored dot inside, with a hidden
 // native <input type="color"> overlaid so clicking opens the OS picker
@@ -383,6 +388,7 @@ function renderRoute() {
     }
     pollPinState();
   } else {
+    closeLedColorPopover();
     stopPinState();
   }
 }
@@ -504,29 +510,7 @@ async function load() {
     onChange: previewLedDebounced,
   });
 
-  // Per-key colors in the key modal (custom LED mode). Editing a key's color
-  // materializes the per-key arrays (filling the rest with the globals) and
-  // live-previews the change.
-  keyNormalColorPicker = createColorPicker(document.getElementById('key-led-colorNormal'), {
-    label: 'Normal',
-    value: '#00ff00',
-    onChange: (value) => {
-      if (editingPin < 0) return;
-      const ledOpts = materializeLedColors();
-      ledOpts.ledNormalColors[editingPin] = colorToInt(value);
-      previewLedDebounced();
-    },
-  });
-  keyPressedColorPicker = createColorPicker(document.getElementById('key-led-colorPressed'), {
-    label: 'Pressed',
-    value: '#ffffff',
-    onChange: (value) => {
-      if (editingPin < 0) return;
-      const ledOpts = materializeLedColors();
-      ledOpts.ledPressedColors[editingPin] = colorToInt(value);
-      previewLedDebounced();
-    },
-  });
+  buildLedColorPopover();
 
   modalSelect = new MultiSelect({
     container: document.getElementById('key-modal-select'),
@@ -597,8 +581,149 @@ function initBoard(options) {
 
   boardView = new BoardView(panel, {
     onPinClick: (pin) => openKeyModal(pin),
+    onLedClick: (ledIdx, el) => openLedColorPopover(ledIdx, el),
   });
   boardView.setOptions(options);
+}
+
+// ---- LED color popover (custom mode) -------------------------------------
+
+// Build the popover DOM once. It's positioned next to whichever LED is
+// clicked (GP2040-th style) and edits that LED's per-key colors.
+function buildLedColorPopover() {
+  ledPopoverEl = document.createElement('div');
+  ledPopoverEl.className = 'led-popover';
+  ledPopoverEl.hidden = true;
+
+  const body = document.createElement('div');
+  body.className = 'led-popover-body';
+
+  const normalWrap = document.createElement('div');
+  normalWrap.className = 'led-popover-color';
+  const normalBtn = document.createElement('button');
+  normalBtn.type = 'button';
+  normalBtn.className = 'led-color-btn';
+  ledPopoverNormalDot = document.createElement('span');
+  ledPopoverNormalDot.className = 'led-color-circle';
+  const normalLbl = document.createElement('span');
+  normalLbl.textContent = 'Normal';
+  normalBtn.appendChild(ledPopoverNormalDot);
+  normalBtn.appendChild(normalLbl);
+  ledPopoverNormalInput = document.createElement('input');
+  ledPopoverNormalInput.type = 'color';
+  ledPopoverNormalInput.addEventListener('input', () => {
+    ledPopoverNormalDot.style.backgroundColor = ledPopoverNormalInput.value;
+    if (!ledColorPopover) return;
+    const ledOpts = materializeLedColors();
+    ledOpts.ledNormalColors[ledColorPopover.pin] = colorToInt(ledPopoverNormalInput.value);
+    previewLedDebounced();
+  });
+  normalWrap.appendChild(normalBtn);
+  normalWrap.appendChild(ledPopoverNormalInput);
+
+  const pressedWrap = document.createElement('div');
+  pressedWrap.className = 'led-popover-color';
+  const pressedBtn = document.createElement('button');
+  pressedBtn.type = 'button';
+  pressedBtn.className = 'led-color-btn';
+  ledPopoverPressedDot = document.createElement('span');
+  ledPopoverPressedDot.className = 'led-color-circle';
+  const pressedLbl = document.createElement('span');
+  pressedLbl.textContent = 'Pressed';
+  pressedBtn.appendChild(ledPopoverPressedDot);
+  pressedBtn.appendChild(pressedLbl);
+  ledPopoverPressedInput = document.createElement('input');
+  ledPopoverPressedInput.type = 'color';
+  ledPopoverPressedInput.addEventListener('input', () => {
+    ledPopoverPressedDot.style.backgroundColor = ledPopoverPressedInput.value;
+    if (!ledColorPopover) return;
+    const ledOpts = materializeLedColors();
+    ledOpts.ledPressedColors[ledColorPopover.pin] = colorToInt(ledPopoverPressedInput.value);
+    previewLedDebounced();
+  });
+  pressedWrap.appendChild(pressedBtn);
+  pressedWrap.appendChild(ledPopoverPressedInput);
+
+  body.appendChild(normalWrap);
+  body.appendChild(pressedWrap);
+  ledPopoverEl.appendChild(body);
+  document.body.appendChild(ledPopoverEl);
+
+  // Close on a click outside the popover (except on the LEDs themselves,
+  // which toggle/move it via their own click handler).
+  document.addEventListener('mousedown', (e) => {
+    if (!ledColorPopover || !ledPopoverEl) return;
+    if (ledPopoverEl.contains(e.target)) return;
+    if (e.target.closest && e.target.closest('[id^="led"]')) return;
+    closeLedColorPopover();
+  });
+
+  window.addEventListener('scroll', positionLedColorPopover, true);
+  window.addEventListener('resize', positionLedColorPopover);
+}
+
+// Reverse LED strip index -> key index from pinLedIndices (+ ledsPerKey range).
+function ledKeyForIndex(ledIdx) {
+  const indices = currentOptions.led?.pinLedIndices || [];
+  const perKey = Math.max(1, currentOptions.led?.ledsPerKey || 1);
+  for (let pin = 0; pin < indices.length; pin++) {
+    const start = indices[pin];
+    if (start === undefined || start < 0) continue;
+    if (ledIdx >= start && ledIdx < start + perKey) return pin;
+  }
+  return -1;
+}
+
+function isCustomLedMode() {
+  return parseInt(document.getElementById('led-mode')?.value, 10) === 0;
+}
+
+function openLedColorPopover(ledIdx, el) {
+  if (!isCustomLedMode() || !ledPopoverEl) return;
+  if (ledColorPopover && ledColorPopover.ledIdx === ledIdx) {
+    closeLedColorPopover();
+    return;
+  }
+  const pin = ledKeyForIndex(ledIdx);
+  if (pin < 0) return;
+
+  ledColorPopover = { ledIdx, pin, element: el };
+  const led = currentOptions.led || {};
+  const normal = led.ledNormalColors?.[pin] ?? led.colorNormal ?? 0x00ff00;
+  const pressed = led.ledPressedColors?.[pin] ?? led.colorPressed ?? 0xffffff;
+  ledPopoverNormalInput.value = intToColor(normal);
+  ledPopoverNormalDot.style.backgroundColor = intToColor(normal);
+  ledPopoverPressedInput.value = intToColor(pressed);
+  ledPopoverPressedDot.style.backgroundColor = intToColor(pressed);
+
+  ledPopoverEl.hidden = false;
+  positionLedColorPopover();
+}
+
+function closeLedColorPopover() {
+  ledColorPopover = null;
+  if (ledPopoverEl) ledPopoverEl.hidden = true;
+}
+
+function positionLedColorPopover() {
+  if (!ledColorPopover || !ledPopoverEl || ledPopoverEl.hidden) return;
+  const rect = ledColorPopover.element.getBoundingClientRect();
+  const pw = ledPopoverEl.offsetWidth;
+  const ph = ledPopoverEl.offsetHeight;
+  const vw = window.innerWidth;
+  const GAP = 10;
+
+  let left = rect.left + rect.width / 2 - pw / 2;
+  left = Math.max(GAP, Math.min(left, vw - pw - GAP));
+  let top = rect.top - ph - GAP;
+  const flip = top < GAP;
+  if (flip) top = rect.bottom + GAP;
+
+  ledPopoverEl.classList.toggle('arrow-up', flip);
+  const arrowOffset = rect.left + rect.width / 2 - left;
+  ledPopoverEl.style.setProperty('--arrow-left', `${arrowOffset}px`);
+  ledPopoverEl.style.left = left + 'px';
+  ledPopoverEl.style.top = top + 'px';
 }
 
 function openKeyModal(pin) {
@@ -612,13 +737,7 @@ function openKeyModal(pin) {
   keyboardWidget.setValue(keycode, mask);
   midiKeyboard.setValue(midiNote);
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
-  // Per-key colors: show the key's own color, falling back to the global
-  // color until the user edits it (custom LED mode).
-  const led = currentOptions.led || {};
-  const normal = led.ledNormalColors?.[pin] ?? led.colorNormal ?? 0x00ff00;
-  const pressed = led.ledPressedColors?.[pin] ?? led.colorPressed ?? 0xffffff;
-  if (keyNormalColorPicker) keyNormalColorPicker.setValue(intToColor(normal));
-  if (keyPressedColorPicker) keyPressedColorPicker.setValue(intToColor(pressed));
+  closeLedColorPopover();
   updateModalMode();
   document.getElementById('key-modal').hidden = false;
   // The widget may have been built while the modal was hidden, so re-fit the
@@ -750,6 +869,7 @@ document.getElementById('reboot-modal').addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !document.getElementById('key-modal').hidden) closeKeyModal();
   if (e.key === 'Escape' && !document.getElementById('reboot-modal').hidden) closeRebootModal();
+  if (e.key === 'Escape' && ledColorPopover) closeLedColorPopover();
 });
 
 // Theme toggle (light / dark / auto). The initial theme is applied in the head

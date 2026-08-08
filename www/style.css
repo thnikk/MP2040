@@ -1072,11 +1072,76 @@ html[data-theme="light"] select {
   cursor: pointer;
 }
 
-/* Per-key colors in the key modal: same pill pickers, side by side. */
-.key-modal-colors {
+/* Per-LED color popover (custom mode): anchored to the clicked LED */
+.led-popover {
+  position: fixed;
+  z-index: 1000;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  padding: 6px 8px;
+}
+
+.led-popover::after,
+.led-popover::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+}
+
+.led-popover::after {
+  left: var(--arrow-left, 11px);
+  border-top: 9px solid var(--card-border);
+}
+
+.led-popover::before {
+  left: var(--arrow-left, 12px);
+  border-top: 8px solid var(--card-bg);
+  z-index: 1;
+}
+
+.led-popover.arrow-up::after {
+  top: auto;
+  bottom: 100%;
+  border-top: none;
+  border-bottom: 9px solid var(--card-border);
+}
+
+.led-popover.arrow-up::before {
+  top: auto;
+  bottom: 100%;
+  border-top: none;
+  border-bottom: 8px solid var(--card-bg);
+}
+
+.led-popover-body {
   display: flex;
-  gap: 10px;
-  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.led-popover-color {
+  position: relative;
+}
+
+.led-popover-color .led-color-btn {
+  width: auto;
+  padding: 0.4rem 0.9rem;
+}
+
+.led-popover-color input[type="color"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
 }
 
 /* "Fill all with default colors" action under the LED color pickers. */
