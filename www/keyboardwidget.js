@@ -166,6 +166,21 @@ const KB_EXTRA_CLUSTERS = [
       ],
     ],
   },
+  {
+    label: 'Mouse',
+    keys: [
+      [
+        { label: 'LMB', value: 0xf5 },
+        { label: 'RMB', value: 0xf6 },
+        { label: 'MMB', value: 0xf7 },
+      ],
+      [
+        { label: 'Back', value: 0xf8 },
+        { label: '', value: 0, spacer: true },
+        { label: 'Fwd', value: 0xf9 },
+      ],
+    ],
+  },
 ];
 
 const kbSizeClass = (s) => (s ? 'sz-' + s.replace('.', '_') : 'sz-1u');

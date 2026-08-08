@@ -34,6 +34,9 @@ const KEYCODES = {
   media_next_track: 0xe8, media_prev_track: 0xe9, media_stop: 0xf0,
   media_play_pause: 0xf1, media_mute: 0xf2, media_volume_up: 0xf3,
   media_volume_down: 0xf4,
+  // Mouse buttons (report 3, sent alongside the keyboard)
+  mouse_left: 0xf5, mouse_right: 0xf6, mouse_middle: 0xf7,
+  mouse_back: 0xf8, mouse_forward: 0xf9,
 };
 
 // Modifier mask bits (KEYBOARD_MODIFIER_*). A pin can hold several at once.

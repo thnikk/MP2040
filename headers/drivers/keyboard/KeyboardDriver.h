@@ -23,6 +23,8 @@ private:
     uint8_t last_report[CFG_TUD_ENDPOINT0_SIZE] = { };
     uint16_t last_report_size;
     KeyboardReport keyboardReport;
+    MouseReport mouseReport;
+    uint8_t lastMouseButtons = 0;
 };
 
 #endif

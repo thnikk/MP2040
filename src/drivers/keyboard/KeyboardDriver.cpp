@@ -79,10 +79,24 @@ void KeyboardDriver::process() {
 			}
 		}
 	}
+
+	// Mouse buttons ride on their own report (0x03), sent independently of the
+	// keyboard report so keys and mouse buttons work at the same time.
+	if (mouseReport.buttons != lastMouseButtons) {
+		if (tud_hid_ready()) {
+			if (tud_hid_report(mouseReport.reportId, &mouseReport.buttons, sizeof(mouseReport.buttons))) {
+				lastMouseButtons = mouseReport.buttons;
+			}
+		}
+	}
 }
 
 void KeyboardDriver::pressKey(uint8_t code) {
-	if (code > HID_KEY_GUI_RIGHT) {
+	if (code >= MOUSE_BUTTON_LEFT && code <= MOUSE_BUTTON_FORWARD) {
+		// Mouse buttons (custom keycodes above the multimedia range): set the
+		// matching button bit. The report is sent separately in process().
+		mouseReport.buttons |= 1u << (code - MOUSE_BUTTON_LEFT);
+	} else if (code > HID_KEY_GUI_RIGHT) {
 		keyboardReport.reportId = KEYBOARD_MULTIMEDIA_REPORT_ID;
 		keyboardReport.multimedia = getMultimedia(code);
 	} else {
@@ -97,6 +111,7 @@ void KeyboardDriver::releaseAllKeys(void) {
 		keyboardReport.keycode[i] = 0;
 	}
 	keyboardReport.multimedia = 0;
+	mouseReport.buttons = 0;
 }
 
 // tud_hid_get_report_cb
@@ -104,6 +119,9 @@ uint16_t KeyboardDriver::get_report(uint8_t report_id, hid_report_type_t report_
 	if ( report_id == KEYBOARD_KEY_REPORT_ID ) {
 		memcpy(buffer, (void*) &keyboardReport.modifier, sizeof(KeyboardReport::modifier) + sizeof(KeyboardReport::keycode));
 		return sizeof(KeyboardReport::modifier) + sizeof(KeyboardReport::keycode);
+	} else if ( report_id == KEYBOARD_MOUSE_REPORT_ID ) {
+		memcpy(buffer, (void*) &mouseReport.buttons, sizeof(mouseReport.buttons));
+		return sizeof(mouseReport.buttons);
 	} else {
 		memcpy(buffer, (void*) &keyboardReport.multimedia, sizeof(KeyboardReport::multimedia));
 		return sizeof(KeyboardReport::multimedia);

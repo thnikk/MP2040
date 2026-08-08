@@ -5,6 +5,7 @@
 
 #define KEYBOARD_KEY_REPORT_ID 0x01
 #define KEYBOARD_MULTIMEDIA_REPORT_ID 0x02
+#define KEYBOARD_MOUSE_REPORT_ID 0x03
 
 #define KEYBOARD_MULTIMEDIA_NEXT_TRACK  0XE8
 #define KEYBOARD_MULTIMEDIA_PREV_TRACK  0XE9
@@ -14,6 +15,22 @@
 #define KEYBOARD_MULTIMEDIA_VOLUME_UP   0XF3
 #define KEYBOARD_MULTIMEDIA_VOLUME_DOWN 0XF4
 
+// Mouse button keycodes (custom, above the multimedia range). A key mapped to
+// one of these clicks the corresponding mouse button while held, alongside any
+// keyboard keys. Routed to the mouse report (0x03) by KeyboardDriver.
+#define MOUSE_BUTTON_LEFT    0xF5
+#define MOUSE_BUTTON_RIGHT   0xF6
+#define MOUSE_BUTTON_MIDDLE  0xF7
+#define MOUSE_BUTTON_BACK    0xF8
+#define MOUSE_BUTTON_FORWARD 0xF9
+
+// Mouse button bits (mirrors the tinyusb HID mouse button bitmap).
+#define MOUSE_BUTTON_LEFT_BIT    0x01
+#define MOUSE_BUTTON_RIGHT_BIT   0x02
+#define MOUSE_BUTTON_MIDDLE_BIT  0x04
+#define MOUSE_BUTTON_BACK_BIT    0x08
+#define MOUSE_BUTTON_FORWARD_BIT 0x10
+
 /// Standard HID Boot Protocol Keyboard Report.
 typedef struct
 {
@@ -22,6 +39,13 @@ typedef struct
 	uint8_t keycode[32]; /**< Key codes of the currently pressed keys. */
 	uint8_t multimedia;
 } KeyboardReport;
+
+/// Mouse buttons-only report (sent alongside the keyboard report).
+typedef struct
+{
+	uint8_t reportId = KEYBOARD_MOUSE_REPORT_ID;
+	uint8_t buttons = 0;   /**< MOUSE_BUTTON_*_BIT mask of held mouse buttons. */
+} MouseReport;
 
 static const uint8_t keyboard_string_language[]    = { 0x09, 0x04 };
 static const uint8_t keyboard_string_manfacturer[] = "Open Stick Community";
@@ -113,6 +137,27 @@ static const uint8_t keyboard_report_descriptor[] =
 		0x95, 0x01,			 //Report Count (1)
 		0x81, 0x01,			 //Input (Const,Ary,Abs)
 		0xC0,			//End Collection
+
+		//Report ID (3) — mouse buttons
+		0x85, KEYBOARD_MOUSE_REPORT_ID,
+		0x05, 0x01,			 //Usage Page (Generic Desktop)
+		0x09, 0x02,			 //Usage (Mouse)
+		0xA1, 0x01,			 //Collection (Application)
+		0x09, 0x01,			 //Usage (Pointer)
+		0xA1, 0x00,			 //Collection (Physical)
+		0x05, 0x09,			 //Usage Page (Button)
+		0x19, 0x01,			 //Usage Minimum (1)
+		0x29, 0x05,			 //Usage Maximum (5)
+		0x15, 0x00,			 //Logical Minimum (0)
+		0x25, 0x01,			 //Logical Maximum (1)
+		0x75, 0x01,			 //Report Size (1)
+		0x95, 0x05,			 //Report Count (5)
+		0x81, 0x02,			 //Input (Data, Var, Abs)
+		0x95, 0x01,			 //Report Count (1)
+		0x75, 0x03,			 //Report Size (3)
+		0x81, 0x01,			 //Input (Const)
+		0xC0,			//End Collection (Physical)
+		0xC0,			//End Collection (Application)
 };
 
 // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval

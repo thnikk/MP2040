@@ -46,6 +46,15 @@ const MEDIA = {
   KEYBOARD_MULTIMEDIA_VOLUME_DOWN: 0xf4,
 };
 
+// Mouse buttons (custom keycodes, reported on the mouse report)
+const MOUSE = {
+  MOUSE_BUTTON_LEFT: 0xf5,
+  MOUSE_BUTTON_RIGHT: 0xf6,
+  MOUSE_BUTTON_MIDDLE: 0xf7,
+  MOUSE_BUTTON_BACK: 0xf8,
+  MOUSE_BUTTON_FORWARD: 0xf9,
+};
+
 // Modifier mask bits (KEYBOARD_MODIFIER_* from tinyusb)
 const MODIFIER_MASK = {
   KEYBOARD_MODIFIER_LEFTCTRL: 0x01,
@@ -117,6 +126,7 @@ function parseKeycode(raw) {
   if (/^-?\d+$/.test(val)) return parseInt(val, 10);
   if (HID[val] !== undefined) return HID[val];
   if (MEDIA[val] !== undefined) return MEDIA[val];
+  if (MOUSE[val] !== undefined) return MOUSE[val];
   return 0;
 }
 
