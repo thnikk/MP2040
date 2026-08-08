@@ -32,6 +32,7 @@ private:
         uint8_t macroIndex;   // 1-8; 0 = slot free
         uint8_t step;         // current step index
         bool holding;         // true = step key currently pressed
+        bool started;         // true once the current step's hold timer is armed
         uint32_t until;       // ms when the current phase (hold/delay) ends
     };
     static constexpr uint8_t MAX_ACTIVE_MACROS = 8;

@@ -30,7 +30,17 @@
 
 #define PATH_CGI_ACTION "/cgi/action"
 
+// Max size of the raw HTTP POST payload (characters). Kept separate from the
+// parsed JSON document size below.
 #define LWIP_HTTPD_POST_MAX_PAYLOAD_LEN (1024 * 16)
+
+// Max size of a parsed JSON document. getOptions builds the full config tree
+// (key maps + all four profiles + macros + per-key LED arrays) into one
+// document; each ArduinoJson value occupies a fixed-size slot, so this must be
+// much larger than the payload buffer or the tail (profiles / matrix) is
+// silently dropped on the real hardware. 64KB fits the heap (the board has
+// ~100KB free) and covers realistic configs end to end.
+#define LWIP_HTTPD_JSON_DOC_SIZE (1024 * 64)
 
 using namespace std;
 
@@ -154,7 +164,7 @@ int set_file_data(fs_file *file, string&& data)
 
 DynamicJsonDocument get_post_data()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(LWIP_HTTPD_JSON_DOC_SIZE);
     deserializeJson(doc, http_post_payload, http_post_payload_len);
     return doc;
 }
@@ -226,7 +236,7 @@ std::string serialize_json(JsonDocument &doc)
 
 std::string getOptions()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(LWIP_HTTPD_JSON_DOC_SIZE);
     const Config& config = Storage::getInstance().getConfig();
     const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
     const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();

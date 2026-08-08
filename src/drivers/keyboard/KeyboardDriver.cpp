@@ -162,7 +162,8 @@ void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState,
 		slot->macroIndex = (uint8_t)macroIndex;
 		slot->step = 0;
 		slot->holding = true;
-		slot->until = now; // applied this frame, hold timer starts below
+		slot->started = false; // hold timer armed on the first frame
+		slot->until = now;
 	}
 
 	// Step each active playback's state machine and apply the held step.
@@ -172,28 +173,37 @@ void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState,
 		if (m.macroIndex > macroCount) { m.macroIndex = 0; continue; }
 
 		const Macro& macro = macros[m.macroIndex - 1];
-		if (macro.steps_count == 0) { m.macroIndex = 0; continue; }
+		const pb_size_t stepCount = macro.steps_count;
+		if (stepCount == 0) { m.macroIndex = 0; continue; }
 
-		const uint32_t holdMs = macro.steps[m.step].holdMs < MACRO_HOLD_MIN_MS
-			? MACRO_HOLD_MIN_MS : macro.steps[m.step].holdMs;
-		const uint32_t delayMs = macro.steps[m.step].delayMs > MACRO_DELAY_MAX_MS
-			? MACRO_DELAY_MAX_MS : macro.steps[m.step].delayMs;
+		// Clamp per-step timing so a corrupt stored config can't wedge playback.
+		const auto holdOf = [&](pb_size_t s) -> uint32_t {
+			uint32_t v = macro.steps[s].holdMs;
+			return v < MACRO_HOLD_MIN_MS ? MACRO_HOLD_MIN_MS
+				: (v > MACRO_HOLD_MAX_MS ? MACRO_HOLD_MAX_MS : v);
+		};
+		const auto delayOf = [&](pb_size_t s) -> uint32_t {
+			uint32_t v = macro.steps[s].delayMs;
+			return v > MACRO_DELAY_MAX_MS ? MACRO_DELAY_MAX_MS : v;
+		};
 
 		if (m.holding) {
-			// First frame after a transition applies the step immediately.
-			if (m.until == now) {
-				m.until = now + holdMs;
-			}
-			// Hold finished: release the key and wait out this step's delay.
-			if (now >= m.until) {
+			if (!m.started) {
+				// Fresh press / step transition: arm the hold timer, then apply
+				// the step immediately.
+				m.started = true;
+				m.until = now + holdOf(m.step);
+			} else if (now >= m.until) {
+				// Hold finished: release the key and wait out this step's delay.
 				m.holding = false;
-				m.until = now + delayMs;
+				m.until = now + delayOf(m.step);
 			}
 		} else if (now >= m.until) {
 			// Delay finished: move to the next step (looping at the end).
-			m.step = (m.step + 1) % macro.steps_count;
+			m.step = (m.step + 1) % stepCount;
 			m.holding = true;
-			m.until = now + holdMs;
+			m.started = false;
+			m.until = now;
 		}
 
 		if (m.holding) {
