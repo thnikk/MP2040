@@ -24,34 +24,8 @@ function matchButtonIndex(el, isMatrix) {
   return null;
 }
 
-const MODIFIER_SHORT = {
-  0xe0: 'Ctrl', 0xe1: 'Shift', 0xe2: 'Alt', 0xe3: 'Win',
-  0xe4: 'Ctrl', 0xe5: 'Shift', 0xe6: 'Alt', 0xe7: 'Win',
-};
-
-const KEY_LABELS = {
-  0x28: 'Enter', 0x29: 'Esc', 0x2a: 'Bksp', 0x2b: 'Tab', 0x2c: 'Space',
-  0x2d: '-', 0x2e: '=', 0x2f: '[', 0x30: ']', 0x31: '\\', 0x32: '\\',
-  0x33: ';', 0x34: "'", 0x35: '`', 0x36: ',', 0x37: '.', 0x38: '/', 0x39: 'Caps',
-  0x46: 'PrtSc', 0x47: 'ScrLk', 0x48: 'Pause', 0x49: 'Ins', 0x4a: 'Home',
-  0x4b: 'PgUp', 0x4c: 'Del', 0x4d: 'End', 0x4e: 'PgDn',
-  0x4f: '\u2192', 0x50: '\u2190', 0x51: '\u2193', 0x52: '\u2191',
-  0x53: 'NumLk', 0x58: 'KPEnt', 0x63: 'KP.', 0x65: 'Menu', 0x66: 'Power', 0x67: 'KP=',
-  0x7f: 'Mute', 0x80: 'Vol+', 0x81: 'Vol-',
-  0xe8: 'Next', 0xe9: 'Prev', 0xf0: 'Stop', 0xf1: 'Play',
-  0xf2: 'Mute', 0xf3: 'Vol+', 0xf4: 'Vol-',
-  0xf5: 'LMB', 0xf6: 'RMB', 0xf7: 'MMB', 0xf8: 'Back', 0xf9: 'Fwd',
-};
-
-function keyLabel(code) {
-  if (code >= 0x04 && code <= 0x1d) return String.fromCharCode(0x41 + code - 0x04); // A-Z
-  if (code === 0x27) return '0';
-  if (code >= 0x1e && code <= 0x26) return String.fromCharCode(0x31 + code - 0x1e); // 1-9
-  if (code >= 0x3a && code <= 0x45) return 'F' + (code - 0x3a + 1); // F1-F12
-  if (code >= 0x68 && code <= 0x73) return 'F' + (code - 0x68 + 13); // F13-F24
-  if (code >= 0x59 && code <= 0x62) return 'KP' + (code - 0x59 + 1); // KP1-KP9
-  return KEY_LABELS[code] || '';
-}
+// Modifier mask / keycode label helpers (MODIFIER_SHORT, KEY_LABELS,
+// keyLabel) come from kblayout.js.
 
 const MIDI_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 function midiNoteName(note) {
@@ -330,12 +304,15 @@ class BoardView {
 
       const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
+      const macroIndex = Number(this.options?.macroIndices?.[pinNumber] || 0);
       const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
 
       let lines = [];
       if (midiMode) {
         if (midiNote > 0) lines.push(midiNoteName(midiNote));
+      } else if (macroIndex > 0) {
+        lines.push('M' + macroIndex);
       } else if (keycode > 0) {
         for (let i = 0; i < 8; i++) {
           if (mask & (1 << i)) lines.push(MODIFIER_SHORT[0xe0 + i] || '');

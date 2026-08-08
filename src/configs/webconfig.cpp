@@ -227,6 +227,7 @@ std::string serialize_json(JsonDocument &doc)
 std::string getOptions()
 {
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    const Config& config = Storage::getInstance().getConfig();
     const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
     const LEDOptions& ledOptions = Storage::getInstance().getLedOptions();
 
@@ -240,6 +241,29 @@ std::string getOptions()
         modifiers.add(pin < (Pin_t)keyMapping.modifierMasks_count ? keyMapping.modifierMasks[pin] : 0);
         midiNotes.add(pin < (Pin_t)keyMapping.midiNotes_count ? keyMapping.midiNotes[pin] : 0);
         midiVelocities.add(pin < (Pin_t)keyMapping.midiVelocities_count ? keyMapping.midiVelocities[pin] : 0);
+    }
+
+    // Global macro triggers (per-key, 0 = none) and definitions (M1-M8).
+    JsonArray macroIndices = doc.createNestedArray("macroIndices");
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+        macroIndices.add(pin < (Pin_t)config.macroIndices_count ? config.macroIndices[pin] : 0);
+    JsonArray macros = doc.createNestedArray("macros");
+    for (pb_size_t m = 0; m < 8; m++)
+    {
+        JsonObject macroJson = macros.createNestedObject();
+        JsonArray steps = macroJson.createNestedArray("steps");
+        if (m < config.macros_count)
+        {
+            const Macro& macro = config.macros[m];
+            for (pb_size_t s = 0; s < macro.steps_count; s++)
+            {
+                JsonObject stepJson = steps.createNestedObject();
+                stepJson["keycode"] = macro.steps[s].keycode;
+                stepJson["modifiers"] = macro.steps[s].modifiers;
+                stepJson["holdMs"] = macro.steps[s].holdMs;
+                stepJson["delayMs"] = macro.steps[s].delayMs;
+            }
+        }
     }
 
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
@@ -338,6 +362,36 @@ std::string setOptions()
 
     if (doc["defaultInputMode"].is<int>())
         Storage::getInstance().setDefaultInputMode((InputMode)doc["defaultInputMode"].as<int>());
+
+    // Global macros: per-key triggers and the definitions (M1-M8). Not
+    // profile-scoped, so they're written straight into the top-level config.
+    JsonArray macroIndices = doc["macroIndices"];
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)macroIndices.size(); pin++)
+        config.macroIndices[pin] = macroIndices[pin].as<uint32_t>();
+    config.macroIndices_count = MAX_KEYS;
+
+    JsonArray macros = doc["macros"];
+    config.macros_count = 0;
+    for (pb_size_t m = 0; m < 8 && m < (pb_size_t)macros.size(); m++)
+    {
+        Macro& macro = config.macros[m];
+        macro.steps_count = 0;
+        JsonObject macroJson = macros[m];
+        JsonArray steps = macroJson["steps"];
+        for (pb_size_t s = 0; s < 32 && s < (pb_size_t)steps.size(); s++)
+        {
+            JsonObject stepJson = steps[s];
+            MacroStep& step = macro.steps[s];
+            step.keycode = stepJson["keycode"] | 0;
+            step.modifiers = stepJson["modifiers"] | 0;
+            uint32_t holdMs = stepJson["holdMs"] | 0;
+            uint32_t delayMs = stepJson["delayMs"] | 0;
+            step.holdMs = holdMs > 5000 ? 5000 : (holdMs == 0 ? 1 : holdMs);
+            step.delayMs = delayMs > 5000 ? 5000 : delayMs;
+            macro.steps_count++;
+        }
+        config.macros_count++;
+    }
 
     JsonObject midi = doc["midi"];
     if (!midi.isNull())
@@ -447,11 +501,14 @@ std::string setLedPreview()
 std::string getUsedPins()
 {
     DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    const Config& config = Storage::getInstance().getConfig();
     const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
     auto usedPins = doc.createNestedArray("usedPins");
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
-        if (pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0)
+        const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
+        const bool hasMacro = pin < (Pin_t)config.macroIndices_count && config.macroIndices[pin] != 0;
+        if (hasKey || hasMacro)
             usedPins.add(pin);
     }
     return serialize_json(doc);

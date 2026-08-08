@@ -1,14 +1,17 @@
 // Spinner — a compact numeric input: a text field with a "-" button on the
 // left and a "+" button on the right. Values clamp to [min, max].
 //
-//   new Spinner({ container, min, max, value, onChange })
+//   new Spinner({ container, min, max, value, onChange, step })
 //   spinner.getValue() / setValue(v)
+// `step` (default 1) is the increment applied by the -/+ buttons; typed
+// values always clamp to [min, max].
 
 class Spinner {
-  constructor({ container, min, max, value, onChange }) {
+  constructor({ container, min, max, value, onChange, step }) {
     this.min = min;
     this.max = max;
     this.value = this.clamp(value == null ? min : value);
+    this.stepSize = step || 1;
     this.onChange = onChange || (() => {});
     this.buildDom(container);
     this.input.value = String(this.value);
@@ -34,7 +37,7 @@ class Spinner {
   }
 
   step(delta) {
-    const next = this.clamp(this.readInput() + delta);
+    const next = this.clamp(this.readInput() + delta * this.stepSize);
     if (next === this.value && String(next) === this.input.value) return;
     this.setValue(next);
     this.onChange(this.value);

@@ -30,6 +30,25 @@ message MIDIOptions
     optional uint32 velocity = 2;
 }
 
+// A single macro step: hold `keycode` (with `modifiers`) for `holdMs`, then
+// release for `delayMs` before the next step. A step with keycode 0 is a pure
+// delay. Times are clamped to 0-5000ms at load and via the web config.
+message MacroStep
+{
+    optional uint32 keycode = 1;
+    optional uint32 modifiers = 2;
+    optional uint32 holdMs = 3;
+    optional uint32 delayMs = 4;
+}
+
+// A macro: an ordered key sequence played while its trigger key is held,
+// looping from the last step back to the first. Definitions are global
+// (shared across profiles); per-key triggers live in Config.macroIndices.
+message Macro
+{
+    repeated MacroStep steps = 1 [(nanopb).max_count = 32];
+}
+
 message LEDOptions
 {
     optional int32 dataPin = 1;
@@ -88,4 +107,12 @@ message Config
     repeated Profile profiles = 6 [(nanopb).max_count = 4];
     // Boot-time profile selection (0-3, index into profiles).
     optional uint32 activeProfile = 7;
+    // Global macro definitions (M1-M8). Per-key triggers reference these by
+    // 1-based index (Config.macroIndices). Stored in Config (not a profile)
+    // so all profiles share the same macro set.
+    repeated Macro macros = 8 [(nanopb).max_count = 8];
+    // Per-key macro trigger assignment (1-8 = macro M1-M8, 0 = no macro). When
+    // set, the pin plays the macro (loop-while-held) instead of its keycode /
+    // modifier mask. Global like the macro definitions themselves.
+    repeated uint32 macroIndices = 9 [(nanopb).max_count = 128];
 }

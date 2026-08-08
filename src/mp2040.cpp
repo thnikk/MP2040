@@ -83,6 +83,7 @@ void MP2040::setup() {
  */
 void MP2040::initializeKeyGpio() {
 	KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
+	Config& config = Storage::getInstance().getConfig();
 	const GpioMask touchPinMask = Storage::getInstance().getTouchPinMask();
 	buttonGpios = 0;
 	touchGpios = 0;
@@ -120,11 +121,12 @@ void MP2040::initializeKeyGpio() {
 
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
 	{
-		// A pin is active if it has a keycode or a MIDI note assigned. The
-		// active mode determines which table is consulted.
+		// A pin is active if it has a keycode, a MIDI note, or a macro
+		// trigger assigned. The active mode determines which table is used.
 		const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
 		const bool hasNote = pin < (Pin_t)keyMapping.midiNotes_count && keyMapping.midiNotes[pin] != 0;
-		if (hasKey || hasNote)
+		const bool hasMacro = pin < (Pin_t)MAX_KEYS && config.macroIndices[pin] != 0;
+		if (hasKey || hasNote || hasMacro)
 		{
 			if (touchPinMask & (1 << pin))
 			{
@@ -148,11 +150,13 @@ void MP2040::initializeKeyGpio() {
  */
 void MP2040::deinitializeKeyGpio() {
 	KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
+	Config& config = Storage::getInstance().getConfig();
 	for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
 	{
 		const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
 		const bool hasNote = pin < (Pin_t)keyMapping.midiNotes_count && keyMapping.midiNotes[pin] != 0;
-		if (hasKey || hasNote)
+		const bool hasMacro = pin < (Pin_t)MAX_KEYS && config.macroIndices[pin] != 0;
+		if (hasKey || hasNote || hasMacro)
 		{
 			gpio_deinit(pin);
 		}

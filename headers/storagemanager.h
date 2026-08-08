@@ -92,6 +92,10 @@ public:
 		return (index < config.profiles_count) ? &config.profiles[index] : nullptr;
 	}
 	pb_size_t getProfileCount() { return config.profiles_count; }
+	// Global macros (M1-M8). Per-key triggers reference these by 1-based
+	// index via config.macroIndices.
+	Macro* getMacros() { return config.macros; }
+	pb_size_t getMacroCount() { return config.macros_count; }
 	// Boot-mode shortcut pin (USB bootloader), from the board's PIN_BOOT define.
 	// A physical board property (like the web config pin), never a user setting.
 	int32_t getBootPin() { return bootPin; }

@@ -1488,6 +1488,151 @@ button:disabled {
   font-size: 1rem;
 }
 
+/* Macro slot row (key picker: assign M1-M8 to a pin) */
+.kb-macro-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.kb-macro-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+  margin-right: 2px;
+}
+
+.kb-macro-slot {
+  width: 44px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: inherit;
+  font-size: 0.85rem;
+  font-family: 'Nunito', monospace;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.kb-macro-slot:hover {
+  background: var(--hover-bg);
+  border-color: var(--nord12);
+}
+
+.kb-macro-slot.selected {
+  background: var(--nord12);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Held modifier highlight (macro builder keyboard) */
+.kb-key.mod.active {
+  background: var(--nord12);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* Macro builder (Settings page) */
+.macro-builder {
+  margin-top: 8px;
+}
+
+.macro-keyboard {
+  margin-top: 14px;
+}
+
+.macro-steps {
+  margin-top: 16px;
+}
+
+.macro-steps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.macro-clear-btn {
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.macro-clear-btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--nord11);
+}
+
+.macro-steps-empty {
+  font-size: 0.85rem;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.macro-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.macro-step-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.macro-step-label {
+  min-width: 90px;
+  font-family: 'Nunito', monospace;
+  font-weight: 700;
+  flex: 1 1 auto;
+}
+
+.macro-step-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.macro-step-time .spinner {
+  transform: scale(0.82);
+  transform-origin: left center;
+}
+
+.macro-step-remove {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.macro-step-remove:hover {
+  background: var(--nord11);
+  border-color: transparent;
+  color: #fff;
+}
+
 /* Toast / Notification (port of GP2040-th's toast styles) */
 .toast-container {
   position: fixed;

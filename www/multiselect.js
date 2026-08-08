@@ -81,16 +81,21 @@ class MultiSelect {
 
   // ---- Public API -------------------------------------------------------
 
-  setValue(keycode, mask) {
+  setValue(keycode, mask, macroIndex) {
     this.selected = [];
-    if (keycode > 0) {
-      const opt = this.options.find((o) => o.group === 'keys' && o.value === keycode);
+    if (macroIndex > 0) {
+      const opt = this.options.find((o) => o.group === 'macros' && o.value === macroIndex);
       if (opt) this.selected.push(opt);
-    }
-    for (const bit of [1, 2, 4, 8, 16, 32, 64, 128]) {
-      if (mask & bit) {
-        const opt = this.options.find((o) => o.group === 'modifiers' && o.value === bit);
+    } else {
+      if (keycode > 0) {
+        const opt = this.options.find((o) => o.group === 'keys' && o.value === keycode);
         if (opt) this.selected.push(opt);
+      }
+      for (const bit of [1, 2, 4, 8, 16, 32, 64, 128]) {
+        if (mask & bit) {
+          const opt = this.options.find((o) => o.group === 'modifiers' && o.value === bit);
+          if (opt) this.selected.push(opt);
+        }
       }
     }
     this.render();
@@ -99,11 +104,13 @@ class MultiSelect {
   getValue() {
     let keycode = 0;
     let mask = 0;
+    let macroIndex = 0;
     for (const opt of this.selected) {
       if (opt.group === 'keys') keycode = opt.value;
-      else mask |= opt.value;
+      else if (opt.group === 'modifiers') mask |= opt.value;
+      else if (opt.group === 'macros') macroIndex = opt.value;
     }
-    return { keycode, mask };
+    return { keycode, mask, macroIndex };
   }
 
   // ---- Selection --------------------------------------------------------
@@ -119,8 +126,10 @@ class MultiSelect {
     } else {
       const opt = this.options.find((o) => o.group === group && o.value === value);
       if (!opt) return;
-      if (group === 'keys') {
-        this.selected = this.selected.filter((o) => o.group !== 'keys');
+      // A key and a macro are mutually exclusive single selects (modifiers
+      // stay additive): picking either clears the other.
+      if (group === 'keys' || group === 'macros') {
+        this.selected = this.selected.filter((o) => o.group !== 'keys' && o.group !== 'macros');
       }
       this.selected.push(opt);
     }

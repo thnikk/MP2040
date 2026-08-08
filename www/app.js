@@ -45,12 +45,14 @@ const MODIFIERS = {
   rightctrl: 16, rightshift: 32, rightalt: 64, rightgui: 128,
 };
 
-// MultiSelect options: one Modifiers group (multiple allowed) + one Keys group
-// (at most one). Modifier keycodes (0xE0-0xE7) are handled by the Modifiers
-// group, so they're excluded from Keys; "none" (0) is implicit as empty.
+// MultiSelect options: Modifiers group (multiple allowed), Keys group (at
+// most one) and Macros group (at most one, mutually exclusive with Keys).
+// Modifier keycodes (0xE0-0xE7) are handled by the Modifiers group, so
+// they're excluded from Keys; "none" (0) is implicit as empty.
 const MULTISELECT_GROUPS = [
   { id: 'modifiers', label: 'Modifiers' },
   { id: 'keys', label: 'Keys' },
+  { id: 'macros', label: 'Macros' },
 ];
 
 const MULTISELECT_OPTIONS = [
@@ -58,6 +60,7 @@ const MULTISELECT_OPTIONS = [
   ...Object.entries(KEYCODES)
     .filter(([, value]) => value !== 0 && (value < 0xe0 || value > 0xe7))
     .map(([label, value]) => ({ group: 'keys', label, value })),
+  ...Array.from({ length: 8 }, (_, i) => ({ group: 'macros', label: 'M' + (i + 1), value: i + 1 })),
 ];
 
 // Working copy of the config from /api/getOptions, edited via the modal
@@ -83,6 +86,9 @@ let keyboardWidget = null;
 
 // MIDI note picker (midikeyboard.js) used in the key modal in MIDI mode
 let midiKeyboard = null;
+
+// Visual macro editor (macrobuilder.js) used on the Settings page
+let macroBuilder = null;
 
 // Pin currently being edited in the modal
 let editingPin = -1;
@@ -341,6 +347,8 @@ function buildOptionsBody() {
     modifierMasks: currentOptions.modifierMasks,
     midiNotes: currentOptions.midiNotes,
     midiVelocities: currentOptions.midiVelocities,
+    macroIndices: currentOptions.macroIndices,
+    macros: currentOptions.macros || [],
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
@@ -439,6 +447,12 @@ async function load() {
     api('/api/getFirmwareVersion'),
   ]);
   currentOptions = options;
+  // Global macros: per-key triggers and the M1-M8 definitions. Default to
+  // empty for old firmware responses that don't carry the fields.
+  currentOptions.macroIndices = Array.isArray(options.macroIndices)
+    ? options.macroIndices.slice()
+    : new Array(128).fill(0);
+  currentOptions.macros = Array.isArray(options.macros) ? options.macros : [];
   document.getElementById('board-label').textContent = version.boardLabel || '';
   document.getElementById('board-label-hero').textContent = version.boardLabel || '';
   document.getElementById('footer-version').textContent = version.firmwareVersion
@@ -515,13 +529,22 @@ async function load() {
 
   buildLedColorPopover();
 
+  const macrosPanel = document.getElementById('macros-panel');
+  if (macrosPanel) {
+    macroBuilder = new MacroBuilder({
+      container: macrosPanel,
+      macros: currentOptions.macros,
+      onChange: (macros) => { currentOptions.macros = macros; },
+    });
+  }
+
   modalSelect = new MultiSelect({
     container: document.getElementById('key-modal-select'),
     options: MULTISELECT_OPTIONS,
     groups: MULTISELECT_GROUPS,
     onChange: () => {
-      const { keycode, mask } = modalSelect.getValue();
-      keyboardWidget.setValue(keycode, mask);
+      const { keycode, mask, macroIndex } = modalSelect.getValue();
+      keyboardWidget.setValue(keycode, mask, macroIndex);
     },
   });
 
@@ -529,8 +552,8 @@ async function load() {
     container: document.getElementById('key-modal-keyboard'),
     keycode: 0,
     mask: 0,
-    onChange: (keycode, mask) => {
-      modalSelect.setValue(keycode, mask);
+    onChange: (keycode, mask, macroIndex) => {
+      modalSelect.setValue(keycode, mask, macroIndex);
     },
   });
 
@@ -572,7 +595,7 @@ function updateModalMode() {
   document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('key-modal-hint').textContent = midiMode
     ? 'Pick a MIDI note for this button (0 = no note).'
-    : 'Pick a key and any number of modifiers from the Modifiers group, or click a key on the keyboard below.';
+    : 'Pick a key and any number of modifiers from the Modifiers group, click a key on the keyboard below, or pick a macro from the Macros group (or an M1-M8 slot) to run it while held.';
   document.getElementById('board-hint').textContent = midiMode
     ? 'Click a button on the board to set its MIDI note and velocity.'
     : 'Click a button on the board to set its key and modifiers.';
@@ -735,9 +758,10 @@ function openKeyModal(pin) {
     `GP${pin.toString().padStart(2, '0')}`;
   const keycode = Number(currentOptions.keycodes[pin] || 0);
   const mask = Number(currentOptions.modifierMasks[pin] || 0);
+  const macroIndex = Number(currentOptions.macroIndices?.[pin] || 0);
   const midiNote = Number(currentOptions.midiNotes?.[pin] || 0);
-  modalSelect.setValue(keycode, mask);
-  keyboardWidget.setValue(keycode, mask);
+  modalSelect.setValue(keycode, mask, macroIndex);
+  keyboardWidget.setValue(keycode, mask, macroIndex);
   midiKeyboard.setValue(midiNote);
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
   closeLedColorPopover();
@@ -755,9 +779,12 @@ function closeKeyModal() {
 
 function saveKeyModal() {
   if (editingPin < 0) return;
-  const { keycode, mask } = modalSelect.getValue();
-  currentOptions.keycodes[editingPin] = keycode;
-  currentOptions.modifierMasks[editingPin] = mask;
+  const { keycode, mask, macroIndex } = keyboardWidget.getValue();
+  // A pin is either a plain key or a macro trigger, never both.
+  currentOptions.keycodes[editingPin] = macroIndex ? 0 : keycode;
+  currentOptions.modifierMasks[editingPin] = macroIndex ? 0 : mask;
+  if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
+  currentOptions.macroIndices[editingPin] = macroIndex;
   if (!currentOptions.midiNotes) currentOptions.midiNotes = new Array(30).fill(0);
   if (!currentOptions.midiVelocities) currentOptions.midiVelocities = new Array(30).fill(0);
   currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();

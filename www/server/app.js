@@ -66,16 +66,21 @@ function defaultOptions() {
   const keycodes = [];
   const modifierMasks = [];
   const pinLedIndices = [];
+  const macroIndices = [];
   for (let i = 0; i < KEY_COUNT; i++) {
     keycodes.push(board?.keycodes?.[i] ?? 0);
     modifierMasks.push(board?.modifierMasks?.[i] ?? 0);
     pinLedIndices.push(board?.pinLedIndices?.[i] ?? -1);
+    macroIndices.push(0);
   }
   const base = {
     keycodes,
     modifierMasks,
     midiNotes: new Array(KEY_COUNT).fill(0),
     midiVelocities: new Array(KEY_COUNT).fill(0),
+    // Global macros: per-key triggers + the M1-M8 definitions.
+    macroIndices,
+    macros: Array.from({ length: 8 }, () => ({ steps: [] })),
     defaultInputMode: 1,
     midi: {
       channel: 0,
@@ -145,6 +150,9 @@ export function createMockApp() {
     if (Array.isArray(body.modifierMasks)) profile.modifierMasks = body.modifierMasks;
     if (Array.isArray(body.midiNotes)) profile.midiNotes = body.midiNotes;
     if (Array.isArray(body.midiVelocities)) profile.midiVelocities = body.midiVelocities;
+    // Global macros (shared across profiles), like the firmware.
+    if (Array.isArray(body.macroIndices)) current.macroIndices = body.macroIndices;
+    if (Array.isArray(body.macros)) current.macros = body.macros;
     if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
     if (body.led) {
       // ledTimeout is a global (non-profile) LED option, like the firmware.

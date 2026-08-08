@@ -1,7 +1,14 @@
 #include "drivers/keyboard/KeyboardDriver.h"
 #include "storagemanager.h"
 #include "drivers/shared/driverhelper.h"
+#include "helper.h"
 #include "types.h"
+
+// Hard upper bounds for macro step timing (ms). The web config clamps to the
+// same range; these keep a corrupt stored config from wedging playback.
+#define MACRO_HOLD_MIN_MS 1
+#define MACRO_HOLD_MAX_MS 5000
+#define MACRO_DELAY_MAX_MS 5000
 
 void KeyboardDriver::initialize() {
 	keyboardReport = {
@@ -21,6 +28,10 @@ void KeyboardDriver::initialize() {
 		.xfer_cb = hidd_xfer_cb,
 		.sof = NULL
 	};
+
+	for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++)
+		activeMacros[i].macroIndex = 0;
+	lastKeyState.clear();
 }
 
 uint8_t KeyboardDriver::getMultimedia(uint8_t code) {
@@ -37,21 +48,26 @@ uint8_t KeyboardDriver::getMultimedia(uint8_t code) {
 }
 
 void KeyboardDriver::process() {
-	const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
+	const Config& config = Storage::getInstance().getConfig();
+	const KeyMapping& keyMapping = config.keyMapping;
 	const KeyMask& keyState = Storage::getInstance().keyState;
 	releaseAllKeys();
 
+	const uint32_t now = getMillis();
+
+	// Advance any running macros and apply their held steps to the report.
+	updateMacros(config, keyState, now);
+
 	// Direct pin -> keycode mapping. Each pressed pin emits its key (or
 	// modifier / multimedia key) while held. A pin with no keycode but a
-	// modifier mask still acts as a pure modifier (e.g. a Shift key).
+	// modifier mask still acts as a pure modifier (e.g. a Shift key). Pins
+	// mapped to a macro (macroIndices > 0) are handled by updateMacros.
 	for (Pin_t pin = 0; pin < (Pin_t)keyMapping.keycodes_count; pin++) {
+		if (pin < (Pin_t)MAX_KEYS && config.macroIndices[pin] != 0) continue;
 		if (!keyState.test(pin)) continue;
 
 		uint8_t keycode = keyMapping.keycodes[pin];
-		keyboardReport.modifier |= keyMapping.modifierMasks[pin];
-		if (keycode == 0) continue;
-
-		pressKey(keycode);
+		applyKey(keycode, keyMapping.modifierMasks[pin]);
 	}
 
 	// Wake up TinyUSB device
@@ -91,7 +107,12 @@ void KeyboardDriver::process() {
 	}
 }
 
-void KeyboardDriver::pressKey(uint8_t code) {
+// Apply a keycode with an explicit modifier mask to the reports. Shared by the
+// direct pin mapping and macro playback. keycode 0 contributes only modifiers.
+void KeyboardDriver::applyKey(uint8_t code, uint8_t modifiers) {
+	keyboardReport.modifier |= modifiers;
+	if (code == 0) return;
+
 	if (code >= MOUSE_BUTTON_LEFT && code <= MOUSE_BUTTON_FORWARD) {
 		// Mouse buttons (custom keycodes above the multimedia range): set the
 		// matching button bit. The report is sent separately in process().
@@ -103,6 +124,85 @@ void KeyboardDriver::pressKey(uint8_t code) {
 		keyboardReport.reportId = KEYBOARD_KEY_REPORT_ID;
 		keyboardReport.keycode[code / 8] |= 1 << (code % 8);
 	}
+}
+
+void KeyboardDriver::pressKey(uint8_t code) {
+	applyKey(code, 0);
+}
+
+// Advance macro playback and apply the currently-held steps to the report.
+// Edge-triggered on the macro pins: a rising edge starts a playback, a falling
+// edge stops it. Each active playback steps through its macro (holding each
+// step's key for holdMs, then waiting delayMs) and loops while its pin is held.
+void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState, uint32_t now) {
+	const Macro* macros = config.macros;
+	const pb_size_t macroCount = config.macros_count;
+
+	// Stop playbacks whose pin has been released (or fell out of range).
+	for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++) {
+		MacroPlayback& m = activeMacros[i];
+		if (m.macroIndex == 0) continue;
+		if (m.pin < MAX_KEYS && keyState.test(m.pin)) continue;
+		m.macroIndex = 0;
+	}
+
+	// Start playback on the rising edge of each macro pin.
+	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++) {
+		const uint32_t macroIndex = pin < (Pin_t)MAX_KEYS ? config.macroIndices[pin] : 0;
+		if (macroIndex == 0 || macroIndex > macroCount) continue;
+		if (!keyState.test(pin) || lastKeyState.test(pin)) continue;
+
+		MacroPlayback* slot = nullptr;
+		for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++) {
+			if (activeMacros[i].macroIndex == 0) { slot = &activeMacros[i]; break; }
+		}
+		if (slot == nullptr) continue;
+
+		slot->pin = (uint8_t)pin;
+		slot->macroIndex = (uint8_t)macroIndex;
+		slot->step = 0;
+		slot->holding = true;
+		slot->until = now; // applied this frame, hold timer starts below
+	}
+
+	// Step each active playback's state machine and apply the held step.
+	for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++) {
+		MacroPlayback& m = activeMacros[i];
+		if (m.macroIndex == 0) continue;
+		if (m.macroIndex > macroCount) { m.macroIndex = 0; continue; }
+
+		const Macro& macro = macros[m.macroIndex - 1];
+		if (macro.steps_count == 0) { m.macroIndex = 0; continue; }
+
+		const uint32_t holdMs = macro.steps[m.step].holdMs < MACRO_HOLD_MIN_MS
+			? MACRO_HOLD_MIN_MS : macro.steps[m.step].holdMs;
+		const uint32_t delayMs = macro.steps[m.step].delayMs > MACRO_DELAY_MAX_MS
+			? MACRO_DELAY_MAX_MS : macro.steps[m.step].delayMs;
+
+		if (m.holding) {
+			// First frame after a transition applies the step immediately.
+			if (m.until == now) {
+				m.until = now + holdMs;
+			}
+			// Hold finished: release the key and wait out this step's delay.
+			if (now >= m.until) {
+				m.holding = false;
+				m.until = now + delayMs;
+			}
+		} else if (now >= m.until) {
+			// Delay finished: move to the next step (looping at the end).
+			m.step = (m.step + 1) % macro.steps_count;
+			m.holding = true;
+			m.until = now + holdMs;
+		}
+
+		if (m.holding) {
+			const MacroStep& step = macro.steps[m.step];
+			applyKey(step.keycode, step.modifiers);
+		}
+	}
+
+	lastKeyState = keyState;
 }
 
 void KeyboardDriver::releaseAllKeys(void) {

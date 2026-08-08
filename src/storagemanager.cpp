@@ -1808,6 +1808,9 @@ static void applyDefaults(Config& config)
     config.keyMapping.modifierMasks_count = MAX_KEYS;
     config.keyMapping.midiNotes_count = MAX_KEYS;
     config.keyMapping.midiVelocities_count = MAX_KEYS;
+    // Macro triggers default to 0 (no macro) for every key; the macro
+    // definitions themselves default to empty (a no-op when triggered).
+    config.macroIndices_count = MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
     {
         config.keyMapping.keycodes[pin] = defaultKeycodes[pin];
@@ -1951,6 +1954,14 @@ void Storage::init() {
             config.keyMapping.keycodes[pin] = defaultKeycodes[pin];
             config.keyMapping.modifierMasks[pin] = defaultModifiers[pin];
         }
+    }
+    // Macro triggers default to 0 (no macro) for any stored config without
+    // the field; the macro definitions stay empty (a no-op when triggered).
+    if (config.macroIndices_count == 0)
+    {
+        config.macroIndices_count = MAX_KEYS;
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+            config.macroIndices[pin] = 0;
     }
     if (!config.has_ledOptions)
     {
