@@ -171,8 +171,8 @@ const KB_EXTRA_CLUSTERS = [
     keys: [
       [
         { label: 'LMB', value: 0xf5 },
-        { label: 'RMB', value: 0xf6 },
         { label: 'MMB', value: 0xf7 },
+        { label: 'RMB', value: 0xf6 },
       ],
       [
         { label: 'Back', value: 0xf8 },
@@ -198,7 +198,11 @@ const KEY_LABELS = {
   0x46: 'PrtSc', 0x47: 'ScrLk', 0x48: 'Pause', 0x49: 'Ins', 0x4a: 'Home',
   0x4b: 'PgUp', 0x4c: 'Del', 0x4d: 'End', 0x4e: 'PgDn',
   0x4f: '\u2192', 0x50: '\u2190', 0x51: '\u2193', 0x52: '\u2191',
-  0x53: 'NumLk', 0x58: 'KPEnt', 0x63: 'KP.', 0x65: 'Menu', 0x66: 'Power', 0x67: 'KP=',
+  0x53: 'NumLk', 0x54: 'KP/', 0x55: 'KP*', 0x56: 'KP-', 0x57: 'KP+', 0x58: 'KPEnt',
+  0x62: 'KP0', 0x63: 'KP.', 0x64: 'Intl\\', 0x65: 'Menu', 0x66: 'Power', 0x67: 'KP=',
+  0x74: 'Execute', 0x75: 'Help', 0x76: 'Menu', 0x77: 'Select', 0x78: 'Stop',
+  0x79: 'Again', 0x7a: 'Undo', 0x7b: 'Cut', 0x7c: 'Copy', 0x7d: 'Paste', 0x7e: 'Find',
+  0x86: 'Compose',
   0x7f: 'Mute', 0x80: 'Vol+', 0x81: 'Vol-',
   0xe8: 'Next', 0xe9: 'Prev', 0xf0: 'Stop', 0xf1: 'Play',
   0xf2: 'Mute', 0xf3: 'Vol+', 0xf4: 'Vol-',
@@ -212,7 +216,7 @@ function keyLabel(code) {
   if (code >= 0x1e && code <= 0x26) return String.fromCharCode(0x31 + code - 0x1e); // 1-9
   if (code >= 0x3a && code <= 0x45) return 'F' + (code - 0x3a + 1); // F1-F12
   if (code >= 0x68 && code <= 0x73) return 'F' + (code - 0x68 + 13); // F13-F24
-  if (code >= 0x59 && code <= 0x62) return 'KP' + (code - 0x59 + 1); // KP1-KP9
+  if (code >= 0x59 && code <= 0x61) return 'KP' + (code - 0x59 + 1); // KP1-KP9
   return KEY_LABELS[code] || '';
 }
 
