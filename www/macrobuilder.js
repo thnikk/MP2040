@@ -229,16 +229,20 @@ class MacroBuilder {
     }
     container.appendChild(header);
 
+    const list = document.createElement('div');
+    list.className = 'macro-step-list';
+
+    // Empty state: a centered placeholder inside the fixed-height list so the
+    // page layout doesn't shift as steps are added.
     if (steps.length === 0) {
       const empty = document.createElement('div');
-      empty.className = 'macro-steps-empty';
+      empty.className = 'macro-step-list-empty';
       empty.textContent = 'No steps yet — press "Add keys…" to build the sequence.';
-      container.appendChild(empty);
+      list.appendChild(empty);
+      container.appendChild(list);
       return;
     }
 
-    const list = document.createElement('div');
-    list.className = 'macro-step-list';
     steps.forEach((step, idx) => {
       const chip = document.createElement('div');
       chip.className = 'macro-step-chip';

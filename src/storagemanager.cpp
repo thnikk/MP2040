@@ -1843,6 +1843,43 @@ static void applyDefaults(Config& config)
 // Profile helpers
 // -----------------------------------------------------
 
+// Normalize a key map against the board defaults: fix the per-array counts
+// and backfill any unassigned key (keycode 0) with the board's default. A
+// stored config may carry a key map from an older firmware or a different
+// board whose pins/indices are empty here; running this on the working copy
+// guarantees the boot key map is always usable. Intentionally blank keys are
+// treated as "use the board default", matching the load-time behavior.
+static void normalizeKeyMapping(KeyMapping& km)
+{
+    if (km.keycodes_count == 0)
+        km.keycodes_count = MAX_KEYS;
+    if (km.modifierMasks_count == 0)
+        km.modifierMasks_count = MAX_KEYS;
+    // midiNotes default to 0 (silent) for any stored config without the field.
+    if (km.midiNotes_count == 0)
+    {
+        km.midiNotes_count = MAX_KEYS;
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+            km.midiNotes[pin] = 0;
+    }
+    // midiVelocities default to 0 (use the global velocity) for any stored
+    // config without the field.
+    if (km.midiVelocities_count == 0)
+    {
+        km.midiVelocities_count = MAX_KEYS;
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+            km.midiVelocities[pin] = 0;
+    }
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    {
+        if (km.keycodes[pin] == 0 && defaultKeycodes[pin] != 0)
+        {
+            km.keycodes[pin] = defaultKeycodes[pin];
+            km.modifierMasks[pin] = defaultModifiers[pin];
+        }
+    }
+}
+
 // Seed all profiles (0-3) as copies of the current base mapping. Runs once for
 // configs that predate profiles so the alternates always start from a known
 // state and stay editable.
@@ -1927,34 +1964,10 @@ void Storage::init() {
         }
     }
 
-    // Fill any unset / unconfigured fields from board defaults
-    if (config.keyMapping.keycodes_count == 0)
-        config.keyMapping.keycodes_count = MAX_KEYS;
-    if (config.keyMapping.modifierMasks_count == 0)
-        config.keyMapping.modifierMasks_count = MAX_KEYS;
-    // midiNotes default to 0 (silent) for any stored config without the field.
-    if (config.keyMapping.midiNotes_count == 0)
-    {
-        config.keyMapping.midiNotes_count = MAX_KEYS;
-        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
-            config.keyMapping.midiNotes[pin] = 0;
-    }
-    // midiVelocities default to 0 (use the global velocity) for any stored
-    // config without the field.
-    if (config.keyMapping.midiVelocities_count == 0)
-    {
-        config.keyMapping.midiVelocities_count = MAX_KEYS;
-        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
-            config.keyMapping.midiVelocities[pin] = 0;
-    }
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
-    {
-        if (config.keyMapping.keycodes[pin] == 0 && defaultKeycodes[pin] != 0)
-        {
-            config.keyMapping.keycodes[pin] = defaultKeycodes[pin];
-            config.keyMapping.modifierMasks[pin] = defaultModifiers[pin];
-        }
-    }
+    // Fill any unset / unconfigured fields from board defaults. The stored
+    // config may predate some fields or come from a different board; normalize
+    // the working copy so the board has a usable key map.
+    normalizeKeyMapping(config.keyMapping);
     // Macro triggers default to 0 (no macro) for any stored config without
     // the field; the macro definitions stay empty (a no-op when triggered).
     if (config.macroIndices_count == 0)
@@ -2042,6 +2055,12 @@ void Storage::init() {
     {
         copyProfileToTopLevel(config.profiles[config.activeProfile], config);
     }
+
+    // A stored active profile from an older firmware or a different board can
+    // carry an empty key map, which would leave the board (and the board view
+    // in the web config) with no key assignments. Normalize the working copy
+    // again so unassigned keys fall back to the board defaults.
+    normalizeKeyMapping(config.keyMapping);
 }
 
 /**

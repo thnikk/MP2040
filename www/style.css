@@ -1587,16 +1587,28 @@ button:disabled {
   border-color: var(--nord11);
 }
 
-.macro-steps-empty {
-  font-size: 0.85rem;
-  color: var(--muted);
-  opacity: 0.8;
-}
-
 .macro-step-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* Fixed height: ~6 chips worth of space, scrolls beyond. Keeps the page
+     layout stable as steps are added (no shifting). */
+  height: 330px;
+  overflow-y: auto;
+	border: 2px dashed var(--bg-3);
+	border-radius: 10px;
+	padding: 10px;
+}
+
+.macro-step-list-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--muted);
+  opacity: 0.8;
 }
 
 .macro-step-chip {
@@ -1605,7 +1617,7 @@ button:disabled {
   align-items: center;
   gap: 12px;
   padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-4);
   border: 1px solid var(--card-border);
   border-radius: 999px;
 }
@@ -1691,7 +1703,7 @@ button:disabled {
   padding: 0;
   border: 1px solid var(--card-border);
   border-radius: 999px;
-  background: transparent;
+  background: var(--bg-1);
   color: var(--muted);
   font-size: 1.1rem;
   line-height: 1;
