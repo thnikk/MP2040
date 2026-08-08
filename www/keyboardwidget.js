@@ -10,10 +10,13 @@
 const KB_MACRO_COUNT = 8;
 
 class KeyboardWidget {
-  constructor({ container, keycode, mask, macroIndex, onChange }) {
+  constructor({ container, keycode, mask, macroIndex, macroSlots, onChange }) {
     this.keycode = keycode || 0;
     this.mask = mask || 0;
     this.macroIndex = macroIndex || 0;
+    // The macro slot row is optional (hidden e.g. inside the macro builder's
+    // key picker, where M1-M8 have no meaning).
+    this.macroSlots = macroSlots !== false;
     this.onChange = onChange || (() => {});
     this.keys = [];
     this.macroButtons = [];
@@ -158,23 +161,25 @@ class KeyboardWidget {
     this.root.appendChild(clustersRow);
 
     // Macro slot row: M1-M8. A pin is either a plain key or a macro trigger.
-    const macroRow = document.createElement('div');
-    macroRow.className = 'kb-macro-row';
-    const macroLabel = document.createElement('div');
-    macroLabel.className = 'kb-macro-label';
-    macroLabel.textContent = 'Macro';
-    macroRow.appendChild(macroLabel);
-    for (let i = 1; i <= KB_MACRO_COUNT; i++) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'kb-macro-slot';
-      btn.textContent = 'M' + i;
-      btn.title = 'Assign macro M' + i + ' (click again to clear)';
-      btn.addEventListener('click', () => this.handleMacroClick(i));
-      this.macroButtons.push(btn);
-      macroRow.appendChild(btn);
+    if (this.macroSlots) {
+      const macroRow = document.createElement('div');
+      macroRow.className = 'kb-macro-row';
+      const macroLabel = document.createElement('div');
+      macroLabel.className = 'kb-macro-label';
+      macroLabel.textContent = 'Macro';
+      macroRow.appendChild(macroLabel);
+      for (let i = 1; i <= KB_MACRO_COUNT; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'kb-macro-slot';
+        btn.textContent = 'M' + i;
+        btn.title = 'Assign macro M' + i + ' (click again to clear)';
+        btn.addEventListener('click', () => this.handleMacroClick(i));
+        this.macroButtons.push(btn);
+        macroRow.appendChild(btn);
+      }
+      this.root.appendChild(macroRow);
     }
-    this.root.appendChild(macroRow);
   }
 
   render() {

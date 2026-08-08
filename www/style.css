@@ -1535,13 +1535,17 @@ button:disabled {
   border-color: transparent;
 }
 
+/* Live step summary shown inside the macro key picker modal */
+.macro-modal-steps {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 6px 0 2px;
+  line-height: 1.4;
+}
+
 /* Macro builder (Settings page) */
 .macro-builder {
   margin-top: 8px;
-}
-
-.macro-keyboard {
-  margin-top: 14px;
 }
 
 .macro-steps {
@@ -1558,12 +1562,24 @@ button:disabled {
   margin-bottom: 8px;
 }
 
+.macro-steps-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.macro-add-btn,
 .macro-clear-btn {
   border: 1px solid var(--card-border);
   border-radius: 999px;
   padding: 4px 14px;
   font-size: 0.85rem;
   cursor: pointer;
+}
+
+.macro-add-btn:hover {
+  background: var(--hover-bg);
+  border-color: var(--nord10);
 }
 
 .macro-clear-btn:hover {
@@ -1584,14 +1600,59 @@ button:disabled {
 }
 
 .macro-step-chip {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 8px 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--card-border);
-  border-radius: 8px;
-  flex-wrap: wrap;
+  border-radius: 999px;
+}
+
+.macro-step-grip {
+  cursor: grab;
+  color: var(--muted);
+  opacity: 0.6;
+  font-size: 1rem;
+  line-height: 1;
+  user-select: none;
+  flex: 0 0 auto;
+}
+
+.macro-step-grip:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.macro-step-chip.dragging {
+  opacity: 0.4;
+}
+
+.macro-step-chip.drag-over {
+  border-color: var(--nord10);
+  box-shadow: 0 0 0 1px var(--nord10);
+}
+
+/* Insertion line shown while dragging between two steps */
+.macro-step-chip.insert-before::before,
+.macro-step-chip.insert-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--nord10);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--nord10) 40%, transparent);
+}
+
+.macro-step-chip.insert-before::before {
+  top: -5px;
+}
+
+.macro-step-chip.insert-after::after {
+  bottom: -5px;
 }
 
 .macro-step-label {
@@ -1599,24 +1660,35 @@ button:disabled {
   font-family: 'Nunito', monospace;
   font-weight: 700;
   flex: 1 1 auto;
+  white-space: nowrap;
 }
 
 .macro-step-time {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--muted);
 }
 
-.macro-step-time .spinner {
-  transform: scale(0.82);
-  transform-origin: left center;
+/* Compact spinners (no transform-scale, so no phantom space on the right) */
+.macro-step-time .spinner-btn {
+  padding: 6px;
+}
+
+.macro-step-time .spinner-input {
+  width: 2.6em;
+  height: 24px;
+  font-size: 0.85rem;
 }
 
 .macro-step-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 28px;
   height: 28px;
+  padding: 0;
   border: 1px solid var(--card-border);
   border-radius: 999px;
   background: transparent;

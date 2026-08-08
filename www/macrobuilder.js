@@ -1,11 +1,13 @@
 // MacroBuilder — visual macro editor for the Settings page.
 //
-// Eight macro slots (M1-M8). Select a slot with the tabs, then click keys on
-// the mini keyboard to append steps in order. Modifier keys (0xE0-0xE7) toggle
-// a held-modifier mask that applies to the next appended key (so Ctrl+C is:
-// click Ctrl, click C). Each step chip shows its key and per-step hold/delay
-// spinners (ms) plus a remove button. Macros play (loop-while-held) when a
-// key mapped to them is pressed.
+// Eight macro slots (M1-M8). Select a slot with the tabs, then use the
+// "Add keys…" button to open a modal with the QMK keyboard. The keyboard
+// behaves like the regular key picker: clicking a non-modifier selects it
+// (replacing the previous selection) and modifier keys (0xE0-0xE7) toggle
+// modifier bits. Press "Add" to append the current key/combo as a step; press
+// "Add" repeatedly to keep appending. Each step chip shows its key and
+// per-step hold/delay spinners (ms) plus a remove button. Macros play
+// (loop-while-held) when a key mapped to them is pressed.
 //
 //   new MacroBuilder({ container, macros, onChange })
 //   builder.getValue() -> [{ steps: [{keycode, modifiers, holdMs, delayMs}] } x8]
@@ -19,9 +21,9 @@ class MacroBuilder {
     this.macros = (macros || []).map((m) => ({ steps: (m && m.steps || []).slice() }));
     while (this.macros.length < MB_MACRO_COUNT) this.macros.push({ steps: [] });
     this.current = 0;
-    this.modMask = 0;
     this.onChange = onChange || (() => {});
     this.stepSpinners = [];
+    this.dragIndex = -1;
     this.buildDom(container);
     this.render();
   }
@@ -42,18 +44,13 @@ class MacroBuilder {
 
   // ---- editing ----------------------------------------------------------
 
-  appendStep(keycode) {
+  appendStep(keycode, modifiers) {
     const steps = this.macros[this.current].steps;
     if (steps.length >= MB_MAX_STEPS) {
       Toast.show(`Macro M${this.current + 1} is full (${MB_MAX_STEPS} steps).`, 'error');
       return;
     }
-    steps.push({
-      keycode,
-      modifiers: this.modMask,
-      holdMs: 30,
-      delayMs: 10,
-    });
+    steps.push({ keycode, modifiers, holdMs: 30, delayMs: 10 });
     this.render();
     this.notify();
   }
@@ -64,110 +61,144 @@ class MacroBuilder {
     this.notify();
   }
 
+  // Move the chip being dragged onto another chip's position (drop "over" an
+  // item): the dragged chip takes that item's position.
+  dropDraggedOn(targetIndex) {
+    const steps = this.macros[this.current].steps;
+    const from = this.dragIndex;
+    this.dragIndex = -1;
+    if (from < 0 || from >= steps.length || targetIndex < 0 ||
+        targetIndex >= steps.length || from === targetIndex) return;
+    const [moved] = steps.splice(from, 1);
+    steps.splice(targetIndex, 0, moved);
+    this.render();
+    this.notify();
+  }
+
+  // Insert the dragged chip in a gap, before the item at `insertIndex`
+  // (0..steps.length). The index is adjusted for the removal when the chip
+  // moves downward.
+  insertDraggedAt(insertIndex) {
+    const steps = this.macros[this.current].steps;
+    const from = this.dragIndex;
+    this.dragIndex = -1;
+    if (from < 0 || from >= steps.length || insertIndex < 0 ||
+        insertIndex > steps.length) return;
+    if (insertIndex === from || insertIndex === from + 1) return; // no move
+    const [moved] = steps.splice(from, 1);
+    let at = insertIndex;
+    if (from < at) at -= 1;
+    steps.splice(at, 0, moved);
+    this.render();
+    this.notify();
+  }
+
+  clearDragFeedback() {
+    if (this.stepsEl) {
+      this.stepsEl.querySelectorAll('.macro-step-chip').forEach((c) =>
+        c.classList.remove('dragging', 'drag-over', 'insert-before', 'insert-after'));
+    }
+    this.dropMode = null;
+  }
+
+  // Compute the drop target from the pointer Y: inside the top/bottom band of
+  // a chip (or in the gap) means "between items" (insert, shown with a line);
+  // the middle of a chip means "over the item" (swap, shown with an outline).
+  onListDragover(e, list) {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    const chips = [...list.querySelectorAll('.macro-step-chip')];
+    chips.forEach((c) => c.classList.remove('drag-over', 'insert-before', 'insert-after'));
+
+    const clientY = e.clientY;
+    let index = -1;
+    let mode = 'none';
+    for (let i = 0; i < chips.length; i++) {
+      const rect = chips[i].getBoundingClientRect();
+      const band = Math.min(14, rect.height * 0.25);
+      if (clientY < rect.top + band) {
+        index = i;
+        mode = 'insert';
+        chips[i].classList.add('insert-before');
+        break;
+      }
+      if (clientY < rect.bottom) {
+        index = i;
+        mode = 'swap';
+        chips[i].classList.add('drag-over');
+        break;
+      }
+    }
+    if (mode === 'none') {
+      index = chips.length;
+      mode = 'insert';
+      if (chips.length) chips[chips.length - 1].classList.add('insert-after');
+    }
+    this.dropMode = { index, mode };
+  }
+
+  onListDrop(e) {
+    e.preventDefault();
+    const dm = this.dropMode;
+    this.clearDragFeedback();
+    if (!dm || dm.mode === 'none' || dm.index < 0) {
+      this.dragIndex = -1;
+      return;
+    }
+    if (dm.mode === 'swap') this.dropDraggedOn(dm.index);
+    else this.insertDraggedAt(dm.index);
+  }
+
   clearMacro() {
     this.macros[this.current].steps = [];
     this.render();
     this.notify();
   }
 
-  handleKeyClick(key) {
-    if (kbIsModifier(key.value)) {
-      this.modMask ^= 1 << (key.value - KB_MODIFIER_MIN);
-      this.render();
-    } else {
-      this.appendStep(key.value);
-    }
-  }
-
   selectMacro(index) {
     this.current = index;
-    this.modMask = 0;
     this.render();
   }
 
-  // ---- rendering --------------------------------------------------------
+  // ---- modal keyboard ----------------------------------------------------
 
-  makeKey(key) {
-    if (key.spacer) {
-      const el = document.createElement('div');
-      el.className = key.flex ? 'kb-flex-spacer' : 'kb-spacer ' + kbSizeClass(key.size);
-      return el;
+  openKeyboardModal() {
+    if (!this.modalEl) return;
+    document.getElementById('macro-key-modal-title').textContent =
+      `Add keys to M${this.current + 1}`;
+    this.keyWidget.setValue(0, 0, 0);
+    this.updateModalSteps();
+    this.modalEl.hidden = false;
+  }
+
+  closeKeyboardModal() {
+    if (this.modalEl) this.modalEl.hidden = true;
+  }
+
+  // Append the current selection as a step, then close the modal.
+  addSelection() {
+    const { keycode, mask } = this.keyWidget.getValue();
+    if (!keycode && !mask) {
+      Toast.show('Pick a key (and any modifiers) first.', 'error');
+      return;
     }
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'kb-key' + (kbIsModifier(key.value) ? ' mod' : '') + ' ' + kbSizeClass(key.size);
-    btn.addEventListener('click', () => this.handleKeyClick(key));
-    btn.title = key.label;
-    btn.textContent = key.label;
-    return btn;
+    this.appendStep(keycode, mask);
+    this.closeKeyboardModal();
   }
 
-  renderRow(row) {
-    const wrap = document.createElement('div');
-    wrap.className = 'keyboard-row';
-    row.forEach((key) => wrap.appendChild(this.makeKey(key)));
-    return wrap;
+  // Live summary of the macro's steps shown inside the modal (the step list
+  // itself is behind the overlay).
+  updateModalSteps() {
+    const el = document.getElementById('macro-key-modal-steps');
+    if (!el) return;
+    const steps = this.macros[this.current].steps;
+    const labels = steps.map((s) => stepLabel(s)).filter(Boolean);
+    el.textContent = labels.length
+      ? `M${this.current + 1}: ${labels.join(' \u2192 ')}`
+      : `M${this.current + 1}: no steps yet`;
   }
 
-  renderKeyboard(container) {
-    this.keyButtons = [];
-    container.innerHTML = '';
-    KB_MAIN_ROWS.forEach((row, ri) => {
-      if (ri < 2) {
-        const el = document.createElement('div');
-        el.className = 'keyboard-row f-row';
-        let group = document.createElement('div');
-        group.className = 'f-cluster';
-        for (const key of row) {
-          if (key.flex) {
-            el.appendChild(group);
-            group = document.createElement('div');
-            group.className = 'f-cluster';
-          } else {
-            const k = this.makeKey(key);
-            if (k.tagName === 'BUTTON') this.keyButtons.push(k);
-            group.appendChild(k);
-          }
-        }
-        el.appendChild(group);
-        container.appendChild(el);
-      } else {
-        const rowEl = this.renderRow(row);
-        rowEl.querySelectorAll('button').forEach((b) => this.keyButtons.push(b));
-        container.appendChild(rowEl);
-      }
-    });
-
-    const clustersRow = document.createElement('div');
-    clustersRow.className = 'kb-clusters-row';
-    KB_EXTRA_CLUSTERS.forEach((cluster) => {
-      const box = document.createElement('div');
-      box.className = 'kb-cluster';
-      const label = document.createElement('div');
-      label.className = 'kb-cluster-label';
-      label.textContent = cluster.label;
-      box.appendChild(label);
-      cluster.keys.forEach((row) => box.appendChild(this.renderRow(row)));
-      clustersRow.appendChild(box);
-    });
-    container.appendChild(clustersRow);
-
-    // Modifier keys are "pressed" while their bit is in the held mask. The
-    // layout is walked in the same order the buttons were pushed above, so
-    // zipping modifier values against the .mod buttons lines up.
-    const mods = [];
-    KB_MAIN_ROWS.concat(KB_EXTRA_CLUSTERS.flatMap((c) => c.keys)).forEach((row) => {
-      row.forEach((key) => {
-        if (!key.spacer && kbIsModifier(key.value)) mods.push(key.value);
-      });
-    });
-    const modBit = (v) => 1 << (v - KB_MODIFIER_MIN);
-    let mi = 0;
-    this.keyButtons.forEach((btn) => {
-      if (!btn.classList.contains('mod')) return;
-      btn.classList.toggle('active', Boolean(this.modMask & modBit(mods[mi++])));
-    });
-  }
+  // ---- rendering --------------------------------------------------------
 
   renderSteps(container) {
     this.stepSpinners = [];
@@ -176,9 +207,18 @@ class MacroBuilder {
 
     const header = document.createElement('div');
     header.className = 'macro-steps-header';
+    const left = document.createElement('div');
+    left.className = 'macro-steps-left';
     const count = document.createElement('span');
     count.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'}`;
-    header.appendChild(count);
+    left.appendChild(count);
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'macro-add-btn';
+    add.textContent = 'Add keys…';
+    add.addEventListener('click', () => this.openKeyboardModal());
+    left.appendChild(add);
+    header.appendChild(left);
     if (steps.length > 0) {
       const clear = document.createElement('button');
       clear.type = 'button';
@@ -192,7 +232,7 @@ class MacroBuilder {
     if (steps.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'macro-steps-empty';
-      empty.textContent = 'Click keys below to add steps (modifier keys are held while on).';
+      empty.textContent = 'No steps yet — press "Add keys…" to build the sequence.';
       container.appendChild(empty);
       return;
     }
@@ -202,6 +242,26 @@ class MacroBuilder {
     steps.forEach((step, idx) => {
       const chip = document.createElement('div');
       chip.className = 'macro-step-chip';
+
+      // Drag handle at the start of the row: only the handle starts a drag.
+      const grip = document.createElement('span');
+      grip.className = 'macro-step-grip';
+      grip.textContent = '\u2630';
+      grip.title = 'Drag to reorder';
+      grip.draggable = true;
+      grip.addEventListener('dragstart', (e) => {
+        this.dragIndex = idx;
+        chip.classList.add('dragging');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(idx));
+        }
+      });
+      grip.addEventListener('dragend', () => {
+        this.clearDragFeedback();
+        this.dragIndex = -1;
+      });
+      chip.appendChild(grip);
 
       const label = document.createElement('span');
       label.className = 'macro-step-label';
@@ -255,16 +315,25 @@ class MacroBuilder {
       this.stepSpinners.push(hold, delay);
     });
     container.appendChild(list);
+
+    // Drag-and-drop reordering, handled at the list level: dragging starts on
+    // a chip's grip; hovering the middle of a chip outlines it for a swap,
+    // hovering a gap (chip edges) draws a line for an insert.
+    list.addEventListener('dragover', (e) => this.onListDragover(e, list));
+    list.addEventListener('drop', (e) => this.onListDrop(e));
+    list.addEventListener('dragleave', (e) => {
+      if (!list.contains(e.relatedTarget)) this.clearDragFeedback();
+    });
   }
 
   render() {
     this.tabs.forEach((btn, i) => {
       const count = this.macros[i].steps.length;
       btn.classList.toggle('active', i === this.current);
-      btn.textContent = `M${i + 1}${count ? ' · ' + count : ''}`;
+      btn.textContent = `M${i + 1}${count ? ' \u00b7 ' + count : ''}`;
     });
-    this.renderKeyboard(this.keyboardEl);
     this.renderSteps(this.stepsEl);
+    this.updateModalSteps();
   }
 
   buildDom(container) {
@@ -286,12 +355,33 @@ class MacroBuilder {
 
     const hint = document.createElement('p');
     hint.className = 'hint';
-    hint.textContent = 'Select a macro slot, then click keys to build its sequence. Click a modifier key to hold it for the next keys, click again to release.';
+    hint.textContent = 'Select a macro slot, then press "Add keys…" to open the key picker. Pick a key (and any modifiers), then press Add to append it to the sequence. Drag steps to reorder them.';
     this.root.appendChild(hint);
 
-    this.keyboardEl = document.createElement('div');
-    this.keyboardEl.className = 'kb-main-centered macro-keyboard';
-    this.root.appendChild(this.keyboardEl);
+    // The key picker lives in its own modal (#macro-key-modal in index.html)
+    // and reuses the KeyboardWidget's selection behavior (no macro slots).
+    this.modalEl = document.getElementById('macro-key-modal');
+    const kbContainer = document.getElementById('macro-key-modal-keyboard');
+    if (this.modalEl && kbContainer) {
+      this.keyWidget = new KeyboardWidget({
+        container: kbContainer,
+        keycode: 0,
+        mask: 0,
+        macroSlots: false,
+        onChange: () => {},
+      });
+
+      const closeBtn = document.getElementById('macro-key-modal-close');
+      const addBtn = document.getElementById('macro-key-modal-add');
+      if (closeBtn) closeBtn.addEventListener('click', () => this.closeKeyboardModal());
+      if (addBtn) addBtn.addEventListener('click', () => this.addSelection());
+      this.modalEl.addEventListener('click', (e) => {
+        if (e.target === this.modalEl) this.closeKeyboardModal();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !this.modalEl.hidden) this.closeKeyboardModal();
+      });
+    }
 
     this.stepsEl = document.createElement('div');
     this.stepsEl.className = 'macro-steps';
