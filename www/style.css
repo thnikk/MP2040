@@ -1437,14 +1437,14 @@ button:disabled {
   width: 100%;
 }
 
-.sz-1u { width: 48px; min-width: 48px; }
-.sz-1_25u { width: 60px; min-width: 60px; }
-.sz-1_5u { width: 72px; min-width: 72px; }
-.sz-1_75u { width: 84px; min-width: 84px; }
-.sz-2u { width: 96px; min-width: 96px; }
-.sz-2_25u { width: 108px; min-width: 108px; }
-.sz-2_75u { width: 132px; min-width: 132px; }
-.sz-6_25u { width: 300px; min-width: 300px; }
+.sz-1u { min-width: 48px; }
+.sz-1_25u { min-width: 60px; }
+.sz-1_5u { min-width: 72px; }
+.sz-1_75u { min-width: 84px; }
+.sz-2u { min-width: 96px; }
+.sz-2_25u { min-width: 108px; }
+.sz-2_75u { min-width: 132px; }
+.sz-6_25u { min-width: 300px; }
 
 .kb-key {
   height: 48px;

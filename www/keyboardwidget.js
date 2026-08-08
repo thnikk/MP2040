@@ -73,14 +73,21 @@ class KeyboardWidget {
   }
 
   makeKey(key) {
+    const units = key.size ? parseFloat(key.size) : 1;
     if (key.spacer) {
       const el = document.createElement('div');
-      el.className = key.flex ? 'kb-flex-spacer' : 'kb-spacer ' + kbSizeClass(key.size);
+      if (key.flex) {
+        el.className = 'kb-flex-spacer';
+      } else {
+        el.className = 'kb-spacer ' + kbSizeClass(key.size);
+        el.style.flex = units + ' 0 0';
+      }
       return el;
     }
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'kb-key' + (kbIsModifier(key.value) ? ' mod' : '') + ' ' + kbSizeClass(key.size);
+    btn.style.flex = units + ' 0 0';
     btn.addEventListener('click', () => this.handleKeyClick(key.value));
     btn.title = key.label;
 
