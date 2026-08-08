@@ -613,6 +613,10 @@ html[data-theme="light"] select {
   border-color: var(--accent);
 }
 
+.ms-control {
+	min-height: 43px;
+}
+
 .ms-tags {
   display: flex;
   flex-wrap: wrap;
@@ -627,7 +631,7 @@ html[data-theme="light"] select {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 1rem;
   padding: 0.15rem 0.5rem;
 }
 
@@ -652,9 +656,18 @@ html[data-theme="light"] select {
 }
 
 .ms-caret {
-  color: var(--muted);
-  font-size: 0.8rem;
-  padding-right: 0.15rem;
+	width: 12px;
+	height: 8px;
+	margin-right: 10px;
+	font-size: 0;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23d8dee9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: 12px 8px;
+}
+
+html[data-theme="light"] .ms-caret {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%234c566a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 .ms-menu {
@@ -669,6 +682,7 @@ html[data-theme="light"] select {
   border: 1px solid var(--card-border);
   border-radius: 12px;
   overflow: hidden;
+	box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
 }
 
 .ms.open .ms-menu {
@@ -678,12 +692,13 @@ html[data-theme="light"] select {
 .ms-search {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.4rem;
+  padding: 10px;
   background: var(--page-bg);
   color: var(--text);
   border: none;
   border-bottom: 1px solid var(--card-border);
   font-family: inherit;
+	font-size: 1rem;
 }
 
 .ms-search:focus {
@@ -697,7 +712,7 @@ html[data-theme="light"] select {
 
 .ms-group-label {
   padding: 0.3rem 0.5rem;
-  font-size: 0.7rem;
+  font-size: 1rem;
   text-transform: uppercase;
   color: var(--muted);
   background: var(--page-bg);
@@ -706,7 +721,7 @@ html[data-theme="light"] select {
 .ms-option {
   padding: 0.35rem 0.5rem;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .ms-option:hover,
@@ -1291,6 +1306,13 @@ button:disabled {
   max-width: 880px;
   max-height: 90vh;
   overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.modal-reboot {
+	max-width: 400px;
 }
 
 .modal-header {
@@ -1325,16 +1347,14 @@ button:disabled {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 1rem;
+  gap: 10px;
 }
 
 /* Reboot mode picker */
 .modal-options {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 1rem;
+  gap: 10px;
 }
 
 .modal-options .modal-option {
@@ -1360,7 +1380,6 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  margin-top: 16px;
   user-select: none;
 }
 

@@ -107,14 +107,14 @@ const KB_MAIN_ROWS = [
     { label: 'Shift', value: 0xe5, size: '2.75u' },
   ],
   [
-    { label: 'Ctrl', value: 0xe0, size: '1.25u' },
-    { label: 'Win', value: 0xe3, size: '1.25u' },
-    { label: 'Alt', value: 0xe2, size: '1.25u' },
+    { label: 'Ctrl', value: 0xe0, size: '1.75u' },
+    { label: 'Win', value: 0xe3, size: '1u' },
+    { label: 'Alt', value: 0xe2, size: '1u' },
     { label: 'Space', value: 0x2c, size: '6.25u' },
-    { label: 'Alt', value: 0xe6, size: '1.25u' },
-    { label: 'Win', value: 0xe7, size: '1.25u' },
-    { label: '', value: 0, size: '1.5u', spacer: true },
-    { label: 'Ctrl', value: 0xe4, size: '1.25u' },
+    { label: 'Alt', value: 0xe6, size: '1.5u' },
+    { label: 'Win', value: 0xe7, size: '1u' },
+    { label: 'Menu', value: 0x76, size: '1u' },
+    { label: 'Ctrl', value: 0xe4, size: '1.75u' },
   ],
 ];
 
