@@ -528,6 +528,9 @@ section h2 {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+	background: var(--bg-1);
+	padding: 5px;
+	border-radius: 999px;
 }
 
 .profile-tab {
@@ -535,11 +538,13 @@ section h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 5px;
   flex: 1 1 0;
   border-radius: 999px;
   padding: 8px 18px;
-  font-size: 0.9rem;
+  font-size: 1rem;
+	background: var(--bg-2);
+	border: none;
 }
 
 .profile-tab.boot::after {
@@ -555,8 +560,7 @@ section h2 {
 }
 
 .profile-tab.active {
-  background: var(--accent);
-  color: var(--page-bg);
+  background: var(--bg-4);
   border-color: transparent;
 }
 
@@ -641,7 +645,7 @@ html[data-theme="light"] select {
   color: var(--muted);
   cursor: pointer;
   padding: 0;
-  font-size: 0.85rem;
+  font-size: 1rem;
   line-height: 1;
 }
 
@@ -651,7 +655,7 @@ html[data-theme="light"] select {
 
 .ms-placeholder {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 1rem;
   margin: 0px 10px;
 }
 
@@ -1564,19 +1568,20 @@ button:disabled {
 
 /* Macro builder (Settings page) */
 .macro-builder {
-  margin-top: 8px;
+	display:flex;
+	flex-direction: column;
+	gap: 10px;
 }
 
 .macro-steps {
-  margin-top: 16px;
 }
 
 .macro-steps-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  font-size: 0.85rem;
+  gap: 10px;
+  font-size: 1rem;
   color: var(--muted);
   margin-bottom: 8px;
 }
@@ -1592,7 +1597,7 @@ button:disabled {
   border: 1px solid var(--card-border);
   border-radius: 999px;
   padding: 4px 14px;
-  font-size: 0.85rem;
+  font-size: 1rem;
   cursor: pointer;
 }
 

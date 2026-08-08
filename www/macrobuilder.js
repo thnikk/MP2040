@@ -167,7 +167,7 @@ class MacroBuilder {
     document.getElementById('macro-key-modal-title').textContent =
       `Add keys to M${this.current + 1}`;
     this.keyWidget.setValue(0, 0, 0);
-    this.updateModalSteps();
+    if (this.modalSelect) this.modalSelect.setValue(0, 0, 0);
     this.modalEl.hidden = false;
   }
 
@@ -186,18 +186,6 @@ class MacroBuilder {
     this.closeKeyboardModal();
   }
 
-  // Live summary of the macro's steps shown inside the modal (the step list
-  // itself is behind the overlay).
-  updateModalSteps() {
-    const el = document.getElementById('macro-key-modal-steps');
-    if (!el) return;
-    const steps = this.macros[this.current].steps;
-    const labels = steps.map((s) => stepLabel(s)).filter(Boolean);
-    el.textContent = labels.length
-      ? `M${this.current + 1}: ${labels.join(' \u2192 ')}`
-      : `M${this.current + 1}: no steps yet`;
-  }
-
   // ---- rendering --------------------------------------------------------
 
   renderSteps(container) {
@@ -207,26 +195,26 @@ class MacroBuilder {
 
     const header = document.createElement('div');
     header.className = 'macro-steps-header';
-    const left = document.createElement('div');
-    left.className = 'macro-steps-left';
     const count = document.createElement('span');
     count.textContent = `${steps.length} step${steps.length === 1 ? '' : 's'}`;
-    left.appendChild(count);
+    header.appendChild(count);
+    const headerBtns = document.createElement('div');
+    headerBtns.className = 'macro-steps-left';
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'macro-add-btn';
     add.textContent = 'Add keys…';
     add.addEventListener('click', () => this.openKeyboardModal());
-    left.appendChild(add);
-    header.appendChild(left);
+    headerBtns.appendChild(add);
     if (steps.length > 0) {
       const clear = document.createElement('button');
       clear.type = 'button';
       clear.className = 'macro-clear-btn';
       clear.textContent = 'Clear';
       clear.addEventListener('click', () => this.clearMacro());
-      header.appendChild(clear);
+      headerBtns.appendChild(clear);
     }
+    header.appendChild(headerBtns);
     container.appendChild(header);
 
     const list = document.createElement('div');
@@ -337,7 +325,6 @@ class MacroBuilder {
       btn.textContent = `M${i + 1}${count ? ' \u00b7 ' + count : ''}`;
     });
     this.renderSteps(this.stepsEl);
-    this.updateModalSteps();
   }
 
   buildDom(container) {
@@ -357,22 +344,37 @@ class MacroBuilder {
     }
     this.root.appendChild(tabs);
 
-    const hint = document.createElement('p');
-    hint.className = 'hint';
-    hint.textContent = 'Select a macro slot, then press "Add keys…" to open the key picker. Pick a key (and any modifiers), then press Add to append it to the sequence. Drag steps to reorder them.';
-    this.root.appendChild(hint);
-
     // The key picker lives in its own modal (#macro-key-modal in index.html)
     // and reuses the KeyboardWidget's selection behavior (no macro slots).
     this.modalEl = document.getElementById('macro-key-modal');
+    const selectContainer = document.getElementById('macro-key-modal-select');
     const kbContainer = document.getElementById('macro-key-modal-keyboard');
     if (this.modalEl && kbContainer) {
+      // MultiSelect (modifiers + keys only — no macro group inside a macro).
+      if (selectContainer && typeof MultiSelect !== 'undefined' &&
+          typeof MULTISELECT_OPTIONS !== 'undefined' &&
+          typeof MULTISELECT_GROUPS !== 'undefined') {
+        const msOptions = MULTISELECT_OPTIONS.filter((o) => o.group !== 'macros');
+        const msGroups = MULTISELECT_GROUPS.filter((g) => g.id !== 'macros');
+        this.modalSelect = new MultiSelect({
+          container: selectContainer,
+          options: msOptions,
+          groups: msGroups,
+          onChange: () => {
+            const { keycode, mask } = this.modalSelect.getValue();
+            this.keyWidget.setValue(keycode, mask, 0);
+          },
+        });
+      }
+
       this.keyWidget = new KeyboardWidget({
         container: kbContainer,
         keycode: 0,
         mask: 0,
         macroSlots: false,
-        onChange: () => {},
+        onChange: (keycode, mask) => {
+          if (this.modalSelect) this.modalSelect.setValue(keycode, mask, 0);
+        },
       });
 
       const closeBtn = document.getElementById('macro-key-modal-close');
