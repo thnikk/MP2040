@@ -7,12 +7,13 @@
 // values always clamp to [min, max].
 
 class Spinner {
-  constructor({ container, min, max, value, onChange, step }) {
+  constructor({ container, min, max, value, onChange, step, name }) {
     this.min = min;
     this.max = max;
     this.value = this.clamp(value == null ? min : value);
     this.stepSize = step || 1;
     this.onChange = onChange || (() => {});
+    this.name = name;
     this.buildDom(container);
     this.input.value = String(this.value);
   }
@@ -62,9 +63,15 @@ class Spinner {
     minus.textContent = '\u2212';
     minus.addEventListener('click', () => this.step(-1));
 
-    this.input = document.createElement('input');
-    this.input.type = 'text';
-    this.input.className = 'spinner-input';
+    this.input = container.querySelector('.spinner-input');
+    if (!this.input) {
+      this.input = document.createElement('input');
+      this.input.type = 'text';
+      this.input.className = 'spinner-input';
+    }
+    if (!this.input.id && !this.input.name) {
+      this.input.name = this.name || 'spinner-input';
+    }
     this.input.addEventListener('change', () => this.commit());
     this.input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.commit();

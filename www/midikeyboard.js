@@ -106,6 +106,7 @@ class MidiKeyboard {
 
     this.octaveSpinner = new Spinner({
       container: document.createElement('div'),
+      name: 'midi-octave',
       min: MIDI_OCTAVE_MIN,
       max: MIDI_OCTAVE_MAX,
       value: 4,
@@ -118,6 +119,7 @@ class MidiKeyboard {
 
     this.velocitySpinner = new Spinner({
       container: document.createElement('div'),
+      name: 'midi-velocity',
       min: 0, // 0 = use the global velocity
       max: 127,
       value: 0,

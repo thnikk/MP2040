@@ -43,6 +43,8 @@ class MultiSelect {
     this.menu.className = 'ms-menu';
     this.search = document.createElement('input');
     this.search.className = 'ms-search';
+    this.search.name = 'ms-search';
+    this.search.setAttribute('aria-label', 'Search options');
     this.search.placeholder = 'Search…';
     this.list = document.createElement('div');
     this.list.className = 'ms-list';

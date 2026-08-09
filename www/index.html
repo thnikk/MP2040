@@ -148,9 +148,13 @@
           </select>
           <div id="midi-settings" hidden>
             <label for="midi-channel">MIDI Channel</label>
-            <div id="midi-channel" class="midi-spinner"></div>
+            <div id="midi-channel-spinner" class="midi-spinner">
+              <input type="text" id="midi-channel" class="spinner-input">
+            </div>
             <label for="midi-velocity">MIDI Velocity</label>
-            <div id="midi-velocity" class="midi-spinner"></div>
+            <div id="midi-velocity-spinner" class="midi-spinner">
+              <input type="text" id="midi-velocity" class="spinner-input">
+            </div>
           </div>
         </div>
       </section>
@@ -164,7 +168,9 @@
         <h2><img class="heading-icon" src="/icons/bulb.svg" alt="">LED Settings</h2>
         <div class="general-form">
           <label for="led-timeout">LED Timeout</label>
-          <div id="led-timeout" class="midi-spinner"></div>
+          <div id="led-timeout-spinner" class="midi-spinner">
+            <input type="text" id="led-timeout" class="spinner-input">
+          </div>
         </div>
       </section>
 

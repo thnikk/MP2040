@@ -290,6 +290,7 @@ class MacroBuilder {
 
       const hold = new Spinner({
         container: holdSpin,
+        name: 'macro-hold',
         min: 1,
         max: 5000,
         step: 5,
@@ -298,6 +299,7 @@ class MacroBuilder {
       });
       const delay = new Spinner({
         container: delaySpin,
+        name: 'macro-delay',
         min: 0,
         max: 5000,
         step: 5,

@@ -471,14 +471,14 @@ async function load() {
   });
 
   midiChannelSpinner = new Spinner({
-    container: document.getElementById('midi-channel'),
+    container: document.getElementById('midi-channel-spinner'),
     min: 0,
     max: 15,
     value: midi.channel ?? 0,
     onChange: () => {},
   });
   midiVelocitySpinner = new Spinner({
-    container: document.getElementById('midi-velocity'),
+    container: document.getElementById('midi-velocity-spinner'),
     min: 1,
     max: 127,
     value: midi.velocity ?? 127,
@@ -509,7 +509,7 @@ async function load() {
   });
 
   timeoutSpinner = new Spinner({
-    container: document.getElementById('led-timeout'),
+    container: document.getElementById('led-timeout-spinner'),
     min: 0,
     max: 600,
     value: led.ledTimeout ?? 0,
