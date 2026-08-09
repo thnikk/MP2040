@@ -89,7 +89,6 @@ class KeyboardWidget {
     btn.className = 'kb-key' + (kbIsModifier(key.value) ? ' mod' : '') + ' ' + kbSizeClass(key.size);
     btn.style.flex = units + ' 0 0';
     btn.addEventListener('click', () => this.handleKeyClick(key.value));
-    btn.title = key.label;
 
     if (key.sub) {
       const stack = document.createElement('span');
@@ -180,7 +179,6 @@ class KeyboardWidget {
         btn.type = 'button';
         btn.className = 'kb-macro-slot';
         btn.textContent = 'M' + i;
-        btn.title = 'Assign macro M' + i + ' (click again to clear)';
         btn.addEventListener('click', () => this.handleMacroClick(i));
         this.macroButtons.push(btn);
         macroRow.appendChild(btn);
