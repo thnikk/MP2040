@@ -1741,6 +1741,42 @@ button:disabled {
   color: #fff;
 }
 
+.macro-step-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  background: var(--bg-1);
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.macro-step-edit:hover {
+  background: var(--nord10);
+  border-color: transparent;
+  color: #fff;
+}
+
+.macro-step-edit-icon {
+  width: 12px;
+  height: 12px;
+  display: block;
+  background-color: var(--muted);
+  -webkit-mask: url('/icons/edit.svg') center / contain no-repeat;
+  mask: url('/icons/edit.svg') center / contain no-repeat;
+}
+
+.macro-step-edit:hover .macro-step-edit-icon {
+  background-color: #fff;
+}
+
 /* Toast / Notification (port of GP2040-th's toast styles) */
 .toast-container {
   position: fixed;

@@ -41,3 +41,6 @@
 ## Testing
 - When testing the web server, don't kill existing instances. Use port 1357 for testing.
 - Don't build the firmware unless necessary.
+
+## Web conventions
+- Don't inline SVGs, styling, or js.

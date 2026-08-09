@@ -24,6 +24,7 @@ class MacroBuilder {
     this.onChange = onChange || (() => {});
     this.stepSpinners = [];
     this.dragIndex = -1;
+    this.editingIndex = -1;
     this.buildDom(container);
     this.render();
   }
@@ -162,27 +163,49 @@ class MacroBuilder {
 
   // ---- modal keyboard ----------------------------------------------------
 
-  openKeyboardModal() {
+  // Open the key picker modal. With `index`, pre-select that step's key(s) so
+  // the selection can be edited in place; without it, start a fresh selection.
+  openKeyboardModal(index) {
     if (!this.modalEl) return;
-    document.getElementById('macro-key-modal-title').textContent =
-      `Add keys to M${this.current + 1}`;
-    this.keyWidget.setValue(0, 0, 0);
-    if (this.modalSelect) this.modalSelect.setValue(0, 0, 0);
+    const editing = typeof index === 'number' && index >= 0;
+    this.editingIndex = editing ? index : -1;
+    const step = editing ? this.macros[this.current].steps[index] : null;
+    document.getElementById('macro-key-modal-title').textContent = editing
+      ? `Edit step ${index + 1} of M${this.current + 1}`
+      : `Add keys to M${this.current + 1}`;
+    const addBtn = document.getElementById('macro-key-modal-add');
+    if (addBtn) addBtn.textContent = editing ? 'Update' : 'Add';
+    const keycode = step ? step.keycode : 0;
+    const mask = step ? step.modifiers : 0;
+    this.keyWidget.setValue(keycode, mask, 0);
+    if (this.modalSelect) this.modalSelect.setValue(keycode, mask, 0);
     this.modalEl.hidden = false;
   }
 
   closeKeyboardModal() {
+    this.editingIndex = -1;
     if (this.modalEl) this.modalEl.hidden = true;
   }
 
-  // Append the current selection as a step, then close the modal.
+  // Commit the current selection: update the step being edited, or append a
+  // new step, then close the modal.
   addSelection() {
     const { keycode, mask } = this.keyWidget.getValue();
     if (!keycode && !mask) {
       Toast.show('Pick a key (and any modifiers) first.', 'error');
       return;
     }
-    this.appendStep(keycode, mask);
+    if (this.editingIndex >= 0) {
+      const step = this.macros[this.current].steps[this.editingIndex];
+      if (step) {
+        step.keycode = keycode;
+        step.modifiers = mask;
+        this.render();
+        this.notify();
+      }
+    } else {
+      this.appendStep(keycode, mask);
+    }
     this.closeKeyboardModal();
   }
 
@@ -260,6 +283,15 @@ class MacroBuilder {
       label.textContent = stepLabel(step) || '(empty)';
       chip.appendChild(label);
 
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'macro-step-edit';
+      edit.title = 'Edit step';
+      const editIcon = document.createElement('span');
+      editIcon.className = 'macro-step-edit-icon';
+      edit.appendChild(editIcon);
+      edit.addEventListener('click', () => this.openKeyboardModal(idx));
+
       const holdWrap = document.createElement('div');
       holdWrap.className = 'macro-step-time';
       const holdLbl = document.createElement('span');
@@ -277,6 +309,8 @@ class MacroBuilder {
       const delaySpin = document.createElement('div');
       delayWrap.appendChild(delaySpin);
       chip.appendChild(delayWrap);
+
+      chip.appendChild(edit);
 
       const remove = document.createElement('button');
       remove.type = 'button';
