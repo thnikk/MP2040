@@ -176,6 +176,7 @@ class BoardView {
       this.updateLabels();
       this.applyLeds();
       this.applyPins();
+      this.applyLedCursors();
     }
     this.updateLedSim();
   }
@@ -195,15 +196,18 @@ class BoardView {
     if (!this.svgRoot) return;
     this.updateLabels();
     this.applyPins();
+    this.applyLedCursors();
     if (!this.ledSim) this.updateLedSim();
   }
 
   // Push live LED control values into the simulation (mirrors /api/setLedPreview).
   setLedParams(led) {
-    if (!this.ledSim || !led) return;
+    if (!led) return;
     // Merge with the full led options so board properties (pinLedIndices,
     // ledsPerKey) survive preview pushes that only carry the control fields.
-    this.ledSim.setParams({ ...this.options?.led, ...led });
+    if (this.options) this.options.led = { ...(this.options.led || {}), ...led };
+    if (this.ledSim) this.ledSim.setParams(this.options?.led);
+    this.applyLedCursors();
   }
 
   // ---- render -----------------------------------------------------------
@@ -231,6 +235,7 @@ class BoardView {
     this.updateLabels();
     this.applyLeds();
     this.applyPins();
+    this.applyLedCursors();
     this.styleTestButton();
     this.wireEvents();
     this.buildLedSim();
@@ -528,6 +533,60 @@ class BoardView {
 
   // ---- pin styling / highlight ------------------------------------------
 
+  // Per-key LEDs only open the color popover in custom LED mode, so only show
+  // the pointer cursor (and click affordance) in that mode.
+  applyLedCursors() {
+    const custom = Number(this.options?.led?.ledMode ?? 0) === 0;
+    ledElements(this.container).forEach((el) => {
+      el.style.setProperty('cursor', custom ? 'pointer' : 'not-allowed');
+    });
+    if (custom) this.hideLedTooltip();
+  }
+
+  // ---- LED tooltip ------------------------------------------------------
+
+  // Custom hover tooltip for LEDs in non-custom LED modes, where clicking an
+  // LED is inert: explains why. Shows instantly on hover (no native delay).
+  showLedTooltip(el) {
+    if (this.ledTooltipEl) return;
+    const tip = document.createElement('div');
+    tip.className = 'board-tooltip';
+    tip.textContent = 'Must be on custom mode to change individual LED colors.';
+    document.body.appendChild(tip);
+    this.ledTooltipEl = tip;
+    this.positionLedTooltip(el);
+
+    this.tooltipHide = () => this.hideLedTooltip();
+    window.addEventListener('scroll', this.tooltipHide, { capture: true, passive: true });
+    window.addEventListener('resize', this.tooltipHide);
+  }
+
+  positionLedTooltip(el) {
+    const tip = this.ledTooltipEl;
+    if (!tip) return;
+    const rect = el.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    let left = rect.left + rect.width / 2 - tw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tw - 8));
+    let top = rect.top - th - 8;
+    if (top < 8) top = rect.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  hideLedTooltip() {
+    if (this.tooltipHide) {
+      window.removeEventListener('scroll', this.tooltipHide, { capture: true });
+      window.removeEventListener('resize', this.tooltipHide);
+      this.tooltipHide = null;
+    }
+    if (this.ledTooltipEl) {
+      this.ledTooltipEl.remove();
+      this.ledTooltipEl = null;
+    }
+  }
+
   applyPins() {
     this.pinElements.forEach(({ id, pinNumber }) => {
       const el = this.container.querySelector(`#${CSS.escape(id)}`);
@@ -582,6 +641,10 @@ class BoardView {
         const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
         this.callbacks.onLedClick?.(idx, el);
       });
+      el.addEventListener('mouseenter', () => {
+        if (Number(this.options?.led?.ledMode ?? 0) !== 0) this.showLedTooltip(el);
+      });
+      el.addEventListener('mouseleave', () => this.hideLedTooltip());
     });
 
     const testBtn = findByRef(this.container, 'test-btn');

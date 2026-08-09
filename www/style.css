@@ -338,6 +338,24 @@ main {
   border-radius: 20px;
 }
 
+/* Hover tooltip for board LEDs in non-custom LED modes */
+.board-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 240px;
+  padding: 8px 12px;
+  background: var(--bg-3);
+  color: var(--text);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Cards */
 section {
   width: 100%;
