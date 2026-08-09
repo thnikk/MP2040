@@ -32,7 +32,7 @@ let store = null;
 
 // Build a profile object. `src` provides the starting arrays/scalars (e.g. the
 // base options) so alternates default to a copy of the base.
-const KEY_COUNT = 128;
+const KEY_COUNT = Math.max(board?.keyCount ?? 0, 1);
 function makeProfile(src = {}) {
   const keycodes = [];
   const modifierMasks = [];

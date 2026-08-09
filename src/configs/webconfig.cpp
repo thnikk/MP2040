@@ -37,10 +37,14 @@
 // Max size of a parsed JSON document. getOptions builds the full config tree
 // (key maps + all four profiles + macros + per-key LED arrays) into one
 // document; each ArduinoJson value occupies a fixed-size slot, so this must be
-// much larger than the payload buffer or the tail (profiles / matrix) is
-// silently dropped on the real hardware. 64KB fits the heap (the board has
-// ~100KB free) and covers realistic configs end to end.
-#define LWIP_HTTPD_JSON_DOC_SIZE (1024 * 64)
+// big enough or the tail (profiles / matrix) is silently dropped on the real
+// hardware. The key-indexed arrays are emitted at getKeyCount() (12 on the
+// MacroPad, 30 on direct boards), so the tree tops out around 33KB of slots;
+// 40KB covers that with headroom. This pool coexists with the serialized
+// response string and the static returnData buffer, so it must stay well under
+// the ~100KB C-heap or a failed allocation aborts (the build is
+// -fno-exceptions) and the board locks up.
+#define LWIP_HTTPD_JSON_DOC_SIZE (1024 * 40)
 
 using namespace std;
 
@@ -179,7 +183,10 @@ static void writeKeyMappingJson(JsonObject obj, const KeyMapping& km)
     JsonArray modifiers = obj.createNestedArray("modifierMasks");
     JsonArray midiNotes = obj.createNestedArray("midiNotes");
     JsonArray midiVelocities = obj.createNestedArray("midiVelocities");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    // Emit one entry per key the board actually has; the UI derives its key
+    // count from the array length. Keep it under the pool budget.
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
     {
         keycodes.add(pin < (Pin_t)km.keycodes_count ? km.keycodes[pin] : 0);
         modifiers.add(pin < (Pin_t)km.modifierMasks_count ? km.modifierMasks[pin] : 0);
@@ -217,9 +224,10 @@ static void writeProfileJson(JsonObject obj, const Profile* profile)
     // legacy configs = the UI falls back to the global colors).
     JsonArray ledNormalColors = led.createNestedArray("ledNormalColors");
     JsonArray ledPressedColors = led.createNestedArray("ledPressedColors");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount && pin < (Pin_t)km.ledNormalColors_count; pin++)
         ledNormalColors.add(km.ledNormalColors[pin]);
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount && pin < (Pin_t)km.ledPressedColors_count; pin++)
         ledPressedColors.add(km.ledPressedColors[pin]);
 }
 
@@ -245,7 +253,8 @@ std::string getOptions()
     JsonArray modifiers = doc.createNestedArray("modifierMasks");
     JsonArray midiNotes = doc.createNestedArray("midiNotes");
     JsonArray midiVelocities = doc.createNestedArray("midiVelocities");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
     {
         keycodes.add(pin < (Pin_t)keyMapping.keycodes_count ? keyMapping.keycodes[pin] : 0);
         modifiers.add(pin < (Pin_t)keyMapping.modifierMasks_count ? keyMapping.modifierMasks[pin] : 0);
@@ -255,7 +264,7 @@ std::string getOptions()
 
     // Global macro triggers (per-key, 0 = none) and definitions (M1-M8).
     JsonArray macroIndices = doc.createNestedArray("macroIndices");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
         macroIndices.add(pin < (Pin_t)config.macroIndices_count ? config.macroIndices[pin] : 0);
     JsonArray macros = doc.createNestedArray("macros");
     for (pb_size_t m = 0; m < 8; m++)
@@ -296,13 +305,13 @@ std::string getOptions()
     // legacy configs = the UI falls back to the global colors).
     JsonArray ledNormalColors = doc["led"].createNestedArray("ledNormalColors");
     JsonArray ledPressedColors = doc["led"].createNestedArray("ledPressedColors");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)keyMapping.ledNormalColors_count; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount && pin < (Pin_t)keyMapping.ledNormalColors_count; pin++)
         ledNormalColors.add(keyMapping.ledNormalColors[pin]);
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)keyMapping.ledPressedColors_count; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount && pin < (Pin_t)keyMapping.ledPressedColors_count; pin++)
         ledPressedColors.add(keyMapping.ledPressedColors[pin]);
 
     JsonArray pinLedIndices = doc["led"].createNestedArray("pinLedIndices");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
         pinLedIndices.add(pin < (Pin_t)ledOptions.pinLedIndices_count ? ledOptions.pinLedIndices[pin] : -1);
 
     doc["webConfigPin"] = Storage::getInstance().getWebConfigPin();
@@ -357,18 +366,20 @@ std::string setOptions()
     JsonArray modifiers = doc["modifierMasks"];
     JsonArray midiNotes = doc["midiNotes"];
     JsonArray midiVelocities = doc["midiVelocities"];
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)keycodes.size(); pin++)
+    // Store the array length the client sent (capped at MAX_KEYS) so the
+    // stored counts match what getOptions emits, keeping the JSON small.
+    keyMapping.keycodes_count = keycodes.size() > MAX_KEYS ? MAX_KEYS : keycodes.size();
+    for (Pin_t pin = 0; pin < (Pin_t)keyMapping.keycodes_count; pin++)
         keyMapping.keycodes[pin] = keycodes[pin];
-    keyMapping.keycodes_count = MAX_KEYS;
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)modifiers.size(); pin++)
+    keyMapping.modifierMasks_count = modifiers.size() > MAX_KEYS ? MAX_KEYS : modifiers.size();
+    for (Pin_t pin = 0; pin < (Pin_t)keyMapping.modifierMasks_count; pin++)
         keyMapping.modifierMasks[pin] = modifiers[pin];
-    keyMapping.modifierMasks_count = MAX_KEYS;
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)midiNotes.size(); pin++)
+    keyMapping.midiNotes_count = midiNotes.size() > MAX_KEYS ? MAX_KEYS : midiNotes.size();
+    for (Pin_t pin = 0; pin < (Pin_t)keyMapping.midiNotes_count; pin++)
         keyMapping.midiNotes[pin] = midiNotes[pin];
-    keyMapping.midiNotes_count = MAX_KEYS;
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)midiVelocities.size(); pin++)
+    keyMapping.midiVelocities_count = midiVelocities.size() > MAX_KEYS ? MAX_KEYS : midiVelocities.size();
+    for (Pin_t pin = 0; pin < (Pin_t)keyMapping.midiVelocities_count; pin++)
         keyMapping.midiVelocities[pin] = midiVelocities[pin];
-    keyMapping.midiVelocities_count = MAX_KEYS;
 
     if (doc["defaultInputMode"].is<int>())
         Storage::getInstance().setDefaultInputMode((InputMode)doc["defaultInputMode"].as<int>());
@@ -376,9 +387,9 @@ std::string setOptions()
     // Global macros: per-key triggers and the definitions (M1-M8). Not
     // profile-scoped, so they're written straight into the top-level config.
     JsonArray macroIndices = doc["macroIndices"];
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)macroIndices.size(); pin++)
+    config.macroIndices_count = macroIndices.size() > MAX_KEYS ? MAX_KEYS : macroIndices.size();
+    for (Pin_t pin = 0; pin < (Pin_t)config.macroIndices_count; pin++)
         config.macroIndices[pin] = macroIndices[pin].as<uint32_t>();
-    config.macroIndices_count = MAX_KEYS;
 
     JsonArray macros = doc["macros"];
     config.macros_count = 0;
@@ -514,7 +525,8 @@ std::string getUsedPins()
     const Config& config = Storage::getInstance().getConfig();
     const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
     auto usedPins = doc.createNestedArray("usedPins");
-    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
     {
         const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
         const bool hasMacro = pin < (Pin_t)config.macroIndices_count && config.macroIndices[pin] != 0;

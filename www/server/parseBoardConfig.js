@@ -214,5 +214,8 @@ export function parseBoardConfig(configDir, rootDir) {
       colorPressed: parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff,
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
+    // Number of keys the board can report, mirroring firmware getKeyCount():
+    // matrix boards report rows*cols, direct boards report all bank-0 GPIOs.
+    keyCount: matrixRows > 0 && matrixCols > 0 ? matrixRows * matrixCols : 30,
   };
 }
