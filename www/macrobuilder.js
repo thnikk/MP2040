@@ -248,7 +248,7 @@ class MacroBuilder {
     if (steps.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'macro-step-list-empty';
-      empty.textContent = 'No steps yet — press "Add keys…" to build the sequence.';
+      empty.textContent = 'No steps yet, press "Add keys…" to build the sequence.';
       list.appendChild(empty);
       container.appendChild(list);
       return;
