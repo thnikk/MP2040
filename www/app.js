@@ -486,7 +486,11 @@ async function load() {
   });
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
-  document.getElementById('led-mode').addEventListener('change', previewLed);
+  document.getElementById('led-mode').addEventListener('change', () => {
+    updateLedFillState();
+    previewLed();
+  });
+  updateLedFillState();
 
   brightnessSlider = new PillSlider({
     container: document.getElementById('led-brightness'),
@@ -864,6 +868,13 @@ document.querySelectorAll('[data-route]').forEach((el) => {
 });
 document.getElementById('reboot').addEventListener('click', openRebootModal);
 document.getElementById('reset').addEventListener('click', resetSettings);
+// The "Fill all" button only applies to per-key colors, which Custom mode
+// (LED_MODE_CUSTOM = 0) is the only mode that uses; grey it out otherwise.
+function updateLedFillState() {
+  const isCustom = parseInt(document.getElementById('led-mode').value, 10) === 0;
+  document.getElementById('led-fill-all').disabled = !isCustom;
+}
+
 document.getElementById('led-fill-all').addEventListener('click', () => {
   const ledOpts = materializeLedColors();
   const normal = currentOptions.led?.colorNormal ?? 0x00ff00;

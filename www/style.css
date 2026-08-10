@@ -777,6 +777,7 @@ html[data-theme="light"] .ms-caret {
   display: flex;
   align-items: stretch;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .led-row .led-mode-label {
@@ -1183,8 +1184,15 @@ html[data-theme="light"] .ms-caret {
 }
 
 /* "Fill all with default colors" action under the LED color pickers. */
+.led-row > .led-colors {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .led-fill {
-  margin-top: 12px;
+  margin-left: auto;
+  display: flex;
+  align-items: stretch;
 }
 
 .led-fill button {
@@ -1196,6 +1204,19 @@ html[data-theme="light"] .ms-caret {
   font-family: inherit;
   font-size: 0.85rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.led-fill button img {
+  width: 14px;
+  height: 14px;
+  filter: invert(0.85) brightness(1.3);
+}
+
+[data-theme="light"] .led-fill button img {
+  filter: none;
 }
 
 .led-fill button:hover {
