@@ -179,7 +179,6 @@ function cloneProfile(p) {
     midi: { channel: p.midi?.channel ?? 0, velocity: p.midi?.velocity ?? 127 },
     led: {
       ledMode: p.led?.ledMode ?? 0,
-      ledSpeed: p.led?.ledSpeed ?? 50,
       brightnessMaximum: p.led?.brightnessMaximum ?? 255,
       brightnessSteps: p.led?.brightnessSteps ?? 1,
       colorNormal: p.led?.colorNormal ?? 0x00ff00,
@@ -198,7 +197,10 @@ function applyProfileToOptions(profile, options) {
   options.midiNotes = profile.midiNotes.slice();
   options.midiVelocities = profile.midiVelocities.slice();
   options.midi = { ...(options.midi || {}), ...profile.midi };
-  options.led = { ...(options.led || {}), ...profile.led };
+  // Speed is a global per-mode setting; profiles only carry the per-profile
+  // LED scalars (mode, brightness, colors, per-key colors).
+  const { ledSpeeds: _ledSpeeds, ...profileLed } = profile.led || {};
+  options.led = { ...(options.led || {}), ...profileLed };
 }
 
 // Copy `options`' per-profile fields back into a profile (opposite of above).
@@ -208,7 +210,8 @@ function applyOptionsToProfile(options, profile) {
   profile.midiNotes = options.midiNotes.slice();
   profile.midiVelocities = options.midiVelocities.slice();
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
-  profile.led = { ...(profile.led || {}), ...(options.led || {}) };
+  const { ledSpeeds: _ledSpeeds, ...optionsLed } = options.led || {};
+  profile.led = { ...(profile.led || {}), ...optionsLed };
 }
 
 // Save any unsaved edits of the current tab back into its profile slot.
@@ -240,7 +243,7 @@ function refreshPerProfileControls() {
   const ledModeEl = document.getElementById('led-mode');
   if (ledModeEl) ledModeEl.value = led.ledMode ?? 0;
   if (brightnessSlider) brightnessSlider.setValue(led.brightnessMaximum ?? 255);
-  if (speedSlider) speedSlider.setValue(led.ledSpeed ?? 50);
+  syncSpeedSliderToMode();
   if (timeoutSpinner) timeoutSpinner.setValue(led.ledTimeout ?? 0);
   if (colorNormalPicker) colorNormalPicker.setValue(intToColor(led.colorNormal ?? 0x00ff00));
   if (colorPressedPicker) colorPressedPicker.setValue(intToColor(led.colorPressed ?? 0xffffff));
@@ -299,6 +302,34 @@ function debounce(fn, ms) {
   };
 }
 
+// Per-mode speeds are global (not per-profile): a 6-element array indexed by
+// LED mode, seeded from the legacy scalar ledSpeed when the firmware hasn't
+// sent per-mode values yet.
+function getModeLedSpeeds() {
+  const led = currentOptions.led || {};
+  let speeds = Array.isArray(led.ledSpeeds) ? led.ledSpeeds.slice() : null;
+  if (!speeds || speeds.length < 6) {
+    const fill = Number.isFinite(led.ledSpeed) ? led.ledSpeed : 50;
+    speeds = new Array(6).fill(fill);
+  }
+  return speeds;
+}
+
+function currentLedMode() {
+  return parseInt(document.getElementById('led-mode').value, 10) || 0;
+}
+
+// The speed slider edits the currently-selected mode's speed; reload it from
+// the per-mode array when the mode changes, and grey it out in Custom (the
+// only mode with no animation speed).
+function syncSpeedSliderToMode() {
+  if (!speedSlider) return;
+  const mode = currentLedMode();
+  const speeds = getModeLedSpeeds();
+  speedSlider.setValue(speeds[mode] ?? 50);
+  speedSlider.setDisabled(mode === 0);
+}
+
 // Read the current LED controls and push them to the board for a live preview.
 // The control values are also written back into currentOptions.led so the sim
 // and any later setOptions stay in sync (the led-mode dropdown change used to
@@ -307,14 +338,16 @@ async function previewLed() {
   if (!currentOptions.led) currentOptions.led = {};
   const led = currentOptions.led;
   led.ledMode = parseInt(document.getElementById('led-mode').value, 10);
-  led.ledSpeed = speedSlider ? speedSlider.getValue() : 50;
+  const speeds = getModeLedSpeeds();
+  speeds[led.ledMode] = speedSlider ? speedSlider.getValue() : 50;
+  led.ledSpeeds = speeds;
   led.brightnessMaximum = brightnessSlider ? brightnessSlider.getValue() : 255;
   led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
   led.colorNormal = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
   led.colorPressed = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
   const preview = {
     ledMode: led.ledMode,
-    ledSpeed: led.ledSpeed,
+    ledSpeeds: led.ledSpeeds,
     brightnessMaximum: led.brightnessMaximum,
     ledTimeout: led.ledTimeout,
     colorNormal: led.colorNormal,
@@ -357,7 +390,7 @@ function buildOptionsBody() {
     },
     led: {
       ledMode: parseInt(document.getElementById('led-mode').value, 10),
-      ledSpeed: speedSlider ? speedSlider.getValue() : 50,
+      ledSpeeds: getModeLedSpeeds(),
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
       colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
@@ -487,7 +520,10 @@ async function load() {
   });
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
-  document.getElementById('led-mode').addEventListener('change', previewLed);
+  document.getElementById('led-mode').addEventListener('change', () => {
+    syncSpeedSliderToMode();
+    previewLed();
+  });
 
   brightnessSlider = new PillSlider({
     container: document.getElementById('led-brightness'),
@@ -504,10 +540,11 @@ async function load() {
     min: 0,
     max: 100,
     label: 'Speed',
-    value: led.ledSpeed ?? 50,
+    value: led.ledSpeeds?.[led.ledMode ?? 0] ?? led.ledSpeed ?? 50,
     padLength: 3,
     onChange: previewLed,
   });
+  syncSpeedSliderToMode();
 
   timeoutSpinner = new Spinner({
     container: document.getElementById('led-timeout-spinner'),

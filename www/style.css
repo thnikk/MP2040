@@ -793,6 +793,11 @@ html[data-theme="light"] .ms-caret {
   flex: 1 1 0;
 }
 
+.led-row > .led-colors {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* Default input mode selector */
 .general-form {
   display: flex;
@@ -1234,6 +1239,12 @@ html[data-theme="light"] .ms-caret {
 .pill-slider:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.pill-slider.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .pill-slider-fill {

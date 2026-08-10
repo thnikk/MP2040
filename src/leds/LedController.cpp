@@ -66,7 +66,7 @@ LedController::LedController() :
     ledCount(0),
     stripCount(0),
     ledMode(LED_MODE_CUSTOM),
-    ledSpeedPercent(50),
+    ledSpeedPercent{50, 50, 50, 50, 50, 50},
     ledSpeed(20),
     lastThemeMillis(0),
     ledTimeoutMs(0),
@@ -128,8 +128,10 @@ void LedController::configure()
     ledCount = ledOptions.ledCount;
     ledMode = ledOptions.ledMode;
     // Config speed is 0-100 percent (higher = faster). recomputeLedSpeed()
-    // maps it to a per-effect theme step interval in ms.
-    ledSpeedPercent = ledOptions.ledSpeed <= 100 ? ledOptions.ledSpeed : 50;
+    // maps the current mode's percent to a per-effect theme step interval.
+    for (uint32_t i = 0; i < 6; i++)
+        ledSpeedPercent[i] = i < ledOptions.ledSpeeds_count && ledOptions.ledSpeeds[i] <= 100
+            ? ledOptions.ledSpeeds[i] : 50;
     recomputeLedSpeed();
     brightnessMaximum = ledOptions.brightnessMaximum;
     colorNormal = ledOptions.colorNormal;
@@ -423,8 +425,10 @@ void LedController::applyLedPreview(const LedPreview& preview)
 {
     ledMode = preview.ledMode;
     // Config speed is 0-100 percent (higher = faster). recomputeLedSpeed()
-    // maps it to a per-effect theme step interval in ms.
-    ledSpeedPercent = preview.ledSpeed <= 100 ? preview.ledSpeed : 50;
+    // maps the current mode's percent to a per-effect theme step interval.
+    for (uint32_t i = 0; i < 6; i++)
+        ledSpeedPercent[i] = i < preview.ledSpeedCount && preview.ledSpeed[i] <= 100
+            ? preview.ledSpeed[i] : 50;
     recomputeLedSpeed();
     brightnessMaximum = preview.brightnessMaximum;
     colorNormal = preview.colorNormal;
@@ -476,7 +480,8 @@ void LedController::recomputeLedSpeed()
         ledSpeed = 20; // CUSTOM (or unknown mode): no animation, default cadence
         return;
     }
-    uint32_t pct = ledSpeedPercent > 100 ? 100 : ledSpeedPercent;
+    uint32_t pct = ledSpeedPercent[ledMode < 6 ? ledMode : 0];
+    if (pct > 100) pct = 100;
     float t = powf((float)minInterval / (float)maxInterval, (float)pct / 100.0f);
     ledSpeed = (uint32_t)((float)maxInterval * t);
     if (ledSpeed < 1) ledSpeed = 1;
@@ -633,7 +638,8 @@ void LedController::renderBps()
 
     // Color-smoothing step per render (fixed 20ms cadence). The 0-100% speed
     // maps linearly to 1..8: 0% = slow (~5s full swing), 100% = fast.
-    uint32_t pct = ledSpeedPercent > 100 ? 100 : ledSpeedPercent;
+    uint32_t pct = ledSpeedPercent[ledMode < 6 ? ledMode : 0];
+    if (pct > 100) pct = 100;
     const uint16_t bpsSpeed = (uint16_t)(1 + (pct * 7) / 100);
     if (lastColor > bpsColor)
     {

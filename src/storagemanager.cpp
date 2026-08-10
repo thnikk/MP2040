@@ -1832,6 +1832,9 @@ static void applyDefaults(Config& config)
     config.ledOptions.ledCount = LED_COUNT;
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
+    config.ledOptions.ledSpeeds_count = 6;
+    for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.ledSpeeds[i] = LED_SPEED;
     config.ledOptions.ledTimeout = LED_TIMEOUT;
     config.ledOptions.pinLedIndices_count = MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
@@ -1894,8 +1897,6 @@ static void seedProfiles(Config& config)
         profile.midiOptions = config.midiOptions;
         profile.has_ledMode = true;
         profile.ledMode = config.ledOptions.ledMode;
-        profile.has_ledSpeed = true;
-        profile.ledSpeed = config.ledOptions.ledSpeed;
         profile.has_brightnessMaximum = true;
         profile.brightnessMaximum = config.ledOptions.brightnessMaximum;
         profile.has_brightnessSteps = true;
@@ -1921,8 +1922,6 @@ static void copyProfileToTopLevel(const Profile& profile, Config& config)
     }
     if (profile.has_ledMode)
         config.ledOptions.ledMode = profile.ledMode;
-    if (profile.has_ledSpeed)
-        config.ledOptions.ledSpeed = profile.ledSpeed;
     if (profile.has_brightnessMaximum)
         config.ledOptions.brightnessMaximum = profile.brightnessMaximum;
     if (profile.has_brightnessSteps)
@@ -1987,12 +1986,28 @@ void Storage::init() {
         config.ledOptions.colorPressed = LED_COLOR_PRESSED;
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
+        config.ledOptions.ledSpeeds_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+            config.ledOptions.ledSpeeds[i] = LED_SPEED;
         config.ledOptions.ledTimeout = LED_TIMEOUT;
     }
     // ledSpeed changed from a 1-255 scale to 0-100 percent. Discard any
     // legacy stored value (out of the new range) in favor of the board default.
     if (config.ledOptions.ledSpeed > 100)
         config.ledOptions.ledSpeed = LED_SPEED;
+    // Per-mode speeds: seed all modes from the legacy ledSpeed on configs that
+    // predate ledSpeeds, and clamp each mode to the 0-100 percent range.
+    if (config.ledOptions.ledSpeeds_count == 0)
+    {
+        config.ledOptions.ledSpeeds_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+            config.ledOptions.ledSpeeds[i] = config.ledOptions.ledSpeed;
+    }
+    for (uint32_t i = 0; i < config.ledOptions.ledSpeeds_count; i++)
+    {
+        if (config.ledOptions.ledSpeeds[i] > 100)
+            config.ledOptions.ledSpeeds[i] = LED_SPEED;
+    }
 
     // Seed the profiles (0-3) once from the current base mapping so configs
     // that predate profiles start with usable, editable profiles.

@@ -38,6 +38,7 @@ class PillSlider {
     container.appendChild(this.root);
 
     const onDown = (e) => {
+      if (this.disabled) return;
       this.dragging = true;
       this.setValueFromEvent(e);
     };
@@ -56,6 +57,7 @@ class PillSlider {
     window.addEventListener('mouseup', onUp);
 
     this.root.addEventListener('keydown', (e) => {
+      if (this.disabled) return;
       let v = this.value;
       if (e.key === 'ArrowRight' || e.key === 'ArrowUp') v = Math.min(this.max, v + 1);
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') v = Math.max(this.min, v - 1);
@@ -81,6 +83,12 @@ class PillSlider {
   setValue(v) {
     this.value = Math.max(this.min, Math.min(this.max, Math.round(v)));
     this.render();
+  }
+
+  setDisabled(disabled) {
+    this.disabled = disabled;
+    this.root.classList.toggle('disabled', disabled);
+    this.root.setAttribute('aria-disabled', disabled ? 'true' : 'false');
   }
 
   getValue() {

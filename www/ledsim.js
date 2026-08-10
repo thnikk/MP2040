@@ -103,7 +103,9 @@ class LedSim {
   // applyLedPreview (LedController.cpp:256).
   setParams(p) {
     this.mode = p.ledMode ?? LED_MODE_CUSTOM;
-    this.ledSpeedPercent = (p.ledSpeed ?? 50) <= 100 ? p.ledSpeed : 50;
+    const fill = (p.ledSpeed ?? 50) <= 100 ? p.ledSpeed : 50;
+    this.ledSpeeds = Array.isArray(p.ledSpeeds) && p.ledSpeeds.length >= 6
+      ? p.ledSpeeds.slice() : new Array(6).fill(fill);
     this.recomputeInterval();
     // Always render at full brightness in the config UI so colors are easy to
     // see; brightnessMaximum still dims the physical board via setLedPreview.
@@ -125,7 +127,7 @@ class LedSim {
       this.themeInterval = 20; // CUSTOM (or unknown mode)
       return;
     }
-    const pct = Math.max(0, Math.min(100, this.ledSpeedPercent));
+    const pct = Math.max(0, Math.min(100, this.ledSpeeds[this.mode] ?? 50));
     const t = Math.pow(r.min / r.max, pct / 100);
     this.themeInterval = Math.max(1, Math.min(1000, Math.round(r.max * t)));
   }
@@ -335,7 +337,7 @@ class LedSim {
     }
     // Color-smoothing step per render (fixed cadence); 0-100% maps linearly
     // to 1..8, mirroring renderBps() in LedController.cpp.
-    const pct = Math.max(0, Math.min(100, this.ledSpeedPercent));
+    const pct = Math.max(0, Math.min(100, this.ledSpeeds[this.mode] ?? 50));
     const bpsSpeed = 1 + Math.floor((pct * 7) / 100);
     if (this.lastColor > this.bpsColor) {
       this.lastColor -= bpsSpeed;

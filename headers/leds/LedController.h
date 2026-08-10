@@ -98,7 +98,10 @@ private:
     uint32_t ledCount;
     uint32_t stripCount;
     uint32_t ledMode;
-    uint32_t ledSpeedPercent; // config 0-100 (higher = faster)
+    // Per-mode config speed (0-100 percent, higher = faster), indexed by
+    // LedMode. recomputeLedSpeed() maps the current mode's percent to a theme
+    // step interval.
+    uint32_t ledSpeedPercent[6];
     uint32_t ledSpeed;        // theme step interval in ms (computed from percent)
     uint32_t lastThemeMillis; // last theme state advance time
     // Inactivity timeout: LEDs go dark after ledTimeoutMs with no key held (a

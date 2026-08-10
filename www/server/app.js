@@ -52,6 +52,9 @@ function makeProfile(src = {}) {
     led: {
       ledMode: src.led?.ledMode ?? 0,
       ledSpeed: src.led?.ledSpeed ?? 50,
+      ledSpeeds: Array.isArray(src.led?.ledSpeeds)
+        ? src.led.ledSpeeds.slice()
+        : Array(6).fill(src.led?.ledSpeed ?? 50),
       brightnessMaximum: src.led?.brightnessMaximum ?? 255,
       brightnessSteps: src.led?.brightnessSteps ?? 1,
       colorNormal: src.led?.colorNormal ?? 0x00ff00,
@@ -93,6 +96,9 @@ function defaultOptions() {
       ledCount: board?.led?.ledCount ?? 0,
       ledMode: board?.led?.ledMode ?? 0,
       ledSpeed: board?.led?.ledSpeed ?? 50,
+      ledSpeeds: Array.isArray(board?.led?.ledSpeeds)
+        ? board.led.ledSpeeds.slice()
+        : Array(6).fill(board?.led?.ledSpeed ?? 50),
       ledTimeout: board?.led?.ledTimeout ?? 0,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
       brightnessSteps: board?.led?.brightnessSteps ?? 1,

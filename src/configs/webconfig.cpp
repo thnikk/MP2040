@@ -219,7 +219,6 @@ static void writeProfileJson(JsonObject obj, const Profile* profile)
     led["colorNormal"] = (profile && profile->has_colorNormal) ? profile->colorNormal : lo.colorNormal;
     led["colorPressed"] = (profile && profile->has_colorPressed) ? profile->colorPressed : lo.colorPressed;
     led["ledMode"] = (profile && profile->has_ledMode) ? profile->ledMode : lo.ledMode;
-    led["ledSpeed"] = (profile && profile->has_ledSpeed) ? profile->ledSpeed : lo.ledSpeed;
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
     // legacy configs = the UI falls back to the global colors).
     JsonArray ledNormalColors = led.createNestedArray("ledNormalColors");
@@ -299,6 +298,9 @@ std::string getOptions()
     doc["led"]["colorPressed"] = ledOptions.colorPressed;
     doc["led"]["ledMode"] = ledOptions.ledMode;
     doc["led"]["ledSpeed"] = ledOptions.ledSpeed;
+    JsonArray ledSpeeds = doc["led"].createNestedArray("ledSpeeds");
+    for (uint32_t i = 0; i < 6 && i < ledOptions.ledSpeeds_count; i++)
+        ledSpeeds.add(ledOptions.ledSpeeds[i]);
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
 
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
@@ -431,8 +433,18 @@ std::string setOptions()
         // enforced from BoardConfig.h at boot; only user-tunables are editable.
         profile.has_ledMode = true;
         profile.ledMode = led["ledMode"] | profile.ledMode;
-        profile.has_ledSpeed = true;
-        profile.ledSpeed = led["ledSpeed"] | profile.ledSpeed;
+        // Per-mode speeds are global (not per-profile). Clamp to 0-100.
+        JsonArray ledSpeeds = led["ledSpeeds"];
+        if (ledSpeeds.size() > 0)
+        {
+            config.ledOptions.ledSpeeds_count = 0;
+            for (uint32_t i = 0; i < 6 && i < (uint32_t)ledSpeeds.size(); i++)
+            {
+                uint32_t sp = ledSpeeds[i].as<uint32_t>();
+                config.ledOptions.ledSpeeds[i] = sp > 100 ? 100 : sp;
+                config.ledOptions.ledSpeeds_count++;
+            }
+        }
         profile.has_brightnessMaximum = true;
         profile.brightnessMaximum = led["brightnessMaximum"] | profile.brightnessMaximum;
         profile.has_brightnessSteps = true;
@@ -491,7 +503,13 @@ std::string setLedPreview()
     if (!led.isNull())
     {
         preview.ledMode = led["ledMode"] | 0;
-        preview.ledSpeed = led["ledSpeed"] | 50;
+        JsonArray ledSpeeds = led["ledSpeeds"];
+        for (uint32_t i = 0; i < 6 && i < (uint32_t)ledSpeeds.size(); i++)
+        {
+            uint32_t sp = ledSpeeds[i].as<uint32_t>();
+            preview.ledSpeed[i] = sp > 100 ? 100 : sp;
+            preview.ledSpeedCount++;
+        }
         preview.brightnessMaximum = led["brightnessMaximum"] | 255;
         preview.colorNormal = led["colorNormal"] | 0x00FF00;
         preview.colorPressed = led["colorPressed"] | 0xFFFFFF;

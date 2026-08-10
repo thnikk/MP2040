@@ -207,6 +207,7 @@ export function parseBoardConfig(configDir, rootDir) {
       ledCount: parseNum(d.LED_COUNT) ?? 0,
       ledMode: parseNum(d.LED_MODE) ?? 0,
       ledSpeed: parseNum(d.LED_SPEED) ?? 50,
+      ledSpeeds: Array(6).fill(parseNum(d.LED_SPEED) ?? 50),
       ledTimeout: parseNum(d.LED_TIMEOUT) ?? 0,
       brightnessMaximum: parseNum(d.LED_BRIGHTNESS_MAX) ?? 255,
       brightnessSteps: parseNum(d.LED_BRIGHTNESS_STEPS) ?? 1,
