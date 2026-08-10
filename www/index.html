@@ -32,11 +32,11 @@
         <h1>MP2040 <span id="board-label"></span></h1>
       </div>
       <nav class="nav-links">
-        <a class="nav-link" href="/layout" data-route="/layout"><img src="/icons/layout.svg" alt="">Layout</a>
-        <a class="nav-link" href="/settings" data-route="/settings"><img src="/icons/auto.svg" alt="">Settings</a>
+        <a class="nav-link" href="/layout" data-route="/layout"><span class="icon icon-layout" aria-hidden="true"></span>Layout</a>
+        <a class="nav-link" href="/settings" data-route="/settings"><span class="icon icon-auto" aria-hidden="true"></span>Settings</a>
       </nav>
       <button id="reboot" class="nav-reboot" title="Reboot">
-        <img src="/icons/reboot.svg" alt="">
+        <span class="icon icon-reboot" aria-hidden="true"></span>
       </button>
     </div>
   </header>
@@ -51,14 +51,14 @@
 
       <div class="landing-cards">
         <a class="landing-card" href="/layout" data-route="/layout">
-          <img class="landing-card-icon" src="/icons/layout.svg" alt="">
+          <span class="landing-card-icon icon icon-layout" aria-hidden="true"></span>
           <div>
             <h3>Layout</h3>
             <p>Keys, modifiers, profiles, and LEDs.</p>
           </div>
         </a>
         <a class="landing-card" href="/settings" data-route="/settings">
-          <img class="landing-card-icon" src="/icons/auto.svg" alt="">
+          <span class="landing-card-icon icon icon-auto" aria-hidden="true"></span>
           <div>
             <h3>Settings</h3>
             <p>Input mode, MIDI, LED timeout, and reset.</p>
@@ -68,19 +68,19 @@
 
       <div class="landing-links">
         <a class="landing-link" href="https://www.thnikk.moe" target="_blank" rel="noopener noreferrer">
-          <img class="landing-link-icon" src="/icons/web.svg" alt="">
+          <span class="landing-link-icon icon icon-web" aria-hidden="true"></span>
           <span>Website</span>
         </a>
         <a class="landing-link" href="https://docs.thnikk.moe/" target="_blank" rel="noopener noreferrer">
-          <img class="landing-link-icon" src="/icons/docs.svg" alt="">
+          <span class="landing-link-icon icon icon-docs" aria-hidden="true"></span>
           <span>Docs</span>
         </a>
         <a class="landing-link" href="https://www.etsy.com/shop/thnikk" target="_blank" rel="noopener noreferrer">
-          <img class="landing-link-icon" src="/icons/etsy.svg" alt="">
+          <span class="landing-link-icon icon icon-etsy" aria-hidden="true"></span>
           <span>Etsy</span>
         </a>
         <a class="landing-link" href="https://github.com/thnikk" target="_blank" rel="noopener noreferrer">
-          <img class="landing-link-icon" src="/icons/github.svg" alt="">
+          <span class="landing-link-icon icon icon-github" aria-hidden="true"></span>
           <span>GitHub</span>
         </a>
       </div>
@@ -94,14 +94,14 @@
 
     <div id="page-layout" class="page" hidden>
       <section>
-        <h2><img class="heading-icon" src="/icons/profile.svg" alt="">Profile
+        <h2><span class="heading-icon icon icon-profile" aria-hidden="true"></span>Profile
           <button id="set-boot-profile" class="section-header-btn" type="button">Set as Default</button>
         </h2>
         <div class="profile-tabs" id="profile-tabs"></div>
       </section>
 
       <section>
-        <h2><img class="heading-icon" src="/icons/bulb.svg" alt="">LEDs</h2>
+        <h2><span class="heading-icon icon icon-bulb" aria-hidden="true"></span>LEDs</h2>
         <div class="led-form">
           <div class="led-row">
             <label class="led-mode-label" for="led-mode">LED Mode</label>
@@ -122,14 +122,14 @@
               <div class="led-color-picker"><div id="led-colorPressed"></div></div>
             </div>
             <div class="led-fill">
-              <button id="led-fill-all" type="button"><img src="/icons/bucket.svg" alt="">Fill All</button>
+              <button id="led-fill-all" type="button"><span class="icon icon-bucket" aria-hidden="true"></span>Fill All</button>
             </div>
           </div>
         </div>
       </section>
 
       <section>
-        <h2><img class="heading-icon" src="/icons/layout.svg" alt="">Board</h2>
+        <h2><span class="heading-icon icon icon-layout" aria-hidden="true"></span>Board</h2>
         <p class="hint" id="board-hint">Click a button on the board to set its key and modifiers.</p>
         <div id="board-panel"></div>
       </section>
@@ -141,7 +141,7 @@
 
     <div id="page-settings" class="page" hidden>
       <section>
-        <h2><img class="heading-icon" src="/icons/auto.svg" alt="">Input Mode</h2>
+        <h2><span class="heading-icon icon icon-auto" aria-hidden="true"></span>Input Mode</h2>
         <div class="general-form">
           <label for="default-input-mode">Default Input Mode</label>
           <select id="default-input-mode">
@@ -162,12 +162,12 @@
       </section>
 
       <section>
-        <h2><img class="heading-icon" src="/icons/layout.svg" alt="">Macros</h2>
+        <h2><span class="heading-icon icon icon-layout" aria-hidden="true"></span>Macros</h2>
         <div id="macros-panel"></div>
       </section>
 
       <section>
-        <h2><img class="heading-icon" src="/icons/bulb.svg" alt="">LED Settings</h2>
+        <h2><span class="heading-icon icon icon-bulb" aria-hidden="true"></span>LED Settings</h2>
         <div class="general-form">
           <label for="led-timeout">LED Timeout</label>
           <div id="led-timeout-spinner" class="midi-spinner">
@@ -177,7 +177,7 @@
       </section>
 
       <section>
-        <h2><img class="heading-icon" src="/icons/importexport.svg" alt="">Import/Export</h2>
+        <h2><span class="heading-icon icon icon-importexport" aria-hidden="true"></span>Import/Export</h2>
         <div class="general-form">
           <div class="general-reset">
             <button id="reset" class="danger">Reset Settings</button>
@@ -195,16 +195,16 @@
     <div class="footer-inner">
       <span id="footer-version">MP2040</span>
       <div class="theme-toggle">
-        <button class="theme-btn" data-theme="light" title="Light"><img src="/icons/light.svg" alt="Light theme"></button>
-        <button class="theme-btn" data-theme="dark" title="Dark"><img src="/icons/dark.svg" alt="Dark theme"></button>
-        <button class="theme-btn" data-theme="auto" title="Auto"><img src="/icons/auto.svg" alt="Auto theme"></button>
+        <button class="theme-btn" data-theme="light" title="Light"><span class="icon icon-light" aria-hidden="true"></span></button>
+        <button class="theme-btn" data-theme="dark" title="Dark"><span class="icon icon-dark" aria-hidden="true"></span></button>
+        <button class="theme-btn" data-theme="auto" title="Auto"><span class="icon icon-auto" aria-hidden="true"></span></button>
       </div>
       <span class="footer-links">
         <a class="footer-link" href="https://www.thnikk.moe" target="_blank" rel="noopener noreferrer" title="Website">
-          <img src="/icons/web.svg" alt="Website">
+          <span class="icon icon-web" aria-hidden="true"></span>
         </a>
         <a class="footer-link" href="https://github.com/thnikk" target="_blank" rel="noopener noreferrer" title="GitHub">
-          <img src="/icons/github.svg" alt="GitHub">
+          <span class="icon icon-github" aria-hidden="true"></span>
         </a>
       </span>
     </div>

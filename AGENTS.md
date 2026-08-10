@@ -44,3 +44,10 @@
 
 ## Web conventions
 - Don't inline SVGs, styling, or js.
+
+### Icons
+- Icons live in `www/icons/` as single-path SVGs (no explicit `fill`, so black). Served at `/icons/<name>.svg` and embedded into the firmware by `makefsdata.py`.
+- To add one: save `<name>.svg` to `www/icons/`, add an `.icon-<name>` rule in `style.css` with both `-webkit-mask-image` and `mask-image` URLs, then use `<span class="icon icon-<name>" aria-hidden="true"></span>` in `index.html`.
+- Do **not** use `<img src="/icons/...">`. The `.icon` base class paints the SVG via `mask-image` + `background-color: currentColor`, so the icon inherits its container's text color and works in both themes.
+- Icons are invisible without an explicit size: add `width`/`height` in a per-context rule (`.heading-icon`, `.nav-link .icon`, `.theme-btn .icon`, `.led-fill button .icon`, ...) or give the span its own width/height.
+- `.logo` and `.macro-step-edit-icon` are the same mask technique and follow the same rules.
