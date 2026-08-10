@@ -123,13 +123,13 @@ body {
 .icon-reboot { -webkit-mask-image: url("/icons/reboot.svg"); mask-image: url("/icons/reboot.svg"); }
 .icon-profile { -webkit-mask-image: url("/icons/profile.svg"); mask-image: url("/icons/profile.svg"); }
 .icon-bulb { -webkit-mask-image: url("/icons/bulb.svg"); mask-image: url("/icons/bulb.svg"); }
-.icon-bucket { -webkit-mask-image: url("/icons/bucket.svg"); mask-image: url("/icons/bucket.svg"); }
 .icon-importexport { -webkit-mask-image: url("/icons/importexport.svg"); mask-image: url("/icons/importexport.svg"); }
 .icon-light { -webkit-mask-image: url("/icons/light.svg"); mask-image: url("/icons/light.svg"); }
 .icon-dark { -webkit-mask-image: url("/icons/dark.svg"); mask-image: url("/icons/dark.svg"); }
 .icon-web { -webkit-mask-image: url("/icons/web.svg"); mask-image: url("/icons/web.svg"); }
 .icon-docs { -webkit-mask-image: url("/icons/docs.svg"); mask-image: url("/icons/docs.svg"); }
 .icon-etsy { -webkit-mask-image: url("/icons/etsy.svg"); mask-image: url("/icons/etsy.svg"); }
+.icon-trash { -webkit-mask-image: url("/icons/trash.svg"); mask-image: url("/icons/trash.svg"); }
 .icon-github { -webkit-mask-image: url("/icons/github.svg"); mask-image: url("/icons/github.svg"); }
 
 /* Brand logo: .logo defines the colors (the SVG's alpha channel painted in
@@ -1060,6 +1060,8 @@ html[data-theme="light"] .ms-caret {
 .led-color-picker {
   display: flex;
   align-items: stretch;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .color-picker {
@@ -1167,7 +1169,34 @@ html[data-theme="light"] .ms-caret {
 
 .led-popover-color .led-color-btn {
   width: auto;
-  padding: 0.4rem 0.9rem;
+  height: 2.1rem;
+  padding: 0 0.9rem;
+}
+
+.led-popover-unset {
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.led-popover-unset .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.led-popover-unset:hover:not(:disabled) {
+  border-color: var(--btn-hover-border);
 }
 
 .led-popover-color input[type="color"] {
@@ -1179,41 +1208,6 @@ html[data-theme="light"] .ms-caret {
   border: none;
   opacity: 0;
   cursor: pointer;
-}
-
-/* "Fill all with default colors" action under the LED color pickers. */
-.led-row > .led-colors {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.led-fill {
-  margin-left: auto;
-  display: flex;
-  align-items: stretch;
-}
-
-.led-fill button {
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  background: var(--btn-bg);
-  border: 1px solid var(--btn-border);
-  color: var(--btn-text);
-  font-family: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.led-fill button .icon {
-  width: 14px;
-  height: 14px;
-}
-
-.led-fill button:hover {
-  background: var(--btn-hover);
 }
 
 /* Pill slider (brightness / speed) */

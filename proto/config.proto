@@ -14,9 +14,8 @@ message KeyMapping
     // (a per-note accent).
     repeated uint32 midiVelocities = 4 [(nanopb).max_count = 128];
     // Per-key LED colors for custom mode (LED_MODE_CUSTOM). Indexed by key
-    // like the other per-key arrays. A value of 0 means literal black; keys
-    // without an entry (count < MAX_KEYS) fall back to the global
-    // colorNormal / colorPressed.
+    // like the other per-key arrays. A value of 0 (or no entry, count <
+    // MAX_KEYS) uses the global colorNormal / colorPressed.
     repeated uint32 ledNormalColors = 5 [(nanopb).max_count = 128];
     repeated uint32 ledPressedColors = 6 [(nanopb).max_count = 128];
 }

@@ -147,14 +147,15 @@ void LedController::configure()
             ? ledOptions.pinLedIndices[pin] : -1;
     }
 
-    // Mirror the active profile's per-key colors for custom mode.
+    // Mirror the active profile's per-key colors for custom mode. A key with
+    // a normal color but no pressed entry uses the global pressed color.
     const KeyMapping& km = Storage::getInstance().getKeyMapping();
     ledColorCount = km.ledNormalColors_count < MAX_KEYS ? km.ledNormalColors_count : MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)ledColorCount; pin++)
     {
         ledNormalColors[pin] = km.ledNormalColors[pin];
         ledPressedColors[pin] = pin < (Pin_t)km.ledPressedColors_count
-            ? km.ledPressedColors[pin] : colorNormal;
+            ? km.ledPressedColors[pin] : 0;
     }
 
     // Total strip length: use the configured count, or derive from the highest
@@ -428,14 +429,15 @@ void LedController::applyLedPreview(const LedPreview& preview)
     brightnessMaximum = preview.brightnessMaximum;
     colorNormal = preview.colorNormal;
     colorPressed = preview.colorPressed;
-    // Per-key colors for custom mode; a count of 0 keeps the global fallback.
+    // Per-key colors for custom mode; keys without an entry use the global
+    // colorNormal / colorPressed.
     ledColorCount = preview.ledNormalColorCount < MAX_KEYS
         ? preview.ledNormalColorCount : MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)ledColorCount; pin++)
     {
         ledNormalColors[pin] = preview.ledNormalColors[pin];
         ledPressedColors[pin] = pin < (Pin_t)preview.ledPressedColorCount
-            ? preview.ledPressedColors[pin] : colorNormal;
+            ? preview.ledPressedColors[pin] : 0;
     }
     // Inactivity timeout (0-600s), 0 = always on; clamp defensively.
     ledTimeoutMs = (preview.ledTimeout > 600 ? 600 : preview.ledTimeout) * 1000u;
@@ -539,9 +541,9 @@ void LedController::advanceThemeState()
     }
 }
 
-// Custom: per-key colors. Each key's LEDs show its normal color, brightening
-// to its pressed color while held. Keys without a per-key entry (or an empty
-// array) fall back to the global colorNormal / colorPressed.
+// Custom: per-key colors, brightening to the pressed color while held. Keys
+// with no per-key entry (or an entry of 0) use the global colorNormal /
+// colorPressed; unmapped LEDs show the global normal color.
 void LedController::renderCustom()
 {
     float scale = effBrightness() / 255.0f;
@@ -560,8 +562,10 @@ void LedController::renderCustom()
         if (idx < 0) continue;
 
         const bool hasCustom = pin < (Pin_t)ledColorCount;
-        uint32_t normal = hasCustom ? ledNormalColors[pin] : colorNormal;
-        uint32_t pressed = hasCustom ? ledPressedColors[pin] : colorPressed;
+        uint32_t normal = hasCustom && ledNormalColors[pin] != 0
+            ? ledNormalColors[pin] : colorNormal;
+        uint32_t pressed = hasCustom && ledPressedColors[pin] != 0
+            ? ledPressedColors[pin] : colorPressed;
         uint8_t kR = static_cast<uint8_t>(((normal >> 16) & 0xFF) * scale);
         uint8_t kG = static_cast<uint8_t>(((normal >> 8) & 0xFF) * scale);
         uint8_t kB = static_cast<uint8_t>((normal & 0xFF) * scale);

@@ -442,7 +442,7 @@ std::string setOptions()
         profile.has_colorPressed = true;
         profile.colorPressed = led["colorPressed"] | profile.colorPressed;
         // Per-key colors for custom mode. The UI always sends the full array
-        // once edited; an empty/absent array keeps the global fallback.
+        // once edited; an empty/absent array uses the global fallback.
         JsonArray ledNormalColors = led["ledNormalColors"];
         JsonArray ledPressedColors = led["ledPressedColors"];
         for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)ledNormalColors.size(); pin++)
@@ -500,8 +500,8 @@ std::string setLedPreview()
             uint32_t timeout = led["ledTimeout"].as<uint32_t>();
             preview.ledTimeout = timeout > 600 ? 600 : timeout;
         }
-        // Per-key colors for custom mode (0 = literal black, so an empty
-        // array keeps the global fallback).
+        // Per-key colors for custom mode (0 or an empty array uses the global
+        // fallback).
         JsonArray normalColors = led["ledNormalColors"];
         JsonArray pressedColors = led["ledPressedColors"];
         preview.ledNormalColorCount = (uint32_t)normalColors.size();

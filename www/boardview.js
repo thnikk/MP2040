@@ -266,7 +266,7 @@ class BoardView {
     const caseEl = findByRef(this.container, 'case');
     if (caseEl) {
       caseEl.style.setProperty('fill', 'var(--bg-1)', 'important');
-      caseEl.style.setProperty('stroke-width', '1', 'important');
+      caseEl.style.setProperty('stroke-width', '2', 'important');
     }
     const oledEl = findByRef(this.container, 'oled');
     if (oledEl) {

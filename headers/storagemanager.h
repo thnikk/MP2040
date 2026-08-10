@@ -25,8 +25,8 @@ struct LedPreview
     uint32_t colorNormal;
     uint32_t colorPressed;
     uint32_t ledTimeout;       // inactivity timeout in seconds (0 = always on)
-    // Per-key colors for custom mode (0 = literal black). A count of 0 keeps
-    // the global colorNormal/colorPressed fallback for every key.
+    // Per-key colors for custom mode. A value of 0 (or no entry) uses the
+    // global colorNormal / colorPressed.
     uint32_t ledNormalColorCount;
     uint32_t ledNormalColors[MAX_KEYS];
     uint32_t ledPressedColorCount;

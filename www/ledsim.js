@@ -278,19 +278,21 @@ class LedSim {
     const n = this.scaled(this.colorNormal, scale);
     const p = this.scaled(this.colorPressed, scale);
 
-    // Unmapped LEDs (and keys without a per-key color) show the global colors.
+    // Unmapped LEDs (and keys with no per-key color, or a value of 0) show the
+    // global colors; per-key entries override them.
     const out = [];
     for (let i = 0; i < this.count; i++) {
       out.push(this.pressed[i] ? p.slice() : n.slice());
     }
 
-    // Per-key colors override the global fallback for mapped keys.
     for (let pin = 0; pin < this.pinLedIndices.length; pin++) {
       const idx = this.pinLedIndices[pin];
       if (idx === undefined || idx < 0) continue;
       const hasCustom = pin < this.normalColors.length;
-      const normal = hasCustom ? this.normalColors[pin] : this.colorNormal;
-      const pressed = hasCustom ? this.pressedColors[pin] : this.colorPressed;
+      const normal = hasCustom && this.normalColors[pin] !== 0
+        ? this.normalColors[pin] : this.colorNormal;
+      const pressed = hasCustom && this.pressedColors[pin] !== 0
+        ? this.pressedColors[pin] : this.colorPressed;
       const ns = this.scaled(normal, scale);
       const ps = this.scaled(pressed, scale);
       for (let l = 0; l < this.ledsPerKey; l++) {

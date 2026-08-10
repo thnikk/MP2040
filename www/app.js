@@ -111,6 +111,7 @@ let ledPopoverNormalDot = null;
 let ledPopoverPressedDot = null;
 let ledPopoverNormalInput = null;
 let ledPopoverPressedInput = null;
+let ledPopoverUnsetBtn = null;
 
 // Color picker pill button: a pill with a colored dot inside, with a hidden
 // native <input type="color"> overlaid so clicking opens the OS picker
@@ -217,16 +218,16 @@ function syncCurrentToProfile() {
 }
 
 // Make the per-key color arrays dense so they can round-trip through JSON and
-// flash: fill any missing entries with the global colors. A no-op once the
-// arrays are populated (e.g. an all-black custom config stays all-black).
+// flash: fill any missing entries with 0 (off). Keys with no per-key color
+// stay dark in custom mode; a no-op once the arrays are populated.
 // Returns the (now populated) led options object.
 function materializeLedColors() {
   const led = currentOptions.led || {};
   const keyCount = (currentOptions.keycodes || []).length;
   if (!Array.isArray(led.ledNormalColors) || led.ledNormalColors.length < keyCount)
-    led.ledNormalColors = new Array(keyCount).fill(led.colorNormal ?? 0x00ff00);
+    led.ledNormalColors = new Array(keyCount).fill(0);
   if (!Array.isArray(led.ledPressedColors) || led.ledPressedColors.length < keyCount)
-    led.ledPressedColors = new Array(keyCount).fill(led.colorPressed ?? 0xffffff);
+    led.ledPressedColors = new Array(keyCount).fill(0);
   return led;
 }
 
@@ -486,11 +487,7 @@ async function load() {
   });
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
-  document.getElementById('led-mode').addEventListener('change', () => {
-    updateLedFillState();
-    previewLed();
-  });
-  updateLedFillState();
+  document.getElementById('led-mode').addEventListener('change', previewLed);
 
   brightnessSlider = new PillSlider({
     container: document.getElementById('led-brightness'),
@@ -643,6 +640,7 @@ function buildLedColorPopover() {
     if (!ledColorPopover) return;
     const ledOpts = materializeLedColors();
     ledOpts.ledNormalColors[ledColorPopover.pin] = colorToInt(ledPopoverNormalInput.value);
+    updateLedPopoverUnsetState();
     previewLedDebounced();
   });
   normalWrap.appendChild(normalBtn);
@@ -666,6 +664,7 @@ function buildLedColorPopover() {
     if (!ledColorPopover) return;
     const ledOpts = materializeLedColors();
     ledOpts.ledPressedColors[ledColorPopover.pin] = colorToInt(ledPopoverPressedInput.value);
+    updateLedPopoverUnsetState();
     previewLedDebounced();
   });
   pressedWrap.appendChild(pressedBtn);
@@ -673,6 +672,29 @@ function buildLedColorPopover() {
 
   body.appendChild(normalWrap);
   body.appendChild(pressedWrap);
+
+  // Unset: clear this key's per-key colors back to off (0 = off). Unlike the
+  // color pickers, which only ever assign a value, this also lets you remove
+  // an existing per-key color so the key goes dark again.
+  const unsetBtn = document.createElement('button');
+  unsetBtn.type = 'button';
+  unsetBtn.className = 'led-popover-unset';
+  unsetBtn.title = 'Unset';
+  const unsetIcon = document.createElement('span');
+  unsetIcon.className = 'icon icon-trash';
+  unsetIcon.setAttribute('aria-hidden', 'true');
+  unsetBtn.appendChild(unsetIcon);
+  unsetBtn.addEventListener('click', () => {
+    if (!ledColorPopover) return;
+    const ledOpts = materializeLedColors();
+    ledOpts.ledNormalColors[ledColorPopover.pin] = 0;
+    ledOpts.ledPressedColors[ledColorPopover.pin] = 0;
+    previewLedDebounced();
+    closeLedColorPopover();
+  });
+  body.appendChild(unsetBtn);
+  ledPopoverUnsetBtn = unsetBtn;
+
   ledPopoverEl.appendChild(body);
   document.body.appendChild(ledPopoverEl);
 
@@ -716,15 +738,31 @@ function openLedColorPopover(ledIdx, el) {
 
   ledColorPopover = { ledIdx, pin, element: el };
   const led = currentOptions.led || {};
-  const normal = led.ledNormalColors?.[pin] ?? led.colorNormal ?? 0x00ff00;
-  const pressed = led.ledPressedColors?.[pin] ?? led.colorPressed ?? 0xffffff;
+  // Unset keys (value 0) show the global default color so assigning a first
+  // color is easy; set keys show their current value.
+  const rawNormal = led.ledNormalColors?.[pin] ?? 0;
+  const rawPressed = led.ledPressedColors?.[pin] ?? 0;
+  const normal = rawNormal > 0 ? rawNormal : (led.colorNormal ?? 0x00ff00);
+  const pressed = rawPressed > 0 ? rawPressed : (led.colorPressed ?? 0xffffff);
   ledPopoverNormalInput.value = intToColor(normal);
   ledPopoverNormalDot.style.backgroundColor = intToColor(normal);
   ledPopoverPressedInput.value = intToColor(pressed);
   ledPopoverPressedDot.style.backgroundColor = intToColor(pressed);
+  updateLedPopoverUnsetState();
 
   ledPopoverEl.hidden = false;
   positionLedColorPopover();
+}
+
+// Enable the Unset button only once this key actually has a per-key color to
+// remove; re-checked whenever the popover's colors change.
+function updateLedPopoverUnsetState() {
+  if (!ledColorPopover || !ledPopoverUnsetBtn) return;
+  const led = currentOptions.led || {};
+  const pin = ledColorPopover.pin;
+  const rawNormal = led.ledNormalColors?.[pin] ?? 0;
+  const rawPressed = led.ledPressedColors?.[pin] ?? 0;
+  ledPopoverUnsetBtn.disabled = rawNormal === 0 && rawPressed === 0;
 }
 
 function closeLedColorPopover() {
@@ -868,23 +906,6 @@ document.querySelectorAll('[data-route]').forEach((el) => {
 });
 document.getElementById('reboot').addEventListener('click', openRebootModal);
 document.getElementById('reset').addEventListener('click', resetSettings);
-// The "Fill all" button only applies to per-key colors, which Custom mode
-// (LED_MODE_CUSTOM = 0) is the only mode that uses; grey it out otherwise.
-function updateLedFillState() {
-  const isCustom = parseInt(document.getElementById('led-mode').value, 10) === 0;
-  document.getElementById('led-fill-all').disabled = !isCustom;
-}
-
-document.getElementById('led-fill-all').addEventListener('click', () => {
-  const ledOpts = materializeLedColors();
-  const normal = currentOptions.led?.colorNormal ?? 0x00ff00;
-  const pressed = currentOptions.led?.colorPressed ?? 0xffffff;
-  for (let i = 0; i < ledOpts.ledNormalColors.length; i++) {
-    ledOpts.ledNormalColors[i] = normal;
-    ledOpts.ledPressedColors[i] = pressed;
-  }
-  previewLed();
-});
 document.getElementById('set-boot-profile').addEventListener('click', () => {
   activeProfile = currentProfileIndex;
   updateProfileTabs();

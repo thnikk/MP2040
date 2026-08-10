@@ -14,7 +14,7 @@ struct LedPreview;
 
 // LED theme modes (matches the web config "LED Mode" dropdown)
 enum LedMode {
-    LED_MODE_CUSTOM = 0, // per-key colors (falls back to colorNormal/Pressed)
+    LED_MODE_CUSTOM = 0, // per-key colors (unset keys use colorNormal/Pressed)
     LED_MODE_CYCLE,    // rainbow wheel
     LED_MODE_REACTIVE, // white -> rainbow -> off fade
     LED_MODE_BPS,      // color tracks keypress rate
@@ -113,7 +113,7 @@ private:
     uint32_t colorPressed;
     // Per-key colors for custom mode, mirrored from the active key mapping.
     // ledColorCount is the number of populated entries; keys >= count (or a
-    // count of 0) fall back to colorNormal / colorPressed.
+    // count of 0) use the global colorNormal / colorPressed.
     uint32_t ledColorCount;
     uint32_t ledNormalColors[MAX_KEYS];
     uint32_t ledPressedColors[MAX_KEYS];
