@@ -1304,9 +1304,17 @@ html[data-theme="light"] .ms-caret {
 }
 
 /* Buttons */
+/* Save-row wrapper: full width with side padding so the button stays inset
+   from the window edges at narrow widths, mirroring the nav. */
+.actions-container {
+  width: 100%;
+  padding: 0 10px;
+}
+
 .actions {
   width: 100%;
   max-width: 1000px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
