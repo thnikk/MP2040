@@ -216,6 +216,10 @@ body {
   border-color: var(--nav-hover-border);
 }
 
+.nav-link.active:hover {
+	background: var(--bg-4);
+}
+
 .theme-btn .icon {
   width: 15px;
   height: 15px;
@@ -225,6 +229,7 @@ body {
 .theme-toggle {
   display: flex;
   border: 1px solid var(--card-border);
+	background: var(--bg-3);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -459,8 +464,8 @@ section h2 {
 }
 
 .landing-card:hover {
-  border-color: var(--accent);
-  /* transform: translateY(-2px); */
+	background: var(--bg-3);
+	border-color: var(--bg-4);
 }
 
 .landing-card-icon {
@@ -514,7 +519,8 @@ section h2 {
 }
 
 .landing-link:hover {
-  border-color: var(--accent);
+	background: var(--bg-3);
+	border-color: var(--bg-4);
 }
 
 .landing-link-icon {
@@ -1080,20 +1086,21 @@ html[data-theme="light"] .ms-caret {
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  padding: 0.5rem 1rem;
+  padding: 5px 10px;
   border-radius: 999px;
   background: var(--btn-bg);
   border: 1px solid var(--btn-border);
   color: var(--btn-text);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.led-color-btn:hover {
+.color-picker:hover .led-color-btn {
   border-color: var(--btn-hover-border);
+	background-color: var(--bg-4);
 }
 
 .led-color-btn.disabled {
@@ -1224,6 +1231,7 @@ html[data-theme="light"] .ms-caret {
 /* Pill slider (brightness / speed) */
 .led-slider {
   min-width: 0;
+	display: flex;
 }
 
 .pill-slider {
@@ -1232,7 +1240,6 @@ html[data-theme="light"] .ms-caret {
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 0.5rem 1.5rem;
   border: 1px solid var(--card-border);
   border-radius: 999px;
   background: var(--page-bg);
@@ -1244,7 +1251,7 @@ html[data-theme="light"] .ms-caret {
 
 .pill-slider:focus {
   outline: none;
-  border-color: var(--accent);
+  /*border-color: var(--accent);*/
 }
 
 .pill-slider.disabled {
@@ -1264,7 +1271,8 @@ html[data-theme="light"] .ms-caret {
 
 .pill-slider-label {
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: 1rem;
+	font-weight: 600;
   pointer-events: none;
   z-index: 1;
 }
@@ -1279,7 +1287,8 @@ html[data-theme="light"] .ms-caret {
   align-items: center;
   justify-content: center;
   color: var(--page-bg);
-  font-size: 0.95rem;
+  font-size: 1rem;
+	font-weight: 600;
   pointer-events: none;
   z-index: 2;
 }
@@ -1310,6 +1319,7 @@ button {
 
 button:hover {
   border-color: var(--btn-hover-border);
+	background: var(--bg-4);
 }
 
 button.danger {
