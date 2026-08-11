@@ -123,7 +123,8 @@ html[data-theme="light"] .logo-link:hover {
 .icon-reboot { -webkit-mask-image: url("/icons/reboot.svg"); mask-image: url("/icons/reboot.svg"); }
 .icon-profile { -webkit-mask-image: url("/icons/profile.svg"); mask-image: url("/icons/profile.svg"); }
 .icon-bulb { -webkit-mask-image: url("/icons/bulb.svg"); mask-image: url("/icons/bulb.svg"); }
-.icon-importexport { -webkit-mask-image: url("/icons/importexport.svg"); mask-image: url("/icons/importexport.svg"); }
+.icon-download { -webkit-mask-image: url("/icons/download.svg"); mask-image: url("/icons/download.svg"); }
+.icon-upload { -webkit-mask-image: url("/icons/upload.svg"); mask-image: url("/icons/upload.svg"); }
 .icon-light { -webkit-mask-image: url("/icons/light.svg"); mask-image: url("/icons/light.svg"); }
 .icon-dark { -webkit-mask-image: url("/icons/dark.svg"); mask-image: url("/icons/dark.svg"); }
 .icon-web { -webkit-mask-image: url("/icons/web.svg"); mask-image: url("/icons/web.svg"); }
@@ -817,11 +818,27 @@ html[data-theme="light"] .ms-caret {
   flex-basis: 100%;
 }
 
-/* Reset Settings row at the bottom of the General card */
-.general-reset {
+/* Import/Export + Reset row at the bottom of the General card */
+.general-import-export {
   flex-basis: 100%;
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.general-import-export button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.general-import-export button .icon {
+  width: 14px;
+  height: 14px;
 }
 
 /* MIDI-only General controls (hidden unless the input mode is MIDI).

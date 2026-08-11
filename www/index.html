@@ -171,10 +171,13 @@
       </section>
 
       <section>
-        <h2><span class="heading-icon icon icon-importexport" aria-hidden="true"></span>Import/Export</h2>
+        <h2><span class="heading-icon icon icon-download" aria-hidden="true"></span>Import/Export</h2>
         <div class="general-form">
-          <div class="general-reset">
-            <button id="reset" class="danger">Reset Settings</button>
+          <div class="general-import-export">
+            <button id="export-settings" type="button"><span class="icon icon-download" aria-hidden="true"></span>Export Settings</button>
+            <button id="import-settings" type="button"><span class="icon icon-upload" aria-hidden="true"></span>Import Settings</button>
+            <button id="reset" class="danger"><span class="icon icon-reboot" aria-hidden="true"></span>Reset Settings</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden>
           </div>
         </div>
       </section>

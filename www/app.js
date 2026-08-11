@@ -975,6 +975,107 @@ async function resetSettings() {
   Toast.show('Settings reset. Rebooting...', 'info');
 }
 
+// ---- import / export ------------------------------------------------------
+
+// Download all settings (profiles + globals) as a portable JSON file. Board
+// properties are excluded: they're fixed per board and re-enforced on import.
+function exportSettings() {
+  syncCurrentToProfile();
+  const payload = {
+    type: 'mp2040-config',
+    version: 1,
+    activeProfile,
+    defaultInputMode: currentOptions.defaultInputMode ?? 1,
+    macroIndices: currentOptions.macroIndices || [],
+    macros: currentOptions.macros || [],
+    led: {
+      ledTimeout: currentOptions.led?.ledTimeout ?? 0,
+      ledSpeeds: getModeLedSpeeds(),
+      colorNormalByMode: getModeLedColors().normal,
+      colorPressedByMode: getModeLedColors().pressed,
+    },
+    profiles: profiles.map((p) => cloneProfile(p)),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mp2040-config.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  Toast.show('Settings exported.', 'success');
+}
+
+// Restore settings from an exported JSON file. The board's setOptions only
+// edits one profile per call, so each profile is applied in turn; global
+// fields (macros, input mode, active profile) ride along on the last call to
+// stay under the firmware's 16KB POST limit.
+async function importSettings(file) {
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+  } catch (e) {
+    Toast.show('Import failed: not a valid JSON file', 'error');
+    return;
+  }
+  if (!data || data.type !== 'mp2040-config' || !Array.isArray(data.profiles) || !data.profiles.length) {
+    Toast.show('Import failed: not an MP2040 settings file', 'error');
+    return;
+  }
+  const profiles = data.profiles.slice(0, 4);
+  const led = data.led || {};
+  const globals = {
+    macroIndices: data.macroIndices || [],
+    macros: data.macros || [],
+    defaultInputMode: data.defaultInputMode ?? 1,
+    activeProfile: Number.isInteger(data.activeProfile) ? data.activeProfile : 0,
+  };
+  try {
+    for (let i = 0; i < profiles.length; i++) {
+      const p = profiles[i];
+      const body = {
+        profileIndex: i,
+        keycodes: p.keycodes || [],
+        modifierMasks: p.modifierMasks || [],
+        midiNotes: p.midiNotes || [],
+        midiVelocities: p.midiVelocities || [],
+        midi: p.midi || {},
+        led: {
+          ...(p.led || {}),
+          ledSpeeds: led.ledSpeeds || [],
+          colorNormalByMode: led.colorNormalByMode || [],
+          colorPressedByMode: led.colorPressedByMode || [],
+          ledTimeout: led.ledTimeout ?? 0,
+        },
+        // Globals only on the last call.
+        ...(i === profiles.length - 1 ? globals : {}),
+      };
+      await api('/api/setOptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    }
+    Toast.show('Settings imported.', 'success');
+    location.reload();
+  } catch (e) {
+    Toast.show('Import failed: ' + e, 'error');
+  }
+}
+
+document.getElementById('export-settings').addEventListener('click', exportSettings);
+document.getElementById('import-settings').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  importSettings(file);
+  e.target.value = '';
+});
+
 document.getElementById('save').addEventListener('click', save);
 document.getElementById('save-settings').addEventListener('click', save);
 document.querySelectorAll('[data-route]').forEach((el) => {
