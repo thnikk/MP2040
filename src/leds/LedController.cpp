@@ -25,6 +25,11 @@ static const SpeedRange speedRanges[] = {
 #define RAIN_DROP_MIN_MS 200
 #define RAIN_DROP_MAX_MS 2000
 
+// Length of the pressed->normal gradient trailing a ripple ring, in grid
+// cells. The ring itself (behind == 0) is full pressed; the trail fades
+// linearly back to the normal color over this many cells.
+#define RIPPLE_TRAIL_CELLS 4
+
 // Suspend/wake fade step (0-255 per 20ms render tick). 255/10 = ~25 ticks,
 // so the fade in/out takes roughly half a second.
 #define LED_FADE_STEP 10
@@ -523,7 +528,10 @@ void LedController::advanceThemeState()
             {
                 if (!ripples[i].active) continue;
                 ripples[i].radius++;
-                if (ripples[i].radius > maxGridDistance(ripples[i].row, ripples[i].col))
+                // Keep the ripple alive until its gradient trail has fully
+                // passed the grid; deactivating at the ring's edge would cut
+                // off the trailing cells still visible on the board.
+                if (ripples[i].radius > maxGridDistance(ripples[i].row, ripples[i].col) + RIPPLE_TRAIL_CELLS)
                     ripples[i].active = false;
             }
             break;
@@ -712,7 +720,11 @@ void LedController::spawnRipple(int8_t row, int8_t col)
     ripples[oldest].radius = 0;
 }
 
-// Ripple: rings propagate outward from each pressed key, leaving a fading trail.
+// Ripple: a single pressed-color ring expands outward from each pressed key,
+// trailed by a smooth gradient interpolating pressed -> normal. The ring
+// (behind == 0) is full pressed; cells behind it fade back to normal over
+// RIPPLE_TRAIL_CELLS. Overlapping ripples composite by max intensity so the
+// nearest/most-intense ring wins.
 void LedController::renderRipple()
 {
     float scale = effBrightness() / 255.0f;
@@ -723,37 +735,36 @@ void LedController::renderRipple()
     uint8_t pg = static_cast<uint8_t>(((colorPressed >> 8) & 0xFF) * scale);
     uint8_t pb = static_cast<uint8_t>((colorPressed & 0xFF) * scale);
 
-    for (uint32_t i = 0; i < stripCount; i++)
-        neopixel->setPixel(i, nr, ng, nb);
-
-    for (uint32_t r = 0; r < MAX_RIPPLES; r++)
+    for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
     {
-        if (!ripples[r].active) continue;
-        const int16_t radius = ripples[r].radius;
-        for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
+        for (uint32_t col = 0; col < LED_GRID_COLS; col++)
         {
-            for (uint32_t col = 0; col < LED_GRID_COLS; col++)
+            int32_t idx = BOARD_LED_GRID[row][col];
+            if (idx < 0 || idx >= (int32_t)stripCount) continue;
+
+            int16_t t = 0; // 0..255 intensity (255 = full pressed)
+            for (uint32_t r = 0; r < MAX_RIPPLES; r++)
             {
-                int32_t idx = BOARD_LED_GRID[row][col];
-                if (idx < 0 || idx >= (int32_t)stripCount) continue;
+                if (!ripples[r].active) continue;
                 int16_t dr = static_cast<int16_t>(row) - ripples[r].row;
                 if (dr < 0) dr = -dr;
                 int16_t dc = static_cast<int16_t>(col) - ripples[r].col;
                 if (dc < 0) dc = -dc;
-                int16_t dist = dr > dc ? dr : dc;
-                if (dist == radius)
-                {
-                    neopixel->setPixel(idx, pr, pg, pb);
-                }
-                else if (dist == radius - 1)
-                {
-                    neopixel->setPixel(idx, pr / 2, pg / 2, pb / 2);
-                }
-                else if (dist == radius - 2)
-                {
-                    neopixel->setPixel(idx, pr / 4, pg / 4, pb / 4);
-                }
+                int16_t behind = ripples[r].radius - (dr > dc ? dr : dc);
+                int16_t rt;
+                if (behind < 0 || behind >= RIPPLE_TRAIL_CELLS)
+                    rt = 0;
+                else if (behind == 0)
+                    rt = 255;
+                else
+                    rt = static_cast<int16_t>(255 - (behind * 255) / RIPPLE_TRAIL_CELLS);
+                if (rt > t) t = rt;
             }
+
+            neopixel->setPixel(idx,
+                static_cast<uint8_t>(nr + (static_cast<int32_t>(pr - nr) * t) / 255),
+                static_cast<uint8_t>(ng + (static_cast<int32_t>(pg - ng) * t) / 255),
+                static_cast<uint8_t>(nb + (static_cast<int32_t>(pb - nb) * t) / 255));
         }
     }
     neopixel->show();

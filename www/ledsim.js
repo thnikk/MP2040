@@ -11,6 +11,10 @@ const LED_MODE_RAIN = 5;
 
 const MAX_RIPPLES = 8;
 
+// Length of the pressed->normal gradient trailing a ripple ring, in grid
+// cells (mirrors RIPPLE_TRAIL_CELLS in LedController.cpp).
+const RIPPLE_TRAIL_CELLS = 4;
+
 // Rain drop interval bounds (ms): a random drop fires every 0.2-2 seconds.
 const RAIN_DROP_MIN_MS = 200;
 const RAIN_DROP_MAX_MS = 2000;
@@ -240,7 +244,9 @@ class LedSim {
         for (let i = 0; i < this.ripples.length; i++) {
           if (!this.ripples[i].active) continue;
           this.ripples[i].radius++;
-          if (this.ripples[i].radius > this.maxGridDistance(this.ripples[i].origin))
+          // Keep the ripple alive until its gradient trail has fully passed
+          // the grid, matching the firmware.
+          if (this.ripples[i].radius > this.maxGridDistance(this.ripples[i].origin) + RIPPLE_TRAIL_CELLS)
             this.ripples[i].active = false;
         }
         break;
@@ -363,16 +369,27 @@ class LedSim {
     const scale = this.brightness / 255;
     const n = this.scaled(this.colorNormal, scale);
     const p = this.scaled(this.colorPressed, scale);
-    const out = this.pressed.map(() => n.slice());
+    const out = [];
 
-    for (const ripple of this.ripples) {
-      if (!ripple.active) continue;
-      for (let j = 0; j < this.count; j++) {
-        const dist = this.distCells(ripple.origin, j);
-        if (dist === ripple.radius) out[j] = p.slice();
-        else if (dist === ripple.radius - 1) out[j] = p.map((c) => c >> 1);
-        else if (dist === ripple.radius - 2) out[j] = p.map((c) => c >> 2);
+    for (let j = 0; j < this.count; j++) {
+      // 0..255 intensity: 255 = full pressed ring, 0 = normal. Overlapping
+      // ripples composite by max intensity, matching the firmware.
+      let t = 0;
+      for (const ripple of this.ripples) {
+        if (!ripple.active) continue;
+        const behind = ripple.radius - this.distCells(ripple.origin, j);
+        let rt;
+        if (behind < 0 || behind >= RIPPLE_TRAIL_CELLS) rt = 0;
+        else if (behind === 0) rt = 255;
+        else rt = 255 - Math.floor((behind * 255) / RIPPLE_TRAIL_CELLS);
+        if (rt > t) t = rt;
       }
+      const mix = t / 255;
+      out.push([
+        Math.floor(n[0] + (p[0] - n[0]) * mix),
+        Math.floor(n[1] + (p[1] - n[1]) * mix),
+        Math.floor(n[2] + (p[2] - n[2]) * mix),
+      ]);
     }
     return out;
   }
