@@ -21,15 +21,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
-     inkscape:zoom="4.3794333"
-     inkscape:cx="67.931164"
-     inkscape:cy="65.076913"
-     inkscape:window-width="1261"
-     inkscape:window-height="1371"
+     inkscape:zoom="6.193454"
+     inkscape:cx="45.370483"
+     inkscape:cy="93.40507"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     inkscape:current-layer="layer2" />
+     inkscape:current-layer="layer5" />
   <desc
      id="desc1">2k.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc>
   <defs
@@ -116,46 +116,12 @@
        y="83.343002"
        rx="3.7795277"
        ry="3.7795277" />
-    <rect
-       style="display:none;fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="rect88"
-       width="40"
-       height="20"
-       x="91.121803"
-       y="28.999186"
-       rx="10"
-       ry="10"
-       inkscape:label="test-btn" />
     <circle
        style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;fill-opacity:1"
        id="pin27"
        cx="38.2953"
        cy="38.299702"
        r="8" />
-  </g>
-  <g
-     inkscape:groupmode="layer"
-     id="layer3"
-     inkscape:label="leds"
-     transform="translate(1,1)">
-    <rect
-       style="fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="led0"
-       width="22.677166"
-       height="11.338583"
-       x="26.956715"
-       y="90.902054"
-       rx="5.6692915"
-       ry="5.6692915" />
-    <rect
-       style="fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="led1"
-       width="22.677166"
-       height="11.338583"
-       x="98.956718"
-       y="90.902054"
-       rx="5.6692915"
-       ry="5.6692915" />
   </g>
   <g
      inkscape:groupmode="layer"
@@ -180,17 +146,57 @@
   </g>
   <g
      inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="leds"
+     transform="translate(1,1)">
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led0"
+       width="22.677166"
+       height="11.338583"
+       x="26.956715"
+       y="87.122528"
+       rx="5.6692915"
+       ry="5.6692915" />
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led1"
+       width="22.677166"
+       height="11.338583"
+       x="98.956726"
+       y="87.122528"
+       rx="5.6692915"
+       ry="5.6692915" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer6"
+     inkscape:label="extra"
+     style="display:none">
+    <path
+       style="fill:#ff0000;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 38.295298,98.461113 -1.93e-4,38.795297"
+       id="path5"
+       transform="translate(1,1)" />
+    <path
+       style="fill:#ff0000;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 110.29531,98.461113 -1e-5,38.795297"
+       id="path6"
+       transform="translate(1,1)" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
      id="layer5"
      inkscape:label="text-alignment"
      style="display:none"
      transform="translate(1,1)">
     <path
        style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       d="M 83.338608,110.29971 H 137.252"
+       d="M 83.338609,117.85876 H 137.252"
        id="pin29-label" />
     <path
        style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       d="M 11.338607,110.29971 H 65.251991"
+       d="M 11.33851,117.85876 H 65.251894"
        id="pin28-label" />
     <path
        style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
