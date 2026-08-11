@@ -213,6 +213,8 @@ export function parseBoardConfig(configDir, rootDir) {
       brightnessSteps: parseNum(d.LED_BRIGHTNESS_STEPS) ?? 1,
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,
       colorPressed: parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff,
+      colorNormalByMode: Array(6).fill(parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00),
+      colorPressedByMode: Array(6).fill(parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
     // Number of keys the board can report, mirroring firmware getKeyCount():

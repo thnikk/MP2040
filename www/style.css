@@ -1096,6 +1096,12 @@ html[data-theme="light"] .ms-caret {
   border-color: var(--btn-hover-border);
 }
 
+.led-color-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .led-color-circle {
   width: 16px;
   height: 16px;

@@ -216,8 +216,6 @@ static void writeProfileJson(JsonObject obj, const Profile* profile)
     JsonObject led = obj.createNestedObject("led");
     led["brightnessMaximum"] = (profile && profile->has_brightnessMaximum) ? profile->brightnessMaximum : lo.brightnessMaximum;
     led["brightnessSteps"] = (profile && profile->has_brightnessSteps) ? profile->brightnessSteps : lo.brightnessSteps;
-    led["colorNormal"] = (profile && profile->has_colorNormal) ? profile->colorNormal : lo.colorNormal;
-    led["colorPressed"] = (profile && profile->has_colorPressed) ? profile->colorPressed : lo.colorPressed;
     led["ledMode"] = (profile && profile->has_ledMode) ? profile->ledMode : lo.ledMode;
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
     // legacy configs = the UI falls back to the global colors).
@@ -294,8 +292,15 @@ std::string getOptions()
     doc["led"]["ledCount"] = ledOptions.ledCount;
     doc["led"]["brightnessMaximum"] = ledOptions.brightnessMaximum;
     doc["led"]["brightnessSteps"] = ledOptions.brightnessSteps;
-    doc["led"]["colorNormal"] = ledOptions.colorNormal;
-    doc["led"]["colorPressed"] = ledOptions.colorPressed;
+    JsonArray colorNormalByMode = doc["led"].createNestedArray("colorNormalByMode");
+    JsonArray colorPressedByMode = doc["led"].createNestedArray("colorPressedByMode");
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        colorNormalByMode.add(i < ledOptions.colorNormalByMode_count
+            ? ledOptions.colorNormalByMode[i] : ledOptions.colorNormal);
+        colorPressedByMode.add(i < ledOptions.colorPressedByMode_count
+            ? ledOptions.colorPressedByMode[i] : ledOptions.colorPressed);
+    }
     doc["led"]["ledMode"] = ledOptions.ledMode;
     doc["led"]["ledSpeed"] = ledOptions.ledSpeed;
     JsonArray ledSpeeds = doc["led"].createNestedArray("ledSpeeds");
@@ -449,12 +454,29 @@ std::string setOptions()
         profile.brightnessMaximum = led["brightnessMaximum"] | profile.brightnessMaximum;
         profile.has_brightnessSteps = true;
         profile.brightnessSteps = led["brightnessSteps"] | profile.brightnessSteps;
-        profile.has_colorNormal = true;
-        profile.colorNormal = led["colorNormal"] | profile.colorNormal;
-        profile.has_colorPressed = true;
-        profile.colorPressed = led["colorPressed"] | profile.colorPressed;
+        // Per-mode normal/pressed colors are global (not per-profile).
+        JsonArray colorNormalByMode = led["colorNormalByMode"];
+        JsonArray colorPressedByMode = led["colorPressedByMode"];
+        if (colorNormalByMode.size() > 0)
+        {
+            config.ledOptions.colorNormalByMode_count = 0;
+            for (uint32_t i = 0; i < 6 && i < (uint32_t)colorNormalByMode.size(); i++)
+            {
+                config.ledOptions.colorNormalByMode[i] = colorNormalByMode[i].as<uint32_t>();
+                config.ledOptions.colorNormalByMode_count++;
+            }
+        }
+        if (colorPressedByMode.size() > 0)
+        {
+            config.ledOptions.colorPressedByMode_count = 0;
+            for (uint32_t i = 0; i < 6 && i < (uint32_t)colorPressedByMode.size(); i++)
+            {
+                config.ledOptions.colorPressedByMode[i] = colorPressedByMode[i].as<uint32_t>();
+                config.ledOptions.colorPressedByMode_count++;
+            }
+        }
         // Per-key colors for custom mode. The UI always sends the full array
-        // once edited; an empty/absent array uses the global fallback.
+        // once edited; an empty/absent array uses the Custom-mode fallback.
         JsonArray ledNormalColors = led["ledNormalColors"];
         JsonArray ledPressedColors = led["ledPressedColors"];
         for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)ledNormalColors.size(); pin++)
@@ -511,8 +533,14 @@ std::string setLedPreview()
             preview.ledSpeedCount++;
         }
         preview.brightnessMaximum = led["brightnessMaximum"] | 255;
-        preview.colorNormal = led["colorNormal"] | 0x00FF00;
-        preview.colorPressed = led["colorPressed"] | 0xFFFFFF;
+        JsonArray colorNormalByMode = led["colorNormalByMode"];
+        JsonArray colorPressedByMode = led["colorPressedByMode"];
+        for (uint32_t i = 0; i < 6 && i < (uint32_t)colorNormalByMode.size(); i++)
+        {
+            preview.colorNormalByMode[i] = colorNormalByMode[i].as<uint32_t>();
+            preview.colorPressedByMode[i] = colorPressedByMode[i].as<uint32_t>();
+            preview.colorCount++;
+        }
         if (led["ledTimeout"].is<int>())
         {
             uint32_t timeout = led["ledTimeout"].as<uint32_t>();

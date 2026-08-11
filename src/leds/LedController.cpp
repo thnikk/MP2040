@@ -79,8 +79,8 @@ LedController::LedController() :
     ledState(LedState::ON),
     ledDim(255),
     brightnessMaximum(255),
-    colorNormal(0x00FF00),
-    colorPressed(0xFFFFFF),
+    colorNormalByMode{0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00},
+    colorPressedByMode{0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF},
     ledColorCount(0),
     nextRunTime(nil_time),
     pressedLeds(nullptr),
@@ -139,8 +139,13 @@ void LedController::configure()
             ? ledOptions.ledSpeeds[i] : 50;
     recomputeLedSpeed();
     brightnessMaximum = ledOptions.brightnessMaximum;
-    colorNormal = ledOptions.colorNormal;
-    colorPressed = ledOptions.colorPressed;
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        colorNormalByMode[i] = i < ledOptions.colorNormalByMode_count
+            ? ledOptions.colorNormalByMode[i] : ledOptions.colorNormal;
+        colorPressedByMode[i] = i < ledOptions.colorPressedByMode_count
+            ? ledOptions.colorPressedByMode[i] : ledOptions.colorPressed;
+    }
     // Inactivity timeout (0-600s), 0 = always on. Clamp defensively against
     // hand-edited configs. The clock starts at boot so fresh boards stay lit
     // until the first release.
@@ -436,10 +441,15 @@ void LedController::applyLedPreview(const LedPreview& preview)
             ? preview.ledSpeed[i] : 50;
     recomputeLedSpeed();
     brightnessMaximum = preview.brightnessMaximum;
-    colorNormal = preview.colorNormal;
-    colorPressed = preview.colorPressed;
-    // Per-key colors for custom mode; keys without an entry use the global
-    // colorNormal / colorPressed.
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        colorNormalByMode[i] = i < preview.colorCount
+            ? preview.colorNormalByMode[i] : 0x00FF00;
+        colorPressedByMode[i] = i < preview.colorCount
+            ? preview.colorPressedByMode[i] : 0xFFFFFF;
+    }
+    // Per-key colors for custom mode; keys without an entry use Custom mode's
+    // normal/pressed colors.
     ledColorCount = preview.ledNormalColorCount < MAX_KEYS
         ? preview.ledNormalColorCount : MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)ledColorCount; pin++)
@@ -491,6 +501,18 @@ void LedController::recomputeLedSpeed()
     ledSpeed = (uint32_t)((float)maxInterval * t);
     if (ledSpeed < 1) ledSpeed = 1;
     if (ledSpeed > 1000) ledSpeed = 1000;
+}
+
+// The current mode's normal/pressed colors (Custom = index 0, Ripple = 4,
+// Rain = 5). Cycle/Reactive/BPS are hue-based and never call these.
+uint32_t LedController::currentNormalColor() const
+{
+    return colorNormalByMode[ledMode < 6 ? ledMode : 0];
+}
+
+uint32_t LedController::currentPressedColor() const
+{
+    return colorPressedByMode[ledMode < 6 ? ledMode : 0];
 }
 
 // Advance the theme state one step (hue / per-LED fade state). Called at the
@@ -555,20 +577,22 @@ void LedController::advanceThemeState()
 }
 
 // Custom: per-key colors, brightening to the pressed color while held. Keys
-// with no per-key entry (or an entry of 0) use the global colorNormal /
-// colorPressed; unmapped LEDs show the global normal color.
+// with no per-key entry (or an entry of 0) use Custom mode's normal/pressed
+// colors; unmapped LEDs show Custom mode's normal color.
 void LedController::renderCustom()
 {
     float scale = effBrightness() / 255.0f;
-    uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
-    uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
-    uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
+    const uint32_t normalColor = currentNormalColor();
+    uint8_t nr = static_cast<uint8_t>(((normalColor >> 16) & 0xFF) * scale);
+    uint8_t ng = static_cast<uint8_t>(((normalColor >> 8) & 0xFF) * scale);
+    uint8_t nb = static_cast<uint8_t>((normalColor & 0xFF) * scale);
 
-    // Unmapped LEDs show the global normal color.
+    // Unmapped LEDs show Custom mode's normal color.
     for (uint32_t i = 0; i < stripCount; i++)
         neopixel->setPixel(i, nr, ng, nb);
 
     const uint32_t keyCount = Storage::getInstance().getKeyCount();
+    const uint32_t pressedColor = currentPressedColor();
     for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
     {
         int32_t idx = pinLedIndices[pin];
@@ -576,9 +600,9 @@ void LedController::renderCustom()
 
         const bool hasCustom = pin < (Pin_t)ledColorCount;
         uint32_t normal = hasCustom && ledNormalColors[pin] != 0
-            ? ledNormalColors[pin] : colorNormal;
+            ? ledNormalColors[pin] : normalColor;
         uint32_t pressed = hasCustom && ledPressedColors[pin] != 0
-            ? ledPressedColors[pin] : colorPressed;
+            ? ledPressedColors[pin] : pressedColor;
         uint8_t kR = static_cast<uint8_t>(((normal >> 16) & 0xFF) * scale);
         uint8_t kG = static_cast<uint8_t>(((normal >> 8) & 0xFF) * scale);
         uint8_t kB = static_cast<uint8_t>((normal & 0xFF) * scale);
@@ -728,12 +752,14 @@ void LedController::spawnRipple(int8_t row, int8_t col)
 void LedController::renderRipple()
 {
     float scale = effBrightness() / 255.0f;
-    uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
-    uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
-    uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
-    uint8_t pr = static_cast<uint8_t>(((colorPressed >> 16) & 0xFF) * scale);
-    uint8_t pg = static_cast<uint8_t>(((colorPressed >> 8) & 0xFF) * scale);
-    uint8_t pb = static_cast<uint8_t>((colorPressed & 0xFF) * scale);
+    const uint32_t normalColor = currentNormalColor();
+    const uint32_t pressedColor = currentPressedColor();
+    uint8_t nr = static_cast<uint8_t>(((normalColor >> 16) & 0xFF) * scale);
+    uint8_t ng = static_cast<uint8_t>(((normalColor >> 8) & 0xFF) * scale);
+    uint8_t nb = static_cast<uint8_t>((normalColor & 0xFF) * scale);
+    uint8_t pr = static_cast<uint8_t>(((pressedColor >> 16) & 0xFF) * scale);
+    uint8_t pg = static_cast<uint8_t>(((pressedColor >> 8) & 0xFF) * scale);
+    uint8_t pb = static_cast<uint8_t>((pressedColor & 0xFF) * scale);
 
     for (uint32_t row = 0; row < LED_GRID_ROWS; row++)
     {
@@ -788,12 +814,14 @@ uint32_t LedController::rainRandom()
 void LedController::renderRain()
 {
     float scale = effBrightness() / 255.0f;
-    uint8_t nr = static_cast<uint8_t>(((colorNormal >> 16) & 0xFF) * scale);
-    uint8_t ng = static_cast<uint8_t>(((colorNormal >> 8) & 0xFF) * scale);
-    uint8_t nb = static_cast<uint8_t>((colorNormal & 0xFF) * scale);
-    uint8_t pr = static_cast<uint8_t>(((colorPressed >> 16) & 0xFF) * scale);
-    uint8_t pg = static_cast<uint8_t>(((colorPressed >> 8) & 0xFF) * scale);
-    uint8_t pb = static_cast<uint8_t>((colorPressed & 0xFF) * scale);
+    const uint32_t normalColor = currentNormalColor();
+    const uint32_t pressedColor = currentPressedColor();
+    uint8_t nr = static_cast<uint8_t>(((normalColor >> 16) & 0xFF) * scale);
+    uint8_t ng = static_cast<uint8_t>(((normalColor >> 8) & 0xFF) * scale);
+    uint8_t nb = static_cast<uint8_t>((normalColor & 0xFF) * scale);
+    uint8_t pr = static_cast<uint8_t>(((pressedColor >> 16) & 0xFF) * scale);
+    uint8_t pg = static_cast<uint8_t>(((pressedColor >> 8) & 0xFF) * scale);
+    uint8_t pb = static_cast<uint8_t>((pressedColor & 0xFF) * scale);
 
     for (uint32_t i = 0; i < stripCount; i++)
     {

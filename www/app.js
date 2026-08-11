@@ -155,6 +155,10 @@ function createColorPicker(container, { label, value, onChange }) {
     getValue() {
       return input.value;
     },
+    setDisabled(disabled) {
+      input.disabled = disabled;
+      btn.classList.toggle('disabled', disabled);
+    },
   };
 }
 
@@ -181,8 +185,6 @@ function cloneProfile(p) {
       ledMode: p.led?.ledMode ?? 0,
       brightnessMaximum: p.led?.brightnessMaximum ?? 255,
       brightnessSteps: p.led?.brightnessSteps ?? 1,
-      colorNormal: p.led?.colorNormal ?? 0x00ff00,
-      colorPressed: p.led?.colorPressed ?? 0xffffff,
       ledNormalColors: (p.led?.ledNormalColors || []).slice(),
       ledPressedColors: (p.led?.ledPressedColors || []).slice(),
     },
@@ -197,9 +199,9 @@ function applyProfileToOptions(profile, options) {
   options.midiNotes = profile.midiNotes.slice();
   options.midiVelocities = profile.midiVelocities.slice();
   options.midi = { ...(options.midi || {}), ...profile.midi };
-  // Speed is a global per-mode setting; profiles only carry the per-profile
-  // LED scalars (mode, brightness, colors, per-key colors).
-  const { ledSpeeds: _ledSpeeds, ...profileLed } = profile.led || {};
+  // Speed and per-mode colors are global; profiles only carry the per-profile
+  // LED scalars (mode, brightness, per-key colors).
+  const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, ...profileLed } = profile.led || {};
   options.led = { ...(options.led || {}), ...profileLed };
 }
 
@@ -210,7 +212,7 @@ function applyOptionsToProfile(options, profile) {
   profile.midiNotes = options.midiNotes.slice();
   profile.midiVelocities = options.midiVelocities.slice();
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
-  const { ledSpeeds: _ledSpeeds, ...optionsLed } = options.led || {};
+  const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, ...optionsLed } = options.led || {};
   profile.led = { ...(profile.led || {}), ...optionsLed };
 }
 
@@ -244,9 +246,8 @@ function refreshPerProfileControls() {
   if (ledModeEl) ledModeEl.value = led.ledMode ?? 0;
   if (brightnessSlider) brightnessSlider.setValue(led.brightnessMaximum ?? 255);
   syncSpeedSliderToMode();
+  syncColorPickersToMode();
   if (timeoutSpinner) timeoutSpinner.setValue(led.ledTimeout ?? 0);
-  if (colorNormalPicker) colorNormalPicker.setValue(intToColor(led.colorNormal ?? 0x00ff00));
-  if (colorPressedPicker) colorPressedPicker.setValue(intToColor(led.colorPressed ?? 0xffffff));
 }
 
 function updateProfileTabs() {
@@ -319,6 +320,39 @@ function currentLedMode() {
   return parseInt(document.getElementById('led-mode').value, 10) || 0;
 }
 
+// Modes that actually render the normal/pressed colors: Custom (per-key
+// fallback), Ripple, Rain. Cycle/Reactive/BPS are hue-based and ignore them.
+function ledModeUsesColors(mode) {
+  return mode === 0 || mode === 4 || mode === 5;
+}
+
+// Per-mode normal/pressed colors (global, not per-profile): 6-element arrays
+// indexed by LED mode, seeded from the legacy scalars when the firmware hasn't
+// sent per-mode values yet.
+function getModeLedColors() {
+  const led = currentOptions.led || {};
+  let normal = Array.isArray(led.colorNormalByMode) && led.colorNormalByMode.length >= 6
+    ? led.colorNormalByMode.slice() : null;
+  if (!normal) normal = new Array(6).fill(Number.isFinite(led.colorNormal) ? led.colorNormal : 0x00ff00);
+  let pressed = Array.isArray(led.colorPressedByMode) && led.colorPressedByMode.length >= 6
+    ? led.colorPressedByMode.slice() : null;
+  if (!pressed) pressed = new Array(6).fill(Number.isFinite(led.colorPressed) ? led.colorPressed : 0xffffff);
+  return { normal, pressed };
+}
+
+// The color pickers edit the currently-selected mode's colors; reload them
+// when the mode changes and grey them out for modes that don't render colors.
+function syncColorPickersToMode() {
+  if (!colorNormalPicker || !colorPressedPicker) return;
+  const mode = currentLedMode();
+  const colors = getModeLedColors();
+  colorNormalPicker.setValue(intToColor(colors.normal[mode] ?? 0x00ff00));
+  colorPressedPicker.setValue(intToColor(colors.pressed[mode] ?? 0xffffff));
+  const disabled = !ledModeUsesColors(mode);
+  colorNormalPicker.setDisabled(disabled);
+  colorPressedPicker.setDisabled(disabled);
+}
+
 // The speed slider edits the currently-selected mode's speed; reload it from
 // the per-mode array when the mode changes, and grey it out in Custom (the
 // only mode with no animation speed).
@@ -343,15 +377,18 @@ async function previewLed() {
   led.ledSpeeds = speeds;
   led.brightnessMaximum = brightnessSlider ? brightnessSlider.getValue() : 255;
   led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
-  led.colorNormal = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
-  led.colorPressed = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
+  const colors = getModeLedColors();
+  colors.normal[led.ledMode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
+  colors.pressed[led.ledMode] = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
+  led.colorNormalByMode = colors.normal;
+  led.colorPressedByMode = colors.pressed;
   const preview = {
     ledMode: led.ledMode,
     ledSpeeds: led.ledSpeeds,
     brightnessMaximum: led.brightnessMaximum,
     ledTimeout: led.ledTimeout,
-    colorNormal: led.colorNormal,
-    colorPressed: led.colorPressed,
+    colorNormalByMode: led.colorNormalByMode,
+    colorPressedByMode: led.colorPressedByMode,
     ledNormalColors: led.ledNormalColors || [],
     ledPressedColors: led.ledPressedColors || [],
   };
@@ -376,6 +413,10 @@ let midiVelocitySpinner = null;
 // Gather the current controls into a full config payload for /api/setOptions.
 // Includes the profile being edited (profileIndex) and the boot profile.
 function buildOptionsBody() {
+  const colors = getModeLedColors();
+  const mode = currentLedMode();
+  colors.normal[mode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
+  colors.pressed[mode] = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
   return {
     keycodes: currentOptions.keycodes,
     modifierMasks: currentOptions.modifierMasks,
@@ -389,12 +430,12 @@ function buildOptionsBody() {
       velocity: midiVelocitySpinner ? midiVelocitySpinner.getValue() : 127,
     },
     led: {
-      ledMode: parseInt(document.getElementById('led-mode').value, 10),
+      ledMode: mode,
       ledSpeeds: getModeLedSpeeds(),
       brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
-      colorNormal: colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00'),
-      colorPressed: colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff'),
+      colorNormalByMode: colors.normal,
+      colorPressedByMode: colors.pressed,
       ledNormalColors: currentOptions.led?.ledNormalColors || [],
       ledPressedColors: currentOptions.led?.ledPressedColors || [],
     },
@@ -522,6 +563,7 @@ async function load() {
   document.getElementById('led-mode').value = led.ledMode ?? 0;
   document.getElementById('led-mode').addEventListener('change', () => {
     syncSpeedSliderToMode();
+    syncColorPickersToMode();
     previewLed();
   });
 
@@ -556,14 +598,15 @@ async function load() {
 
   colorNormalPicker = createColorPicker(document.getElementById('led-colorNormal'), {
     label: 'Normal',
-    value: intToColor(led.colorNormal ?? 0x00ff00),
+    value: intToColor(led.colorNormalByMode?.[led.ledMode ?? 0] ?? led.colorNormal ?? 0x00ff00),
     onChange: previewLedDebounced,
   });
   colorPressedPicker = createColorPicker(document.getElementById('led-colorPressed'), {
     label: 'Pressed',
-    value: intToColor(led.colorPressed ?? 0xffffff),
+    value: intToColor(led.colorPressedByMode?.[led.ledMode ?? 0] ?? led.colorPressed ?? 0xffffff),
     onChange: previewLedDebounced,
   });
+  syncColorPickersToMode();
 
   buildLedColorPopover();
 
@@ -775,12 +818,12 @@ function openLedColorPopover(ledIdx, el) {
 
   ledColorPopover = { ledIdx, pin, element: el };
   const led = currentOptions.led || {};
-  // Unset keys (value 0) show the global default color so assigning a first
+  // Unset keys (value 0) show Custom mode's default color so assigning a first
   // color is easy; set keys show their current value.
   const rawNormal = led.ledNormalColors?.[pin] ?? 0;
   const rawPressed = led.ledPressedColors?.[pin] ?? 0;
-  const normal = rawNormal > 0 ? rawNormal : (led.colorNormal ?? 0x00ff00);
-  const pressed = rawPressed > 0 ? rawPressed : (led.colorPressed ?? 0xffffff);
+  const normal = rawNormal > 0 ? rawNormal : (led.colorNormalByMode?.[0] ?? led.colorNormal ?? 0x00ff00);
+  const pressed = rawPressed > 0 ? rawPressed : (led.colorPressedByMode?.[0] ?? led.colorPressed ?? 0xffffff);
   ledPopoverNormalInput.value = intToColor(normal);
   ledPopoverNormalDot.style.backgroundColor = intToColor(normal);
   ledPopoverPressedInput.value = intToColor(pressed);

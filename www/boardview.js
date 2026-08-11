@@ -392,8 +392,11 @@ class BoardView {
     // fill only as the fallback / pre-sim baseline.
     if (this.ledSim) return;
 
-    const color = this.options?.led?.colorNormal != null
-      ? intToCss(this.options.led.colorNormal) : '#4caf50';
+    const led = this.options?.led;
+    const mode = led?.ledMode ?? 0;
+    const color = led?.colorNormalByMode?.[mode] != null
+      ? intToCss(led.colorNormalByMode[mode])
+      : (led?.colorNormal != null ? intToCss(led.colorNormal) : '#4caf50');
 
     ledElements(this.container).forEach((led) => {
       shapesOf(led).forEach((s) => {

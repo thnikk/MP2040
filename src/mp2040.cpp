@@ -244,8 +244,12 @@ void MP2040::run() {
 		for (uint32_t i = 0; i < 6; i++)
 			boot.ledSpeed[i] = 50;
 		boot.brightnessMaximum = 255;
-		boot.colorNormal = LED_COLOR_PRESSED;
-		boot.colorPressed = LED_COLOR_PRESSED;
+		boot.colorCount = 6;
+		for (uint32_t i = 0; i < 6; i++)
+		{
+			boot.colorNormalByMode[i] = LED_COLOR_PRESSED;
+			boot.colorPressedByMode[i] = LED_COLOR_PRESSED;
+		}
 		Storage::getInstance().publishLedPreview(boot);
 
 		const int32_t wcPin = Storage::getInstance().getWebConfigPin();
@@ -301,8 +305,14 @@ void MP2040::run() {
 		for (uint32_t i = 0; i < 6; i++)
 			restore.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
 		restore.brightnessMaximum = lo.brightnessMaximum;
-		restore.colorNormal = lo.colorNormal;
-		restore.colorPressed = lo.colorPressed;
+		restore.colorCount = 6;
+		for (uint32_t i = 0; i < 6; i++)
+		{
+			restore.colorNormalByMode[i] = i < lo.colorNormalByMode_count
+				? lo.colorNormalByMode[i] : lo.colorNormal;
+			restore.colorPressedByMode[i] = i < lo.colorPressedByMode_count
+				? lo.colorPressedByMode[i] : lo.colorPressed;
+		}
 		restore.ledTimeout = lo.ledTimeout;
 		restore.ledNormalColorCount = km.ledNormalColors_count;
 		for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)

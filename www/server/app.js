@@ -59,6 +59,12 @@ function makeProfile(src = {}) {
       brightnessSteps: src.led?.brightnessSteps ?? 1,
       colorNormal: src.led?.colorNormal ?? 0x00ff00,
       colorPressed: src.led?.colorPressed ?? 0xffffff,
+      colorNormalByMode: Array.isArray(src.led?.colorNormalByMode)
+        ? src.led.colorNormalByMode.slice()
+        : Array(6).fill(src.led?.colorNormal ?? 0x00ff00),
+      colorPressedByMode: Array.isArray(src.led?.colorPressedByMode)
+        ? src.led.colorPressedByMode.slice()
+        : Array(6).fill(src.led?.colorPressed ?? 0xffffff),
       ledNormalColors: Array.isArray(src.led?.ledNormalColors) ? src.led.ledNormalColors.slice() : [],
       ledPressedColors: Array.isArray(src.led?.ledPressedColors) ? src.led.ledPressedColors.slice() : [],
     },
@@ -104,6 +110,12 @@ function defaultOptions() {
       brightnessSteps: board?.led?.brightnessSteps ?? 1,
       colorNormal: board?.led?.colorNormal ?? 0x00ff00,
       colorPressed: board?.led?.colorPressed ?? 0xffffff,
+      colorNormalByMode: Array.isArray(board?.led?.colorNormalByMode)
+        ? board.led.colorNormalByMode.slice()
+        : Array(6).fill(board?.led?.colorNormal ?? 0x00ff00),
+      colorPressedByMode: Array.isArray(board?.led?.colorPressedByMode)
+        ? board.led.colorPressedByMode.slice()
+        : Array(6).fill(board?.led?.colorPressed ?? 0xffffff),
       // Empty per-key color arrays = "use the global colors" (legacy config),
       // matching the firmware.
       ledNormalColors: [],

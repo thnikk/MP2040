@@ -24,11 +24,13 @@ struct LedPreview
     uint32_t ledSpeed[6];
     uint32_t ledSpeedCount;
     uint32_t brightnessMaximum;
-    uint32_t colorNormal;
-    uint32_t colorPressed;
+    // Per-mode normal/pressed colors, indexed by LedMode.
+    uint32_t colorNormalByMode[6];
+    uint32_t colorPressedByMode[6];
+    uint32_t colorCount;
     uint32_t ledTimeout;       // inactivity timeout in seconds (0 = always on)
-    // Per-key colors for custom mode. A value of 0 (or no entry) uses the
-    // global colorNormal / colorPressed.
+    // Per-key colors for custom mode. A value of 0 (or no entry) uses Custom
+    // mode's colorNormalByMode[0] / colorPressedByMode[0].
     uint32_t ledNormalColorCount;
     uint32_t ledNormalColors[MAX_KEYS];
     uint32_t ledPressedColorCount;

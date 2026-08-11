@@ -78,8 +78,8 @@ class LedSim {
     this.mode = LED_MODE_CUSTOM;
     this.themeInterval = 20;
     this.brightness = 255;
-    this.colorNormal = 0x00ff00;
-    this.colorPressed = 0xffffff;
+    this.colorNormalByMode = new Array(6).fill(0x00ff00);
+    this.colorPressedByMode = new Array(6).fill(0xffffff);
     this.ledsPerKey = 1;
     this.pinLedIndices = [];
     this.lastThemeMillis = performance.now();
@@ -114,13 +114,25 @@ class LedSim {
     // Always render at full brightness in the config UI so colors are easy to
     // see; brightnessMaximum still dims the physical board via setLedPreview.
     this.brightness = 255;
-    this.colorNormal = p.colorNormal ?? 0x00ff00;
-    this.colorPressed = p.colorPressed ?? 0xffffff;
+    // Per-mode normal/pressed colors (mirror the firmware).
+    this.colorNormalByMode = Array.isArray(p.colorNormalByMode) && p.colorNormalByMode.length >= 6
+      ? p.colorNormalByMode.slice() : new Array(6).fill(p.colorNormal ?? 0x00ff00);
+    this.colorPressedByMode = Array.isArray(p.colorPressedByMode) && p.colorPressedByMode.length >= 6
+      ? p.colorPressedByMode.slice() : new Array(6).fill(p.colorPressed ?? 0xffffff);
     this.normalColors = p.ledNormalColors || [];
     this.pressedColors = p.ledPressedColors || [];
     this.ledsPerKey = Math.max(1, p.ledsPerKey || 1);
     this.pinLedIndices = p.pinLedIndices || [];
     this.resetTheme();
+  }
+
+  // Current mode's normal/pressed colors (mirrors currentNormalColor()).
+  normalColor() {
+    return this.colorNormalByMode[this.mode] ?? 0x00ff00;
+  }
+
+  pressedColor() {
+    return this.colorPressedByMode[this.mode] ?? 0xffffff;
   }
 
   // Map the 0-100% speed to a theme step interval for the current mode
@@ -283,11 +295,11 @@ class LedSim {
 
   renderCustom() {
     const scale = this.brightness / 255;
-    const n = this.scaled(this.colorNormal, scale);
-    const p = this.scaled(this.colorPressed, scale);
+    const n = this.scaled(this.normalColor(), scale);
+    const p = this.scaled(this.pressedColor(), scale);
 
-    // Unmapped LEDs (and keys with no per-key color, or a value of 0) show the
-    // global colors; per-key entries override them.
+    // Unmapped LEDs (and keys with no per-key color, or a value of 0) show
+    // Custom mode's colors; per-key entries override them.
     const out = [];
     for (let i = 0; i < this.count; i++) {
       out.push(this.pressed[i] ? p.slice() : n.slice());
@@ -298,9 +310,9 @@ class LedSim {
       if (idx === undefined || idx < 0) continue;
       const hasCustom = pin < this.normalColors.length;
       const normal = hasCustom && this.normalColors[pin] !== 0
-        ? this.normalColors[pin] : this.colorNormal;
+        ? this.normalColors[pin] : this.normalColor();
       const pressed = hasCustom && this.pressedColors[pin] !== 0
-        ? this.pressedColors[pin] : this.colorPressed;
+        ? this.pressedColors[pin] : this.pressedColor();
       const ns = this.scaled(normal, scale);
       const ps = this.scaled(pressed, scale);
       for (let l = 0; l < this.ledsPerKey; l++) {
@@ -367,8 +379,8 @@ class LedSim {
 
   renderRipple() {
     const scale = this.brightness / 255;
-    const n = this.scaled(this.colorNormal, scale);
-    const p = this.scaled(this.colorPressed, scale);
+    const n = this.scaled(this.normalColor(), scale);
+    const p = this.scaled(this.pressedColor(), scale);
     const out = [];
 
     for (let j = 0; j < this.count; j++) {
@@ -396,8 +408,8 @@ class LedSim {
 
   renderRain() {
     const scale = this.brightness / 255;
-    const n = this.scaled(this.colorNormal, scale);
-    const p = this.scaled(this.colorPressed, scale);
+    const n = this.scaled(this.normalColor(), scale);
+    const p = this.scaled(this.pressedColor(), scale);
     const out = [];
     for (let i = 0; i < this.count; i++) {
       if (this.pressed[i]) {

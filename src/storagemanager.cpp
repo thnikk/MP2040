@@ -1829,6 +1829,13 @@ static void applyDefaults(Config& config)
     config.ledOptions.brightnessSteps = LED_BRIGHTNESS_STEPS;
     config.ledOptions.colorNormal = LED_COLOR_NORMAL;
     config.ledOptions.colorPressed = LED_COLOR_PRESSED;
+    config.ledOptions.colorNormalByMode_count = 6;
+    config.ledOptions.colorPressedByMode_count = 6;
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
+        config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
+    }
     config.ledOptions.ledCount = LED_COUNT;
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
@@ -1901,10 +1908,6 @@ static void seedProfiles(Config& config)
         profile.brightnessMaximum = config.ledOptions.brightnessMaximum;
         profile.has_brightnessSteps = true;
         profile.brightnessSteps = config.ledOptions.brightnessSteps;
-        profile.has_colorNormal = true;
-        profile.colorNormal = config.ledOptions.colorNormal;
-        profile.has_colorPressed = true;
-        profile.colorPressed = config.ledOptions.colorPressed;
     }
 }
 
@@ -1926,10 +1929,6 @@ static void copyProfileToTopLevel(const Profile& profile, Config& config)
         config.ledOptions.brightnessMaximum = profile.brightnessMaximum;
     if (profile.has_brightnessSteps)
         config.ledOptions.brightnessSteps = profile.brightnessSteps;
-    if (profile.has_colorNormal)
-        config.ledOptions.colorNormal = profile.colorNormal;
-    if (profile.has_colorPressed)
-        config.ledOptions.colorPressed = profile.colorPressed;
 }
 
 // -----------------------------------------------------
@@ -1984,6 +1983,13 @@ void Storage::init() {
         config.ledOptions.brightnessSteps = LED_BRIGHTNESS_STEPS;
         config.ledOptions.colorNormal = LED_COLOR_NORMAL;
         config.ledOptions.colorPressed = LED_COLOR_PRESSED;
+        config.ledOptions.colorNormalByMode_count = 6;
+        config.ledOptions.colorPressedByMode_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+        {
+            config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
+            config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
+        }
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
         config.ledOptions.ledSpeeds_count = 6;
@@ -2007,6 +2013,20 @@ void Storage::init() {
     {
         if (config.ledOptions.ledSpeeds[i] > 100)
             config.ledOptions.ledSpeeds[i] = LED_SPEED;
+    }
+    // Per-mode colors: seed all modes from the legacy colorNormal/colorPressed
+    // on configs that predate the per-mode arrays.
+    if (config.ledOptions.colorNormalByMode_count == 0)
+    {
+        config.ledOptions.colorNormalByMode_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+            config.ledOptions.colorNormalByMode[i] = config.ledOptions.colorNormal;
+    }
+    if (config.ledOptions.colorPressedByMode_count == 0)
+    {
+        config.ledOptions.colorPressedByMode_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+            config.ledOptions.colorPressedByMode[i] = config.ledOptions.colorPressed;
     }
 
     // Seed the profiles (0-3) once from the current base mapping so configs

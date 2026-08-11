@@ -15,7 +15,7 @@ message KeyMapping
     repeated uint32 midiVelocities = 4 [(nanopb).max_count = 128];
     // Per-key LED colors for custom mode (LED_MODE_CUSTOM). Indexed by key
     // like the other per-key arrays. A value of 0 (or no entry, count <
-    // MAX_KEYS) uses the global colorNormal / colorPressed.
+    // MAX_KEYS) uses Custom mode's colorNormalByMode[0] / colorPressedByMode[0].
     repeated uint32 ledNormalColors = 5 [(nanopb).max_count = 128];
     repeated uint32 ledPressedColors = 6 [(nanopb).max_count = 128];
 }
@@ -55,6 +55,9 @@ message LEDOptions
     optional uint32 ledsPerKey = 3;
     optional uint32 brightnessMaximum = 4;
     optional uint32 brightnessSteps = 5;
+    // Legacy single normal/pressed colors. Superseded by colorNormalByMode /
+    // colorPressedByMode; kept so older configs keep their colors when first
+    // upgraded (all modes are seeded from them).
     optional uint32 colorNormal = 6;
     optional uint32 colorPressed = 7;
     // Total number of LEDs in the strip. 0 = derive from pinLedIndices.
@@ -76,13 +79,19 @@ message LEDOptions
     // LedMode. Each effect maps its own percent into a theme step interval.
     // Empty on old configs; seeded from ledSpeed at load.
     repeated uint32 ledSpeeds = 13 [(nanopb).max_count = 6];
+    // Per-mode normal/pressed colors, indexed by LedMode. Only modes that
+    // render them use them (Custom fallback, Ripple, Rain). Empty on old
+    // configs; seeded from colorNormal / colorPressed at load.
+    repeated uint32 colorNormalByMode = 14 [(nanopb).max_count = 6];
+    repeated uint32 colorPressedByMode = 15 [(nanopb).max_count = 6];
 }
 
 // A profile: a full key mapping plus the per-profile MIDI options and LED
 // theme scalars. profiles[0] is the base; profiles[1-3] are alternates. The
 // active profile is copied into the top-level keyMapping / midiOptions /
 // ledOptions at boot (the top-level fields act as the working copy that the
-// drivers read). Speed is global (per-mode in LEDOptions), not per-profile.
+// drivers read). Speed and the normal/pressed colors are global (per-mode in
+// LEDOptions), not per-profile.
 message Profile
 {
     optional KeyMapping keyMapping = 1;
@@ -90,8 +99,6 @@ message Profile
     optional uint32 ledMode = 3;
     optional uint32 brightnessMaximum = 5;
     optional uint32 brightnessSteps = 6;
-    optional uint32 colorNormal = 7;
-    optional uint32 colorPressed = 8;
 }
 
 message Config
