@@ -204,7 +204,10 @@ void MP2040::debounceGpioGetAll() {
 	// return if state isn't different than the actual
 	if (debouncedGpio == (raw_gpio & keyGpios)) return;
 
-	uint32_t debounceDelay = 5;
+	// Debounce interval in ms (0 = apply raw state immediately). Clamp
+	// defensively against hand-edited configs.
+	uint32_t debounceDelay = Storage::getInstance().getConfig().debounceInterval;
+	if (debounceDelay > 100) debounceDelay = 100;
 	// abort if no delay is configured
 	if (debounceDelay == 0) {
 		debouncedGpio = raw_gpio & keyGpios;

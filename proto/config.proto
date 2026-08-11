@@ -124,4 +124,6 @@ message Config
     // set, the pin plays the macro (loop-while-held) instead of its keycode /
     // modifier mask. Global like the macro definitions themselves.
     repeated uint32 macroIndices = 9 [(nanopb).max_count = 128];
+    // Key debounce interval in ms (0 = apply raw state immediately). Global.
+    optional uint32 debounceInterval = 10;
 }

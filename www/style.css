@@ -119,6 +119,7 @@ html[data-theme="light"] .logo-link:hover {
 }
 
 .icon-layout { -webkit-mask-image: url("/icons/layout.svg"); mask-image: url("/icons/layout.svg"); }
+.icon-microchip { -webkit-mask-image: url("/icons/microchip.svg"); mask-image: url("/icons/microchip.svg"); }
 .icon-auto { -webkit-mask-image: url("/icons/auto.svg"); mask-image: url("/icons/auto.svg"); }
 .icon-reboot { -webkit-mask-image: url("/icons/reboot.svg"); mask-image: url("/icons/reboot.svg"); }
 .icon-profile { -webkit-mask-image: url("/icons/profile.svg"); mask-image: url("/icons/profile.svg"); }

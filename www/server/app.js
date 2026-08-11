@@ -91,6 +91,7 @@ function defaultOptions() {
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
     defaultInputMode: 1,
+    debounceInterval: 5,
     midi: {
       channel: 0,
       velocity: 127,
@@ -181,6 +182,9 @@ export function createMockApp() {
       }
     }
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;
+    if (Number.isInteger(body.debounceInterval)) {
+      current.debounceInterval = Math.max(0, Math.min(100, Number(body.debounceInterval) || 0));
+    }
     if (Number.isInteger(body.activeProfile)) {
       current.activeProfile = Math.min(3, Math.max(0, body.activeProfile));
     }

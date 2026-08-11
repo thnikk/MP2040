@@ -409,6 +409,7 @@ const previewLedDebounced = debounce(previewLed, 150);
 // Global MIDI Channel / Velocity spinners (visible only in MIDI mode)
 let midiChannelSpinner = null;
 let midiVelocitySpinner = null;
+let debounceSpinner = null;
 
 // Gather the current controls into a full config payload for /api/setOptions.
 // Includes the profile being edited (profileIndex) and the boot profile.
@@ -425,6 +426,7 @@ function buildOptionsBody() {
     macroIndices: currentOptions.macroIndices,
     macros: currentOptions.macros || [],
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
+    debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
       velocity: midiVelocitySpinner ? midiVelocitySpinner.getValue() : 127,
@@ -556,6 +558,14 @@ async function load() {
     min: 1,
     max: 127,
     value: midi.velocity ?? 127,
+    onChange: () => {},
+  });
+
+  debounceSpinner = new Spinner({
+    container: document.getElementById('debounce-spinner'),
+    min: 0,
+    max: 100,
+    value: options.debounceInterval ?? 5,
     onChange: () => {},
   });
 

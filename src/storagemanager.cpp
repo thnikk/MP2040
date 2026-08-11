@@ -1822,6 +1822,7 @@ static void applyDefaults(Config& config)
     }
     config.midiOptions.channel = 0;
     config.midiOptions.velocity = 127;
+    config.debounceInterval = 5;
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
     config.ledOptions.ledsPerKey = LEDS_PER_KEY;
