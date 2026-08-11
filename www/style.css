@@ -150,16 +150,6 @@ html[data-theme="light"] .logo-link:hover {
   height: 40px;
 }
 
-.nav-title h1 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.nav-title h1 span {
-  color: var(--accent);
-}
-
 /* Navbar reboot button (green = success action) */
 .nav-reboot {
   display: flex;
@@ -228,7 +218,7 @@ html[data-theme="light"] .logo-link:hover {
 
 .theme-toggle {
   display: flex;
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--bg-4);
 	background: var(--bg-3);
   border-radius: 999px;
   overflow: hidden;
@@ -280,6 +270,7 @@ main {
   width: 100%;
   margin-left: auto;
   margin-right: auto;
+  transition: border-radius 0.15s;
 }
 
 .footer-inner {
@@ -385,6 +376,7 @@ section {
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
+  transition: border-radius 0.15s;
 }
 
 section h2 {
@@ -460,7 +452,7 @@ section h2 {
   border-radius: 20px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s, transform 0.15s;
+  transition: border-color 0.15s, transform 0.15s, border-radius 0.15s;
 }
 
 .landing-card:hover {
@@ -1347,7 +1339,6 @@ button:disabled {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
-  padding: 1rem;
 }
 
 /* Keep the overlay hidden when the modal is closed (the display:flex above
@@ -1362,7 +1353,7 @@ button:disabled {
   border-radius: 20px;
   padding: 20px;
   width: 100%;
-  max-width: 880px;
+  max-width: 820px;
   max-height: 90vh;
   overflow-y: auto;
 	display: flex;
@@ -1905,5 +1896,15 @@ button:disabled {
   to {
     transform: translateX(100%);
     opacity: 0;
+  }
+}
+
+/* At narrower widths the cards go edge-to-edge, so drop the rounded corners.
+   Kept last so it overrides the base section/landing-card radius. */
+@media (max-width: 999px) {
+  section,
+  .landing-card,
+  .footer {
+    border-radius: 0;
   }
 }

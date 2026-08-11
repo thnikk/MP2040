@@ -528,7 +528,6 @@ async function load() {
     ? options.macroIndices.slice()
     : new Array(128).fill(0);
   currentOptions.macros = Array.isArray(options.macros) ? options.macros : [];
-  document.getElementById('board-label').textContent = version.boardLabel || '';
   document.getElementById('board-label-hero').textContent = version.boardLabel || '';
   document.getElementById('footer-version').textContent = version.firmwareVersion
     ? `${version.firmwareVersion}${version.gitCommit ? ` · ${version.gitCommit}` : ''}`
