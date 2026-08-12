@@ -246,7 +246,9 @@ void MP2040::run() {
 		boot.ledSpeedCount = 6;
 		for (uint32_t i = 0; i < 6; i++)
 			boot.ledSpeed[i] = 50;
-		boot.brightnessMaximum = 255;
+		boot.brightnessByModeCount = 6;
+		for (uint32_t i = 0; i < 6; i++)
+			boot.brightnessByMode[i] = 255;
 		boot.colorCount = 6;
 		for (uint32_t i = 0; i < 6; i++)
 		{
@@ -307,7 +309,10 @@ void MP2040::run() {
 		restore.ledSpeedCount = 6;
 		for (uint32_t i = 0; i < 6; i++)
 			restore.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
-		restore.brightnessMaximum = lo.brightnessMaximum;
+		restore.brightnessByModeCount = 6;
+		for (uint32_t i = 0; i < 6; i++)
+			restore.brightnessByMode[i] = i < lo.brightnessByMode_count
+				? lo.brightnessByMode[i] : lo.brightnessMaximum;
 		restore.colorCount = 6;
 		for (uint32_t i = 0; i < 6; i++)
 		{

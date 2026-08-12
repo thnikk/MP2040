@@ -23,7 +23,9 @@ struct LedPreview
     // Per-mode speed, indexed by LedMode (0-100 percent config value).
     uint32_t ledSpeed[6];
     uint32_t ledSpeedCount;
-    uint32_t brightnessMaximum;
+    // Per-mode brightness (0-255), indexed by LedMode.
+    uint32_t brightnessByMode[6];
+    uint32_t brightnessByModeCount;
     // Per-mode normal/pressed colors, indexed by LedMode.
     uint32_t colorNormalByMode[6];
     uint32_t colorPressedByMode[6];

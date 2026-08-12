@@ -210,6 +210,7 @@ export function parseBoardConfig(configDir, rootDir) {
       ledSpeeds: Array(6).fill(parseNum(d.LED_SPEED) ?? 50),
       ledTimeout: parseNum(d.LED_TIMEOUT) ?? 0,
       brightnessMaximum: parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255,
+      brightnessByMode: Array(6).fill(parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255),
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,
       colorPressed: parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff,
       colorNormalByMode: Array(6).fill(parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00),

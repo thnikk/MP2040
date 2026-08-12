@@ -214,7 +214,6 @@ static void writeProfileJson(JsonObject obj, const Profile* profile)
 
     const LEDOptions& lo = config.ledOptions;
     JsonObject led = obj.createNestedObject("led");
-    led["brightnessMaximum"] = (profile && profile->has_brightnessMaximum) ? profile->brightnessMaximum : lo.brightnessMaximum;
     led["ledMode"] = (profile && profile->has_ledMode) ? profile->ledMode : lo.ledMode;
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
     // legacy configs = the UI falls back to the global colors).
@@ -290,7 +289,6 @@ std::string getOptions()
     doc["led"]["ledFormat"] = ledOptions.ledFormat;
     doc["led"]["ledsPerKey"] = ledOptions.ledsPerKey;
     doc["led"]["ledCount"] = ledOptions.ledCount;
-    doc["led"]["brightnessMaximum"] = ledOptions.brightnessMaximum;
     JsonArray colorNormalByMode = doc["led"].createNestedArray("colorNormalByMode");
     JsonArray colorPressedByMode = doc["led"].createNestedArray("colorPressedByMode");
     for (uint32_t i = 0; i < 6; i++)
@@ -305,6 +303,10 @@ std::string getOptions()
     JsonArray ledSpeeds = doc["led"].createNestedArray("ledSpeeds");
     for (uint32_t i = 0; i < 6 && i < ledOptions.ledSpeeds_count; i++)
         ledSpeeds.add(ledOptions.ledSpeeds[i]);
+    JsonArray brightnessByMode = doc["led"].createNestedArray("brightnessByMode");
+    for (uint32_t i = 0; i < 6; i++)
+        brightnessByMode.add(i < ledOptions.brightnessByMode_count
+            ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum);
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
 
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
@@ -455,8 +457,18 @@ std::string setOptions()
                 config.ledOptions.ledSpeeds_count++;
             }
         }
-        profile.has_brightnessMaximum = true;
-        profile.brightnessMaximum = led["brightnessMaximum"] | profile.brightnessMaximum;
+        // Per-mode brightness is global (not per-profile). Clamp to 0-255.
+        JsonArray brightnessByMode = led["brightnessByMode"];
+        if (brightnessByMode.size() > 0)
+        {
+            config.ledOptions.brightnessByMode_count = 0;
+            for (uint32_t i = 0; i < 6 && i < (uint32_t)brightnessByMode.size(); i++)
+            {
+                uint32_t b = brightnessByMode[i].as<uint32_t>();
+                config.ledOptions.brightnessByMode[i] = b > 255 ? 255 : b;
+                config.ledOptions.brightnessByMode_count++;
+            }
+        }
         // Per-mode normal/pressed colors are global (not per-profile).
         JsonArray colorNormalByMode = led["colorNormalByMode"];
         JsonArray colorPressedByMode = led["colorPressedByMode"];
@@ -535,7 +547,14 @@ std::string setLedPreview()
             preview.ledSpeed[i] = sp > 100 ? 100 : sp;
             preview.ledSpeedCount++;
         }
-        preview.brightnessMaximum = led["brightnessMaximum"] | 255;
+        preview.brightnessByModeCount = 0;
+        JsonArray brightnessByMode = led["brightnessByMode"];
+        for (uint32_t i = 0; i < 6 && i < (uint32_t)brightnessByMode.size(); i++)
+        {
+            uint32_t b = brightnessByMode[i].as<uint32_t>();
+            preview.brightnessByMode[i] = b > 255 ? 255 : b;
+            preview.brightnessByModeCount++;
+        }
         JsonArray colorNormalByMode = led["colorNormalByMode"];
         JsonArray colorPressedByMode = led["colorPressedByMode"];
         for (uint32_t i = 0; i < 6 && i < (uint32_t)colorNormalByMode.size(); i++)

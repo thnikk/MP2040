@@ -53,6 +53,9 @@ message LEDOptions
     optional int32 dataPin = 1;
     optional LEDFormat_Proto ledFormat = 2;
     optional uint32 ledsPerKey = 3;
+    // Legacy single max brightness. Superseded by brightnessByMode; kept so
+    // older configs keep their brightness when first upgraded (all modes are
+    // seeded from it).
     optional uint32 brightnessMaximum = 4;
     // Legacy single normal/pressed colors. Superseded by colorNormalByMode /
     // colorPressedByMode; kept so older configs keep their colors when first
@@ -83,20 +86,22 @@ message LEDOptions
     // configs; seeded from colorNormal / colorPressed at load.
     repeated uint32 colorNormalByMode = 14 [(nanopb).max_count = 6];
     repeated uint32 colorPressedByMode = 15 [(nanopb).max_count = 6];
+    // Per-mode brightness (0-255), indexed by LedMode. Empty on old configs;
+    // seeded from brightnessMaximum at load.
+    repeated uint32 brightnessByMode = 16 [(nanopb).max_count = 6];
 }
 
 // A profile: a full key mapping plus the per-profile MIDI options and LED
 // theme scalars. profiles[0] is the base; profiles[1-3] are alternates. The
 // active profile is copied into the top-level keyMapping / midiOptions /
 // ledOptions at boot (the top-level fields act as the working copy that the
-// drivers read). Speed and the normal/pressed colors are global (per-mode in
-// LEDOptions), not per-profile.
+// drivers read). Speed, brightness and the normal/pressed colors are global
+// (per-mode in LEDOptions), not per-profile.
 message Profile
 {
     optional KeyMapping keyMapping = 1;
     optional MIDIOptions midiOptions = 2;
     optional uint32 ledMode = 3;
-    optional uint32 brightnessMaximum = 5;
 }
 
 message Config

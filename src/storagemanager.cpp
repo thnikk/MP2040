@@ -1833,6 +1833,9 @@ static void applyDefaults(Config& config)
         config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
         config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
     }
+    config.ledOptions.brightnessByMode_count = 6;
+    for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.brightnessByMode[i] = LED_BRIGHTNESS_DEFAULT;
     config.ledOptions.ledCount = LED_COUNT;
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
@@ -1901,8 +1904,6 @@ static void seedProfiles(Config& config)
         profile.midiOptions = config.midiOptions;
         profile.has_ledMode = true;
         profile.ledMode = config.ledOptions.ledMode;
-        profile.has_brightnessMaximum = true;
-        profile.brightnessMaximum = config.ledOptions.brightnessMaximum;
     }
 }
 
@@ -1920,8 +1921,6 @@ static void copyProfileToTopLevel(const Profile& profile, Config& config)
     }
     if (profile.has_ledMode)
         config.ledOptions.ledMode = profile.ledMode;
-    if (profile.has_brightnessMaximum)
-        config.ledOptions.brightnessMaximum = profile.brightnessMaximum;
 }
 
 // -----------------------------------------------------
@@ -1982,6 +1981,9 @@ void Storage::init() {
             config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
             config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
         }
+        config.ledOptions.brightnessByMode_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+            config.ledOptions.brightnessByMode[i] = LED_BRIGHTNESS_DEFAULT;
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
         config.ledOptions.ledSpeeds_count = 6;
@@ -2019,6 +2021,15 @@ void Storage::init() {
         config.ledOptions.colorPressedByMode_count = 6;
         for (uint32_t i = 0; i < 6; i++)
             config.ledOptions.colorPressedByMode[i] = config.ledOptions.colorPressed;
+    }
+    // Per-mode brightness: seed all modes from the legacy brightnessMaximum on
+    // configs that predate the per-mode array, clamping to the 0-255 range.
+    if (config.ledOptions.brightnessByMode_count == 0)
+    {
+        config.ledOptions.brightnessByMode_count = 6;
+        for (uint32_t i = 0; i < 6; i++)
+            config.ledOptions.brightnessByMode[i] = config.ledOptions.brightnessMaximum > 255
+                ? 255 : config.ledOptions.brightnessMaximum;
     }
 
     // Seed the profiles (0-3) once from the current base mapping so configs

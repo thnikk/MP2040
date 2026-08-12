@@ -88,8 +88,11 @@ private:
     void spawnRipple(int8_t row, int8_t col);
     uint32_t rainRandom();
     // BrightnessMaximum scaled by the fade multiplier (ledDim). Full when the
-    // timeout is disabled or the strip is awake; less while fading.
-    uint32_t effBrightness() const { return brightnessMaximum * ledDim / 255; }
+    // timeout is disabled or the strip is awake; less while fading. Uses the
+    // current mode's per-mode brightness.
+    uint32_t effBrightness() const {
+        return brightnessByMode[ledMode < 6 ? ledMode : 0] * ledDim / 255;
+    }
 
     Neopixel* neopixel;
     int32_t dataPin;
@@ -111,7 +114,8 @@ private:
     LedState ledState;              // timeout state machine (see above)
     uint8_t ledDim;                 // 0-255 fade multiplier applied to all output
     int32_t pinLedIndices[MAX_KEYS];
-    uint32_t brightnessMaximum;
+    // Per-mode brightness (0-255), indexed by LedMode.
+    uint32_t brightnessByMode[6];
     // Per-mode normal/pressed colors, indexed by LedMode. Only modes that
     // render them use them (Custom fallback = index 0, Ripple, Rain).
     uint32_t colorNormalByMode[6];

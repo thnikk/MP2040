@@ -78,7 +78,7 @@ LedController::LedController() :
     ledLastActivityMillis(0),
     ledState(LedState::ON),
     ledDim(255),
-    brightnessMaximum(255),
+    brightnessByMode{255, 255, 255, 255, 255, 255},
     colorNormalByMode{0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00},
     colorPressedByMode{0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF},
     ledColorCount(0),
@@ -138,7 +138,12 @@ void LedController::configure()
         ledSpeedPercent[i] = i < ledOptions.ledSpeeds_count && ledOptions.ledSpeeds[i] <= 100
             ? ledOptions.ledSpeeds[i] : 50;
     recomputeLedSpeed();
-    brightnessMaximum = ledOptions.brightnessMaximum;
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        brightnessByMode[i] = i < ledOptions.brightnessByMode_count
+            ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum;
+        if (brightnessByMode[i] > 255) brightnessByMode[i] = 255;
+    }
     for (uint32_t i = 0; i < 6; i++)
     {
         colorNormalByMode[i] = i < ledOptions.colorNormalByMode_count
@@ -440,7 +445,12 @@ void LedController::applyLedPreview(const LedPreview& preview)
         ledSpeedPercent[i] = i < preview.ledSpeedCount && preview.ledSpeed[i] <= 100
             ? preview.ledSpeed[i] : 50;
     recomputeLedSpeed();
-    brightnessMaximum = preview.brightnessMaximum;
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        brightnessByMode[i] = i < preview.brightnessByModeCount
+            ? preview.brightnessByMode[i] : 255;
+        if (brightnessByMode[i] > 255) brightnessByMode[i] = 255;
+    }
     for (uint32_t i = 0; i < 6; i++)
     {
         colorNormalByMode[i] = i < preview.colorCount

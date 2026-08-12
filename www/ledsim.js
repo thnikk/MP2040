@@ -112,7 +112,7 @@ class LedSim {
       ? p.ledSpeeds.slice() : new Array(6).fill(fill);
     this.recomputeInterval();
     // Always render at full brightness in the config UI so colors are easy to
-    // see; brightnessMaximum still dims the physical board via setLedPreview.
+    // see; brightnessByMode still dims the physical board via setLedPreview.
     this.brightness = 255;
     // Per-mode normal/pressed colors (mirror the firmware).
     this.colorNormalByMode = Array.isArray(p.colorNormalByMode) && p.colorNormalByMode.length >= 6

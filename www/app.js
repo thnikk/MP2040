@@ -183,7 +183,6 @@ function cloneProfile(p) {
     midi: { channel: p.midi?.channel ?? 0, velocity: p.midi?.velocity ?? 127 },
     led: {
       ledMode: p.led?.ledMode ?? 0,
-      brightnessMaximum: p.led?.brightnessMaximum ?? 255,
       ledNormalColors: (p.led?.ledNormalColors || []).slice(),
       ledPressedColors: (p.led?.ledPressedColors || []).slice(),
     },
@@ -198,9 +197,9 @@ function applyProfileToOptions(profile, options) {
   options.midiNotes = profile.midiNotes.slice();
   options.midiVelocities = profile.midiVelocities.slice();
   options.midi = { ...(options.midi || {}), ...profile.midi };
-  // Speed and per-mode colors are global; profiles only carry the per-profile
-  // LED scalars (mode, brightness, per-key colors).
-  const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, ...profileLed } = profile.led || {};
+  // Speed, brightness and per-mode colors are global; profiles only carry the
+  // per-profile LED scalars (mode, per-key colors).
+  const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...profileLed } = profile.led || {};
   options.led = { ...(options.led || {}), ...profileLed };
 }
 
@@ -211,7 +210,7 @@ function applyOptionsToProfile(options, profile) {
   profile.midiNotes = options.midiNotes.slice();
   profile.midiVelocities = options.midiVelocities.slice();
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
-  const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, ...optionsLed } = options.led || {};
+  const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...optionsLed } = options.led || {};
   profile.led = { ...(profile.led || {}), ...optionsLed };
 }
 
@@ -243,7 +242,7 @@ function refreshPerProfileControls() {
   const led = currentOptions.led || {};
   const ledModeEl = document.getElementById('led-mode');
   if (ledModeEl) ledModeEl.value = led.ledMode ?? 0;
-  if (brightnessSlider) brightnessSlider.setValue(led.brightnessMaximum ?? 255);
+  syncBrightnessSliderToMode();
   syncSpeedSliderToMode();
   syncColorPickersToMode();
   if (timeoutSpinner) timeoutSpinner.setValue(led.ledTimeout ?? 0);
@@ -339,6 +338,29 @@ function getModeLedColors() {
   return { normal, pressed };
 }
 
+// Per-mode brightness (global, not per-profile): a 6-element array indexed by
+// LED mode, seeded from the legacy scalar brightnessMaximum when the firmware
+// hasn't sent per-mode values yet.
+function getModeLedBrightnesses() {
+  const led = currentOptions.led || {};
+  let brightness = Array.isArray(led.brightnessByMode) && led.brightnessByMode.length >= 6
+    ? led.brightnessByMode.slice() : null;
+  if (!brightness) {
+    const fill = Number.isFinite(led.brightnessMaximum) ? led.brightnessMaximum : 255;
+    brightness = new Array(6).fill(fill);
+  }
+  return brightness;
+}
+
+// The brightness slider edits the currently-selected mode's brightness; reload
+// it from the per-mode array when the mode changes.
+function syncBrightnessSliderToMode() {
+  if (!brightnessSlider) return;
+  const mode = currentLedMode();
+  const brightness = getModeLedBrightnesses();
+  brightnessSlider.setValue(brightness[mode] ?? 255);
+}
+
 // The color pickers edit the currently-selected mode's colors; reload them
 // when the mode changes and grey them out for modes that don't render colors.
 function syncColorPickersToMode() {
@@ -374,7 +396,9 @@ async function previewLed() {
   const speeds = getModeLedSpeeds();
   speeds[led.ledMode] = speedSlider ? speedSlider.getValue() : 50;
   led.ledSpeeds = speeds;
-  led.brightnessMaximum = brightnessSlider ? brightnessSlider.getValue() : 255;
+  const brightness = getModeLedBrightnesses();
+  brightness[led.ledMode] = brightnessSlider ? brightnessSlider.getValue() : 255;
+  led.brightnessByMode = brightness;
   led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
   const colors = getModeLedColors();
   colors.normal[led.ledMode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
@@ -384,7 +408,7 @@ async function previewLed() {
   const preview = {
     ledMode: led.ledMode,
     ledSpeeds: led.ledSpeeds,
-    brightnessMaximum: led.brightnessMaximum,
+    brightnessByMode: led.brightnessByMode,
     ledTimeout: led.ledTimeout,
     colorNormalByMode: led.colorNormalByMode,
     colorPressedByMode: led.colorPressedByMode,
@@ -417,6 +441,8 @@ function buildOptionsBody() {
   const mode = currentLedMode();
   colors.normal[mode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
   colors.pressed[mode] = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
+  const brightness = getModeLedBrightnesses();
+  brightness[mode] = brightnessSlider ? brightnessSlider.getValue() : 255;
   return {
     keycodes: currentOptions.keycodes,
     modifierMasks: currentOptions.modifierMasks,
@@ -433,7 +459,7 @@ function buildOptionsBody() {
     led: {
       ledMode: mode,
       ledSpeeds: getModeLedSpeeds(),
-      brightnessMaximum: brightnessSlider ? brightnessSlider.getValue() : 255,
+      brightnessByMode: brightness,
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
       colorNormalByMode: colors.normal,
       colorPressedByMode: colors.pressed,
@@ -570,6 +596,7 @@ async function load() {
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
   document.getElementById('led-mode').addEventListener('change', () => {
+    syncBrightnessSliderToMode();
     syncSpeedSliderToMode();
     syncColorPickersToMode();
     previewLed();
@@ -580,7 +607,7 @@ async function load() {
     min: 0,
     max: 255,
     label: 'Brightness',
-    value: led.brightnessMaximum ?? 255,
+    value: led.brightnessByMode?.[led.ledMode ?? 0] ?? led.brightnessMaximum ?? 255,
     padLength: 3,
     onChange: previewLed,
   });
