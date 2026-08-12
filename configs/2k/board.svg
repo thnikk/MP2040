@@ -23,7 +23,7 @@
      showgrid="false"
      inkscape:zoom="6.193454"
      inkscape:cx="45.370483"
-     inkscape:cy="93.40507"
+     inkscape:cy="22.685242"
      inkscape:window-width="2560"
      inkscape:window-height="1440"
      inkscape:window-x="0"
@@ -98,7 +98,7 @@
      inkscape:label="buttons"
      transform="translate(1,1)">
     <rect
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="pin28"
        width="53.912998"
        height="53.913399"
@@ -108,7 +108,7 @@
        ry="3.7795277"
        inkscape:label="pin28" />
     <rect
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        id="pin29"
        width="53.913387"
        height="53.913399"
@@ -117,7 +117,7 @@
        rx="3.7795277"
        ry="3.7795277" />
     <circle
-       style="fill:#2b303b;stroke:#000000;stroke-width:2;stroke-linecap:round;fill-opacity:1"
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round"
        id="pin27"
        cx="38.2953"
        cy="38.299702"
