@@ -52,8 +52,7 @@
 #define LED_PIN 1
 #define LED_FORMAT LED_FORMAT_GRB
 #define LEDS_PER_KEY 1
-#define LED_BRIGHTNESS_MAX 255
-#define LED_BRIGHTNESS_STEPS 1
+#define LED_BRIGHTNESS_DEFAULT 50
 #define LED_COLOR_NORMAL 0x00FF00
 #define LED_COLOR_PRESSED 0xFFFFFF
 
@@ -61,14 +60,14 @@
 #define LED_COUNT 12
 
 // Default LED theme mode (0=custom, 1=cycle, 2=reactive, 3=bps, 4=ripple, 5=rain)
-#define LED_MODE 0
+#define LED_MODE 1
 
 // Default LED animation speed (0-100 percent, higher = faster; 50 = default)
-#define LED_SPEED 50
+#define LED_SPEED 80
 
 // LED inactivity timeout (seconds): strip turns off after this long with no
 // key held (any press wakes it). 0 = always on.
-#define LED_TIMEOUT 0
+#define LED_TIMEOUT 60
 
 // Key index -> LED strip index mapping. -1 = key has no LED. The LED(s) at
 // the mapped index (LEDS_PER_KEY of them) light up when the key is pressed.

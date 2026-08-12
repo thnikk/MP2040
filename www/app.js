@@ -184,7 +184,6 @@ function cloneProfile(p) {
     led: {
       ledMode: p.led?.ledMode ?? 0,
       brightnessMaximum: p.led?.brightnessMaximum ?? 255,
-      brightnessSteps: p.led?.brightnessSteps ?? 1,
       ledNormalColors: (p.led?.ledNormalColors || []).slice(),
       ledPressedColors: (p.led?.ledPressedColors || []).slice(),
     },

@@ -215,7 +215,6 @@ static void writeProfileJson(JsonObject obj, const Profile* profile)
     const LEDOptions& lo = config.ledOptions;
     JsonObject led = obj.createNestedObject("led");
     led["brightnessMaximum"] = (profile && profile->has_brightnessMaximum) ? profile->brightnessMaximum : lo.brightnessMaximum;
-    led["brightnessSteps"] = (profile && profile->has_brightnessSteps) ? profile->brightnessSteps : lo.brightnessSteps;
     led["ledMode"] = (profile && profile->has_ledMode) ? profile->ledMode : lo.ledMode;
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
     // legacy configs = the UI falls back to the global colors).
@@ -292,7 +291,6 @@ std::string getOptions()
     doc["led"]["ledsPerKey"] = ledOptions.ledsPerKey;
     doc["led"]["ledCount"] = ledOptions.ledCount;
     doc["led"]["brightnessMaximum"] = ledOptions.brightnessMaximum;
-    doc["led"]["brightnessSteps"] = ledOptions.brightnessSteps;
     JsonArray colorNormalByMode = doc["led"].createNestedArray("colorNormalByMode");
     JsonArray colorPressedByMode = doc["led"].createNestedArray("colorPressedByMode");
     for (uint32_t i = 0; i < 6; i++)
@@ -459,8 +457,6 @@ std::string setOptions()
         }
         profile.has_brightnessMaximum = true;
         profile.brightnessMaximum = led["brightnessMaximum"] | profile.brightnessMaximum;
-        profile.has_brightnessSteps = true;
-        profile.brightnessSteps = led["brightnessSteps"] | profile.brightnessSteps;
         // Per-mode normal/pressed colors are global (not per-profile).
         JsonArray colorNormalByMode = led["colorNormalByMode"];
         JsonArray colorPressedByMode = led["colorPressedByMode"];

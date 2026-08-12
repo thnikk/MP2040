@@ -54,7 +54,6 @@ message LEDOptions
     optional LEDFormat_Proto ledFormat = 2;
     optional uint32 ledsPerKey = 3;
     optional uint32 brightnessMaximum = 4;
-    optional uint32 brightnessSteps = 5;
     // Legacy single normal/pressed colors. Superseded by colorNormalByMode /
     // colorPressedByMode; kept so older configs keep their colors when first
     // upgraded (all modes are seeded from them).
@@ -98,7 +97,6 @@ message Profile
     optional MIDIOptions midiOptions = 2;
     optional uint32 ledMode = 3;
     optional uint32 brightnessMaximum = 5;
-    optional uint32 brightnessSteps = 6;
 }
 
 message Config

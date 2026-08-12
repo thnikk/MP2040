@@ -1080,11 +1080,8 @@
 #ifndef LEDS_PER_KEY
 #define LEDS_PER_KEY 1
 #endif
-#ifndef LED_BRIGHTNESS_MAX
-#define LED_BRIGHTNESS_MAX 255
-#endif
-#ifndef LED_BRIGHTNESS_STEPS
-#define LED_BRIGHTNESS_STEPS 1
+#ifndef LED_BRIGHTNESS_DEFAULT
+#define LED_BRIGHTNESS_DEFAULT 255
 #endif
 #ifndef LED_COLOR_NORMAL
 #define LED_COLOR_NORMAL 0x00FF00
@@ -1826,8 +1823,7 @@ static void applyDefaults(Config& config)
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
     config.ledOptions.ledsPerKey = LEDS_PER_KEY;
-    config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_MAX;
-    config.ledOptions.brightnessSteps = LED_BRIGHTNESS_STEPS;
+    config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_DEFAULT;
     config.ledOptions.colorNormal = LED_COLOR_NORMAL;
     config.ledOptions.colorPressed = LED_COLOR_PRESSED;
     config.ledOptions.colorNormalByMode_count = 6;
@@ -1907,8 +1903,6 @@ static void seedProfiles(Config& config)
         profile.ledMode = config.ledOptions.ledMode;
         profile.has_brightnessMaximum = true;
         profile.brightnessMaximum = config.ledOptions.brightnessMaximum;
-        profile.has_brightnessSteps = true;
-        profile.brightnessSteps = config.ledOptions.brightnessSteps;
     }
 }
 
@@ -1928,8 +1922,6 @@ static void copyProfileToTopLevel(const Profile& profile, Config& config)
         config.ledOptions.ledMode = profile.ledMode;
     if (profile.has_brightnessMaximum)
         config.ledOptions.brightnessMaximum = profile.brightnessMaximum;
-    if (profile.has_brightnessSteps)
-        config.ledOptions.brightnessSteps = profile.brightnessSteps;
 }
 
 // -----------------------------------------------------
@@ -1980,8 +1972,7 @@ void Storage::init() {
         config.ledOptions.dataPin = LED_PIN;
         config.ledOptions.ledFormat = LED_FORMAT;
         config.ledOptions.ledsPerKey = LEDS_PER_KEY;
-        config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_MAX;
-        config.ledOptions.brightnessSteps = LED_BRIGHTNESS_STEPS;
+        config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_DEFAULT;
         config.ledOptions.colorNormal = LED_COLOR_NORMAL;
         config.ledOptions.colorPressed = LED_COLOR_PRESSED;
         config.ledOptions.colorNormalByMode_count = 6;
