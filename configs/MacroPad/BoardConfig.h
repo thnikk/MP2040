@@ -31,18 +31,18 @@
 
 // Key mapping by linear matrix key index (row * MATRIX_COLS + col). Unlisted
 // indices default to 0 (unassigned), so only define overrides.
-#define KEYCODE_IDX00 HID_KEY_1
-#define KEYCODE_IDX01 HID_KEY_2
-#define KEYCODE_IDX02 HID_KEY_3
-#define KEYCODE_IDX03 HID_KEY_4
-#define KEYCODE_IDX04 HID_KEY_5
-#define KEYCODE_IDX05 HID_KEY_6
-#define KEYCODE_IDX06 HID_KEY_7
-#define KEYCODE_IDX07 HID_KEY_8
-#define KEYCODE_IDX08 HID_KEY_9
-#define KEYCODE_IDX09 HID_KEY_0
-#define KEYCODE_IDX10 HID_KEY_ENTER
-#define KEYCODE_IDX11 HID_KEY_SPACE
+#define KEYCODE_IDX00 HID_KEY_F13
+#define KEYCODE_IDX01 HID_KEY_F14
+#define KEYCODE_IDX02 HID_KEY_F15
+#define KEYCODE_IDX03 HID_KEY_F16
+#define KEYCODE_IDX04 HID_KEY_F17
+#define KEYCODE_IDX05 HID_KEY_F18
+#define KEYCODE_IDX06 HID_KEY_F19
+#define KEYCODE_IDX07 HID_KEY_F20
+#define KEYCODE_IDX08 HID_KEY_F21
+#define KEYCODE_IDX09 HID_KEY_F22
+#define KEYCODE_IDX10 HID_KEY_F23
+#define KEYCODE_IDX11 HID_KEY_F24
 
 // Optional modifier mask overrides by key index (KEYBOARD_MODIFIER_* from
 // tinyusb). For a modifier key, set the index's mask here; its keycode can
@@ -53,7 +53,7 @@
 #define LED_FORMAT LED_FORMAT_GRB
 #define LEDS_PER_KEY 1
 #define LED_BRIGHTNESS_DEFAULT 50
-#define LED_COLOR_NORMAL 0x00FF00
+#define LED_COLOR_NORMAL 0x000000
 #define LED_COLOR_PRESSED 0xFFFFFF
 
 // Total number of LEDs in the strip. 0 = derive from the pin mappings / grid.
