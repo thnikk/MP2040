@@ -129,4 +129,10 @@ message Config
     repeated uint32 macroIndices = 9 [(nanopb).max_count = 128];
     // Key debounce interval in ms (0 = apply raw state immediately). Global.
     optional uint32 debounceInterval = 10;
+    // Touch pad auto-calibration, indexed by GPIO pin (only auto-calibrated
+    // pads are populated; 0 = no stored entry). Saved at every normal boot
+    // (pads idle) and loaded instead of re-sampling on a web config reboot,
+    // where the pad that triggered the reboot is still being held.
+    repeated uint32 touchThresholdsOn = 11 [(nanopb).max_count = 30];
+    repeated uint32 touchThresholdsOff = 12 [(nanopb).max_count = 30];
 }

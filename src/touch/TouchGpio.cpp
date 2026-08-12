@@ -1,6 +1,7 @@
 #include "touch/TouchGpio.h"
 
 #include "BoardConfig.h"
+#include "storagemanager.h"
 
 #include "hardware/gpio.h"
 
@@ -145,7 +146,7 @@ TouchGpio::TouchGpio()
     }
 }
 
-void TouchGpio::setup(GpioMask touchMask)
+void TouchGpio::setup(GpioMask touchMask, bool useStored)
 {
     mask = touchMask & ((1u << NUM_BANK0_GPIOS) - 1u);
     if (mask == 0) return;
@@ -177,11 +178,50 @@ void TouchGpio::setup(GpioMask touchMask)
         pio_sm_set_enabled(pio, sm, true);
     }
 
-    calibrate();
+    if (useStored)
+        loadCalibration();
+    else
+        calibrate();
 }
 
 void TouchGpio::calibrate()
 {
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        if (smForPin[pin] == 0xFF) continue;
+        calibratePin(pin);
+    }
+
+    // Persist the freshly-calibrated thresholds so a web config reboot (where
+    // the pad that triggered the reboot is still being held) can load them
+    // instead of re-sampling mid-touch. Fixed-threshold pads are board
+    // properties and don't need storing. save() only commits to flash when
+    // the config actually changed, so a stable calibration is a no-op.
+    Config& config = Storage::getInstance().getConfig();
+    config.touchThresholdsOn_count = 0;
+    config.touchThresholdsOff_count = 0;
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        // Clear stale entries first so a pad that is no longer active (e.g.
+        // saturated / missing) doesn't keep an outdated stored threshold.
+        config.touchThresholdsOn[pin] = 0;
+        config.touchThresholdsOff[pin] = 0;
+    }
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        if (smForPin[pin] == 0xFF || !active[pin]) continue;
+        if (defaultTouchThresholds[pin] > 0) continue;
+        config.touchThresholdsOn[pin] = thresholdOn[pin];
+        config.touchThresholdsOff[pin] = thresholdOff[pin];
+        config.touchThresholdsOn_count = pin + 1;
+        config.touchThresholdsOff_count = pin + 1;
+    }
+    Storage::getInstance().save(true);
+}
+
+void TouchGpio::loadCalibration()
+{
+    const Config& config = Storage::getInstance().getConfig();
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (smForPin[pin] == 0xFF) continue;
@@ -196,29 +236,57 @@ void TouchGpio::calibrate()
             continue;
         }
 
-        // Idle baseline: the lowest of several samples is robust to noise and
-        // to a finger resting on the pad during boot.
-        uint32_t baseline = 0xFFFFFFFF;
-        bool saturated = false;
-        for (uint32_t i = 0; i < TOUCH_CAL_SAMPLES; i++)
+        if (pin < (Pin_t)config.touchThresholdsOn_count && config.touchThresholdsOn[pin] > 0)
         {
-            uint32_t v = readPin(pin);
-            if (v >= TOUCH_TIMEOUT) { saturated = true; break; }
-            if (v < baseline) baseline = v;
+            // Stored calibration from the last normal boot (pads idle).
+            thresholdOn[pin] = config.touchThresholdsOn[pin];
+            thresholdOff[pin] = config.touchThresholdsOff[pin];
+            active[pin] = true;
+            touched[pin] = false;
         }
-
-        // The pad never discharged: no resistor or pad connected. Disable it.
-        if (saturated || baseline == 0xFFFFFFFF)
+        else
         {
-            active[pin] = false;
-            continue;
+            // No stored entry (a pad added after the last save, or an old
+            // config): calibrate fresh.
+            calibratePin(pin);
         }
+    }
+}
 
-        thresholdOn[pin] = baseline + (baseline * TOUCH_MARGIN / 100);
-        thresholdOff[pin] = baseline + (baseline * TOUCH_HYSTERESIS / 100);
+void TouchGpio::calibratePin(Pin_t pin)
+{
+    if (defaultTouchThresholds[pin] > 0)
+    {
+        // Fixed threshold from the board config: no calibration needed.
+        thresholdOn[pin] = defaultTouchThresholds[pin];
+        thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * TOUCH_HYSTERESIS / 100);
         active[pin] = true;
         touched[pin] = false;
+        return;
     }
+
+    // Idle baseline: the lowest of several samples is robust to noise and
+    // to a finger resting on the pad during boot.
+    uint32_t baseline = 0xFFFFFFFF;
+    bool saturated = false;
+    for (uint32_t i = 0; i < TOUCH_CAL_SAMPLES; i++)
+    {
+        uint32_t v = readPin(pin);
+        if (v >= TOUCH_TIMEOUT) { saturated = true; break; }
+        if (v < baseline) baseline = v;
+    }
+
+    // The pad never discharged: no resistor or pad connected. Disable it.
+    if (saturated || baseline == 0xFFFFFFFF)
+    {
+        active[pin] = false;
+        return;
+    }
+
+    thresholdOn[pin] = baseline + (baseline * TOUCH_MARGIN / 100);
+    thresholdOff[pin] = baseline + (baseline * TOUCH_HYSTERESIS / 100);
+    active[pin] = true;
+    touched[pin] = false;
 }
 
 GpioMask TouchGpio::scan()

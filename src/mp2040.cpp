@@ -32,9 +32,17 @@
 void MP2040::setup() {
 	Storage::getInstance().init();
 
+	// Read the boot mode once: a watchdog reboot can request web config / USB
+	// bootloader / gamepad mode. Stored so getBootAction() and the key GPIO
+	// setup can both use it without consuming the scratch register twice.
+	bootMode = System::takeBootMode();
+
 	// Initialize key GPIOs (buttons and touch pads) up front so the boot-mode
 	// check below can use touch detection when the web config pin is a pad.
-	this->initializeKeyGpio();
+	// On a web config reboot the touch pads load their stored calibration
+	// instead of being re-sampled (a pad is likely still being held from the
+	// boot window that triggered the reboot).
+	this->initializeKeyGpio(bootMode == System::BootMode::WEBCONFIG);
 
 	const BootAction bootAction = getBootAction();
 	switch (bootAction) {
@@ -81,7 +89,7 @@ void MP2040::setup() {
  * Matrix mode: rows are driven outputs (idle high) and columns are inputs
  * with pull-ups. Keys are scanned at row/column intersections (see scanMatrix).
  */
-void MP2040::initializeKeyGpio() {
+void MP2040::initializeKeyGpio(bool configBoot) {
 	KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
 	Config& config = Storage::getInstance().getConfig();
 	const GpioMask touchPinMask = Storage::getInstance().getTouchPinMask();
@@ -142,7 +150,7 @@ void MP2040::initializeKeyGpio() {
 		}
 	}
 
-	TouchGpio::getInstance().setup(touchGpios);
+	TouchGpio::getInstance().setup(touchGpios, configBoot);
 }
 
 /**
@@ -280,6 +288,10 @@ void MP2040::run() {
 					seenWc = true;
 					seenWcAt = now;
 				} else if (now - seenWcAt >= 40) {
+					// Reboot into web config mode. The pads were calibrated in
+					// setup() (idle, before this window) and that calibration is
+					// persisted; on the reboot the pads load the stored values
+					// instead of being recalibrated mid-touch.
 					System::reboot(System::BootMode::WEBCONFIG);
 				}
 			} else {
@@ -301,34 +313,7 @@ void MP2040::run() {
 		bootTouchDeadline = 0;
 
 		// Window passed without a touch: restore the board's normal LED mode.
-		const LEDOptions& lo = Storage::getInstance().getLedOptions();
-		const KeyMapping& km = Storage::getInstance().getKeyMapping();
-		static LedPreview restore;
-		std::memset(&restore, 0, sizeof(restore));
-		restore.ledMode = lo.ledMode;
-		restore.ledSpeedCount = 6;
-		for (uint32_t i = 0; i < 6; i++)
-			restore.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
-		restore.brightnessByModeCount = 6;
-		for (uint32_t i = 0; i < 6; i++)
-			restore.brightnessByMode[i] = i < lo.brightnessByMode_count
-				? lo.brightnessByMode[i] : lo.brightnessMaximum;
-		restore.colorCount = 6;
-		for (uint32_t i = 0; i < 6; i++)
-		{
-			restore.colorNormalByMode[i] = i < lo.colorNormalByMode_count
-				? lo.colorNormalByMode[i] : lo.colorNormal;
-			restore.colorPressedByMode[i] = i < lo.colorPressedByMode_count
-				? lo.colorPressedByMode[i] : lo.colorPressed;
-		}
-		restore.ledTimeout = lo.ledTimeout;
-		restore.ledNormalColorCount = km.ledNormalColors_count;
-		for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
-			restore.ledNormalColors[pin] = km.ledNormalColors[pin];
-		restore.ledPressedColorCount = km.ledPressedColors_count;
-		for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
-			restore.ledPressedColors[pin] = km.ledPressedColors[pin];
-		Storage::getInstance().publishLedPreview(restore);
+		restoreBoardLedMode();
 	}
 
 	GPDriver * inputDriver = DriverManager::getInstance().getDriver();
@@ -356,8 +341,44 @@ void MP2040::run() {
 	}
 }
 
+// Publish a live preview restoring the board's configured LED theme, undoing
+// the boot-window cue (pressed color / full brightness). Called when the boot
+// window expires without a touch.
+void MP2040::restoreBoardLedMode() {
+	const LEDOptions& lo = Storage::getInstance().getLedOptions();
+	const KeyMapping& km = Storage::getInstance().getKeyMapping();
+	static LedPreview restore;
+	std::memset(&restore, 0, sizeof(restore));
+	restore.ledMode = lo.ledMode;
+	restore.ledSpeedCount = 6;
+	for (uint32_t i = 0; i < 6; i++)
+		restore.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
+	restore.brightnessByModeCount = 6;
+	for (uint32_t i = 0; i < 6; i++)
+		restore.brightnessByMode[i] = i < lo.brightnessByMode_count
+			? lo.brightnessByMode[i] : lo.brightnessMaximum;
+	restore.colorCount = 6;
+	for (uint32_t i = 0; i < 6; i++)
+	{
+		restore.colorNormalByMode[i] = i < lo.colorNormalByMode_count
+			? lo.colorNormalByMode[i] : lo.colorNormal;
+		restore.colorPressedByMode[i] = i < lo.colorPressedByMode_count
+			? lo.colorPressedByMode[i] : lo.colorPressed;
+	}
+	restore.ledTimeout = lo.ledTimeout;
+	restore.ledNormalColorCount = km.ledNormalColors_count;
+	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
+		restore.ledNormalColors[pin] = km.ledNormalColors[pin];
+	restore.ledPressedColorCount = km.ledPressedColors_count;
+	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
+		restore.ledPressedColors[pin] = km.ledPressedColors[pin];
+	Storage::getInstance().publishLedPreview(restore);
+}
+
 MP2040::BootAction MP2040::getBootAction() {
-	switch (System::takeBootMode()) {
+	// bootMode was captured once in setup() (takeBootMode() resets the
+	// scratch register, so it can only be read once per boot).
+	switch (bootMode) {
 		case System::BootMode::GAMEPAD:
 			return BootAction::NONE;
 		case System::BootMode::WEBCONFIG:

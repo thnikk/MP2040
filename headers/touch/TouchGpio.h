@@ -27,9 +27,12 @@ public:
 		return instance;
 	}
 
-	// Claim PIO state machines for every set bit in touchMask and calibrate
-	// their thresholds. Safe to call once at boot.
-	void setup(GpioMask touchMask);
+	// Claim PIO state machines for every set bit in touchMask and set up their
+	// thresholds. Safe to call once at boot. When `useStored` is true (a web
+	// config reboot, where the pad that triggered the reboot is still held)
+	// the thresholds saved by the last normal boot are loaded instead of being
+	// re-sampled; pads without a stored entry are calibrated fresh.
+	void setup(GpioMask touchMask, bool useStored);
 
 	// Measure all configured pads and return a mask of currently-touched pins.
 	// Applies per-pad thresholds with release hysteresis.
@@ -37,7 +40,15 @@ public:
 
 private:
 	TouchGpio();
+	// Auto-calibrate all configured pads, then persist the thresholds to the
+	// stored config so a web config reboot can load them.
 	void calibrate();
+	// Load the stored thresholds (falling back to fresh calibration for pads
+	// without an entry).
+	void loadCalibration();
+	// Calibrate a single pad (fixed threshold from the board config, or the
+	// lowest of several idle samples + margin).
+	void calibratePin(Pin_t pin);
 	uint32_t readPin(Pin_t pin);
 
 	PIO pio;
