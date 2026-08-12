@@ -22,10 +22,10 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="5.8457337"
-     inkscape:cx="129.23955"
-     inkscape:cy="38.660673"
-     inkscape:window-width="2536"
-     inkscape:window-height="1371"
+     inkscape:cx="129.15402"
+     inkscape:cy="38.575141"
+     inkscape:window-width="2560"
+     inkscape:window-height="1440"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -92,7 +92,7 @@
      inkscape:label="buttons">
     <rect
        style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="pin27"
+       id="pin28"
        width="52.912998"
        height="52.919998"
        x="19.8976"
@@ -101,7 +101,7 @@
        ry="3.7795277" />
     <rect
        style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="pin28"
+       id="pin29"
        width="52.914001"
        height="52.919998"
        x="163.89729"
@@ -110,7 +110,7 @@
        ry="3.7795277" />
     <ellipse
        style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="pin29"
+       id="pin27"
        cx="243.26768"
        cy="46.349701"
        rx="8.0590553"
@@ -132,15 +132,15 @@
     <path
        style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
        d="M 19.8976,53.909054 H 72.810999"
-       id="pin27-label" />
-    <path
-       style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       d="m 163.8973,53.909054 h 52.914"
        id="pin28-label" />
     <path
        style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       d="m 235.20863,46.349701 h 16.11811"
+       d="m 163.8973,53.909054 h 52.914"
        id="pin29-label" />
+    <path
+       style="fill:#ff0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       d="m 235.20863,46.349701 h 16.11811"
+       id="pin27-label" />
   </g>
   <g
      inkscape:groupmode="layer"
