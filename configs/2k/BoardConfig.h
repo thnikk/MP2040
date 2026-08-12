@@ -14,7 +14,7 @@
 // the given USB HID keycode while pressed (active-low, internal pull-up).
 // Pins not listed here default to 0 (unassigned), so only define overrides.
 // GP26 is the WS2812 LED data line, not a key.
-#define KEYCODE_GP27 HID_KEY_ESC
+#define KEYCODE_GP27 HID_KEY_ESCAPE
 #define KEYCODE_GP28 HID_KEY_Z
 #define KEYCODE_GP29 HID_KEY_X
 
