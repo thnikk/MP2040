@@ -852,7 +852,7 @@ html[data-theme="light"] .ms-caret {
 }
 
 .led-row > .led-colors {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -1160,7 +1160,7 @@ html[data-theme="light"] .ms-caret {
 .led-color-picker {
   display: flex;
   align-items: stretch;
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
@@ -1174,7 +1174,7 @@ html[data-theme="light"] .ms-caret {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  width: 100%;
+  width: auto;
   padding: 5px 10px;
   border-radius: 999px;
   background: var(--btn-bg);
