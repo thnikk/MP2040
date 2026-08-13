@@ -602,10 +602,10 @@ class BoardView {
       shapesOf(el).forEach((shape) => {
         const s = shape;
         if (isHeld) {
-          s.style.setProperty('fill', '#3d3d00', 'important');
-          s.style.setProperty('stroke', '#ffff00', 'important');
+          s.style.setProperty('fill', 'var(--bg-2)', 'important');
+          s.style.setProperty('fill-opacity', '0.6', 'important');
+          s.style.setProperty('stroke', 'var(--nord13)', 'important');
           s.style.setProperty('stroke-width', '3', 'important');
-          s.style.removeProperty('fill-opacity');
         } else {
           s.style.setProperty('fill', 'var(--bg-2)', 'important');
           s.style.removeProperty('fill-opacity');
