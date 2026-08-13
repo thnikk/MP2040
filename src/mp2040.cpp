@@ -345,33 +345,8 @@ void MP2040::run() {
 // the boot-window cue (pressed color / full brightness). Called when the boot
 // window expires without a touch.
 void MP2040::restoreBoardLedMode() {
-	const LEDOptions& lo = Storage::getInstance().getLedOptions();
-	const KeyMapping& km = Storage::getInstance().getKeyMapping();
-	static LedPreview restore;
-	std::memset(&restore, 0, sizeof(restore));
-	restore.ledMode = lo.ledMode;
-	restore.ledSpeedCount = 6;
-	for (uint32_t i = 0; i < 6; i++)
-		restore.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
-	restore.brightnessByModeCount = 6;
-	for (uint32_t i = 0; i < 6; i++)
-		restore.brightnessByMode[i] = i < lo.brightnessByMode_count
-			? lo.brightnessByMode[i] : lo.brightnessMaximum;
-	restore.colorCount = 6;
-	for (uint32_t i = 0; i < 6; i++)
-	{
-		restore.colorNormalByMode[i] = i < lo.colorNormalByMode_count
-			? lo.colorNormalByMode[i] : lo.colorNormal;
-		restore.colorPressedByMode[i] = i < lo.colorPressedByMode_count
-			? lo.colorPressedByMode[i] : lo.colorPressed;
-	}
-	restore.ledTimeout = lo.ledTimeout;
-	restore.ledNormalColorCount = km.ledNormalColors_count;
-	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
-		restore.ledNormalColors[pin] = km.ledNormalColors[pin];
-	restore.ledPressedColorCount = km.ledPressedColors_count;
-	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
-		restore.ledPressedColors[pin] = km.ledPressedColors[pin];
+	LedPreview restore;
+	Storage::getInstance().buildLedPreviewFromConfig(restore);
 	Storage::getInstance().publishLedPreview(restore);
 }
 

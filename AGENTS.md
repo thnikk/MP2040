@@ -38,6 +38,13 @@
 - Modifier keys: set the pin's `MODIFIER_GPxx` mask; the keycode can then be 0. The web UI exposes both.
 - The keyboard report is a 256-key bitmap (NKRO), not the 6-key boot report.
 
+## Serial (CDC) command interface
+- Enabled per-config via `Config.serialConfigEnabled` (web Settings → "Serial control (CDC)"), off by default; requires reboot (USB descriptors are fixed at enumeration).
+- When on, the keyboard/MIDI device also exposes a CDC-ACM port. Both drivers share `SerialCommandHandler` (`headers/drivers/shared/serialhelper.h`), called from each driver's `process()`.
+- Protocol: **newline-delimited JSON**. Each line is one command object; responses are JSON. Examples: `{"cmd":"help"}`, `{"cmd":"version"}`, `{"cmd":"profile"}`, `{"cmd":"profile","index":1,"persist":true}`, `{"cmd":"led"}`, `{"cmd":"led","mode":3,"speed":60,"brightness":180,"timeout":120}`.
+- Profile switch is live by default; `"persist":true` also saves to flash. LED commands always persist + apply live (via `Storage::buildLedPreviewFromConfig` + `publishLedPreview`).
+- Resilience: lines that aren't valid JSON or have an unknown `cmd` are dropped without a response (probing software like NZXT CAM can't latch on). Line buffer is 128 bytes; overlong lines are discarded whole.
+
 ## Testing
 - When testing the web server, don't kill existing instances. Use port 1357 for testing.
 - Don't build the firmware unless necessary.

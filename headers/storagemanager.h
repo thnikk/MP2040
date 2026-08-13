@@ -168,6 +168,11 @@ public:
 	void publishLedPreview(const LedPreview&);
 	bool consumeLedPreview(LedPreview&);
 
+	// Seed a LedPreview from the current working config (ledOptions + key
+	// mapping) so a live update can publish the full theme state. Used by the
+	// boot-window restore and the serial LED commands.
+	void buildLedPreviewFromConfig(LedPreview& preview);
+
 	void ResetSettings(); 				// EEPROM Reset Feature
 
 private:

@@ -2225,6 +2225,36 @@ void Storage::publishLedPreview(const LedPreview& preview)
     ledPreviewGen++;
 }
 
+void Storage::buildLedPreviewFromConfig(LedPreview& preview)
+{
+    const LEDOptions& lo = getLedOptions();
+    const KeyMapping& km = getKeyMapping();
+    std::memset(&preview, 0, sizeof(preview));
+    preview.ledMode = lo.ledMode;
+    preview.ledSpeedCount = 6;
+    for (uint32_t i = 0; i < 6; i++)
+        preview.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
+    preview.brightnessByModeCount = 6;
+    for (uint32_t i = 0; i < 6; i++)
+        preview.brightnessByMode[i] = i < lo.brightnessByMode_count
+            ? lo.brightnessByMode[i] : lo.brightnessMaximum;
+    preview.colorCount = 6;
+    for (uint32_t i = 0; i < 6; i++)
+    {
+        preview.colorNormalByMode[i] = i < lo.colorNormalByMode_count
+            ? lo.colorNormalByMode[i] : lo.colorNormal;
+        preview.colorPressedByMode[i] = i < lo.colorPressedByMode_count
+            ? lo.colorPressedByMode[i] : lo.colorPressed;
+    }
+    preview.ledTimeout = lo.ledTimeout;
+    preview.ledNormalColorCount = km.ledNormalColors_count;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
+        preview.ledNormalColors[pin] = km.ledNormalColors[pin];
+    preview.ledPressedColorCount = km.ledPressedColors_count;
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledPressedColors_count; pin++)
+        preview.ledPressedColors[pin] = km.ledPressedColors[pin];
+}
+
 bool Storage::consumeLedPreview(LedPreview& out)
 {
     const uint32_t gen = ledPreviewGen;
