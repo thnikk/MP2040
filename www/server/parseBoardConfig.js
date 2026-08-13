@@ -91,6 +91,29 @@ export function findBoardConfigDir(boardId, rootDir) {
   return null;
 }
 
+// Every board available to the mock: the configs/<Board> directories that
+// contain a BoardConfig.h. Mirrors docker-build.py's board list.
+export function listBoardConfigs(rootDir) {
+  const configsDir = path.join(rootDir, 'configs');
+  if (!fs.existsSync(configsDir)) return [];
+  const boards = [];
+  for (const entry of fs.readdirSync(configsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const boardConfigPath = path.join(configsDir, entry.name, 'BoardConfig.h');
+    if (!fs.existsSync(boardConfigPath)) continue;
+    let label = entry.name;
+    try {
+      const m = fs.readFileSync(boardConfigPath, 'utf8').match(/BOARD_CONFIG_LABEL\s+"([^"]*)"/);
+      if (m) label = m[1];
+    } catch {
+      // fall through to the directory name
+    }
+    boards.push({ id: entry.name, label });
+  }
+  boards.sort((a, b) => a.id.localeCompare(b.id));
+  return boards;
+}
+
 function extractDefines(content) {
   const defines = {};
   const cleaned = content.replace(/\/\*[\s\S]*?\*\//g, '');

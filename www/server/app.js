@@ -7,44 +7,69 @@
 // (see vite.config.js) or run standalone with `node server/app.js` for the
 // mock API on http://localhost:8080.
 //
-// Board selection: VITE_MP2040_BOARD or MP2040_BOARDCONFIG env (default Pico).
+// Board selection: VITE_MP2040_BOARD or MP2040_BOARDCONFIG env (default Pico)
+// is the initial board; the running server can switch boards at runtime via
+// GET/POST /api/board (the configurator's Settings page exposes a dropdown in
+// mock mode only). getFirmwareVersion reports `mock: true` so the UI can
+// distinguish the mock from a real board.
 
 import express from 'express';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { findBoardConfigDir, parseBoardConfig } from './parseBoardConfig.js';
+import { findBoardConfigDir, listBoardConfigs, parseBoardConfig } from './parseBoardConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..', '..');
 
-const boardId = (
+let boardId = (
   process.env.VITE_MP2040_BOARD || process.env.MP2040_BOARDCONFIG || 'Pico'
 ).toLowerCase();
 
 const configDir = findBoardConfigDir(boardId, rootDir);
-const board = parseBoardConfig(configDir, rootDir);
+let board = parseBoardConfig(configDir, rootDir);
+// Use the canonical config directory name so /api/board ids match the ids in
+// /api/boards (dropdown preselection).
+boardId = configDir || boardId;
 
 console.log(`MP2040 mock server → board: ${board?.boardConfigLabel ?? boardId}`);
 
 let store = null;
 
+// Switch the active mock board: re-parse its BoardConfig.h and drop the store
+// (the options are board-specific: key count, keycodes, LED layout, matrix).
+// Request handlers read `board` at request time, so no other state needs
+// rebuilding. Returns false if the id doesn't match a board config.
+function loadBoard(id) {
+  const dir = findBoardConfigDir(id, rootDir);
+  if (!dir) return false;
+  boardId = dir;
+  board = parseBoardConfig(dir, rootDir);
+  store = null;
+  return true;
+}
+
+// Number of keys the active board can report (rows*cols for matrix boards,
+// all bank-0 GPIOs for direct boards).
+function keyCount() {
+  return Math.max(board?.keyCount ?? 0, 1);
+}
+
 // Build a profile object. `src` provides the starting arrays/scalars (e.g. the
 // base options) so alternates default to a copy of the base.
-const KEY_COUNT = Math.max(board?.keyCount ?? 0, 1);
 function makeProfile(src = {}) {
   const keycodes = [];
   const modifierMasks = [];
-  for (let i = 0; i < KEY_COUNT; i++) {
+  for (let i = 0; i < keyCount(); i++) {
     keycodes.push(src.keycodes?.[i] ?? 0);
     modifierMasks.push(src.modifierMasks?.[i] ?? 0);
   }
   return {
     keycodes,
     modifierMasks,
-    midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(KEY_COUNT).fill(0),
-    midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(KEY_COUNT).fill(0),
+    midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(keyCount()).fill(0),
+    midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(keyCount()).fill(0),
     midi: {
       channel: src.midi?.channel ?? 0,
       velocity: src.midi?.velocity ?? 127,
@@ -78,7 +103,7 @@ function defaultOptions() {
   const modifierMasks = [];
   const pinLedIndices = [];
   const macroIndices = [];
-  for (let i = 0; i < KEY_COUNT; i++) {
+  for (let i = 0; i < keyCount(); i++) {
     keycodes.push(board?.keycodes?.[i] ?? 0);
     modifierMasks.push(board?.modifierMasks?.[i] ?? 0);
     pinLedIndices.push(board?.pinLedIndices?.[i] ?? -1);
@@ -87,8 +112,8 @@ function defaultOptions() {
   const base = {
     keycodes,
     modifierMasks,
-    midiNotes: new Array(KEY_COUNT).fill(0),
-    midiVelocities: new Array(KEY_COUNT).fill(0),
+    midiNotes: new Array(keyCount()).fill(0),
+    midiVelocities: new Array(keyCount()).fill(0),
     // Global macros: per-key triggers + the M1-M8 definitions.
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
@@ -155,6 +180,25 @@ export function createMockApp() {
   app.get('/api/getOptions', (req, res) => {
     if (!store) store = defaultOptions();
     res.send(store);
+  });
+
+  // Mock-only board switcher. The real board never exposes these endpoints.
+  app.get('/api/boards', (req, res) => {
+    res.send(listBoardConfigs(rootDir));
+  });
+
+  app.get('/api/board', (req, res) => {
+    res.send({ board: boardId, boardConfigLabel: board?.boardConfigLabel ?? boardId });
+  });
+
+  app.post('/api/board', (req, res) => {
+    const id = req.body?.board;
+    if (typeof id !== 'string' || !loadBoard(id)) {
+      res.status(404).send({ error: `Unknown board '${id}'` });
+      return;
+    }
+    console.log(`MP2040 mock server → board: ${board?.boardConfigLabel ?? boardId}`);
+    res.send({ board: boardId, boardConfigLabel: board?.boardConfigLabel ?? boardId });
   });
 
   app.post('/api/setOptions', (req, res) => {
@@ -226,6 +270,9 @@ export function createMockApp() {
       firmwareVersion: 'dev',
       gitCommit: 'mock',
       boardLabel: board?.boardConfigLabel ?? boardId,
+      // Lets the configurator show the mock-only board switcher. The real
+      // board never returns this field.
+      mock: true,
     });
   });
 
@@ -242,9 +289,26 @@ export function createMockApp() {
   });
 
   // The web UI is one HTML file routed client-side (/, /layout, /settings);
-  // mirror the firmware's route mapping so those paths work in dev too.
+  // mirror the firmware's route mapping so those paths work in dev too. The
+  // mock-only Development section (board switcher) is injected here so it never
+  // ships in the firmware's embedded index.html.
+  const devSection = `
+      <section id="mock-board-section">
+        <h2><span class="heading-icon icon icon-microchip" aria-hidden="true"></span>Development</h2>
+        <div class="general-form">
+          <label for="mock-board">Board (mock server)</label>
+          <select id="mock-board"></select>
+          <p class="hint">Switch which board config the mock API serves. Only available in dev mode.</p>
+        </div>
+      </section>
+`;
   app.get(['/', '/layout', '/settings'], (req, res) => {
-    res.type('html').send(readFileSync(path.join(__dirname, '..', 'index.html')));
+    const html = readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    const injected = html.replace(
+      '<div id="page-settings" class="page" hidden>',
+      '<div id="page-settings" class="page" hidden>\n' + devSection
+    );
+    res.type('html').send(injected);
   });
 
   return app;

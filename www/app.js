@@ -561,6 +561,41 @@ async function load() {
     : '';
   document.getElementById('landing-year').textContent = new Date().getFullYear();
 
+  // Mock-server board switcher (dev only). The Development section is injected
+  // into the page only by the mock server, and the real board never returns
+  // `mock`, so neither exists when proxied to hardware. Switching boards
+  // reloads the page so the whole config (options, board view, board svg)
+  // re-initializes from the new board config.
+  if (version.mock) {
+    const mockSection = document.getElementById('mock-board-section');
+    const mockBoardEl = document.getElementById('mock-board');
+    if (mockSection && mockBoardEl) {
+      const [boards, current] = await Promise.all([
+        api('/api/boards'),
+        api('/api/board'),
+      ]);
+      for (const b of Array.isArray(boards) ? boards : []) {
+        const opt = document.createElement('option');
+        opt.value = b.id;
+        opt.textContent = b.label;
+        mockBoardEl.appendChild(opt);
+      }
+      if (current && typeof current.board === 'string') mockBoardEl.value = current.board;
+      mockBoardEl.addEventListener('change', async () => {
+        const res = await api('/api/board', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ board: mockBoardEl.value }),
+        });
+        if (res && res.error) {
+          Toast.show('Failed to switch board: ' + res.error, 'error');
+          return;
+        }
+        window.location.reload();
+      });
+    }
+  }
+
   const led = options.led || {};
   const midi = options.midi || {};
 

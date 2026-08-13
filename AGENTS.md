@@ -10,7 +10,7 @@
 ## Build (web configurator, dev only)
 - `cd www && npm install` once, then:
   - `npm run dev` — Vite dev server (http://localhost:3000) with a mock API. It parses `configs/<Board>/BoardConfig.h` and serves `/api/*` + `/board.svg` from `server/app.js`, so no board is needed.
-  - `VITE_MP2040_BOARD=<Board> npm run dev` — target a specific board for the mock (e.g. `2k`, `Pico`).
+  - `VITE_MP2040_BOARD=<Board> npm run dev` — initial board for the mock (e.g. `2k`, `Pico`). The board can also be switched at runtime from the Settings page's "Development" section (mock mode only), which reloads with the new board config.
   - `npm run dev-board` — Vite dev server that proxies `/api` and `/board.svg` to a real board at `VITE_DEV_BASE_URL` (default `http://192.168.7.1`).
 - Dev files (`node_modules/`, `server/`, `package.json`, `vite.config.js`) are excluded from the firmware by `tools/makefsdata.py`.
 
