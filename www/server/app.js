@@ -315,11 +315,11 @@ export function createMockApp() {
   // ships in the firmware's embedded index.html.
   const devSection = `
       <section id="mock-board-section">
-        <h2><span class="heading-icon icon icon-microchip" aria-hidden="true"></span>Development</h2>
+        <h2><span class="heading-icon icon icon-code" aria-hidden="true"></span>Development</h2>
         <div class="general-form">
-          <label for="mock-board">Board (mock server)</label>
+          <label for="mock-board">Board</label>
+          <span class="icon icon-info field-info" data-tooltip='Switch which board config the mock API serves. Only available in dev mode.'></span>
           <select id="mock-board"></select>
-          <p class="hint">Switch which board config the mock API serves. Only available in dev mode.</p>
         </div>
       </section>
 `;

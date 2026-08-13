@@ -124,6 +124,7 @@ html[data-theme="light"] .logo-link:hover {
 .icon-reboot { -webkit-mask-image: url("/icons/reboot.svg"); mask-image: url("/icons/reboot.svg"); }
 .icon-profile { -webkit-mask-image: url("/icons/profile.svg"); mask-image: url("/icons/profile.svg"); }
 .icon-bulb { -webkit-mask-image: url("/icons/bulb.svg"); mask-image: url("/icons/bulb.svg"); }
+.icon-code { -webkit-mask-image: url("/icons/code.svg"); mask-image: url("/icons/code.svg"); }
 .icon-download { -webkit-mask-image: url("/icons/download.svg"); mask-image: url("/icons/download.svg"); }
 .icon-upload { -webkit-mask-image: url("/icons/upload.svg"); mask-image: url("/icons/upload.svg"); }
 .icon-light { -webkit-mask-image: url("/icons/light.svg"); mask-image: url("/icons/light.svg"); }
@@ -354,14 +355,12 @@ main {
 .tooltip {
   position: fixed;
   z-index: 1000;
-  max-width: 240px;
+  max-width: 350px;
   padding: 8px 12px;
   background: var(--bg-3);
   color: var(--text);
   border: 1px solid var(--card-border);
   border-radius: 8px;
-  font-size: 0.85rem;
-  line-height: 1.35;
   text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   pointer-events: none;
@@ -369,7 +368,7 @@ main {
 }
 
 .tooltip {
-  max-width: 300px;
+  max-width: 350px;
 }
 
 /* Cards */
