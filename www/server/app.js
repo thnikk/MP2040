@@ -56,6 +56,16 @@ function keyCount() {
   return Math.max(board?.keyCount ?? 0, 1);
 }
 
+// Mock favicon: the same logo.svg as the real board but in a dev color (Nord
+// 15) so a mock/dev browser tab is clearly distinguishable from the firmware's
+// red (Nord 11) icon. Inlined as a data URI so no extra request / file is
+// needed, and the shared index.html (and firmware) keeps the original color.
+const MOCK_FAVICON_COLOR = '#B48EAD';
+const mockFaviconSvg = readFileSync(
+  path.join(rootDir, 'www', 'icons', 'logo.svg'), 'utf8'
+).replace('#bf616a', MOCK_FAVICON_COLOR);
+const mockFaviconHref = `data:image/svg+xml;base64,${Buffer.from(mockFaviconSvg).toString('base64')}`;
+
 // Build a profile object. `src` provides the starting arrays/scalars (e.g. the
 // base options) so alternates default to a copy of the base.
 function makeProfile(src = {}) {
@@ -303,12 +313,19 @@ export function createMockApp() {
       </section>
 `;
   app.get(['/', '/layout', '/settings'], (req, res) => {
-    const html = readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-    const injected = html.replace(
+    let html = readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    // Mock-only Development section (board switcher): injected here so it never
+    // ships in the firmware's embedded index.html.
+    html = html.replace(
       '<div id="page-settings" class="page" hidden>',
       '<div id="page-settings" class="page" hidden>\n' + devSection
     );
-    res.type('html').send(injected);
+    // Dev-colored favicon (data URI) instead of the firmware's red logo.svg.
+    html = html.replace(
+      '<link rel="icon" type="image/svg+xml" href="/icons/logo.svg">',
+      `<link rel="icon" type="image/svg+xml" href="${mockFaviconHref}">`
+    );
+    res.type('html').send(html);
   });
 
   return app;
