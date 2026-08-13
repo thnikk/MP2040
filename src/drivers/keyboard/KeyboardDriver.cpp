@@ -1,14 +1,9 @@
 #include "drivers/keyboard/KeyboardDriver.h"
 #include "storagemanager.h"
 #include "drivers/shared/driverhelper.h"
+#include "drivers/shared/serialhelper.h"
 #include "helper.h"
 #include "types.h"
-#include "version.h"
-
-#include <cstdio>
-#include <cstring>
-#include <cctype>
-#include <cstdlib>
 
 // Hard upper bounds for macro step timing (ms). The web config clamps to the
 // same range; these keep a corrupt stored config from wedging playback.
@@ -113,80 +108,9 @@ void KeyboardDriver::process() {
 	}
 
 	// Serial command interface (opt-in via web config). Reads line-based
-	// commands on the CDC port; see handleSerialCommand.
+	// commands on the CDC port; see serialhelper.h for the shared handler.
 	if (Storage::getInstance().getSerialConfigEnabled())
-		processSerial();
-}
-
-// ---- Serial (CDC) command interface --------------------------------------
-// The serial port only exists when serialConfigEnabled is set (the board must
-// reboot for the descriptors to change). Commands are line-based (terminated
-// by '\r' or '\n'); each line is parsed and answered.
-
-void KeyboardDriver::processSerial() {
-	if (!tud_cdc_connected()) return;
-
-	while (tud_cdc_available()) {
-		int32_t ch = tud_cdc_read_char();
-		if (ch < 0) break;
-		if (ch == '\r' || ch == '\n') {
-			if (serialLineLen > 0) {
-				serialLine[serialLineLen] = '\0';
-				handleSerialCommand(serialLine);
-				serialLineLen = 0;
-			}
-		} else if (serialLineLen < sizeof(serialLine) - 1) {
-			serialLine[serialLineLen++] = (char)ch;
-		}
-	}
-	tud_cdc_write_flush();
-}
-
-// Split "cmd arg" lines, trim whitespace, lowercase the command. Writes the
-// response back to the CDC port.
-void KeyboardDriver::handleSerialCommand(char *line) {
-	char *cmd = line;
-	while (*cmd && isspace((unsigned char)*cmd)) cmd++;
-	char *arg = cmd;
-	while (*arg && !isspace((unsigned char)*arg)) {
-		*arg = (char)tolower((unsigned char)*arg);
-		arg++;
-	}
-	if (*arg) {
-		*arg = '\0';
-		arg++;
-		while (*arg && isspace((unsigned char)*arg)) arg++;
-	}
-
-	if (strcmp(cmd, "help") == 0) {
-		tud_cdc_write_str("commands: help, version, profile [0-3]\r\n");
-	} else if (strcmp(cmd, "version") == 0) {
-		char buf[64];
-		int n = snprintf(buf, sizeof(buf), "MP2040 " MP2040VERSION " (" MP2040BUILD ")\r\n");
-		if (n > 0) tud_cdc_write(buf, (uint32_t)(n < (int)sizeof(buf) ? n : sizeof(buf) - 1));
-	} else if (strcmp(cmd, "profile") == 0) {
-		if (*arg == '\0') {
-			char buf[32];
-			int n = snprintf(buf, sizeof(buf), "active profile: %lu\r\n",
-				(unsigned long)Storage::getInstance().getActiveProfile());
-			if (n > 0) tud_cdc_write(buf, (uint32_t)(n < (int)sizeof(buf) ? n : sizeof(buf) - 1));
-			return;
-		}
-		char *end = nullptr;
-		long p = strtol(arg, &end, 10);
-		// Reject empty or trailing garbage (e.g. "profile 2x").
-		if (end == arg || *end != '\0' || p < 0 || p > 3) {
-			tud_cdc_write_str("usage: profile [0-3]\r\n");
-			return;
-		}
-		Storage::getInstance().setActiveProfile((uint32_t)p);
-		Storage::getInstance().applyActiveProfile();
-		char buf[32];
-		int n = snprintf(buf, sizeof(buf), "profile %ld active\r\n", p);
-		if (n > 0) tud_cdc_write(buf, (uint32_t)(n < (int)sizeof(buf) ? n : sizeof(buf) - 1));
-	} else {
-		tud_cdc_write_str("unknown command (type 'help')\r\n");
-	}
+		serialCommands.process();
 }
 
 // Apply a keycode with an explicit modifier mask to the reports. Shared by the

@@ -3,6 +3,7 @@
 
 #include "gpdriver.h"
 #include "drivers/keyboard/KeyboardDescriptors.h"
+#include "drivers/shared/serialhelper.h"
 #include "keymask.h"
 #include "config.pb.h"
 
@@ -26,10 +27,7 @@ private:
     // Serial (CDC) command interface: line-buffered commands that control the
     // board live (e.g. switching profiles). Only active when the serial
     // interface is enabled in config.
-    void processSerial();
-    void handleSerialCommand(char *line);
-    char serialLine[32];
-    uint8_t serialLineLen = 0;
+    SerialCommandHandler serialCommands;
     // Macro playback (loop-while-held). A key mapped to a macro
     // (Config.macroIndices > 0) plays its steps in order, repeating until the
     // key is released. Each step holds its keycode for holdMs, then waits

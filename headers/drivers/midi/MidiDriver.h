@@ -3,6 +3,7 @@
 
 #include "gpdriver.h"
 #include "drivers/midi/MidiDescriptors.h"
+#include "drivers/shared/serialhelper.h"
 #include "types.h"
 #include "keymask.h"
 
@@ -20,6 +21,10 @@ public:
     virtual const uint8_t * get_descriptor_device_qualifier_cb();
 private:
     void sendNote(uint8_t cin, uint8_t note, uint8_t velocity);
+    // Serial (CDC) command interface: line-buffered commands that control the
+    // board live (e.g. switching profiles). Only active when the serial
+    // interface is enabled in config.
+    SerialCommandHandler serialCommands;
     KeyMask lastKeyState;
 };
 

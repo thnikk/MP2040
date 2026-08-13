@@ -1,6 +1,7 @@
 #include "drivers/midi/MidiDriver.h"
 #include "storagemanager.h"
 #include "drivers/shared/driverhelper.h"
+#include "drivers/shared/serialhelper.h"
 #include "types.h"
 
 #include "class/midi/midi_device.h"
@@ -25,6 +26,11 @@ void MidiDriver::process() {
 	const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
 	const uint8_t globalVelocity = (uint8_t)Storage::getInstance().getMidiVelocity();
 	const KeyMask& keyState = Storage::getInstance().keyState;
+
+	// Serial command interface (opt-in via web config). Reads line-based
+	// commands on the CDC port; see serialhelper.h for the shared handler.
+	if (Storage::getInstance().getSerialConfigEnabled())
+		serialCommands.process();
 
 	// Only produce note events while a host has claimed the MIDI interfaces.
 	// Keep the previous state in sync so a later mount doesn't send spurious
@@ -85,7 +91,9 @@ const uint16_t * MidiDriver::get_descriptor_string_cb(uint8_t index, uint16_t la
 }
 
 const uint8_t * MidiDriver::get_descriptor_device_cb() {
-    return midi_device_descriptor;
+    return Storage::getInstance().getSerialConfigEnabled()
+        ? midi_serial_device_descriptor
+        : midi_device_descriptor;
 }
 
 const uint8_t * MidiDriver::get_hid_descriptor_report_cb(uint8_t itf) {
@@ -93,7 +101,9 @@ const uint8_t * MidiDriver::get_hid_descriptor_report_cb(uint8_t itf) {
 }
 
 const uint8_t * MidiDriver::get_descriptor_configuration_cb(uint8_t index) {
-    return midi_configuration_descriptor;
+    return Storage::getInstance().getSerialConfigEnabled()
+        ? midi_serial_configuration_descriptor
+        : midi_configuration_descriptor;
 }
 
 const uint8_t * MidiDriver::get_descriptor_device_qualifier_cb() {
