@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+"""Build MP2040 firmware via Docker.
+
+Runs the CMake build inside the gp2040-ce-builder Docker image (no local ARM
+toolchain needed) and optionally flashes a connected board. Pipeline:
+
+    nuke → ensure builder image → clean → build → flash
+
+Examples:
+    python3 docker-build.py -b 2k
+    python3 docker-build.py -b MacroPad --nuke --flash
+    python3 docker-build.py -b 2k --clean --verbose --output build.log
+"""
 import argparse
 import glob
 import os
@@ -16,7 +28,10 @@ DEFAULT_FLASH_PATH = os.path.expandvars("/run/media/$USER/RPI-RP2")
 NUKE_FILE = REPO_ROOT / "tools" / "flash_nuke.uf2"
 
 
+#  Board / filesystem helpers
+
 def get_valid_boards():
+    """Board config dirs: configs/<Board>/BoardConfig.h."""
     configs = REPO_ROOT / "configs"
     return sorted(
         d.name for d in configs.iterdir()
@@ -25,10 +40,12 @@ def get_valid_boards():
 
 
 def resolve_flash_path(path_str):
+    """Expand $VAR references in the flash mount path."""
     return os.path.expandvars(path_str)
 
 
 def wait_for_mount(path, timeout, log_file=None):
+    """Poll for up to `timeout` seconds until the flash drive appears."""
     for _ in range(timeout):
         if path.is_dir():
             return True
@@ -37,13 +54,17 @@ def wait_for_mount(path, timeout, log_file=None):
 
 
 def log_msg(msg, log_file=None):
+    """Print to the terminal and append to the --output log file if given."""
     print(msg)
     if log_file:
         with open(log_file, "a") as f:
             f.write(msg + "\n")
 
 
+#  Docker helpers
+
 def image_exists(image):
+    """True if the builder image is already present locally."""
     try:
         subprocess.run(["docker", "image", "inspect", image],
                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -54,6 +75,7 @@ def image_exists(image):
 
 
 def build_image(image, log_file=None):
+    """Build the Docker builder image (Dockerfile at repo root)."""
     cmd = ["docker", "build", "-t", image, "."]
     with subprocess.Popen(
         cmd, cwd=REPO_ROOT, stdout=subprocess.PIPE,
@@ -69,6 +91,12 @@ def build_image(image, log_file=None):
 
 
 def run_docker(image, command, extra_args=None, log_file=None, verbose=False):
+    """Run a command in the builder container, streaming its output.
+
+    Every line is written to --output when given. On the terminal, non-verbose
+    mode collapses CMake's "[N%]" lines into a single-line progress bar while
+    still printing error lines; --verbose prints everything.
+    """
     cmd = [
         "docker", "run", "--rm",
         "-v", f"{REPO_ROOT}:/build",
@@ -117,9 +145,129 @@ def run_docker(image, command, extra_args=None, log_file=None, verbose=False):
             log_fh.close()
 
 
-def main():
-    valid_boards = get_valid_boards()
+#  Build pipeline steps
 
+def nuke_flash(args, flash_dir):
+    """Flash the nuke UF2 to wipe flash, or warn. Returns the flash dir
+    (or None if the drive never mounted, so the later flash step can skip)."""
+    if not args.nuke:
+        return flash_dir
+    if not NUKE_FILE.exists():
+        log_msg(f"Warning: nuke file not found at {NUKE_FILE}, skipping",
+                args.output)
+        return flash_dir
+    if not flash_dir.is_dir():
+        log_msg(f"Waiting {args.timeout}s for {flash_dir} to mount...",
+                args.output)
+        if not wait_for_mount(flash_dir, args.timeout, args.output):
+            log_msg(f"Warning: flash path {flash_dir} not found "
+                    f"after {args.timeout}s, skipping nuke",
+                    args.output)
+            return None
+    dst = flash_dir / "flash_nuke.uf2"
+    log_msg(f"Nuking board: {NUKE_FILE} -> {dst}", args.output)
+    try:
+        shutil.copy2(NUKE_FILE, dst)
+        log_msg("Nuke sent", args.output)
+    except Exception as e:
+        log_msg(f"Warning: nuke failed: {e}", args.output)
+    return flash_dir
+
+
+def ensure_builder_image(args):
+    """Build the Docker image if it's missing or --rebuild was given."""
+    if args.rebuild or not image_exists(args.image):
+        log_msg("Building Docker image...", args.output)
+        ret = build_image(args.image, args.output)
+        if ret != 0:
+            sys.exit(ret)
+
+
+def clean_build_dir(args):
+    """Fix file ownership in the mounted repo and optionally wipe the build dir.
+
+    The build container runs as root, so its output files land owned by root;
+    the chown hands them back to the host user. --clean also removes the build
+    dir for a from-scratch build.
+    """
+    log_msg("Cleaning...", args.output)
+    cleanup_cmd = (
+        'chown -R 1000:1000 '
+        '/build/.git/modules /build/lib/pico_pio_usb /build/lib/tinyusb '
+        '/build/www /build/build 2>/dev/null || true'
+    )
+    if args.clean:
+        cleanup_cmd += '; rm -rf /build/build 2>/dev/null || true'
+    run_docker(args.image, cleanup_cmd,
+               extra_args=["--user", "0:0"],
+               log_file=args.output, verbose=args.verbose)
+
+
+def build_firmware(args):
+    """Configure and build the firmware in the container. Returns the built
+    UF2 path, or None if the build failed / produced no UF2."""
+    # fsdata.c is regenerated from www/ by makefsdata.py at build time, so a
+    # stale copy from a previous build must not be compiled in.
+    fsdata = REPO_ROOT / "lib" / "httpd" / "fsdata.c"
+    if fsdata.exists():
+        fsdata.unlink()
+
+    log_msg("Configuring...", args.output)
+    build_cmd = (
+        'cmake -B build -DCMAKE_BUILD_TYPE=Release '
+        '-DMP2040_BOARDCONFIG=$MP2040_BOARDCONFIG '
+        '&& cmake --build build --parallel'
+    )
+    ret = run_docker(args.image, build_cmd,
+                     extra_args=["-e", f"MP2040_BOARDCONFIG={args.board}"],
+                     log_file=args.output, verbose=args.verbose)
+
+    if ret != 0:
+        if args.output:
+            log_msg(f"Build failed (exit {ret}). Log: {args.output}")
+        sys.exit(ret)
+
+    matches = sorted(glob.glob(str(REPO_ROOT / "build" / f"MP2040_*_{args.board}.uf2")))
+    uf2 = Path(matches[-1]) if matches else None
+    if uf2:
+        log_msg(f"Build complete! → {uf2.name}", args.output)
+    else:
+        log_msg("Build complete!", args.output)
+    return uf2
+
+
+def flash_firmware(uf2, args, flash_dir):
+    """Wait for the board mount and copy the built UF2 onto it."""
+    if not args.flash:
+        return
+    if uf2 is None:
+        log_msg("Warning: no UF2 found, skipping flash", args.output)
+        return
+    if flash_dir is None:
+        log_msg(f"Warning: flash path not available, skipping flash",
+                args.output)
+        return
+    if not flash_dir.is_dir():
+        log_msg(f"Waiting {args.timeout}s for {flash_dir} to mount...",
+                args.output)
+        wait_for_mount(flash_dir, args.timeout, args.output)
+    if not flash_dir.is_dir():
+        log_msg(f"Warning: flash path {flash_dir} not found "
+                f"after {args.timeout}s, skipping flash",
+                args.output)
+        return
+    dst = flash_dir / uf2.name
+    log_msg(f"Flashing: {uf2.name} -> {dst}", args.output)
+    try:
+        shutil.copy2(uf2, dst)
+        log_msg("Flash complete!", args.output)
+    except Exception as e:
+        log_msg(f"Warning: flash failed: {e}", args.output)
+
+
+#  CLI
+
+def parse_args(valid_boards):
     parser = argparse.ArgumentParser(
         description="Build MP2040 firmware via Docker.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -145,116 +293,40 @@ def main():
                         help=f"RPI-RP2 mount point (default: {DEFAULT_FLASH_PATH})")
     parser.add_argument("-t", "--timeout", type=int, default=30,
                         help="Seconds to wait for mount (default: 30)")
+    return parser.parse_args()
 
-    args = parser.parse_args()
 
-    if args.output:
-        open(args.output, "w").close()
-
-    if args.board not in valid_boards:
-        print(f"Error: Unknown board '{args.board}'. Available boards:",
+def validate_board(board, valid_boards):
+    if board not in valid_boards:
+        print(f"Error: Unknown board '{board}'. Available boards:",
               file=sys.stderr)
         for b in valid_boards:
             print(f"  {b}", file=sys.stderr)
         sys.exit(1)
 
-    flash_path = resolve_flash_path(args.path)
-    flash_dir = Path(flash_path)
 
-    # --- Nuke ---
-    if args.nuke:
-        if not NUKE_FILE.exists():
-            log_msg(f"Warning: nuke file not found at {NUKE_FILE}, skipping",
-                    args.output)
-        elif not flash_dir.is_dir():
-            log_msg(f"Waiting {args.timeout}s for {flash_path} to mount...",
-                    args.output)
-            if not wait_for_mount(flash_dir, args.timeout, args.output):
-                log_msg(f"Warning: flash path {flash_path} not found "
-                        f"after {args.timeout}s, skipping nuke",
-                        args.output)
-                flash_dir = None
-        if flash_dir and flash_dir.is_dir():
-            dst = flash_dir / "flash_nuke.uf2"
-            log_msg(f"Nuking board: {NUKE_FILE} -> {dst}", args.output)
-            try:
-                shutil.copy2(NUKE_FILE, dst)
-                log_msg("Nuke sent", args.output)
-            except Exception as e:
-                log_msg(f"Warning: nuke failed: {e}", args.output)
+def main():
+    valid_boards = get_valid_boards()
+    args = parse_args(valid_boards)
 
-    # --- Image ---
-    if args.rebuild or not image_exists(args.image):
-        log_msg("Building Docker image...", args.output)
-        ret = build_image(args.image, args.output)
-        if ret != 0:
-            sys.exit(ret)
+    # Fresh log file when --output is given.
+    if args.output:
+        open(args.output, "w").close()
 
-    # --- Cleanup ---
-    log_msg("Cleaning...", args.output)
-    cleanup_cmd = (
-        'chown -R 1000:1000 '
-        '/build/.git/modules /build/lib/pico_pio_usb /build/lib/tinyusb '
-        '/build/www /build/build 2>/dev/null || true'
-    )
-    if args.clean:
-        cleanup_cmd += '; rm -rf /build/build 2>/dev/null || true'
-    run_docker(args.image, cleanup_cmd,
-               extra_args=["--user", "0:0"],
-               log_file=args.output, verbose=args.verbose)
+    validate_board(args.board, valid_boards)
 
-    # --- Build ---
-    fsdata = REPO_ROOT / "lib" / "httpd" / "fsdata.c"
-    if fsdata.exists():
-        fsdata.unlink()
+    flash_dir = Path(resolve_flash_path(args.path))
 
-    log_msg("Configuring...", args.output)
-    build_cmd = (
-        'cmake -B build -DCMAKE_BUILD_TYPE=Release '
-        '-DMP2040_BOARDCONFIG=$MP2040_BOARDCONFIG '
-        '&& cmake --build build --parallel'
-    )
-    ret = run_docker(args.image, build_cmd,
-                     extra_args=["-e", f"MP2040_BOARDCONFIG={args.board}"],
-                     log_file=args.output, verbose=args.verbose)
-
-    if ret != 0:
-        if args.output:
-            log_msg(f"Build failed (exit {ret}). Log: {args.output}")
-        sys.exit(ret)
-
-    uf2_matches = sorted(glob.glob(str(REPO_ROOT / "build" / f"MP2040_*_{args.board}.uf2")))
-    if uf2_matches:
-        log_msg(f"Build complete! → {Path(uf2_matches[-1]).name}", args.output)
-    else:
-        log_msg("Build complete!", args.output)
-
-    # --- Flash ---
-    if args.flash:
-        if not flash_dir.is_dir():
-            log_msg(f"Waiting {args.timeout}s for {flash_path} to mount...",
-                    args.output)
-            wait_for_mount(flash_dir, args.timeout, args.output)
-
-        if not flash_dir.is_dir():
-            log_msg(f"Warning: flash path {flash_path} not found "
-                    f"after {args.timeout}s, skipping flash",
-                    args.output)
-        else:
-            pattern = f"MP2040_*_{args.board}.uf2"
-            matches = sorted(glob.glob(str(REPO_ROOT / "build" / pattern)))
-            if not matches:
-                log_msg(f"Warning: no UF2 found matching '{pattern}', "
-                        "skipping flash", args.output)
-            else:
-                src = Path(matches[-1])
-                dst = flash_dir / src.name
-                log_msg(f"Flashing: {src.name} -> {dst}", args.output)
-                try:
-                    shutil.copy2(src, dst)
-                    log_msg("Flash complete!", args.output)
-                except Exception as e:
-                    log_msg(f"Warning: flash failed: {e}", args.output)
+    # 1. Wipe flash (optional)
+    flash_dir = nuke_flash(args, flash_dir)
+    # 2. Build the builder image (once)
+    ensure_builder_image(args)
+    # 3. Fix ownership / clean build dir
+    clean_build_dir(args)
+    # 4. Configure + build firmware
+    uf2 = build_firmware(args)
+    # 5. Copy the UF2 to the board (optional)
+    flash_firmware(uf2, args, flash_dir)
 
 
 if __name__ == "__main__":
