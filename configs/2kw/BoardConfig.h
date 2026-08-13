@@ -50,12 +50,13 @@
 #define BOARD_LED_POSITIONS \
     { 0, 1 }
 
-// Web config boot pin (hold to ground at boot to enter web config mode).
-// GP27 is button 3, so holding button 3 while powering on opens the web config.
+// Web config boot key: the first main key. Hold it to ground at boot to
+// enter web config mode. The round ESC button (GP27) is an extra button,
+// not a config/boot key.
 #define PIN_WEBCONFIG 28
 
-// Optional boot-mode shortcut pin (hold to ground at boot to enter the USB
-// bootloader). -1 = disabled. Use a spare button GPIO not used as a key.
+// Boot-mode shortcut: the second main key. Hold it to ground at boot to
+// enter the USB bootloader. -1 = disabled.
 #define PIN_BOOT 29
 
 #endif

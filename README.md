@@ -40,10 +40,10 @@ To flash:
 
 ## Web Config
 
-Hold the web-config key/button while powering on. The device appears as a
-network adapter and serves the configurator at `http://192.168.7.1`, where you
-can remap keys, set up macros, and adjust LED colors. The web-config key varies
-by board.
+Hold the first key while powering on to open the web config; hold the second
+key to enter the bootloader. The device appears as a network adapter and
+serves the configurator at `http://192.168.7.1`, where you can remap keys, set
+up macros, and adjust LED colors.
 
 ![Web Config](assets/web-config.png)
 
