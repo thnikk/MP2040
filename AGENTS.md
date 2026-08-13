@@ -8,6 +8,7 @@
 - Output: `build/MP2040_<version>_<sha>_<Board>.uf2`
 
 ## Build (web configurator, dev only)
+- `./web-config.py` — initialize (if needed) and run the web configurator from the repo root. Flags: `-b <Board>` (mock board), `-u <version>` (fake update), `-p <port>`, `--dev-board` (proxy to a real board).
 - `cd www && npm install` once, then:
   - `npm run dev` — Vite dev server (http://localhost:3000) with a mock API. It parses `configs/<Board>/BoardConfig.h` and serves `/api/*` + `/board.svg` from `server/app.js`, so no board is needed.
   - `VITE_MP2040_BOARD=<Board> npm run dev` — initial board for the mock (default `MacroPad`; e.g. `2k`, `MegaTouch`). The board can also be switched at runtime from the Settings page's "Development" section (mock mode only), which reloads with the new board config.
