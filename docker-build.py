@@ -125,8 +125,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=f"Available boards: {', '.join(valid_boards)}",
     )
-    parser.add_argument("-b", "--board", default="Pico",
-                        help=f"Board config (default: Pico)")
+    parser.add_argument("-b", "--board", default="MacroPad",
+                        help=f"Board config (default: MacroPad)")
     parser.add_argument("-o", "--output", metavar="FILE",
                         help="Save stdout+stderr to file")
     parser.add_argument("-i", "--image", default=DEFAULT_IMAGE,

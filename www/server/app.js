@@ -7,13 +7,13 @@
 // (see vite.config.js) or run standalone with `node server/app.js` for the
 // mock API on http://localhost:8080.
 //
-// Board selection: VITE_MP2040_BOARD or MP2040_BOARDCONFIG env (default Pico)
-// is the initial board; the running server can switch boards at runtime via
-// GET/POST /api/board (the configurator's Settings page exposes a dropdown in
-// mock mode only). getFirmwareVersion reports `mock: true` so the UI can
-// distinguish the mock from a real board. VITE_FAKE_UPDATE (e.g. "v9.9.9")
-// makes the mock report an old version plus a fake latest release so the
-// welcome page's update card can be tested without GitHub access.
+// Board selection: VITE_MP2040_BOARD or MP2040_BOARDCONFIG env (default
+// MacroPad) is the initial board; the running server can switch boards at
+// runtime via GET/POST /api/board (the configurator's Settings page exposes a
+// dropdown in mock mode only). getFirmwareVersion reports `mock: true` so the
+// UI can distinguish the mock from a real board. VITE_FAKE_UPDATE (e.g.
+// "v9.9.9") makes the mock report an old version plus a fake latest release so
+// the welcome page's update card can be tested without GitHub access.
 
 import express from 'express';
 import { readFileSync } from 'fs';
@@ -26,7 +26,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..', '..');
 
 let boardId = (
-  process.env.VITE_MP2040_BOARD || process.env.MP2040_BOARDCONFIG || 'Pico'
+  process.env.VITE_MP2040_BOARD || process.env.MP2040_BOARDCONFIG || 'MacroPad'
 ).toLowerCase();
 
 const configDir = findBoardConfigDir(boardId, rootDir);

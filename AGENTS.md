@@ -2,7 +2,7 @@
 
 ## Build (firmware)
 - **Docker only** — no local ARM toolchain
-- `python3 docker-build.py -b <Board>` — board from `configs/` dir names (default: `Pico`)
+- `python3 docker-build.py -b <Board>` — board from `configs/` dir names (default: `MacroPad`)
 - `-c` clean build, `-v` verbose, `-f` flash to board, `-n` nuke first, `-p <path>` flash mount
 - First time (or after Dockerfile changes): `docker build -t gp2040-ce-builder .`
 - Output: `build/MP2040_<version>_<sha>_<Board>.uf2`
@@ -10,7 +10,7 @@
 ## Build (web configurator, dev only)
 - `cd www && npm install` once, then:
   - `npm run dev` — Vite dev server (http://localhost:3000) with a mock API. It parses `configs/<Board>/BoardConfig.h` and serves `/api/*` + `/board.svg` from `server/app.js`, so no board is needed.
-  - `VITE_MP2040_BOARD=<Board> npm run dev` — initial board for the mock (e.g. `2k`, `Pico`). The board can also be switched at runtime from the Settings page's "Development" section (mock mode only), which reloads with the new board config.
+  - `VITE_MP2040_BOARD=<Board> npm run dev` — initial board for the mock (default `MacroPad`; e.g. `2k`, `MegaTouch`). The board can also be switched at runtime from the Settings page's "Development" section (mock mode only), which reloads with the new board config.
   - `VITE_FAKE_UPDATE=<version> npm run dev` — mock reports an old version and shows the welcome page's "Update available" card using `<version>` as the fake latest (e.g. `VITE_FAKE_UPDATE=v9.9.9`); no GitHub access needed.
   - `npm run dev-board` — Vite dev server that proxies `/api` and `/board.svg` to a real board at `VITE_DEV_BASE_URL` (default `http://192.168.7.1`).
 - Dev files (`node_modules/`, `server/`, `package.json`, `vite.config.js`) are excluded from the firmware by `tools/makefsdata.py`.
