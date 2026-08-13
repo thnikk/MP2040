@@ -40,11 +40,19 @@
 
   <main>
     <div id="page-home" class="page">
-      <section class="hero">
-        <span class="logo hero-logo" role="img" aria-label="MP2040"></span>
-        <h2>MP2040 <span id="board-label-hero"></span></h2>
-        <p class="hint">Configure your keypad over USB.</p>
-      </section>
+      <div class="hero-row">
+        <section class="hero">
+          <span class="logo hero-logo" role="img" aria-label="MP2040"></span>
+          <h2>MP2040 <span id="board-label-hero"></span></h2>
+          <p class="hint">Configure your keypad over USB.</p>
+        </section>
+
+        <a id="update-card" class="update-card hero" href="https://github.com/thnikk/MP2040/releases" target="_blank" rel="noopener noreferrer" hidden>
+          <span class="icon icon-download update-card-icon" aria-hidden="true"></span>
+          <h2>Update available</h2>
+          <p class="hint"><span id="update-current"></span> → <span id="update-latest"></span></p>
+        </a>
+      </div>
 
       <div class="landing-cards">
         <a class="landing-card" href="/layout" data-route="/layout">

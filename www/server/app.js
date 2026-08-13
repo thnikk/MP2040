@@ -11,7 +11,9 @@
 // is the initial board; the running server can switch boards at runtime via
 // GET/POST /api/board (the configurator's Settings page exposes a dropdown in
 // mock mode only). getFirmwareVersion reports `mock: true` so the UI can
-// distinguish the mock from a real board.
+// distinguish the mock from a real board. VITE_FAKE_UPDATE (e.g. "v9.9.9")
+// makes the mock report an old version plus a fake latest release so the
+// welcome page's update card can be tested without GitHub access.
 
 import express from 'express';
 import { readFileSync } from 'fs';
@@ -278,13 +280,20 @@ export function createMockApp() {
   });
 
   app.get('/api/getFirmwareVersion', (req, res) => {
+    // VITE_FAKE_UPDATE (e.g. "v9.9.9") lets the welcome page's update card be
+    // tested in mock mode: the server reports an old released version and a
+    // fake "latest" release, so the card shows without a real GitHub release
+    // or any network access.
+    const fakeUpdate = process.env.VITE_FAKE_UPDATE;
     res.send({
-      firmwareVersion: 'dev',
-      gitCommit: 'mock',
+      firmwareVersion: fakeUpdate ? 'v0.1.0' : 'dev',
+      gitCommit: fakeUpdate ? 'v0.1.0' : 'mock',
       boardLabel: board?.boardConfigLabel ?? boardId,
       // Lets the configurator show the mock-only board switcher. The real
       // board never returns this field.
       mock: true,
+      // Mock-only: the fake latest release to compare against.
+      ...(fakeUpdate ? { fakeLatestVersion: fakeUpdate } : {}),
     });
   });
 

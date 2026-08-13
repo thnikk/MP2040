@@ -544,6 +544,57 @@ document.addEventListener('visibilitychange', () => {
   else if (currentRoute() === '/layout') pollPinState();
 });
 
+// Parse "v1.2.3"-style versions; returns [major, minor, patch] or null.
+function parseVersion(str) {
+  if (typeof str !== 'string') return null;
+  const m = str.trim().match(/^v?(\d+)\.(\d+)\.(\d+)/);
+  return m ? m.slice(1).map(Number) : null;
+}
+
+// Compare [major, minor, patch] arrays: negative if a < b, 0 if equal.
+function compareVersions(a, b) {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+// Compare the board's firmware version against the latest GitHub release and
+// show an update card on the welcome page when a newer release exists. Runs
+// client-side: the browser has internet even though the board does not. The
+// mock server can inject `fakeLatestVersion` (via VITE_FAKE_UPDATE) to test
+// the card without any network access.
+async function checkForUpdates(version) {
+  const card = document.getElementById('update-card');
+  if (!card) return;
+  const current = parseVersion(version.firmwareVersion);
+  if (!current) return;
+
+  // Mock-only: use the injected fake release instead of hitting GitHub.
+  let latest = version.fakeLatestVersion ? parseVersion(version.fakeLatestVersion) : null;
+  if (!latest) {
+    // Skip mock/dev servers and untagged (bare-SHA) dev builds.
+    if (version.mock || !/^v?\d+\.\d+\.\d+/.test(version.gitCommit || '')) return;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch('https://api.github.com/repos/thnikk/MP2040/releases/latest', {
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) return;
+      latest = parseVersion((await res.json()).tag_name);
+    } catch (e) {
+      // Offline or GitHub unreachable: leave the card hidden.
+      return;
+    }
+  }
+  if (!latest || compareVersions(latest, current) <= 0) return;
+  document.getElementById('update-latest').textContent = 'v' + latest.join('.');
+  document.getElementById('update-current').textContent = 'v' + current.join('.');
+  card.hidden = false;
+}
+
 async function load() {
   const [options, version] = await Promise.all([
     api('/api/getOptions'),
@@ -561,6 +612,7 @@ async function load() {
     ? `${version.firmwareVersion}${version.gitCommit ? ` · ${version.gitCommit}` : ''}`
     : '';
   document.getElementById('landing-year').textContent = new Date().getFullYear();
+  checkForUpdates(version);
 
   // Mock-server board switcher (dev only). The Development section is injected
   // into the page only by the mock server, and the real board never returns

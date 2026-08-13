@@ -419,6 +419,14 @@ section h2 {
 }
 
 /* Landing page */
+.hero-row {
+  width: 100%;
+  max-width: 1000px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
 .hero {
   align-items: center;
   text-align: center;
@@ -488,6 +496,51 @@ section h2 {
 
 .landing-version {
   text-align: center;
+}
+
+.update-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 28px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, transform 0.15s, background 0.15s;
+}
+
+.update-card:hover {
+  background: var(--bg-3);
+  border-color: var(--bg-4);
+}
+
+.update-card[hidden] {
+  display: none;
+}
+
+.update-card-icon {
+  width: 60px;
+  height: 60px;
+  flex: none;
+  color: var(--text);
+}
+
+.update-card #update-latest {
+  color: var(--accent);
+}
+
+@media (max-width: 700px) {
+  .hero-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hero-row:has(#update-card[hidden]) {
+  grid-template-columns: 1fr;
 }
 
 /* Landing Links row: button-styled links filling the width */

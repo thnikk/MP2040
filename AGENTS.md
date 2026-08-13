@@ -11,6 +11,7 @@
 - `cd www && npm install` once, then:
   - `npm run dev` — Vite dev server (http://localhost:3000) with a mock API. It parses `configs/<Board>/BoardConfig.h` and serves `/api/*` + `/board.svg` from `server/app.js`, so no board is needed.
   - `VITE_MP2040_BOARD=<Board> npm run dev` — initial board for the mock (e.g. `2k`, `Pico`). The board can also be switched at runtime from the Settings page's "Development" section (mock mode only), which reloads with the new board config.
+  - `VITE_FAKE_UPDATE=<version> npm run dev` — mock reports an old version and shows the welcome page's "Update available" card using `<version>` as the fake latest (e.g. `VITE_FAKE_UPDATE=v9.9.9`); no GitHub access needed.
   - `npm run dev-board` — Vite dev server that proxies `/api` and `/board.svg` to a real board at `VITE_DEV_BASE_URL` (default `http://192.168.7.1`).
 - Dev files (`node_modules/`, `server/`, `package.json`, `vite.config.js`) are excluded from the firmware by `tools/makefsdata.py`.
 
@@ -46,7 +47,7 @@
 - Resilience: lines that aren't valid JSON or have an unknown `cmd` are dropped without a response (probing software like NZXT CAM can't latch on). Line buffer is 128 bytes; overlong lines are discarded whole.
 
 ## Testing
-- When testing the web server, don't kill existing instances. Use port 1357 for testing.
+- **Never kill the user's running mock/Vite dev server** (`npm run dev`, usually on port 3000). To test the web server, start a separate instance on port 1357 and clean up only that one; don't kill existing instances.
 - Don't build the firmware unless necessary.
 
 ## Web conventions
