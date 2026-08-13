@@ -129,6 +129,7 @@ function defaultOptions() {
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
     defaultInputMode: 1,
     debounceInterval: 5,
+    serialConfigEnabled: false,
     midi: {
       channel: 0,
       velocity: 127,
@@ -240,6 +241,7 @@ export function createMockApp() {
       }
     }
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;
+    if (typeof body.serialConfigEnabled === 'boolean') current.serialConfigEnabled = body.serialConfigEnabled;
     if (Number.isInteger(body.debounceInterval)) {
       current.debounceInterval = Math.max(0, Math.min(100, Number(body.debounceInterval) || 0));
     }

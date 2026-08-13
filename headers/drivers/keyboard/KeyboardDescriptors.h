@@ -78,6 +78,28 @@ static const uint8_t keyboard_device_descriptor[] =
 	0x01						// bNumConfigurations
 };
 
+// Device descriptor when the serial (CDC) interface is enabled. Composite
+// devices use the IAD (Interface Association Descriptor) device class, and the
+// extra interfaces get their own PID so the OS doesn't cache the keyboard-only
+// driver against the composite device.
+static const uint8_t keyboard_serial_device_descriptor[] =
+{
+	sizeof(tusb_desc_device_t),	// bLength
+	TUSB_DESC_DEVICE,			// bDescriptorType
+	0x10, 0x01,					// bcdUSB
+	TUSB_CLASS_MISC,			// bDeviceClass (composite)
+	MISC_SUBCLASS_COMMON,		// bDeviceSubClass
+	MISC_PROTOCOL_IAD,			// bDeviceProtocol
+	64,							// bMaxPacketSize0
+	0xfe, 0xca,					// idVendor
+	0x01, 0x01,					// idProduct (keyboard + serial)
+	0x00, 0x01,					// bcdDevice
+	0x01,						// iManufacturer
+	0x02,						// iProduct
+	0x00,						// iSerialNumber
+	0x01						// bNumConfigurations
+};
+
 enum
 {
 	ITF_NUM_HID_KEYBOARD,
@@ -179,4 +201,37 @@ static const uint8_t keyboard_configuration_descriptor[] =
 
 	// Interface number, string index, protocol, report descriptor len, EP Out & In address, size & polling interval
 	TUD_HID_DESCRIPTOR(ITF_NUM_HID_KEYBOARD, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(keyboard_report_descriptor), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 1)
+};
+
+// ---- Composite keyboard + serial (CDC) variant -----------------------------
+// Used when Config.serialConfigEnabled is set: the same HID keyboard interface
+// plus a CDC-ACM serial port (tud_cdc_* API) for live control commands. Chosen
+// at boot because the descriptor is fixed once the device enumerates.
+enum
+{
+	ITF_NUM_HID_KEYBOARD_SERIAL,
+	ITF_NUM_CDC_SERIAL,
+	ITF_NUM_CDC_DATA_SERIAL,
+	ITF_NUM_TOTAL_SERIAL
+};
+
+#define  CONFIG_TOTAL_LEN_SERIAL  (TUD_CONFIG_DESC_LEN + TUD_HID_DESC_LEN + TUD_CDC_DESC_LEN)
+
+// Serial endpoints. HID keeps EPNUM_HID (0x81); the CDC pair gets its own
+// endpoints. bInterval 16 on the notification endpoint (per CDC spec), 0 on
+// the bulk data endpoints.
+#define EPNUM_CDC_NOTIF  0x82
+#define EPNUM_CDC_OUT    0x01
+#define EPNUM_CDC_IN     0x83
+
+static const uint8_t keyboard_serial_configuration_descriptor[] =
+{
+	// Config number, interface count, string index, total length, attribute, power in mA
+	TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL_SERIAL, 0, CONFIG_TOTAL_LEN_SERIAL, 32, 100),
+
+	// Interface number, string index, protocol, report descriptor len, EP Out & In address, size & polling interval
+	TUD_HID_DESCRIPTOR(ITF_NUM_HID_KEYBOARD_SERIAL, 0, HID_ITF_PROTOCOL_KEYBOARD, sizeof(keyboard_report_descriptor), EPNUM_HID, CFG_TUD_HID_EP_BUFSIZE, 1),
+
+	// Interface number, string index, EP notification address & size, EP data (out, in) address & size
+	TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_SERIAL, 0, EPNUM_CDC_NOTIF, 8, EPNUM_CDC_OUT, EPNUM_CDC_IN, CFG_TUD_CDC_EP_BUFSIZE)
 };

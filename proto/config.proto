@@ -135,4 +135,9 @@ message Config
     // where the pad that triggered the reboot is still being held.
     repeated uint32 touchThresholdsOn = 11 [(nanopb).max_count = 30];
     repeated uint32 touchThresholdsOff = 12 [(nanopb).max_count = 30];
+    // Enable a USB serial (CDC) command interface alongside the keyboard. The
+    // device re-enumerates with an extra serial port on the next boot; from a
+    // terminal you can issue commands (type "help") to control the board live,
+    // e.g. switch profiles. Off by default.
+    optional bool serialConfigEnabled = 13;
 }

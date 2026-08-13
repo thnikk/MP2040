@@ -452,6 +452,7 @@ function buildOptionsBody() {
     macros: currentOptions.macros || [],
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
+    serialConfigEnabled: document.getElementById('serial-config').checked,
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
       velocity: midiVelocitySpinner ? midiVelocitySpinner.getValue() : 127,
@@ -604,6 +605,11 @@ async function load() {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
     if (boardView) boardView.refresh();
+  });
+
+  document.getElementById('serial-config').checked = options.serialConfigEnabled === true;
+  document.getElementById('serial-config').addEventListener('change', () => {
+    currentOptions.serialConfigEnabled = document.getElementById('serial-config').checked;
   });
 
   midiChannelSpinner = new Spinner({
@@ -1057,6 +1063,7 @@ function exportSettings() {
     version: 1,
     activeProfile,
     defaultInputMode: currentOptions.defaultInputMode ?? 1,
+    serialConfigEnabled: currentOptions.serialConfigEnabled === true,
     macroIndices: currentOptions.macroIndices || [],
     macros: currentOptions.macros || [],
     led: {
@@ -1101,6 +1108,7 @@ async function importSettings(file) {
     macroIndices: data.macroIndices || [],
     macros: data.macros || [],
     defaultInputMode: data.defaultInputMode ?? 1,
+    serialConfigEnabled: data.serialConfigEnabled === true,
     activeProfile: Number.isInteger(data.activeProfile) ? data.activeProfile : 0,
   };
   try {

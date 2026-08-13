@@ -282,6 +282,7 @@ std::string getOptions()
 
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
     doc["debounceInterval"] = Storage::getInstance().getConfig().debounceInterval;
+    doc["serialConfigEnabled"] = Storage::getInstance().getSerialConfigEnabled();
     doc["midi"]["channel"] = Storage::getInstance().getMidiChannel();
     doc["midi"]["velocity"] = Storage::getInstance().getMidiVelocity();
 
@@ -397,6 +398,9 @@ std::string setOptions()
         uint32_t debounce = doc["debounceInterval"].as<uint32_t>();
         config.debounceInterval = debounce > 100 ? 100 : debounce;
     }
+
+    if (doc["serialConfigEnabled"].is<bool>())
+        Storage::getInstance().setSerialConfigEnabled(doc["serialConfigEnabled"].as<bool>());
 
     // Global macros: per-key triggers and the definitions (M1-M8). Not
     // profile-scoped, so they're written straight into the top-level config.

@@ -83,6 +83,15 @@ public:
 		config.defaultInputMode = mode;
 		config.has_defaultInputMode = true;
 	}
+	// USB serial (CDC) command interface. Off by default; the board must reboot
+	// after toggling it because the USB descriptors are fixed at enumeration.
+	bool getSerialConfigEnabled() {
+		return config.has_serialConfigEnabled ? config.serialConfigEnabled : false;
+	}
+	void setSerialConfigEnabled(bool enabled) {
+		config.serialConfigEnabled = enabled;
+		config.has_serialConfigEnabled = true;
+	}
 	// Profile support: all four profiles live in config.profiles (index 0 =
 	// base, 1-3 = alternates). The active profile is copied into the working
 	// top-level fields (keyMapping / midiOptions / ledOptions) at boot, which

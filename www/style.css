@@ -810,6 +810,19 @@ html[data-theme="light"] .ms-caret {
   white-space: nowrap;
 }
 
+/* Checkbox row in the general form (e.g. Serial control). Full-width so it
+   sits on its own line, with the checkbox aligned to the text baseline. */
+.checkbox-label {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  accent-color: var(--accent, #81a1c1);
+}
+
 .general-form select {
   flex: 1 1 0;
   min-width: 0;
