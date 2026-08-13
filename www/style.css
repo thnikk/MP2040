@@ -133,6 +133,7 @@ html[data-theme="light"] .logo-link:hover {
 .icon-etsy { -webkit-mask-image: url("/icons/etsy.svg"); mask-image: url("/icons/etsy.svg"); }
 .icon-trash { -webkit-mask-image: url("/icons/trash.svg"); mask-image: url("/icons/trash.svg"); }
 .icon-github { -webkit-mask-image: url("/icons/github.svg"); mask-image: url("/icons/github.svg"); }
+.icon-info { -webkit-mask-image: url("/icons/info.svg"); mask-image: url("/icons/info.svg"); }
 
 /* Brand logo: .logo defines the colors (the SVG's alpha channel painted in
    the theme's foreground color); sizing lives in .nav-logo / .hero-logo. */
@@ -349,7 +350,8 @@ main {
 }
 
 /* Hover tooltip for board LEDs in non-custom LED modes */
-.board-tooltip {
+.board-tooltip,
+.tooltip {
   position: fixed;
   z-index: 1000;
   max-width: 240px;
@@ -364,6 +366,10 @@ main {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   pointer-events: none;
   user-select: none;
+}
+
+.tooltip {
+  max-width: 300px;
 }
 
 /* Cards */
@@ -821,6 +827,14 @@ html[data-theme="light"] .ms-caret {
 
 .checkbox-label input[type="checkbox"] {
   accent-color: var(--accent, #81a1c1);
+}
+
+/* Info icon next to a field label; shows a tooltip on hover (see tooltip.js) */
+.field-info {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+  cursor: help;
 }
 
 .general-form select {
