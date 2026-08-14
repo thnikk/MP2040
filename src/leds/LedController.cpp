@@ -64,6 +64,11 @@ static const SpeedRange speedRanges[] = {
 // so the fade in/out takes roughly half a second.
 #define LED_FADE_STEP 10
 
+// Upper bound on theme steps replayed per tick after a stall (e.g. waking
+// from OFF). Enough to keep fast modes running ahead of the 20ms tick, while
+// guaranteeing the first wake frame renders immediately.
+#define MAX_THEME_CATCHUP_STEPS 8
+
 // HSV -> RGB matching Adafruit's ColorHSV() as used by unified-2022.
 // hue is 0-255 here (unified passes hue*256 as the 16-bit hue); sat/val 0-255.
 static void hsvToRgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, uint8_t& b)
@@ -439,16 +444,20 @@ void LedController::update()
 
     // Advance the theme state at the configured speed. Catch up on any missed
     // steps so higher speeds (shorter intervals) actually run faster than the
-    // 20ms render cadence.
+    // 20ms render cadence. The catch-up is capped: while the strip is OFF the
+    // early return skips this block, so lastThemeMillis goes stale across the
+    // whole idle period. Replaying that entire backlog on the wake tick would
+    // stall core 1 (and keep the strip black) for seconds on O(strip) modes
+    // like FIRE, so we only catch up a few steps and drop the rest.
     if (ledMode != LED_MODE_CUSTOM)
     {
         if (now - lastThemeMillis >= ledSpeed)
         {
-            uint32_t elapsed = now - lastThemeMillis;
-            uint32_t steps = elapsed / ledSpeed;
+            uint32_t steps = (now - lastThemeMillis) / ledSpeed;
+            if (steps > MAX_THEME_CATCHUP_STEPS) steps = MAX_THEME_CATCHUP_STEPS;
             for (uint32_t s = 0; s < steps; s++)
                 advanceThemeState();
-            lastThemeMillis = now - (elapsed % ledSpeed);
+            lastThemeMillis = now;
         }
     }
 
