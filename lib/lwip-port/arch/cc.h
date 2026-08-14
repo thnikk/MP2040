@@ -70,6 +70,11 @@ typedef int sys_prot_t;
 
 #endif
 
-#define LWIP_PLATFORM_ASSERT(x) do { if(!(x)) while(1); } while(0)
+/* Reboot the device instead of spinning forever on a failed lwIP assertion,
+   so a protocol-state bug can never leave the board locked up. Implemented in
+   the application (rndis.c). */
+void lwip_platform_assert_fail(const char *msg);
+#define LWIP_PLATFORM_ASSERT(x) do { if(!(x)) { lwip_platform_assert_fail(#x); } } while(0)
+#define LWIP_ASSERT(message, assertion) do { if(!(assertion)) { lwip_platform_assert_fail(message); } } while(0)
 
 #endif /* __CC_H__ */

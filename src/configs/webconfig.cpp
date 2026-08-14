@@ -46,6 +46,10 @@
 // -fno-exceptions) and the board locks up.
 #define LWIP_HTTPD_JSON_DOC_SIZE (1024 * 40)
 
+// Small JSON documents: a handful of scalar fields or a short array of pin
+// indices. Only getOptions / get_post_data need the large doc above.
+#define LWIP_HTTPD_JSON_SMALL_SIZE (1024 * 2)
+
 using namespace std;
 
 extern struct fsdata_file file__index_html[];
@@ -593,7 +597,7 @@ std::string setLedPreview()
 
 std::string getUsedPins()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(LWIP_HTTPD_JSON_SMALL_SIZE);
     const Config& config = Storage::getInstance().getConfig();
     const KeyMapping& keyMapping = Storage::getInstance().getKeyMapping();
     auto usedPins = doc.createNestedArray("usedPins");
@@ -610,7 +614,7 @@ std::string getUsedPins()
 
 std::string getPinState()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(LWIP_HTTPD_JSON_SMALL_SIZE);
 
     // In matrix mode keys live at row/column intersections, so scan the matrix.
     // Otherwise touch pads are PIO-driven, so gpio_get_all() reports their
@@ -639,7 +643,7 @@ std::string getPinState()
 
 std::string getFirmwareVersion()
 {
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(LWIP_HTTPD_JSON_SMALL_SIZE);
     doc["firmwareVersion"] = MP2040VERSION;
     doc["gitCommit"] = MP2040BUILD;
     doc["boardLabel"] = BOARD_CONFIG_LABEL;
@@ -649,7 +653,7 @@ std::string getFirmwareVersion()
 std::string resetSettings()
 {
     Storage::getInstance().ResetSettings();
-    DynamicJsonDocument doc(LWIP_HTTPD_POST_MAX_PAYLOAD_LEN);
+    DynamicJsonDocument doc(LWIP_HTTPD_JSON_SMALL_SIZE);
     doc["success"] = true;
     return serialize_json(doc);
 }
@@ -714,7 +718,11 @@ err_t httpd_post_receive_data(void *connection, struct pbuf *p)
 {
     LWIP_UNUSED_ARG(connection);
 
-    // Cache the received data to http_post_payload
+    // Cache the received data to http_post_payload. httpd passes ownership of
+    // the pbuf to this callback ("pbuf is passed to the application, don't
+    // free it!" in httpd.c), so keep the chain head and free the whole chain
+    // on the way out.
+    struct pbuf *head = p;
     while (p != NULL)
     {
         if (http_post_payload_len + p->len <= LWIP_HTTPD_POST_MAX_PAYLOAD_LEN)
@@ -731,8 +739,8 @@ err_t httpd_post_receive_data(void *connection, struct pbuf *p)
         p = p->next;
     }
 
-    // Need to release memory here or will leak
-    pbuf_free(p);
+    // Release the pbuf chain (owning the payload leaks pbufs otherwise).
+    pbuf_free(head);
 
     // If the buffer overflows, error out
     if (http_post_payload_len == 0xffff) {

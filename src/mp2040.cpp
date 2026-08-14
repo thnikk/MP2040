@@ -13,6 +13,7 @@
 #include "pico/bootrom.h"
 #include "pico/time.h"
 #include "hardware/gpio.h"
+#include "hardware/watchdog.h"
 
 #include "tusb.h"
 
@@ -322,7 +323,15 @@ void MP2040::run() {
     // Start the TinyUSB Device functionality
     tud_init(TUD_OPT_RHPORT);
 
+    // Hardware watchdog as a last-resort recovery: if anything on core 0
+    // hangs (e.g. a network-path bug in web config mode), the device reboots
+    // after 5s instead of staying dead until it's unplugged. Fed every loop
+    // iteration below. Paused while a debugger is attached.
+    watchdog_enable(5000, true);
+
 	while (1) { // LOOP
+		watchdog_update();
+
 		// Debounce
 		debounceGpioGetAll();
 		// Publish the current key state for the other core (and drivers)

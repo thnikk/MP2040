@@ -43,6 +43,7 @@ The smartphone may be artificially picky about which Ethernet MAC address to rec
 try changing the first byte of tud_network_mac_address[] below from 0x02 to 0x00 (clearing bit 1).
 */
 #include "tusb.h"
+#include "hardware/watchdog.h"
 
 #include "dhserver.h"
 #include "dnserver.h"
@@ -68,6 +69,11 @@ static const ip4_addr_t ipaddr  = INIT_IP4(192, 168, 7, 1);
 static const ip4_addr_t netmask = INIT_IP4(255, 255, 255, 0);
 static const ip4_addr_t gateway = INIT_IP4(0, 0, 0, 0);
 
+/* How long (ms) linkoutput_fn will wait on a busy RNDIS endpoint before
+   dropping the packet and letting TCP retransmit. Prevents a stalled host
+   from hanging core 0 indefinitely. */
+#define LINKOUTPUT_SPIN_MS 50
+
 /* database IP addresses that can be offered to the host; this must be in RAM to store assigned MAC addresses */
 static dhcp_entry_t entries[] =
 {
@@ -76,6 +82,10 @@ static dhcp_entry_t entries[] =
     { {0}, INIT_IP4(192, 168, 7, 3), 24 * 60 * 60 },
     { {0}, INIT_IP4(192, 168, 7, 4), 24 * 60 * 60 },
 };
+
+/* lwIP millisecond clock; defined at the bottom of this file but referenced
+   from linkoutput_fn above. */
+uint32_t sys_now(void);
 
 static const dhcp_config_t dhcp_config =
 {
@@ -90,22 +100,27 @@ static err_t linkoutput_fn(struct netif *netif, struct pbuf *p)
 {
   (void)netif;
 
-  for (;;)
-  {
-    /* if TinyUSB isn't ready, we must signal back to lwip that there is nothing we can do */
-    if (!tud_ready())
-      return ERR_USE;
+  /* if TinyUSB isn't ready, we must signal back to lwip that there is nothing we can do */
+  if (!tud_ready())
+    return ERR_USE;
 
-    /* if the network driver can accept another packet, we make it happen */
-    if (tud_network_can_xmit(p->tot_len))
-    {
-      tud_network_xmit(p, 0 /* unused for this example */);
-      return ERR_OK;
-    }
+  /* Bounded wait for the endpoint to accept the packet. The original code
+     spun forever until tud_network_can_xmit() was true, which could hang
+     core 0 if the host stalled draining the endpoint (e.g. the web config's
+     long-poll connection is open and the host network stack is idle). Give
+     up after LINKOUTPUT_SPIN_MS and let TCP retransmit instead. */
+  const uint32_t deadline = sys_now() + LINKOUTPUT_SPIN_MS;
+  while (!tud_network_can_xmit(p->tot_len))
+  {
+    if (sys_now() > deadline)
+      return ERR_USE;
 
     /* transfer execution to TinyUSB in the hopes that it will finish transmitting the prior packet */
     tud_task();
   }
+
+  tud_network_xmit(p, 0 /* unused for this example */);
+  return ERR_OK;
 }
 
 static err_t ip4_output_fn(struct netif *netif, struct pbuf *p, const ip4_addr_t *addr)
@@ -231,6 +246,15 @@ void rndis_task(void)
 {
   tud_task();
   service_traffic();
+}
+
+/* lwIP panic hook (see arch/cc.h): a failed assertion reboots the device so
+   it can't hang forever. watchdog_reboot never returns. */
+void lwip_platform_assert_fail(const char *msg)
+{
+  (void)msg;
+  watchdog_reboot(0, 0, 0);
+  while (1) {}
 }
 
 /* lwip has provision for using a mutex, when applicable */
