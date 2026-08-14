@@ -41,6 +41,25 @@ static const SpeedRange speedRanges[] = {
 // linearly back to the normal color over this many cells.
 #define RIPPLE_TRAIL_CELLS 4
 
+// Mode indicator LED (board-fixed pin/colors). -1 = no status LED. Other
+// boards omit the defines; the fallbacks keep this compiling and disabled.
+#ifndef STATUS_LED_PIN
+#define STATUS_LED_PIN -1
+#endif
+// Power-gate GPIO for the status LED, driven high to enable it. -1 = none.
+#ifndef STATUS_LED_ENABLE_PIN
+#define STATUS_LED_ENABLE_PIN -1
+#endif
+#ifndef STATUS_LED_COLOR_KEYBOARD
+#define STATUS_LED_COLOR_KEYBOARD 0x00FF00
+#endif
+#ifndef STATUS_LED_COLOR_MIDI
+#define STATUS_LED_COLOR_MIDI 0xFFA500
+#endif
+#ifndef STATUS_LED_COLOR_CONFIG
+#define STATUS_LED_COLOR_CONFIG 0x00FFFF
+#endif
+
 // Suspend/wake fade step (0-255 per 20ms render tick). 255/10 = ~25 ticks,
 // so the fade in/out takes roughly half a second.
 #define LED_FADE_STEP 10
@@ -76,6 +95,8 @@ static void hsvToRgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, ui
 
 LedController::LedController() :
     neopixel(nullptr),
+    statusLed(nullptr),
+    lastStatusColor(0xFFFFFFFF),
     dataPin(-1),
     ledFormat(LED_FORMAT_GRB),
     ledsPerKey(1),
@@ -116,6 +137,7 @@ LedController::~LedController()
     delete[] pressedLeds;
     delete[] ledSat;
     delete[] ledVal;
+    delete statusLed;
 }
 
 void LedController::setup()
@@ -216,6 +238,26 @@ void LedController::configure()
     delete neopixel;
     neopixel = nullptr;
 
+    // The mode indicator LED is independent of the theme strip, so build it
+    // even when there's no main strip (boards without a status LED define
+    // STATUS_LED_PIN -1 and skip this). Reset lastStatusColor so the next
+    // update() forces the first show().
+    delete statusLed;
+    statusLed = nullptr;
+    lastStatusColor = 0xFFFFFFFF;
+    if (isValidPin(STATUS_LED_PIN))
+    {
+        // Power the LED gate before driving data so the first frame latches.
+        if (isValidPin(STATUS_LED_ENABLE_PIN))
+        {
+            gpio_init(STATUS_LED_ENABLE_PIN);
+            gpio_set_dir(STATUS_LED_ENABLE_PIN, GPIO_OUT);
+            gpio_put(STATUS_LED_ENABLE_PIN, 1);
+        }
+        statusLed = new Neopixel(STATUS_LED_PIN, 1, LED_FORMAT_GRB);
+        statusLed->off();
+    }
+
     if (!isValidPin(dataPin) || total == 0)
         return;
 
@@ -255,6 +297,10 @@ void LedController::configure()
 
 void LedController::update()
 {
+    // The mode indicator LED runs every tick regardless of the theme strip:
+    // it stays lit during the inactivity timeout and when there's no strip.
+    updateStatusLed();
+
     if (neopixel == nullptr) return;
 
     // Apply any live LED options pushed from the web config (core 0).
@@ -452,6 +498,29 @@ void LedController::update()
         case LED_MODE_FIRE:     renderFire();     break;
         default:                renderCustom();   break;
     }
+}
+
+// Light the mode indicator LED in the board-fixed color for the active input
+// mode: web config (cyan), MIDI (amber), keyboard (green). The color is
+// re-shown only when it changes so the 80us WS2812 latch wait doesn't run
+// every 20ms frame.
+void LedController::updateStatusLed()
+{
+    if (statusLed == nullptr) return;
+
+    uint32_t color = STATUS_LED_COLOR_KEYBOARD;
+    if (Storage::getInstance().GetConfigMode())
+        color = STATUS_LED_COLOR_CONFIG;
+    else if (Storage::getInstance().getDefaultInputMode() == INPUT_MODE_MIDI)
+        color = STATUS_LED_COLOR_MIDI;
+
+    if (color == lastStatusColor) return;
+    lastStatusColor = color;
+    statusLed->setPixel(0,
+        static_cast<uint8_t>((color >> 16) & 0xFF),
+        static_cast<uint8_t>((color >> 8) & 0xFF),
+        static_cast<uint8_t>(color & 0xFF));
+    statusLed->show();
 }
 
 // Apply live LED options from the web config without rebuilding the strip.

@@ -98,7 +98,13 @@ private:
         return brightnessByMode[ledMode < LED_MODE_COUNT ? ledMode : 0] * ledDim / 255;
     }
 
+    // Mode indicator LED: a separate single-WS2812 strip (board-fixed pin)
+    // showing the active input mode. Independent of the theme strip.
+    void updateStatusLed();
+
     Neopixel* neopixel;
+    Neopixel* statusLed;
+    uint32_t lastStatusColor; // last color shown on the status LED
     int32_t dataPin;
     LEDFormat_Proto ledFormat;
     uint32_t ledsPerKey;
