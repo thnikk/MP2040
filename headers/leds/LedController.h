@@ -20,6 +20,8 @@ enum LedMode {
     LED_MODE_BPS,      // color tracks keypress rate
     LED_MODE_RIPPLE,   // rings propagate outward from pressed keys
     LED_MODE_RAIN,     // random drops light up and fade back to black
+    LED_MODE_FIRE,     // per-LED ember flicker in the normal color
+    LED_MODE_COUNT,    // number of modes (per-mode arrays are sized to this)
 };
 
 // Concurrent ripple limit: enough for full-board hammering without letting
@@ -84,14 +86,16 @@ private:
     void renderBps();
     void renderRipple();
     void renderRain();
+    void renderFire();
     int16_t maxGridDistance(int8_t row, int8_t col);
     void spawnRipple(int8_t row, int8_t col);
     uint32_t rainRandom();
+    uint32_t fireRandom();
     // BrightnessMaximum scaled by the fade multiplier (ledDim). Full when the
     // timeout is disabled or the strip is awake; less while fading. Uses the
     // current mode's per-mode brightness.
     uint32_t effBrightness() const {
-        return brightnessByMode[ledMode < 6 ? ledMode : 0] * ledDim / 255;
+        return brightnessByMode[ledMode < LED_MODE_COUNT ? ledMode : 0] * ledDim / 255;
     }
 
     Neopixel* neopixel;
@@ -104,7 +108,7 @@ private:
     // Per-mode config speed (0-100 percent, higher = faster), indexed by
     // LedMode. recomputeLedSpeed() maps the current mode's percent to a theme
     // step interval.
-    uint32_t ledSpeedPercent[6];
+    uint32_t ledSpeedPercent[LED_MODE_COUNT];
     uint32_t ledSpeed;        // theme step interval in ms (computed from percent)
     uint32_t lastThemeMillis; // last theme state advance time
     // Inactivity timeout: LEDs go dark after ledTimeoutMs with no key held (a
@@ -115,11 +119,11 @@ private:
     uint8_t ledDim;                 // 0-255 fade multiplier applied to all output
     int32_t pinLedIndices[MAX_KEYS];
     // Per-mode brightness (0-255), indexed by LedMode.
-    uint32_t brightnessByMode[6];
+    uint32_t brightnessByMode[LED_MODE_COUNT];
     // Per-mode normal/pressed colors, indexed by LedMode. Only modes that
-    // render them use them (Custom fallback = index 0, Ripple, Rain).
-    uint32_t colorNormalByMode[6];
-    uint32_t colorPressedByMode[6];
+    // render them use them (Custom fallback = index 0, Ripple, Rain, Fire).
+    uint32_t colorNormalByMode[LED_MODE_COUNT];
+    uint32_t colorPressedByMode[LED_MODE_COUNT];
     // Current mode's normal/pressed colors (indexed by ledMode).
     uint32_t currentNormalColor() const;
     uint32_t currentPressedColor() const;
@@ -144,6 +148,7 @@ private:
     Ripple ripples[MAX_RIPPLES];
     uint32_t rainDropMillis; // next random drop time (ms since boot)
     uint32_t rainRandState;  // xorshift PRNG state for drop selection
+    uint32_t fireRandState;  // xorshift PRNG state for fire flicker
 };
 
 #endif

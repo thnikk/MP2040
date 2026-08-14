@@ -19,11 +19,19 @@ static const SpeedRange speedRanges[] = {
     { 0, 0 },    // LED_MODE_BPS     (handled separately)
     { 50, 660 }, // LED_MODE_RIPPLE  (radius +1/step: ~0.3s .. ~4s cross)
     { 25, 200 }, // LED_MODE_RAIN    (32-step fade: ~0.8s .. ~6.4s)
+    { 25, 150 }, // LED_MODE_FIRE    (ember flare + decay: faster = more flares)
 };
 
 // Rain drop interval bounds (ms): a random drop fires every 0.2-2 seconds.
 #define RAIN_DROP_MIN_MS 200
 #define RAIN_DROP_MAX_MS 2000
+
+// Fire ember bounds. Each theme step lights one random LED to a random
+// brightness (a flare) and decays every LED toward off by a random amount, so
+// embers flare and die back. The decay + flare rate scales with the mode's
+// speed (faster interval = more steps = more activity).
+#define FIRE_DECAY_MIN 4
+#define FIRE_DECAY_MAX 16
 
 // Length of the pressed->normal gradient trailing a ripple ring, in grid
 // cells. The ring itself (behind == 0) is full pressed; the trail fades
@@ -71,16 +79,16 @@ LedController::LedController() :
     ledCount(0),
     stripCount(0),
     ledMode(LED_MODE_CUSTOM),
-    ledSpeedPercent{50, 50, 50, 50, 50, 50},
+    ledSpeedPercent{50, 50, 50, 50, 50, 50, 50},
     ledSpeed(20),
     lastThemeMillis(0),
     ledTimeoutMs(0),
     ledLastActivityMillis(0),
     ledState(LedState::ON),
     ledDim(255),
-    brightnessByMode{255, 255, 255, 255, 255, 255},
-    colorNormalByMode{0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00},
-    colorPressedByMode{0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF},
+    brightnessByMode{255, 255, 255, 255, 255, 255, 255},
+    colorNormalByMode{0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00, 0x00FF00},
+    colorPressedByMode{0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF},
     ledColorCount(0),
     nextRunTime(nil_time),
     pressedLeds(nullptr),
@@ -93,7 +101,8 @@ LedController::LedController() :
     bpsColor(0),
     lastColor(0),
     rainDropMillis(0),
-    rainRandState(0)
+    rainRandState(0),
+    fireRandState(0)
 {
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         pinLedIndices[pin] = -1;
@@ -134,17 +143,17 @@ void LedController::configure()
     ledMode = ledOptions.ledMode;
     // Config speed is 0-100 percent (higher = faster). recomputeLedSpeed()
     // maps the current mode's percent to a per-effect theme step interval.
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < LED_MODE_COUNT; i++)
         ledSpeedPercent[i] = i < ledOptions.ledSpeeds_count && ledOptions.ledSpeeds[i] <= 100
             ? ledOptions.ledSpeeds[i] : 50;
     recomputeLedSpeed();
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < LED_MODE_COUNT; i++)
     {
         brightnessByMode[i] = i < ledOptions.brightnessByMode_count
             ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum;
         if (brightnessByMode[i] > 255) brightnessByMode[i] = 255;
     }
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < LED_MODE_COUNT; i++)
     {
         colorNormalByMode[i] = i < ledOptions.colorNormalByMode_count
             ? ledOptions.colorNormalByMode[i] : ledOptions.colorNormal;
@@ -230,6 +239,13 @@ void LedController::configure()
     lastColor = 0;
     rainRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
     rainDropMillis = 0;
+    fireRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
+    // Fire reuses ledVal as its per-LED heat; seed it so the embers start lit.
+    if (ledMode == LED_MODE_FIRE)
+    {
+        for (uint32_t i = 0; i < stripCount; i++)
+            ledVal[i] = fireRandom() % 256;
+    }
 
     nextRunTime = make_timeout_time_ms(0);
 }
@@ -430,6 +446,7 @@ void LedController::update()
         case LED_MODE_BPS:      renderBps();      break;
         case LED_MODE_RIPPLE:   renderRipple();   break;
         case LED_MODE_RAIN:     renderRain();     break;
+        case LED_MODE_FIRE:     renderFire();     break;
         default:                renderCustom();   break;
     }
 }
@@ -438,20 +455,21 @@ void LedController::update()
 // Only user-tunable scalars; board properties stay as configured at boot.
 void LedController::applyLedPreview(const LedPreview& preview)
 {
-    ledMode = preview.ledMode;
+    const uint32_t newMode = preview.ledMode;
+    ledMode = newMode;
     // Config speed is 0-100 percent (higher = faster). recomputeLedSpeed()
     // maps the current mode's percent to a per-effect theme step interval.
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < LED_MODE_COUNT; i++)
         ledSpeedPercent[i] = i < preview.ledSpeedCount && preview.ledSpeed[i] <= 100
             ? preview.ledSpeed[i] : 50;
     recomputeLedSpeed();
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < LED_MODE_COUNT; i++)
     {
         brightnessByMode[i] = i < preview.brightnessByModeCount
             ? preview.brightnessByMode[i] : 255;
         if (brightnessByMode[i] > 255) brightnessByMode[i] = 255;
     }
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < LED_MODE_COUNT; i++)
     {
         colorNormalByMode[i] = i < preview.colorCount
             ? preview.colorNormalByMode[i] : 0x00FF00;
@@ -487,6 +505,13 @@ void LedController::applyLedPreview(const LedPreview& preview)
     prevKeyState = Storage::getInstance().getKeyState();
     rainRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
     rainDropMillis = 0;
+    fireRandState = to_ms_since_boot(get_absolute_time()) ^ 0x9E3779B9u;
+    // Fire reuses ledVal as its per-LED heat; seed it so the embers start lit.
+    if (newMode == LED_MODE_FIRE)
+    {
+        for (uint32_t i = 0; i < stripCount; i++)
+            ledVal[i] = fireRandom() % 256;
+    }
 }
 
 // Map the 0-100% speed to a theme step interval (ms) for the current mode.
@@ -505,7 +530,7 @@ void LedController::recomputeLedSpeed()
         ledSpeed = 20; // CUSTOM (or unknown mode): no animation, default cadence
         return;
     }
-    uint32_t pct = ledSpeedPercent[ledMode < 6 ? ledMode : 0];
+    uint32_t pct = ledSpeedPercent[ledMode < LED_MODE_COUNT ? ledMode : 0];
     if (pct > 100) pct = 100;
     float t = powf((float)minInterval / (float)maxInterval, (float)pct / 100.0f);
     ledSpeed = (uint32_t)((float)maxInterval * t);
@@ -514,15 +539,15 @@ void LedController::recomputeLedSpeed()
 }
 
 // The current mode's normal/pressed colors (Custom = index 0, Ripple = 4,
-// Rain = 5). Cycle/Reactive/BPS are hue-based and never call these.
+// Rain = 5, Fire = 6). Cycle/Reactive/BPS are hue-based and never call these.
 uint32_t LedController::currentNormalColor() const
 {
-    return colorNormalByMode[ledMode < 6 ? ledMode : 0];
+    return colorNormalByMode[ledMode < LED_MODE_COUNT ? ledMode : 0];
 }
 
 uint32_t LedController::currentPressedColor() const
 {
-    return colorPressedByMode[ledMode < 6 ? ledMode : 0];
+    return colorPressedByMode[ledMode < LED_MODE_COUNT ? ledMode : 0];
 }
 
 // Advance the theme state one step (hue / per-LED fade state). Called at the
@@ -578,6 +603,27 @@ void LedController::advanceThemeState()
                     ledVal[i] -= 8;
                     if (ledVal[i] < 0) ledVal[i] = 0;
                 }
+            }
+            break;
+
+        case LED_MODE_FIRE:
+            // Decay every LED toward off; freeze pressed LEDs so releasing
+            // them doesn't flash the held heat (their color is drawn by
+            // renderFire()).
+            for (uint32_t i = 0; i < stripCount; i++)
+            {
+                if (pressedLeds[i] || ledVal[i] <= 0) continue;
+                int decay = FIRE_DECAY_MIN
+                    + (int)(fireRandom() % (FIRE_DECAY_MAX - FIRE_DECAY_MIN + 1));
+                ledVal[i] -= decay;
+                if (ledVal[i] < 0) ledVal[i] = 0;
+            }
+            // Light one random unpressed LED to a random brightness.
+            if (stripCount > 0)
+            {
+                uint32_t idx = fireRandom() % stripCount;
+                if (!pressedLeds[idx])
+                    ledVal[idx] = (int)(fireRandom() % 256);
             }
             break;
 
@@ -680,7 +726,7 @@ void LedController::renderBps()
 
     // Color-smoothing step per render (fixed 20ms cadence). The 0-100% speed
     // maps linearly to 1..8: 0% = slow (~5s full swing), 100% = fast.
-    uint32_t pct = ledSpeedPercent[ledMode < 6 ? ledMode : 0];
+    uint32_t pct = ledSpeedPercent[ledMode < LED_MODE_COUNT ? ledMode : 0];
     if (pct > 100) pct = 100;
     const uint16_t bpsSpeed = (uint16_t)(1 + (pct * 7) / 100);
     if (lastColor > bpsColor)
@@ -806,16 +852,27 @@ void LedController::renderRipple()
     neopixel->show();
 }
 
-// xorshift32 PRNG for rain drop selection. Deterministic and dependency-free;
-// the seed is (re)initialized from the boot clock and stirred each drop.
-uint32_t LedController::rainRandom()
+// xorshift32 PRNG for random drop selection and fire flicker. Deterministic
+// and dependency-free; the per-use state is (re)initialized from the boot
+// clock and stirred each draw.
+static uint32_t xorshift32(uint32_t& state)
 {
-    uint32_t x = rainRandState;
+    uint32_t x = state;
     x ^= x << 13;
     x ^= x >> 17;
     x ^= x << 5;
-    rainRandState = x;
+    state = x;
     return x;
+}
+
+uint32_t LedController::rainRandom()
+{
+    return xorshift32(rainRandState);
+}
+
+uint32_t LedController::fireRandom()
+{
+    return xorshift32(fireRandState);
 }
 
 // Rain: LEDs default to black. update() periodically lights a random LED at
@@ -847,6 +904,39 @@ void LedController::renderRain()
                 static_cast<uint8_t>(ng * v / 255),
                 static_cast<uint8_t>(nb * v / 255));
         }
+    }
+    neopixel->show();
+}
+
+// Fire: each LED is an ember whose heat (reused ledVal[]) is set to a random
+// brightness by advanceThemeState() and then decays toward off. The LED shows
+// the normal color at that brightness (0-255). Pressed LEDs flash the pressed
+// color.
+void LedController::renderFire()
+{
+    const float scale = effBrightness() / 255.0f;
+    const uint32_t normalColor = currentNormalColor();
+    const uint32_t pressedColor = currentPressedColor();
+    const int32_t nr = static_cast<int32_t>(((normalColor >> 16) & 0xFF) * scale);
+    const int32_t ng = static_cast<int32_t>(((normalColor >> 8) & 0xFF) * scale);
+    const int32_t nb = static_cast<int32_t>((normalColor & 0xFF) * scale);
+    const int32_t pr = static_cast<int32_t>(((pressedColor >> 16) & 0xFF) * scale);
+    const int32_t pg = static_cast<int32_t>(((pressedColor >> 8) & 0xFF) * scale);
+    const int32_t pb = static_cast<int32_t>((pressedColor & 0xFF) * scale);
+
+    for (uint32_t i = 0; i < stripCount; i++)
+    {
+        if (pressedLeds[i])
+        {
+            neopixel->setPixel(i, pr, pg, pb);
+            continue;
+        }
+        // t = heat (0-255): 0 = off, 255 = full brightness.
+        const int32_t t = ledVal[i] > 0 ? ledVal[i] : 0;
+        neopixel->setPixel(i,
+            static_cast<uint8_t>(nr * t / 255),
+            static_cast<uint8_t>(ng * t / 255),
+            static_cast<uint8_t>(nb * t / 255));
     }
     neopixel->show();
 }

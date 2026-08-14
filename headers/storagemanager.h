@@ -21,14 +21,15 @@ struct LedPreview
 {
     uint32_t ledMode;
     // Per-mode speed, indexed by LedMode (0-100 percent config value).
-    uint32_t ledSpeed[6];
+    // 7 = one entry per LED mode (Custom .. Fire).
+    uint32_t ledSpeed[7];
     uint32_t ledSpeedCount;
     // Per-mode brightness (0-255), indexed by LedMode.
-    uint32_t brightnessByMode[6];
+    uint32_t brightnessByMode[7];
     uint32_t brightnessByModeCount;
     // Per-mode normal/pressed colors, indexed by LedMode.
-    uint32_t colorNormalByMode[6];
-    uint32_t colorPressedByMode[6];
+    uint32_t colorNormalByMode[7];
+    uint32_t colorPressedByMode[7];
     uint32_t colorCount;
     uint32_t ledTimeout;       // inactivity timeout in seconds (0 = always on)
     // Per-key colors for custom mode. A value of 0 (or no entry) uses Custom

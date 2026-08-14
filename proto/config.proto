@@ -67,8 +67,9 @@ message LEDOptions
     // Per-pin LED strip index (index in array = pin, value = LED index).
     // -1 = pin has no LED.
     repeated int32 pinLedIndices = 9 [(nanopb).max_count = 128];
-    // LED theme mode (0=static, 1=cycle, 2=reactive, 3=bps). Default from
-    // the board's LED_MODE define; editable via the web config.
+    // LED theme mode (0=custom, 1=cycle, 2=reactive, 3=bps, 4=ripple,
+    // 5=rain, 6=fire). Default from the board's LED_MODE define; editable via
+    // the web config.
     optional uint32 ledMode = 10;
     // Legacy single animation speed (0-100 percent). Superseded by ledSpeeds;
     // kept so older configs keep their speed when first upgraded (all modes
@@ -80,15 +81,15 @@ message LEDOptions
     // Per-mode animation speed (0-100 percent, higher = faster), indexed by
     // LedMode. Each effect maps its own percent into a theme step interval.
     // Empty on old configs; seeded from ledSpeed at load.
-    repeated uint32 ledSpeeds = 13 [(nanopb).max_count = 6];
+    repeated uint32 ledSpeeds = 13 [(nanopb).max_count = 7];
     // Per-mode normal/pressed colors, indexed by LedMode. Only modes that
-    // render them use them (Custom fallback, Ripple, Rain). Empty on old
-    // configs; seeded from colorNormal / colorPressed at load.
-    repeated uint32 colorNormalByMode = 14 [(nanopb).max_count = 6];
-    repeated uint32 colorPressedByMode = 15 [(nanopb).max_count = 6];
+    // render them use them (Custom fallback, Ripple, Rain, Fire). Empty on
+    // old configs; seeded from colorNormal / colorPressed at load.
+    repeated uint32 colorNormalByMode = 14 [(nanopb).max_count = 7];
+    repeated uint32 colorPressedByMode = 15 [(nanopb).max_count = 7];
     // Per-mode brightness (0-255), indexed by LedMode. Empty on old configs;
     // seeded from brightnessMaximum at load.
-    repeated uint32 brightnessByMode = 16 [(nanopb).max_count = 6];
+    repeated uint32 brightnessByMode = 16 [(nanopb).max_count = 7];
 }
 
 // A profile: a full key mapping plus the per-profile MIDI options and LED

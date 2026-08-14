@@ -144,18 +144,18 @@ private:
 			led.ledMode = (uint32_t)mode;
 			changed = true;
 		}
-		const uint32_t curMode = led.ledMode < 6 ? led.ledMode : 0;
+		const uint32_t curMode = led.ledMode < 7 ? led.ledMode : 0;
 		if (doc["speed"].is<int>()) {
 			int speed = doc["speed"].as<int>();
 			if (speed < 0 || speed > 100) { sendError("led speed must be 0-100"); return; }
-			if (led.ledSpeeds_count < 6) led.ledSpeeds_count = 6;
+			if (led.ledSpeeds_count < 7) led.ledSpeeds_count = 7;
 			led.ledSpeeds[curMode] = (uint32_t)speed;
 			changed = true;
 		}
 		if (doc["brightness"].is<int>()) {
 			int b = doc["brightness"].as<int>();
 			if (b < 0 || b > 255) { sendError("led brightness must be 0-255"); return; }
-			if (led.brightnessByMode_count < 6) led.brightnessByMode_count = 6;
+			if (led.brightnessByMode_count < 7) led.brightnessByMode_count = 7;
 			led.brightnessByMode[curMode] = (uint32_t)b;
 			changed = true;
 		}
@@ -178,7 +178,7 @@ private:
 
 	void sendLedState() {
 		const LEDOptions& led = Storage::getInstance().getLedOptions();
-		const uint32_t mode = led.ledMode < 6 ? led.ledMode : 0;
+		const uint32_t mode = led.ledMode < 7 ? led.ledMode : 0;
 		StaticJsonDocument<256> out;
 		out["ok"] = true;
 		JsonObject l = out.createNestedObject("led");

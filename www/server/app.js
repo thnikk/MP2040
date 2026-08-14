@@ -91,19 +91,19 @@ function makeProfile(src = {}) {
       ledSpeed: src.led?.ledSpeed ?? 50,
       ledSpeeds: Array.isArray(src.led?.ledSpeeds)
         ? src.led.ledSpeeds.slice()
-        : Array(6).fill(src.led?.ledSpeed ?? 50),
+        : Array(7).fill(src.led?.ledSpeed ?? 50),
       brightnessMaximum: src.led?.brightnessMaximum ?? 255,
-      brightnessByMode: Array.isArray(src.led?.brightnessByMode) && src.led.brightnessByMode.length >= 6
+      brightnessByMode: Array.isArray(src.led?.brightnessByMode) && src.led.brightnessByMode.length >= 7
         ? src.led.brightnessByMode.slice()
-        : Array(6).fill(src.led?.brightnessMaximum ?? 255),
+        : Array(7).fill(src.led?.brightnessMaximum ?? 255),
       colorNormal: src.led?.colorNormal ?? 0x00ff00,
       colorPressed: src.led?.colorPressed ?? 0xffffff,
       colorNormalByMode: Array.isArray(src.led?.colorNormalByMode)
         ? src.led.colorNormalByMode.slice()
-        : Array(6).fill(src.led?.colorNormal ?? 0x00ff00),
+        : Array(7).fill(src.led?.colorNormal ?? 0x00ff00),
       colorPressedByMode: Array.isArray(src.led?.colorPressedByMode)
         ? src.led.colorPressedByMode.slice()
-        : Array(6).fill(src.led?.colorPressed ?? 0xffffff),
+        : Array(7).fill(src.led?.colorPressed ?? 0xffffff),
       ledNormalColors: Array.isArray(src.led?.ledNormalColors) ? src.led.ledNormalColors.slice() : [],
       ledPressedColors: Array.isArray(src.led?.ledPressedColors) ? src.led.ledPressedColors.slice() : [],
     },
@@ -145,20 +145,20 @@ function defaultOptions() {
       ledSpeed: board?.led?.ledSpeed ?? 50,
       ledSpeeds: Array.isArray(board?.led?.ledSpeeds)
         ? board.led.ledSpeeds.slice()
-        : Array(6).fill(board?.led?.ledSpeed ?? 50),
+        : Array(7).fill(board?.led?.ledSpeed ?? 50),
       ledTimeout: board?.led?.ledTimeout ?? 0,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
-      brightnessByMode: Array.isArray(board?.led?.brightnessByMode) && board.led.brightnessByMode.length >= 6
+      brightnessByMode: Array.isArray(board?.led?.brightnessByMode) && board.led.brightnessByMode.length >= 7
         ? board.led.brightnessByMode.slice()
-        : Array(6).fill(board?.led?.brightnessMaximum ?? 255),
+        : Array(7).fill(board?.led?.brightnessMaximum ?? 255),
       colorNormal: board?.led?.colorNormal ?? 0x00ff00,
       colorPressed: board?.led?.colorPressed ?? 0xffffff,
       colorNormalByMode: Array.isArray(board?.led?.colorNormalByMode)
         ? board.led.colorNormalByMode.slice()
-        : Array(6).fill(board?.led?.colorNormal ?? 0x00ff00),
+        : Array(7).fill(board?.led?.colorNormal ?? 0x00ff00),
       colorPressedByMode: Array.isArray(board?.led?.colorPressedByMode)
         ? board.led.colorPressedByMode.slice()
-        : Array(6).fill(board?.led?.colorPressed ?? 0xffffff),
+        : Array(7).fill(board?.led?.colorPressed ?? 0xffffff),
       // Empty per-key color arrays = "use the global colors" (legacy config),
       // matching the firmware.
       ledNormalColors: [],

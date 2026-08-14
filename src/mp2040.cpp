@@ -251,14 +251,14 @@ void MP2040::run() {
 		static LedPreview boot;
 		std::memset(&boot, 0, sizeof(boot));
 		boot.ledMode = 0;                 // LED_MODE_CUSTOM (global fallback)
-		boot.ledSpeedCount = 6;
-		for (uint32_t i = 0; i < 6; i++)
+		boot.ledSpeedCount = 7;
+		for (uint32_t i = 0; i < 7; i++)
 			boot.ledSpeed[i] = 50;
-		boot.brightnessByModeCount = 6;
-		for (uint32_t i = 0; i < 6; i++)
+		boot.brightnessByModeCount = 7;
+		for (uint32_t i = 0; i < 7; i++)
 			boot.brightnessByMode[i] = 255;
-		boot.colorCount = 6;
-		for (uint32_t i = 0; i < 6; i++)
+		boot.colorCount = 7;
+		for (uint32_t i = 0; i < 7; i++)
 		{
 			boot.colorNormalByMode[i] = LED_COLOR_PRESSED;
 			boot.colorPressedByMode[i] = LED_COLOR_PRESSED;

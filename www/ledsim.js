@@ -8,6 +8,7 @@ const LED_MODE_REACTIVE = 2;
 const LED_MODE_BPS = 3;
 const LED_MODE_RIPPLE = 4;
 const LED_MODE_RAIN = 5;
+const LED_MODE_FIRE = 6;
 
 const MAX_RIPPLES = 8;
 
@@ -18,6 +19,11 @@ const RIPPLE_TRAIL_CELLS = 4;
 // Rain drop interval bounds (ms): a random drop fires every 0.2-2 seconds.
 const RAIN_DROP_MIN_MS = 200;
 const RAIN_DROP_MAX_MS = 2000;
+
+// Fire ember bounds (mirror FIRE_DECAY_* in LedController.cpp): each theme
+// step lights one random LED to a random brightness and decays all toward off.
+const FIRE_DECAY_MIN = 4;
+const FIRE_DECAY_MAX = 16;
 
 // Theme step interval (ms) bounds per mode, indexed by LED_MODE_* (mirrors
 // speedRanges[] in LedController.cpp). The 0-100% speed maps exponentially
@@ -30,6 +36,7 @@ const speedRanges = [
   { min: 0, max: 0 },     // LED_MODE_BPS
   { min: 50, max: 660 },  // LED_MODE_RIPPLE
   { min: 25, max: 200 },  // LED_MODE_RAIN (fade step; drop interval is fixed 1-3s)
+  { min: 25, max: 150 },  // LED_MODE_FIRE (ember flare + decay: faster = more flares)
 ];
 
 // HSV -> RGB matching the firmware's hsvToRgb (Adafruit ColorHSV variant).
@@ -74,12 +81,13 @@ class LedSim {
     this.ripples = [];
     this.rainDropMillis = 0;
     this.rainRandState = 0;
+    this.fireRandState = 0;
 
     this.mode = LED_MODE_CUSTOM;
     this.themeInterval = 20;
     this.brightness = 255;
-    this.colorNormalByMode = new Array(6).fill(0x00ff00);
-    this.colorPressedByMode = new Array(6).fill(0xffffff);
+    this.colorNormalByMode = new Array(7).fill(0x00ff00);
+    this.colorPressedByMode = new Array(7).fill(0xffffff);
     this.ledsPerKey = 1;
     this.pinLedIndices = [];
     this.lastThemeMillis = performance.now();
@@ -108,17 +116,17 @@ class LedSim {
   setParams(p) {
     this.mode = p.ledMode ?? LED_MODE_CUSTOM;
     const fill = (p.ledSpeed ?? 50) <= 100 ? p.ledSpeed : 50;
-    this.ledSpeeds = Array.isArray(p.ledSpeeds) && p.ledSpeeds.length >= 6
-      ? p.ledSpeeds.slice() : new Array(6).fill(fill);
+    this.ledSpeeds = Array.isArray(p.ledSpeeds) && p.ledSpeeds.length >= 7
+      ? p.ledSpeeds.slice() : new Array(7).fill(fill);
     this.recomputeInterval();
     // Always render at full brightness in the config UI so colors are easy to
     // see; brightnessByMode still dims the physical board via setLedPreview.
     this.brightness = 255;
     // Per-mode normal/pressed colors (mirror the firmware).
-    this.colorNormalByMode = Array.isArray(p.colorNormalByMode) && p.colorNormalByMode.length >= 6
-      ? p.colorNormalByMode.slice() : new Array(6).fill(p.colorNormal ?? 0x00ff00);
-    this.colorPressedByMode = Array.isArray(p.colorPressedByMode) && p.colorPressedByMode.length >= 6
-      ? p.colorPressedByMode.slice() : new Array(6).fill(p.colorPressed ?? 0xffffff);
+    this.colorNormalByMode = Array.isArray(p.colorNormalByMode) && p.colorNormalByMode.length >= 7
+      ? p.colorNormalByMode.slice() : new Array(7).fill(p.colorNormal ?? 0x00ff00);
+    this.colorPressedByMode = Array.isArray(p.colorPressedByMode) && p.colorPressedByMode.length >= 7
+      ? p.colorPressedByMode.slice() : new Array(7).fill(p.colorPressed ?? 0xffffff);
     this.normalColors = p.ledNormalColors || [];
     this.pressedColors = p.ledPressedColors || [];
     this.ledsPerKey = Math.max(1, p.ledsPerKey || 1);
@@ -159,6 +167,11 @@ class LedSim {
     this.prevHeld = new Set();
     this.rainRandState = (Math.floor(performance.now()) ^ 0x9e3779b9) | 0;
     this.rainDropMillis = 0;
+    this.fireRandState = (Math.floor(performance.now()) ^ 0x9e3779b9) | 0;
+    // Fire reuses ledVal as its per-LED heat; seed it so the embers start lit.
+    if (this.mode === LED_MODE_FIRE) {
+      for (let i = 0; i < this.count; i++) this.ledVal[i] = this.fireRandom() % 256;
+    }
     this.resync();
   }
 
@@ -272,7 +285,31 @@ class LedSim {
           }
         }
         break;
+
+      case LED_MODE_FIRE:
+        // Decay every LED toward off; freeze pressed LEDs (their color is
+        // drawn by renderFire()). Mirrors the firmware.
+        for (let i = 0; i < this.count; i++) {
+          if (this.pressed[i] || this.ledVal[i] <= 0) continue;
+          this.ledVal[i] = Math.max(0, this.ledVal[i] - (FIRE_DECAY_MIN + (this.fireRandom() % (FIRE_DECAY_MAX - FIRE_DECAY_MIN + 1))));
+        }
+        // Light one random unpressed LED to a random brightness.
+        if (this.count > 0) {
+          const idx = this.fireRandom() % this.count;
+          if (!this.pressed[idx]) this.ledVal[idx] = this.fireRandom() % 256;
+        }
+        break;
     }
+  }
+
+  // xorshift32 PRNG mirroring LedController::fireRandom().
+  fireRandom() {
+    let x = this.fireRandState | 0;
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    this.fireRandState = x | 0;
+    return x >>> 0;
   }
 
   // xorshift32 PRNG mirroring LedController::rainRandom().
@@ -426,6 +463,28 @@ class LedSim {
     return out;
   }
 
+  // Fire: each LED shows the normal color at its ember heat (ledVal, set to a
+  // random brightness then decaying toward off). Mirrors renderFire().
+  renderFire() {
+    const scale = this.brightness / 255;
+    const n = this.scaled(this.normalColor(), scale);
+    const p = this.scaled(this.pressedColor(), scale);
+    const out = [];
+    for (let i = 0; i < this.count; i++) {
+      if (this.pressed[i]) {
+        out.push(p.slice());
+        continue;
+      }
+      const t = Math.max(0, this.ledVal[i]) / 255;
+      out.push([
+        Math.floor(n[0] * t),
+        Math.floor(n[1] * t),
+        Math.floor(n[2] * t),
+      ]);
+    }
+    return out;
+  }
+
   // Advance theme state (catching up missed steps like the firmware) and
   // return the per-LED RGB array for the current frame.
   tick() {
@@ -469,6 +528,7 @@ class LedSim {
       case LED_MODE_BPS: return this.renderBps();
       case LED_MODE_RIPPLE: return this.renderRipple();
       case LED_MODE_RAIN: return this.renderRain();
+      case LED_MODE_FIRE: return this.renderFire();
       default: return this.renderCustom();
     }
   }

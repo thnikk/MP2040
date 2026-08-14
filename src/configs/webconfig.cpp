@@ -292,7 +292,7 @@ std::string getOptions()
     doc["led"]["ledCount"] = ledOptions.ledCount;
     JsonArray colorNormalByMode = doc["led"].createNestedArray("colorNormalByMode");
     JsonArray colorPressedByMode = doc["led"].createNestedArray("colorPressedByMode");
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < 7; i++)
     {
         colorNormalByMode.add(i < ledOptions.colorNormalByMode_count
             ? ledOptions.colorNormalByMode[i] : ledOptions.colorNormal);
@@ -302,10 +302,10 @@ std::string getOptions()
     doc["led"]["ledMode"] = ledOptions.ledMode;
     doc["led"]["ledSpeed"] = ledOptions.ledSpeed;
     JsonArray ledSpeeds = doc["led"].createNestedArray("ledSpeeds");
-    for (uint32_t i = 0; i < 6 && i < ledOptions.ledSpeeds_count; i++)
+    for (uint32_t i = 0; i < 7 && i < ledOptions.ledSpeeds_count; i++)
         ledSpeeds.add(ledOptions.ledSpeeds[i]);
     JsonArray brightnessByMode = doc["led"].createNestedArray("brightnessByMode");
-    for (uint32_t i = 0; i < 6; i++)
+    for (uint32_t i = 0; i < 7; i++)
         brightnessByMode.add(i < ledOptions.brightnessByMode_count
             ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum);
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
@@ -454,7 +454,7 @@ std::string setOptions()
         if (ledSpeeds.size() > 0)
         {
             config.ledOptions.ledSpeeds_count = 0;
-            for (uint32_t i = 0; i < 6 && i < (uint32_t)ledSpeeds.size(); i++)
+            for (uint32_t i = 0; i < 7 && i < (uint32_t)ledSpeeds.size(); i++)
             {
                 uint32_t sp = ledSpeeds[i].as<uint32_t>();
                 config.ledOptions.ledSpeeds[i] = sp > 100 ? 100 : sp;
@@ -466,7 +466,7 @@ std::string setOptions()
         if (brightnessByMode.size() > 0)
         {
             config.ledOptions.brightnessByMode_count = 0;
-            for (uint32_t i = 0; i < 6 && i < (uint32_t)brightnessByMode.size(); i++)
+            for (uint32_t i = 0; i < 7 && i < (uint32_t)brightnessByMode.size(); i++)
             {
                 uint32_t b = brightnessByMode[i].as<uint32_t>();
                 config.ledOptions.brightnessByMode[i] = b > 255 ? 255 : b;
@@ -479,7 +479,7 @@ std::string setOptions()
         if (colorNormalByMode.size() > 0)
         {
             config.ledOptions.colorNormalByMode_count = 0;
-            for (uint32_t i = 0; i < 6 && i < (uint32_t)colorNormalByMode.size(); i++)
+            for (uint32_t i = 0; i < 7 && i < (uint32_t)colorNormalByMode.size(); i++)
             {
                 config.ledOptions.colorNormalByMode[i] = colorNormalByMode[i].as<uint32_t>();
                 config.ledOptions.colorNormalByMode_count++;
@@ -488,7 +488,7 @@ std::string setOptions()
         if (colorPressedByMode.size() > 0)
         {
             config.ledOptions.colorPressedByMode_count = 0;
-            for (uint32_t i = 0; i < 6 && i < (uint32_t)colorPressedByMode.size(); i++)
+            for (uint32_t i = 0; i < 7 && i < (uint32_t)colorPressedByMode.size(); i++)
             {
                 config.ledOptions.colorPressedByMode[i] = colorPressedByMode[i].as<uint32_t>();
                 config.ledOptions.colorPressedByMode_count++;
@@ -545,7 +545,7 @@ std::string setLedPreview()
     {
         preview.ledMode = led["ledMode"] | 0;
         JsonArray ledSpeeds = led["ledSpeeds"];
-        for (uint32_t i = 0; i < 6 && i < (uint32_t)ledSpeeds.size(); i++)
+        for (uint32_t i = 0; i < 7 && i < (uint32_t)ledSpeeds.size(); i++)
         {
             uint32_t sp = ledSpeeds[i].as<uint32_t>();
             preview.ledSpeed[i] = sp > 100 ? 100 : sp;
@@ -553,7 +553,7 @@ std::string setLedPreview()
         }
         preview.brightnessByModeCount = 0;
         JsonArray brightnessByMode = led["brightnessByMode"];
-        for (uint32_t i = 0; i < 6 && i < (uint32_t)brightnessByMode.size(); i++)
+        for (uint32_t i = 0; i < 7 && i < (uint32_t)brightnessByMode.size(); i++)
         {
             uint32_t b = brightnessByMode[i].as<uint32_t>();
             preview.brightnessByMode[i] = b > 255 ? 255 : b;
@@ -561,7 +561,7 @@ std::string setLedPreview()
         }
         JsonArray colorNormalByMode = led["colorNormalByMode"];
         JsonArray colorPressedByMode = led["colorPressedByMode"];
-        for (uint32_t i = 0; i < 6 && i < (uint32_t)colorNormalByMode.size(); i++)
+        for (uint32_t i = 0; i < 7 && i < (uint32_t)colorNormalByMode.size(); i++)
         {
             preview.colorNormalByMode[i] = colorNormalByMode[i].as<uint32_t>();
             preview.colorPressedByMode[i] = colorPressedByMode[i].as<uint32_t>();

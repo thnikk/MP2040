@@ -1826,21 +1826,22 @@ static void applyDefaults(Config& config)
     config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_DEFAULT;
     config.ledOptions.colorNormal = LED_COLOR_NORMAL;
     config.ledOptions.colorPressed = LED_COLOR_PRESSED;
-    config.ledOptions.colorNormalByMode_count = 6;
-    config.ledOptions.colorPressedByMode_count = 6;
-    for (uint32_t i = 0; i < 6; i++)
+    // 7 = one entry per LED mode (Custom .. Fire).
+    config.ledOptions.colorNormalByMode_count = 7;
+    config.ledOptions.colorPressedByMode_count = 7;
+    for (uint32_t i = 0; i < 7; i++)
     {
         config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
         config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
     }
-    config.ledOptions.brightnessByMode_count = 6;
-    for (uint32_t i = 0; i < 6; i++)
+    config.ledOptions.brightnessByMode_count = 7;
+    for (uint32_t i = 0; i < 7; i++)
         config.ledOptions.brightnessByMode[i] = LED_BRIGHTNESS_DEFAULT;
     config.ledOptions.ledCount = LED_COUNT;
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
-    config.ledOptions.ledSpeeds_count = 6;
-    for (uint32_t i = 0; i < 6; i++)
+    config.ledOptions.ledSpeeds_count = 7;
+    for (uint32_t i = 0; i < 7; i++)
         config.ledOptions.ledSpeeds[i] = LED_SPEED;
     config.ledOptions.ledTimeout = LED_TIMEOUT;
     config.ledOptions.pinLedIndices_count = MAX_KEYS;
@@ -1974,20 +1975,20 @@ void Storage::init() {
         config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_DEFAULT;
         config.ledOptions.colorNormal = LED_COLOR_NORMAL;
         config.ledOptions.colorPressed = LED_COLOR_PRESSED;
-        config.ledOptions.colorNormalByMode_count = 6;
-        config.ledOptions.colorPressedByMode_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.colorNormalByMode_count = 7;
+        config.ledOptions.colorPressedByMode_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
         {
             config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
             config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
         }
-        config.ledOptions.brightnessByMode_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.brightnessByMode_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.brightnessByMode[i] = LED_BRIGHTNESS_DEFAULT;
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
-        config.ledOptions.ledSpeeds_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.ledSpeeds_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.ledSpeeds[i] = LED_SPEED;
         config.ledOptions.ledTimeout = LED_TIMEOUT;
     }
@@ -1999,8 +2000,8 @@ void Storage::init() {
     // predate ledSpeeds, and clamp each mode to the 0-100 percent range.
     if (config.ledOptions.ledSpeeds_count == 0)
     {
-        config.ledOptions.ledSpeeds_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.ledSpeeds_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.ledSpeeds[i] = config.ledOptions.ledSpeed;
     }
     for (uint32_t i = 0; i < config.ledOptions.ledSpeeds_count; i++)
@@ -2012,22 +2013,22 @@ void Storage::init() {
     // on configs that predate the per-mode arrays.
     if (config.ledOptions.colorNormalByMode_count == 0)
     {
-        config.ledOptions.colorNormalByMode_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.colorNormalByMode_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.colorNormalByMode[i] = config.ledOptions.colorNormal;
     }
     if (config.ledOptions.colorPressedByMode_count == 0)
     {
-        config.ledOptions.colorPressedByMode_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.colorPressedByMode_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.colorPressedByMode[i] = config.ledOptions.colorPressed;
     }
     // Per-mode brightness: seed all modes from the legacy brightnessMaximum on
     // configs that predate the per-mode array, clamping to the 0-255 range.
     if (config.ledOptions.brightnessByMode_count == 0)
     {
-        config.ledOptions.brightnessByMode_count = 6;
-        for (uint32_t i = 0; i < 6; i++)
+        config.ledOptions.brightnessByMode_count = 7;
+        for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.brightnessByMode[i] = config.ledOptions.brightnessMaximum > 255
                 ? 255 : config.ledOptions.brightnessMaximum;
     }
@@ -2231,15 +2232,15 @@ void Storage::buildLedPreviewFromConfig(LedPreview& preview)
     const KeyMapping& km = getKeyMapping();
     std::memset(&preview, 0, sizeof(preview));
     preview.ledMode = lo.ledMode;
-    preview.ledSpeedCount = 6;
-    for (uint32_t i = 0; i < 6; i++)
+    preview.ledSpeedCount = 7;
+    for (uint32_t i = 0; i < 7; i++)
         preview.ledSpeed[i] = i < lo.ledSpeeds_count ? lo.ledSpeeds[i] : lo.ledSpeed;
-    preview.brightnessByModeCount = 6;
-    for (uint32_t i = 0; i < 6; i++)
+    preview.brightnessByModeCount = 7;
+    for (uint32_t i = 0; i < 7; i++)
         preview.brightnessByMode[i] = i < lo.brightnessByMode_count
             ? lo.brightnessByMode[i] : lo.brightnessMaximum;
-    preview.colorCount = 6;
-    for (uint32_t i = 0; i < 6; i++)
+    preview.colorCount = 7;
+    for (uint32_t i = 0; i < 7; i++)
     {
         preview.colorNormalByMode[i] = i < lo.colorNormalByMode_count
             ? lo.colorNormalByMode[i] : lo.colorNormal;

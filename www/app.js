@@ -307,9 +307,9 @@ function debounce(fn, ms) {
 function getModeLedSpeeds() {
   const led = currentOptions.led || {};
   let speeds = Array.isArray(led.ledSpeeds) ? led.ledSpeeds.slice() : null;
-  if (!speeds || speeds.length < 6) {
+  if (!speeds || speeds.length < 7) {
     const fill = Number.isFinite(led.ledSpeed) ? led.ledSpeed : 50;
-    speeds = new Array(6).fill(fill);
+    speeds = new Array(7).fill(fill);
   }
   return speeds;
 }
@@ -319,9 +319,10 @@ function currentLedMode() {
 }
 
 // Modes that actually render the normal/pressed colors: Custom (per-key
-// fallback), Ripple, Rain. Cycle/Reactive/BPS are hue-based and ignore them.
+// fallback), Ripple, Rain, Fire. Cycle/Reactive/BPS are hue-based and ignore
+// them.
 function ledModeUsesColors(mode) {
-  return mode === 0 || mode === 4 || mode === 5;
+  return mode === 0 || mode === 4 || mode === 5 || mode === 6;
 }
 
 // Per-mode normal/pressed colors (global, not per-profile): 6-element arrays
@@ -329,12 +330,12 @@ function ledModeUsesColors(mode) {
 // sent per-mode values yet.
 function getModeLedColors() {
   const led = currentOptions.led || {};
-  let normal = Array.isArray(led.colorNormalByMode) && led.colorNormalByMode.length >= 6
+  let normal = Array.isArray(led.colorNormalByMode) && led.colorNormalByMode.length >= 7
     ? led.colorNormalByMode.slice() : null;
-  if (!normal) normal = new Array(6).fill(Number.isFinite(led.colorNormal) ? led.colorNormal : 0x00ff00);
-  let pressed = Array.isArray(led.colorPressedByMode) && led.colorPressedByMode.length >= 6
+  if (!normal) normal = new Array(7).fill(Number.isFinite(led.colorNormal) ? led.colorNormal : 0x00ff00);
+  let pressed = Array.isArray(led.colorPressedByMode) && led.colorPressedByMode.length >= 7
     ? led.colorPressedByMode.slice() : null;
-  if (!pressed) pressed = new Array(6).fill(Number.isFinite(led.colorPressed) ? led.colorPressed : 0xffffff);
+  if (!pressed) pressed = new Array(7).fill(Number.isFinite(led.colorPressed) ? led.colorPressed : 0xffffff);
   return { normal, pressed };
 }
 
@@ -343,11 +344,11 @@ function getModeLedColors() {
 // hasn't sent per-mode values yet.
 function getModeLedBrightnesses() {
   const led = currentOptions.led || {};
-  let brightness = Array.isArray(led.brightnessByMode) && led.brightnessByMode.length >= 6
+  let brightness = Array.isArray(led.brightnessByMode) && led.brightnessByMode.length >= 7
     ? led.brightnessByMode.slice() : null;
   if (!brightness) {
     const fill = Number.isFinite(led.brightnessMaximum) ? led.brightnessMaximum : 255;
-    brightness = new Array(6).fill(fill);
+    brightness = new Array(7).fill(fill);
   }
   return brightness;
 }
