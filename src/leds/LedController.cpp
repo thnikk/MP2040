@@ -501,9 +501,10 @@ void LedController::update()
 }
 
 // Light the mode indicator LED in the board-fixed color for the active input
-// mode: web config (cyan), MIDI (amber), keyboard (green). The color is
-// re-shown only when it changes so the 80us WS2812 latch wait doesn't run
-// every 20ms frame.
+// mode: web config (cyan), MIDI (amber), keyboard (green). The main strip's
+// inactivity fade (ledDim) is applied so the status LED sleeps and wakes with
+// it. The LED is re-shown only when the scaled output changes, so the 80us
+// WS2812 latch wait doesn't run every 20ms frame while idle.
 void LedController::updateStatusLed()
 {
     if (statusLed == nullptr) return;
@@ -514,12 +515,14 @@ void LedController::updateStatusLed()
     else if (Storage::getInstance().getDefaultInputMode() == INPUT_MODE_MIDI)
         color = STATUS_LED_COLOR_MIDI;
 
-    if (color == lastStatusColor) return;
-    lastStatusColor = color;
-    statusLed->setPixel(0,
-        static_cast<uint8_t>((color >> 16) & 0xFF),
-        static_cast<uint8_t>((color >> 8) & 0xFF),
-        static_cast<uint8_t>(color & 0xFF));
+    uint32_t r = ((color >> 16) & 0xFF) * ledDim / 255;
+    uint32_t g = ((color >> 8) & 0xFF) * ledDim / 255;
+    uint32_t b = (color & 0xFF) * ledDim / 255;
+    uint32_t out = (r << 16) | (g << 8) | b;
+
+    if (out == lastStatusColor) return;
+    lastStatusColor = out;
+    statusLed->setPixel(0, r, g, b);
     statusLed->show();
 }
 
