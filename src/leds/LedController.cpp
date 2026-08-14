@@ -26,12 +26,15 @@ static const SpeedRange speedRanges[] = {
 #define RAIN_DROP_MIN_MS 200
 #define RAIN_DROP_MAX_MS 2000
 
-// Fire ember bounds. Each theme step lights one random LED to a random
-// brightness (a flare) and decays every LED toward off by a random amount, so
-// embers flare and die back. The decay + flare rate scales with the mode's
-// speed (faster interval = more steps = more activity).
+// Fire ember bounds. Each LED re-flares with a chance that grows as it dims
+// (FIRE_FLARE_DIVISOR scales the curve: 0% at full bright, ~63% at 0 for a
+// divisor of 4), then decays toward off by a random amount. Embers never sit
+// at full black, and per-LED logic behaves the same on any board size. The
+// decay + flare rate scales with the mode's speed (faster interval = more
+// steps = more activity).
 #define FIRE_DECAY_MIN 4
 #define FIRE_DECAY_MAX 16
+#define FIRE_FLARE_DIVISOR 4
 
 // Length of the pressed->normal gradient trailing a ripple ring, in grid
 // cells. The ring itself (behind == 0) is full pressed; the trail fades
@@ -244,7 +247,7 @@ void LedController::configure()
     if (ledMode == LED_MODE_FIRE)
     {
         for (uint32_t i = 0; i < stripCount; i++)
-            ledVal[i] = fireRandom() % 256;
+            ledVal[i] = 255;
     }
 
     nextRunTime = make_timeout_time_ms(0);
@@ -510,7 +513,7 @@ void LedController::applyLedPreview(const LedPreview& preview)
     if (newMode == LED_MODE_FIRE)
     {
         for (uint32_t i = 0; i < stripCount; i++)
-            ledVal[i] = fireRandom() % 256;
+            ledVal[i] = 255;
     }
 }
 
@@ -607,23 +610,28 @@ void LedController::advanceThemeState()
             break;
 
         case LED_MODE_FIRE:
-            // Decay every LED toward off; freeze pressed LEDs so releasing
-            // them doesn't flash the held heat (their color is drawn by
-            // renderFire()).
+            // Each LED re-flares with a chance that grows as it dims: a bright
+            // LED mostly decays, and the closer it gets to 0 the more likely
+            // it is to flare back up to max brightness. Every flare shoots the
+            // LED to full brightness, then it fades down again. Pressed LEDs
+            // freeze; renderFire() draws their pressed color.
             for (uint32_t i = 0; i < stripCount; i++)
             {
-                if (pressedLeds[i] || ledVal[i] <= 0) continue;
-                int decay = FIRE_DECAY_MIN
-                    + (int)(fireRandom() % (FIRE_DECAY_MAX - FIRE_DECAY_MIN + 1));
-                ledVal[i] -= decay;
-                if (ledVal[i] < 0) ledVal[i] = 0;
-            }
-            // Light one random unpressed LED to a random brightness.
-            if (stripCount > 0)
-            {
-                uint32_t idx = fireRandom() % stripCount;
-                if (!pressedLeds[idx])
-                    ledVal[idx] = (int)(fireRandom() % 256);
+                if (pressedLeds[i]) continue;
+                uint32_t chance = (uint32_t)(ledVal[i] < 0 ? 255 : 255 - ledVal[i])
+                    / FIRE_FLARE_DIVISOR;
+                if (chance > 100) chance = 100;
+                if ((fireRandom() % 100) < chance)
+                {
+                    ledVal[i] = 255;
+                }
+                else
+                {
+                    int decay = FIRE_DECAY_MIN
+                        + (int)(fireRandom() % (FIRE_DECAY_MAX - FIRE_DECAY_MIN + 1));
+                    ledVal[i] -= decay;
+                    if (ledVal[i] < 0) ledVal[i] = 0;
+                }
             }
             break;
 

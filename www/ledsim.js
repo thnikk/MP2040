@@ -20,10 +20,12 @@ const RIPPLE_TRAIL_CELLS = 4;
 const RAIN_DROP_MIN_MS = 200;
 const RAIN_DROP_MAX_MS = 2000;
 
-// Fire ember bounds (mirror FIRE_DECAY_* in LedController.cpp): each theme
-// step lights one random LED to a random brightness and decays all toward off.
+// Fire ember bounds (mirror FIRE_DECAY_* / FIRE_FLARE_DIVISOR in
+// LedController.cpp): each LED re-flares with a chance that grows as it dims,
+// then decays toward off.
 const FIRE_DECAY_MIN = 4;
 const FIRE_DECAY_MAX = 16;
+const FIRE_FLARE_DIVISOR = 4;
 
 // Theme step interval (ms) bounds per mode, indexed by LED_MODE_* (mirrors
 // speedRanges[] in LedController.cpp). The 0-100% speed maps exponentially
@@ -170,7 +172,7 @@ class LedSim {
     this.fireRandState = (Math.floor(performance.now()) ^ 0x9e3779b9) | 0;
     // Fire reuses ledVal as its per-LED heat; seed it so the embers start lit.
     if (this.mode === LED_MODE_FIRE) {
-      for (let i = 0; i < this.count; i++) this.ledVal[i] = this.fireRandom() % 256;
+      for (let i = 0; i < this.count; i++) this.ledVal[i] = 255;
     }
     this.resync();
   }
@@ -287,16 +289,16 @@ class LedSim {
         break;
 
       case LED_MODE_FIRE:
-        // Decay every LED toward off; freeze pressed LEDs (their color is
-        // drawn by renderFire()). Mirrors the firmware.
+        // Each LED re-flares with a chance that grows as it dims, mirroring
+        // the firmware. Pressed LEDs freeze (renderFire() draws their color).
         for (let i = 0; i < this.count; i++) {
-          if (this.pressed[i] || this.ledVal[i] <= 0) continue;
-          this.ledVal[i] = Math.max(0, this.ledVal[i] - (FIRE_DECAY_MIN + (this.fireRandom() % (FIRE_DECAY_MAX - FIRE_DECAY_MIN + 1))));
-        }
-        // Light one random unpressed LED to a random brightness.
-        if (this.count > 0) {
-          const idx = this.fireRandom() % this.count;
-          if (!this.pressed[idx]) this.ledVal[idx] = this.fireRandom() % 256;
+      if (this.pressed[i]) continue;
+      const chance = Math.min(100, (255 - this.ledVal[i]) / FIRE_FLARE_DIVISOR);
+      if ((this.fireRandom() % 100) < chance) {
+        this.ledVal[i] = 255;
+      } else {
+        this.ledVal[i] = Math.max(0, this.ledVal[i] - (FIRE_DECAY_MIN + (this.fireRandom() % (FIRE_DECAY_MAX - FIRE_DECAY_MIN + 1))));
+      }
         }
         break;
     }
