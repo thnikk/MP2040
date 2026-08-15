@@ -1102,6 +1102,95 @@
 #ifndef LED_TIMEOUT
 #define LED_TIMEOUT 0
 #endif
+
+// Optional per-mode LED defaults (BoardConfig.h). Each overrides the single
+// global default above for its mode (Custom, Cycle, Reactive, Bps, Ripple,
+// Rain, Fire); unset modes fall back to the global default.
+#ifndef LED_COLOR_NORMAL_MODE_CUSTOM
+#define LED_COLOR_NORMAL_MODE_CUSTOM LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_NORMAL_MODE_CYCLE
+#define LED_COLOR_NORMAL_MODE_CYCLE LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_NORMAL_MODE_REACTIVE
+#define LED_COLOR_NORMAL_MODE_REACTIVE LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_NORMAL_MODE_BPS
+#define LED_COLOR_NORMAL_MODE_BPS LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_NORMAL_MODE_RIPPLE
+#define LED_COLOR_NORMAL_MODE_RIPPLE LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_NORMAL_MODE_RAIN
+#define LED_COLOR_NORMAL_MODE_RAIN LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_NORMAL_MODE_FIRE
+#define LED_COLOR_NORMAL_MODE_FIRE LED_COLOR_NORMAL
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_CUSTOM
+#define LED_COLOR_PRESSED_MODE_CUSTOM LED_COLOR_PRESSED
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_CYCLE
+#define LED_COLOR_PRESSED_MODE_CYCLE LED_COLOR_PRESSED
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_REACTIVE
+#define LED_COLOR_PRESSED_MODE_REACTIVE LED_COLOR_PRESSED
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_BPS
+#define LED_COLOR_PRESSED_MODE_BPS LED_COLOR_PRESSED
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_RIPPLE
+#define LED_COLOR_PRESSED_MODE_RIPPLE LED_COLOR_PRESSED
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_RAIN
+#define LED_COLOR_PRESSED_MODE_RAIN LED_COLOR_PRESSED
+#endif
+#ifndef LED_COLOR_PRESSED_MODE_FIRE
+#define LED_COLOR_PRESSED_MODE_FIRE LED_COLOR_PRESSED
+#endif
+#ifndef LED_BRIGHTNESS_MODE_CUSTOM
+#define LED_BRIGHTNESS_MODE_CUSTOM LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_BRIGHTNESS_MODE_CYCLE
+#define LED_BRIGHTNESS_MODE_CYCLE LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_BRIGHTNESS_MODE_REACTIVE
+#define LED_BRIGHTNESS_MODE_REACTIVE LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_BRIGHTNESS_MODE_BPS
+#define LED_BRIGHTNESS_MODE_BPS LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_BRIGHTNESS_MODE_RIPPLE
+#define LED_BRIGHTNESS_MODE_RIPPLE LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_BRIGHTNESS_MODE_RAIN
+#define LED_BRIGHTNESS_MODE_RAIN LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_BRIGHTNESS_MODE_FIRE
+#define LED_BRIGHTNESS_MODE_FIRE LED_BRIGHTNESS_DEFAULT
+#endif
+#ifndef LED_SPEED_MODE_CUSTOM
+#define LED_SPEED_MODE_CUSTOM LED_SPEED
+#endif
+#ifndef LED_SPEED_MODE_CYCLE
+#define LED_SPEED_MODE_CYCLE LED_SPEED
+#endif
+#ifndef LED_SPEED_MODE_REACTIVE
+#define LED_SPEED_MODE_REACTIVE LED_SPEED
+#endif
+#ifndef LED_SPEED_MODE_BPS
+#define LED_SPEED_MODE_BPS LED_SPEED
+#endif
+#ifndef LED_SPEED_MODE_RIPPLE
+#define LED_SPEED_MODE_RIPPLE LED_SPEED
+#endif
+#ifndef LED_SPEED_MODE_RAIN
+#define LED_SPEED_MODE_RAIN LED_SPEED
+#endif
+#ifndef LED_SPEED_MODE_FIRE
+#define LED_SPEED_MODE_FIRE LED_SPEED
+#endif
+
 #ifndef PIN_WEBCONFIG
 #define PIN_WEBCONFIG -1
 #endif
@@ -1798,6 +1887,48 @@ static void setHasFlags(const pb_msgdesc_t* fields, void* s)
     } while (pb_field_iter_next(&iter));
 }
 
+// Per-mode board defaults (indexed by LedMode: Custom, Cycle, Reactive, Bps,
+// Ripple, Rain, Fire). Seeded into the per-mode config arrays on fresh
+// configs / configs that predate them. Defined in BoardConfig.h via the
+// LED_COLOR_NORMAL_MODE_* / LED_COLOR_PRESSED_MODE_* / LED_BRIGHTNESS_MODE_* /
+// LED_SPEED_MODE_* macros; each falls back to the single global default.
+static const uint32_t defaultColorNormalByMode[7] = {
+    LED_COLOR_NORMAL_MODE_CUSTOM,
+    LED_COLOR_NORMAL_MODE_CYCLE,
+    LED_COLOR_NORMAL_MODE_REACTIVE,
+    LED_COLOR_NORMAL_MODE_BPS,
+    LED_COLOR_NORMAL_MODE_RIPPLE,
+    LED_COLOR_NORMAL_MODE_RAIN,
+    LED_COLOR_NORMAL_MODE_FIRE,
+};
+static const uint32_t defaultColorPressedByMode[7] = {
+    LED_COLOR_PRESSED_MODE_CUSTOM,
+    LED_COLOR_PRESSED_MODE_CYCLE,
+    LED_COLOR_PRESSED_MODE_REACTIVE,
+    LED_COLOR_PRESSED_MODE_BPS,
+    LED_COLOR_PRESSED_MODE_RIPPLE,
+    LED_COLOR_PRESSED_MODE_RAIN,
+    LED_COLOR_PRESSED_MODE_FIRE,
+};
+static const uint32_t defaultBrightnessByMode[7] = {
+    LED_BRIGHTNESS_MODE_CUSTOM,
+    LED_BRIGHTNESS_MODE_CYCLE,
+    LED_BRIGHTNESS_MODE_REACTIVE,
+    LED_BRIGHTNESS_MODE_BPS,
+    LED_BRIGHTNESS_MODE_RIPPLE,
+    LED_BRIGHTNESS_MODE_RAIN,
+    LED_BRIGHTNESS_MODE_FIRE,
+};
+static const uint32_t defaultLedSpeedsByMode[7] = {
+    LED_SPEED_MODE_CUSTOM,
+    LED_SPEED_MODE_CYCLE,
+    LED_SPEED_MODE_REACTIVE,
+    LED_SPEED_MODE_BPS,
+    LED_SPEED_MODE_RIPPLE,
+    LED_SPEED_MODE_RAIN,
+    LED_SPEED_MODE_FIRE,
+};
+
 static void applyDefaults(Config& config)
 {
     config = Config Config_init_zero;
@@ -1826,23 +1957,24 @@ static void applyDefaults(Config& config)
     config.ledOptions.brightnessMaximum = LED_BRIGHTNESS_DEFAULT;
     config.ledOptions.colorNormal = LED_COLOR_NORMAL;
     config.ledOptions.colorPressed = LED_COLOR_PRESSED;
-    // 7 = one entry per LED mode (Custom .. Fire).
+    // 7 = one entry per LED mode (Custom .. Fire). Per-mode board defaults
+    // (LED_COLOR_NORMAL_MODE_*, ...) are used where defined.
     config.ledOptions.colorNormalByMode_count = 7;
     config.ledOptions.colorPressedByMode_count = 7;
     for (uint32_t i = 0; i < 7; i++)
     {
-        config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
-        config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
+        config.ledOptions.colorNormalByMode[i] = defaultColorNormalByMode[i];
+        config.ledOptions.colorPressedByMode[i] = defaultColorPressedByMode[i];
     }
     config.ledOptions.brightnessByMode_count = 7;
     for (uint32_t i = 0; i < 7; i++)
-        config.ledOptions.brightnessByMode[i] = LED_BRIGHTNESS_DEFAULT;
+        config.ledOptions.brightnessByMode[i] = defaultBrightnessByMode[i];
     config.ledOptions.ledCount = LED_COUNT;
     config.ledOptions.ledMode = LED_MODE;
     config.ledOptions.ledSpeed = LED_SPEED;
     config.ledOptions.ledSpeeds_count = 7;
     for (uint32_t i = 0; i < 7; i++)
-        config.ledOptions.ledSpeeds[i] = LED_SPEED;
+        config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
     config.ledOptions.ledTimeout = LED_TIMEOUT;
     config.ledOptions.pinLedIndices_count = MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
@@ -1979,17 +2111,17 @@ void Storage::init() {
         config.ledOptions.colorPressedByMode_count = 7;
         for (uint32_t i = 0; i < 7; i++)
         {
-            config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
-            config.ledOptions.colorPressedByMode[i] = LED_COLOR_PRESSED;
+            config.ledOptions.colorNormalByMode[i] = defaultColorNormalByMode[i];
+            config.ledOptions.colorPressedByMode[i] = defaultColorPressedByMode[i];
         }
         config.ledOptions.brightnessByMode_count = 7;
         for (uint32_t i = 0; i < 7; i++)
-            config.ledOptions.brightnessByMode[i] = LED_BRIGHTNESS_DEFAULT;
+            config.ledOptions.brightnessByMode[i] = defaultBrightnessByMode[i];
         config.ledOptions.ledMode = LED_MODE;
         config.ledOptions.ledSpeed = LED_SPEED;
         config.ledOptions.ledSpeeds_count = 7;
         for (uint32_t i = 0; i < 7; i++)
-            config.ledOptions.ledSpeeds[i] = LED_SPEED;
+            config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
         config.ledOptions.ledTimeout = LED_TIMEOUT;
     }
     // ledSpeed changed from a 1-255 scale to 0-100 percent. Discard any

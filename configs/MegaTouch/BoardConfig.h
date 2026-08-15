@@ -53,6 +53,23 @@
 // key held (any press wakes it). 0 = always on.
 #define LED_TIMEOUT 60
 
+// Optional per-mode LED defaults. Each mode's normal/pressed colors,
+// brightness (0-255), and speed (0-100 percent) override the single defaults
+// above; unset modes fall back to LED_COLOR_NORMAL / LED_COLOR_PRESSED /
+// LED_BRIGHTNESS_DEFAULT / LED_SPEED. Mode names: CUSTOM, CYCLE, REACTIVE,
+// BPS, RIPPLE, RAIN, FIRE.
+#define LED_COLOR_NORMAL_MODE_CYCLE 0x00FF00
+#define LED_COLOR_PRESSED_MODE_CYCLE 0xFFFFFF
+#define LED_SPEED_MODE_CYCLE 60
+
+#define LED_COLOR_NORMAL_MODE_RAIN 0x0044FF
+#define LED_COLOR_PRESSED_MODE_RAIN 0xFFFFFF
+#define LED_SPEED_MODE_RAIN 70
+
+#define LED_COLOR_NORMAL_MODE_FIRE 0xFF6600
+#define LED_COLOR_PRESSED_MODE_FIRE 0xFFAA00
+#define LED_SPEED_MODE_FIRE 90
+
 // Pin → LED strip index mapping. -1 = pin has no LED. The LED(s) at the
 // mapped index (LEDS_PER_KEY of them) light up when the pin is pressed.
 #define LED_INDEX_GP26 0

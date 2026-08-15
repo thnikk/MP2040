@@ -173,6 +173,18 @@ function parsePinArray(raw) {
     .filter((n) => !Number.isNaN(n));
 }
 
+// Per-mode LED defaults mirroring firmware: LED_<SETTING>_MODE_<NAME> for each
+// of the 7 modes, falling back to the single global default per entry.
+const LED_MODE_NAMES = ['CUSTOM', 'CYCLE', 'REACTIVE', 'BPS', 'RIPPLE', 'RAIN', 'FIRE'];
+
+function perModeDefaults(defines, setting, parse, fallback) {
+  return LED_MODE_NAMES.map((m) => {
+    const raw = defines[`${setting}_MODE_${m}`];
+    const val = raw !== undefined ? parse(raw) : undefined;
+    return val ?? fallback;
+  });
+}
+
 export function parseBoardConfig(configDir, rootDir) {
   const boardConfigPath = path.join(rootDir, 'configs', configDir, 'BoardConfig.h');
   if (!fs.existsSync(boardConfigPath)) return null;
@@ -230,14 +242,14 @@ export function parseBoardConfig(configDir, rootDir) {
       ledCount: parseNum(d.LED_COUNT) ?? 0,
       ledMode: parseNum(d.LED_MODE) ?? 0,
       ledSpeed: parseNum(d.LED_SPEED) ?? 50,
-      ledSpeeds: Array(7).fill(parseNum(d.LED_SPEED) ?? 50),
+      ledSpeeds: perModeDefaults(d, 'LED_SPEED', parseNum, parseNum(d.LED_SPEED) ?? 50),
       ledTimeout: parseNum(d.LED_TIMEOUT) ?? 0,
       brightnessMaximum: parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255,
-      brightnessByMode: Array(7).fill(parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255),
+      brightnessByMode: perModeDefaults(d, 'LED_BRIGHTNESS', parseNum, parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255),
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,
       colorPressed: parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff,
-      colorNormalByMode: Array(7).fill(parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00),
-      colorPressedByMode: Array(7).fill(parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
+      colorNormalByMode: perModeDefaults(d, 'LED_COLOR_NORMAL', parseColor, parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00),
+      colorPressedByMode: perModeDefaults(d, 'LED_COLOR_PRESSED', parseColor, parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
     // Number of keys the board can report, mirroring firmware getKeyCount():
