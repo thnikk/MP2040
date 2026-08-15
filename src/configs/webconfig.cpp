@@ -313,6 +313,7 @@ std::string getOptions()
         brightnessByMode.add(i < ledOptions.brightnessByMode_count
             ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum);
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
+    doc["led"]["statusLedEnabled"] = ledOptions.statusLedEnabled != 0;
 
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
     // legacy configs = the UI falls back to the global colors).
@@ -517,6 +518,9 @@ std::string setOptions()
             uint32_t timeout = led["ledTimeout"].as<uint32_t>();
             config.ledOptions.ledTimeout = timeout > 600 ? 600 : timeout;
         }
+        // The status LED toggle is a global (non-profile) LED option.
+        if (led["statusLedEnabled"].is<bool>())
+            config.ledOptions.statusLedEnabled = led["statusLedEnabled"].as<bool>() ? 1 : 0;
     }
 
     if (doc["activeProfile"].is<int>())
@@ -544,6 +548,7 @@ std::string setLedPreview()
     // LedPreview ~1KB, and this handler runs on the deep lwIP httpd call path.
     static LedPreview preview;
     std::memset(&preview, 0, sizeof(preview));
+    preview.statusLedEnabled = LED_PREVIEW_STATUS_UNSET;
     JsonObject led = doc["led"];
     if (!led.isNull())
     {
@@ -576,6 +581,8 @@ std::string setLedPreview()
             uint32_t timeout = led["ledTimeout"].as<uint32_t>();
             preview.ledTimeout = timeout > 600 ? 600 : timeout;
         }
+        if (led["statusLedEnabled"].is<bool>())
+            preview.statusLedEnabled = led["statusLedEnabled"].as<bool>() ? 1 : 0;
         // Per-key colors for custom mode (0 or an empty array uses the global
         // fallback).
         JsonArray normalColors = led["ledNormalColors"];

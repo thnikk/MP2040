@@ -147,6 +147,7 @@ function defaultOptions() {
         ? board.led.ledSpeeds.slice()
         : Array(7).fill(board?.led?.ledSpeed ?? 50),
       ledTimeout: board?.led?.ledTimeout ?? 0,
+      statusLedEnabled: board?.led?.statusLedEnabled ?? 1,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
       brightnessByMode: Array.isArray(board?.led?.brightnessByMode) && board.led.brightnessByMode.length >= 7
         ? board.led.brightnessByMode.slice()
@@ -235,11 +236,15 @@ export function createMockApp() {
     if (Array.isArray(body.macros)) current.macros = body.macros;
     if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
     if (body.led) {
-      // ledTimeout is a global (non-profile) LED option, like the firmware.
-      const { ledTimeout, ...profileLed } = body.led;
+      // ledTimeout / statusLedEnabled are global (non-profile) LED options,
+      // like the firmware.
+      const { ledTimeout, statusLedEnabled, ...profileLed } = body.led;
       profile.led = { ...profile.led, ...profileLed };
       if (ledTimeout !== undefined) {
         current.led.ledTimeout = Math.max(0, Math.min(600, Number(ledTimeout) || 0));
+      }
+      if (statusLedEnabled !== undefined) {
+        current.led.statusLedEnabled = statusLedEnabled ? 1 : 0;
       }
     }
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;

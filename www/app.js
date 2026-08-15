@@ -401,6 +401,8 @@ async function previewLed() {
   brightness[led.ledMode] = brightnessSlider ? brightnessSlider.getValue() : 255;
   led.brightnessByMode = brightness;
   led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
+  const statusLedEl = document.getElementById('status-led');
+  led.statusLedEnabled = statusLedEl ? statusLedEl.checked : true;
   const colors = getModeLedColors();
   colors.normal[led.ledMode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
   colors.pressed[led.ledMode] = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
@@ -411,6 +413,7 @@ async function previewLed() {
     ledSpeeds: led.ledSpeeds,
     brightnessByMode: led.brightnessByMode,
     ledTimeout: led.ledTimeout,
+    statusLedEnabled: led.statusLedEnabled,
     colorNormalByMode: led.colorNormalByMode,
     colorPressedByMode: led.colorPressedByMode,
     ledNormalColors: led.ledNormalColors || [],
@@ -463,6 +466,7 @@ function buildOptionsBody() {
       ledSpeeds: getModeLedSpeeds(),
       brightnessByMode: brightness,
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
+      statusLedEnabled: document.getElementById('status-led').checked,
       colorNormalByMode: colors.normal,
       colorPressedByMode: colors.pressed,
       ledNormalColors: currentOptions.led?.ledNormalColors || [],
@@ -664,6 +668,16 @@ async function load() {
   document.getElementById('serial-config').addEventListener('change', () => {
     currentOptions.serialConfigEnabled = document.getElementById('serial-config').checked;
   });
+
+  const statusLedEl = document.getElementById('status-led');
+  if (statusLedEl) {
+    statusLedEl.checked = options.led?.statusLedEnabled !== 0;
+    statusLedEl.addEventListener('change', () => {
+      if (!currentOptions.led) currentOptions.led = {};
+      currentOptions.led.statusLedEnabled = statusLedEl.checked;
+      previewLed();
+    });
+  }
 
   midiChannelSpinner = new Spinner({
     container: document.getElementById('midi-channel-spinner'),
@@ -1121,6 +1135,7 @@ function exportSettings() {
     macros: currentOptions.macros || [],
     led: {
       ledTimeout: currentOptions.led?.ledTimeout ?? 0,
+      statusLedEnabled: currentOptions.led?.statusLedEnabled ?? true,
       ledSpeeds: getModeLedSpeeds(),
       colorNormalByMode: getModeLedColors().normal,
       colorPressedByMode: getModeLedColors().pressed,
@@ -1180,6 +1195,7 @@ async function importSettings(file) {
           colorNormalByMode: led.colorNormalByMode || [],
           colorPressedByMode: led.colorPressedByMode || [],
           ledTimeout: led.ledTimeout ?? 0,
+          statusLedEnabled: led.statusLedEnabled ?? true,
         },
         // Globals only on the last call.
         ...(i === profiles.length - 1 ? globals : {}),

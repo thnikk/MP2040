@@ -105,6 +105,7 @@ private:
     Neopixel* neopixel;
     Neopixel* statusLed;
     uint32_t lastStatusColor; // last color shown on the status LED
+    bool statusLedEnabled;    // user toggle: false = mode indicator off
     int32_t dataPin;
     LEDFormat_Proto ledFormat;
     uint32_t ledsPerKey;

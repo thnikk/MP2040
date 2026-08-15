@@ -1976,6 +1976,7 @@ static void applyDefaults(Config& config)
     for (uint32_t i = 0; i < 7; i++)
         config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
     config.ledOptions.ledTimeout = LED_TIMEOUT;
+    config.ledOptions.statusLedEnabled = 1;
     config.ledOptions.pinLedIndices_count = MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
@@ -2123,6 +2124,7 @@ void Storage::init() {
         for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
         config.ledOptions.ledTimeout = LED_TIMEOUT;
+        config.ledOptions.statusLedEnabled = 1;
     }
     // ledSpeed changed from a 1-255 scale to 0-100 percent. Discard any
     // legacy stored value (out of the new range) in favor of the board default.
@@ -2163,6 +2165,12 @@ void Storage::init() {
         for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.brightnessByMode[i] = config.ledOptions.brightnessMaximum > 255
                 ? 255 : config.ledOptions.brightnessMaximum;
+    }
+    // Status LED toggle: configs that predate the field default to on.
+    if (!config.ledOptions.has_statusLedEnabled)
+    {
+        config.ledOptions.has_statusLedEnabled = true;
+        config.ledOptions.statusLedEnabled = 1;
     }
 
     // Seed the profiles (0-3) once from the current base mapping so configs
@@ -2380,6 +2388,7 @@ void Storage::buildLedPreviewFromConfig(LedPreview& preview)
             ? lo.colorPressedByMode[i] : lo.colorPressed;
     }
     preview.ledTimeout = lo.ledTimeout;
+    preview.statusLedEnabled = lo.statusLedEnabled != 0 ? 1 : 0;
     preview.ledNormalColorCount = km.ledNormalColors_count;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
         preview.ledNormalColors[pin] = km.ledNormalColors[pin];

@@ -90,6 +90,9 @@ message LEDOptions
     // Per-mode brightness (0-255), indexed by LedMode. Empty on old configs;
     // seeded from brightnessMaximum at load.
     repeated uint32 brightnessByMode = 16 [(nanopb).max_count = 7];
+    // Mode indicator LED (board-fixed pin showing the active input mode):
+    // 0 = off, 1 = on. Defaults to on when absent.
+    optional uint32 statusLedEnabled = 17;
 }
 
 // A profile: a full key mapping plus the per-profile MIDI options and LED

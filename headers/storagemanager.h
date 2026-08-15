@@ -14,6 +14,11 @@
 
 #define SI Storage::getInstance()
 
+// Sentinel for LedPreview.statusLedEnabled: "leave the status LED untouched".
+// Used by previews that don't carry the toggle (e.g. the boot-window cue) so
+// applying them doesn't turn the mode indicator off.
+#define LED_PREVIEW_STATUS_UNSET 0xFFFFFFFF
+
 // Live LED options pushed from the web config (core 0) to the running LED
 // controller (core 1). Only user-tunable scalars; board properties are
 // unaffected. Not persisted — the full config is written on Save.
@@ -32,6 +37,9 @@ struct LedPreview
     uint32_t colorPressedByMode[7];
     uint32_t colorCount;
     uint32_t ledTimeout;       // inactivity timeout in seconds (0 = always on)
+    // Mode indicator LED toggle. LED_PREVIEW_STATUS_UNSET = leave untouched;
+    // otherwise 1 = on, 0 = off.
+    uint32_t statusLedEnabled;
     // Per-key colors for custom mode. A value of 0 (or no entry) uses Custom
     // mode's colorNormalByMode[0] / colorPressedByMode[0].
     uint32_t ledNormalColorCount;

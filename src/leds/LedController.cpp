@@ -102,6 +102,7 @@ LedController::LedController() :
     neopixel(nullptr),
     statusLed(nullptr),
     lastStatusColor(0xFFFFFFFF),
+    statusLedEnabled(true),
     dataPin(-1),
     ledFormat(LED_FORMAT_GRB),
     ledsPerKey(1),
@@ -194,6 +195,7 @@ void LedController::configure()
     // hand-edited configs. The clock starts at boot so fresh boards stay lit
     // until the first release.
     ledTimeoutMs = (ledOptions.ledTimeout > 600 ? 600 : ledOptions.ledTimeout) * 1000u;
+    statusLedEnabled = ledOptions.statusLedEnabled != 0;
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;
     ledDim = 255;
@@ -518,6 +520,17 @@ void LedController::updateStatusLed()
 {
     if (statusLed == nullptr) return;
 
+    // User toggle: turn the indicator off (once) and stay dark until re-enabled.
+    if (!statusLedEnabled)
+    {
+        if (lastStatusColor != 0)
+        {
+            lastStatusColor = 0;
+            statusLed->off();
+        }
+        return;
+    }
+
     uint32_t color = STATUS_LED_COLOR_KEYBOARD;
     if (Storage::getInstance().GetConfigMode())
         color = STATUS_LED_COLOR_CONFIG;
@@ -572,6 +585,9 @@ void LedController::applyLedPreview(const LedPreview& preview)
     }
     // Inactivity timeout (0-600s), 0 = always on; clamp defensively.
     ledTimeoutMs = (preview.ledTimeout > 600 ? 600 : preview.ledTimeout) * 1000u;
+    // Status LED toggle; LED_PREVIEW_STATUS_UNSET leaves it untouched.
+    if (preview.statusLedEnabled != LED_PREVIEW_STATUS_UNSET)
+        statusLedEnabled = preview.statusLedEnabled != 0;
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;
     ledDim = 255;

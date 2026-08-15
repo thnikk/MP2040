@@ -252,6 +252,7 @@ void MP2040::run() {
 		static LedPreview boot;
 		std::memset(&boot, 0, sizeof(boot));
 		boot.ledMode = 0;                 // LED_MODE_CUSTOM (global fallback)
+		boot.statusLedEnabled = LED_PREVIEW_STATUS_UNSET; // leave the indicator on
 		boot.ledSpeedCount = 7;
 		for (uint32_t i = 0; i < 7; i++)
 			boot.ledSpeed[i] = 50;
