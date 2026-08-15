@@ -244,6 +244,10 @@ export function parseBoardConfig(configDir, rootDir) {
       ledSpeed: parseNum(d.LED_SPEED) ?? 50,
       ledSpeeds: perModeDefaults(d, 'LED_SPEED', parseNum, parseNum(d.LED_SPEED) ?? 50),
       ledTimeout: parseNum(d.LED_TIMEOUT) ?? 0,
+      hasStatusLed: (() => {
+        const pin = parseNum(d.STATUS_LED_PIN);
+        return pin !== undefined && pin >= 0;
+      })(),
       brightnessMaximum: parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255,
       brightnessByMode: perModeDefaults(d, 'LED_BRIGHTNESS', parseNum, parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255),
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,

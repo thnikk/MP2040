@@ -877,6 +877,11 @@ html[data-theme="light"] .ms-caret {
   gap: 8px;
 }
 
+/* display:flex above would override the hidden attribute's UA default */
+.checkbox-label[hidden] {
+  display: none;
+}
+
 .checkbox-label input[type="checkbox"] {
   accent-color: var(--accent, #81a1c1);
 }

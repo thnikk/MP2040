@@ -147,6 +147,7 @@ function defaultOptions() {
         ? board.led.ledSpeeds.slice()
         : Array(7).fill(board?.led?.ledSpeed ?? 50),
       ledTimeout: board?.led?.ledTimeout ?? 0,
+      hasStatusLed: board?.led?.hasStatusLed ?? false,
       statusLedEnabled: board?.led?.statusLedEnabled ?? 1,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
       brightnessByMode: Array.isArray(board?.led?.brightnessByMode) && board.led.brightnessByMode.length >= 7

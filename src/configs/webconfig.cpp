@@ -50,6 +50,11 @@
 // indices. Only getOptions / get_post_data need the large doc above.
 #define LWIP_HTTPD_JSON_SMALL_SIZE (1024 * 2)
 
+// Mode indicator LED (board-fixed pin). -1 = the board has no status LED.
+#ifndef STATUS_LED_PIN
+#define STATUS_LED_PIN -1
+#endif
+
 using namespace std;
 
 extern struct fsdata_file file__index_html[];
@@ -314,6 +319,9 @@ std::string getOptions()
             ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum);
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
     doc["led"]["statusLedEnabled"] = ledOptions.statusLedEnabled != 0;
+    // Board property: whether this board has a mode indicator LED (the UI
+    // hides the status LED toggle when it's false).
+    doc["led"]["hasStatusLed"] = isValidPin(STATUS_LED_PIN);
 
     // Per-key colors for custom mode. Emitted up to the stored count (0 for
     // legacy configs = the UI falls back to the global colors).
