@@ -147,6 +147,7 @@ src/drivers/xinput/XInputDriver.cpp
 src/drivers/switchpro/SwitchProDriver.cpp
 src/leds/LedController.cpp
 src/touch/TouchGpio.cpp
+src/touch/TouchRing.cpp
 ${PROTO_OUTPUT_DIR}/enums.pb.c
 ${PROTO_OUTPUT_DIR}/config.pb.c
 )

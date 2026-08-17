@@ -126,6 +126,44 @@ public:
 		config.gamepadMapping.masks_count = count > MAX_KEYS ? MAX_KEYS : count;
 		config.has_gamepadMapping = true;
 	}
+	// Touch ring per-mode behavior. The ring is interpreted differently by each
+	// input mode:
+	//   ringStickTarget (gamepad): 0 = left stick, 1 = right stick.
+	//   ringKeyboardMode: 0 = off, 1 = scroll, 2 = volume.
+	//   ringScrollAxis: 0 = vertical, 1 = horizontal (keyboard scroll mode).
+	//   ringMidiBehavior: 0 = off, 1 = pitch bend.
+	uint32_t getRingStickTarget() {
+		return config.has_ringOptions && config.ringOptions.has_ringStickTarget ? config.ringOptions.ringStickTarget : 1; // default right
+	}
+	void setRingStickTarget(uint32_t v) {
+		config.ringOptions.ringStickTarget = v;
+		config.ringOptions.has_ringStickTarget = true;
+		config.has_ringOptions = true;
+	}
+	uint32_t getRingKeyboardMode() {
+		return config.has_ringOptions && config.ringOptions.has_ringKeyboardMode ? config.ringOptions.ringKeyboardMode : 2; // default volume
+	}
+	void setRingKeyboardMode(uint32_t v) {
+		config.ringOptions.ringKeyboardMode = v;
+		config.ringOptions.has_ringKeyboardMode = true;
+		config.has_ringOptions = true;
+	}
+	uint32_t getRingScrollAxis() {
+		return config.has_ringOptions && config.ringOptions.has_ringScrollAxis ? config.ringOptions.ringScrollAxis : 0;
+	}
+	void setRingScrollAxis(uint32_t v) {
+		config.ringOptions.ringScrollAxis = v;
+		config.ringOptions.has_ringScrollAxis = true;
+		config.has_ringOptions = true;
+	}
+	uint32_t getRingMidiBehavior() {
+		return config.has_ringOptions && config.ringOptions.has_ringMidiBehavior ? config.ringOptions.ringMidiBehavior : 1; // default pitch bend
+	}
+	void setRingMidiBehavior(uint32_t v) {
+		config.ringOptions.ringMidiBehavior = v;
+		config.ringOptions.has_ringMidiBehavior = true;
+		config.has_ringOptions = true;
+	}
 	// USB serial (CDC) command interface. Off by default; the board must reboot
 	// after toggling it because the USB descriptors are fixed at enumeration.
 	bool getSerialConfigEnabled() {

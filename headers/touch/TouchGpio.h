@@ -38,6 +38,14 @@ public:
 	// Applies per-pad thresholds with release hysteresis.
 	GpioMask scan();
 
+	// Read the raw discharge counts for a set of pins (bit set in `pins`).
+	// out[pin] is set to the raw value for each requested configured pad (0 if
+	// the pin isn't a configured touch pad). Returns the mask of pins that were
+	// actually read. Unlike scan(), this exposes the proportional capacitance
+	// reading so a caller can interpolate position/strength (e.g. the touch
+	// ring) rather than just a pressed bit.
+	GpioMask readValues(GpioMask pins, uint32_t* out);
+
 private:
 	TouchGpio();
 	// Auto-calibrate all configured pads, then persist the thresholds to the

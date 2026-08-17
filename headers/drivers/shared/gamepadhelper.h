@@ -17,13 +17,29 @@
 // SOCD-cleaned dpad is what the drivers serialize into their USB reports.
 //
 
+// Analog stick neutral / range. Sticks are unsigned 16-bit with center at
+// GAMEPAD_JOYSTICK_MID; the drivers scale to their own encodings.
+#define GAMEPAD_JOYSTICK_MIN 0
+#define GAMEPAD_JOYSTICK_MID 0x7FFF
+#define GAMEPAD_JOYSTICK_MAX 0xFFFF
+
 // Gamepad state assembled from key state: current dpad directions plus held
-// buttons. Analog sticks and triggers stay at their mid/off values (no analog
-// inputs in MP2040); the drivers hard-code centered sticks / digital triggers.
+// buttons, plus optional analog stick position (from a touch ring or future
+// analog source). Analog sticks default to center so boards without an analog
+// source report a neutral stick (no behavior change).
 struct GamepadState
 {
 	uint8_t dpad {0};
 	uint16_t buttons {0};
+
+	// Left / right analog sticks. Center = GAMEPAD_JOYSTICK_MID. Only the
+	// configured target stick is driven by the ring; the other stays center.
+	uint16_t lx {GAMEPAD_JOYSTICK_MID};
+	uint16_t ly {GAMEPAD_JOYSTICK_MID};
+	uint16_t rx {GAMEPAD_JOYSTICK_MID};
+	uint16_t ry {GAMEPAD_JOYSTICK_MID};
+	// True when a touch ring is driving the analog stick this frame.
+	bool ringActive {false};
 };
 
 // DPAD direction history for the SOCD cleaner. Values index dpadMasks.
@@ -67,6 +83,38 @@ static inline void buildGamepadState(GamepadState& state)
 		state.dpad |= mask & GAMEPAD_MASK_DPAD;
 		state.buttons |= (mask >> 4) & 0x3FFFu;
 	}
+
+	// Sticks stay centered unless a ring drives the configured stick.
+	state.lx = GAMEPAD_JOYSTICK_MID;
+	state.ly = GAMEPAD_JOYSTICK_MID;
+	state.rx = GAMEPAD_JOYSTICK_MID;
+	state.ry = GAMEPAD_JOYSTICK_MID;
+	state.ringActive = false;
+}
+
+// Apply a touch-ring stick vector (lx/ly in -1..1, axis-aligned so +x = right,
+// +y = up) to the configured analog stick in `state`. When `active` is false
+// (no ring touch) the stick is left at its center. Normalizes magnitude so a
+// diagonal reading doesn't exceed the stick range.
+static inline void applyRingToStick(GamepadState& state, float lx, float ly, bool active, bool rightStick)
+{
+	uint16_t& x = rightStick ? state.rx : state.lx;
+	uint16_t& y = rightStick ? state.ry : state.ly;
+	state.ringActive = active;
+
+	if (!active) {
+		x = GAMEPAD_JOYSTICK_MID;
+		y = GAMEPAD_JOYSTICK_MID;
+		return;
+	}
+
+	// Clamp the (already unit-ish) vector and map -1..1 to 16-bit stick range.
+	const float mid = (float)GAMEPAD_JOYSTICK_MID;
+	const float half = mid;
+	float cx = lx < -1.0f ? -1.0f : (lx > 1.0f ? 1.0f : lx);
+	float cy = ly < -1.0f ? -1.0f : (ly > 1.0f ? 1.0f : ly);
+	x = (uint16_t)(mid + cx * half);
+	y = (uint16_t)(mid - cy * half);   // screen Y up => stick Y inverted
 }
 
 /**

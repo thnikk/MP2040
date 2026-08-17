@@ -21,11 +21,16 @@ public:
     virtual const uint8_t * get_descriptor_device_qualifier_cb();
 private:
     void sendNote(uint8_t cin, uint8_t note, uint8_t velocity);
+    // Send a 14-bit pitch-bend value (0..0x3FFF) on the configured channel.
+    void sendPitchBend(uint16_t value);
     // Serial (CDC) command interface: line-buffered commands that control the
     // board live (e.g. switching profiles). Only active when the serial
     // interface is enabled in config.
     SerialCommandHandler serialCommands;
     KeyMask lastKeyState;
+    // Last pitch-bend value sent (to avoid redundant reports). 0xFFFF = never
+    // sent: the first ring read always reports.
+    uint16_t lastPitchBend = 0xFFFF;
 };
 
 #endif

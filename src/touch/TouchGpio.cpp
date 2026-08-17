@@ -323,3 +323,19 @@ uint32_t TouchGpio::readPin(Pin_t pin)
     if (remaining == 0) return TOUCH_TIMEOUT;      // 0 sentinel: never discharged
     return TOUCH_TIMEOUT - remaining;
 }
+
+GpioMask TouchGpio::readValues(GpioMask pins, uint32_t* out)
+{
+    if (mask == 0) return 0;
+
+    GpioMask result = 0;
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        if (!(pins & (1u << pin))) continue;
+        out[pin] = 0;
+        if (smForPin[pin] == 0xFF || !active[pin]) continue;
+        out[pin] = readPin(pin);
+        result |= (1u << pin);
+    }
+    return result;
+}

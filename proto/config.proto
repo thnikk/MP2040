@@ -33,6 +33,23 @@ message GamepadMapping
     repeated uint32 masks = 1 [(nanopb).max_count = 128];
 }
 
+// Touch ring behavior. The ring (a circular 4-pad capacitive control) is one
+// virtual input interpreted per input mode:
+//   - gamepad:      ring position -> the selected analog stick.
+//   - keyboard:     ring rotation -> scroll or volume.
+//   - MIDI:         ring position -> pitch bend.
+message RingOptions
+{
+    // Gamepad mode: which analog stick the ring drives (0 = left, 1 = right).
+    optional uint32 ringStickTarget = 1;
+    // Keyboard mode: 0 = off, 1 = scroll, 2 = volume. Defaults to volume.
+    optional uint32 ringKeyboardMode = 2;
+    // Keyboard scroll mode axis: 0 = vertical, 1 = horizontal.
+    optional uint32 ringScrollAxis = 3;
+    // MIDI mode: 0 = off, 1 = pitch bend. Defaults to pitch bend.
+    optional uint32 ringMidiBehavior = 4;
+}
+
 // Global MIDI output options, used when the default input mode is MIDI.
 message MIDIOptions
 {
@@ -168,4 +185,6 @@ message Config
     // Per-pin gamepad control mapping (independent of the keyboard / MIDI
     // key mapping, see GamepadMapping).
     optional GamepadMapping gamepadMapping = 16;
+    // Touch ring per-mode behavior (see RingOptions).
+    optional RingOptions ringOptions = 17;
 }

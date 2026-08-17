@@ -181,6 +181,33 @@
               <span class="icon icon-info field-info" data-tooltip='Switch Pro only. Uses the B/A/Y/X order (B1=A, B2=B, B3=Y, B4=X) instead of the Xbox layout. XInput always uses the Xbox layout.'></span>
             </label>
           </div>
+          <div id="ring-settings">
+            <h3 class="settings-subtitle">Touch Ring</h3>
+            <label for="ring-stick-target">Gamepad: Ring stick</label>
+            <select id="ring-stick-target">
+              <option value="0">Left stick</option>
+              <option value="1">Right stick</option>
+            </select>
+            <label for="ring-keyboard-mode">Keyboard: Ring behavior</label>
+            <select id="ring-keyboard-mode">
+              <option value="0">Off</option>
+              <option value="1">Scroll</option>
+              <option value="2">Volume</option>
+            </select>
+            <div id="ring-scroll-wrap" hidden>
+              <label for="ring-scroll-axis">Scroll axis</label>
+              <select id="ring-scroll-axis">
+                <option value="0">Vertical</option>
+                <option value="1">Horizontal</option>
+              </select>
+            </div>
+            <label for="ring-midi-behavior">MIDI: Ring behavior</label>
+            <select id="ring-midi-behavior">
+              <option value="0">Off</option>
+              <option value="1">Pitch bend</option>
+            </select>
+            <p class="hint">Only active when the board config defines a touch ring (RING_GPxx).</p>
+          </div>
           <label for="debounce">Debounce (ms)</label>
           <div id="debounce-spinner" class="midi-spinner">
             <input type="text" id="debounce" class="spinner-input">

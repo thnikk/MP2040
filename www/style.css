@@ -868,6 +868,18 @@ html[data-theme="light"] .ms-caret {
   white-space: nowrap;
 }
 
+/* Sub-heading inside the general settings form (e.g. the touch-ring block).
+   Full-width, styled like a mini section header to separate ring controls. */
+.settings-subtitle {
+  flex-basis: 100%;
+  margin: 8px 0 0;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
 /* Checkbox row in the general form (e.g. Serial control). Full-width so it
    sits on its own line, with the checkbox aligned to the text baseline. */
 .checkbox-label {

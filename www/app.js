@@ -502,6 +502,20 @@ function buildOptionsBody() {
         ? document.getElementById('nintendo-layout').checked
         : false,
     },
+    ring: {
+      ringStickTarget: document.getElementById('ring-stick-target')
+        ? parseInt(document.getElementById('ring-stick-target').value, 10)
+        : 0,
+      ringKeyboardMode: document.getElementById('ring-keyboard-mode')
+        ? parseInt(document.getElementById('ring-keyboard-mode').value, 10)
+        : 2,
+      ringScrollAxis: document.getElementById('ring-scroll-axis')
+        ? parseInt(document.getElementById('ring-scroll-axis').value, 10)
+        : 0,
+      ringMidiBehavior: document.getElementById('ring-midi-behavior')
+        ? parseInt(document.getElementById('ring-midi-behavior').value, 10)
+        : 1,
+    },
     led: {
       ledMode: mode,
       ledSpeeds: getModeLedSpeeds(),
@@ -721,6 +735,47 @@ async function load() {
     nintendoEl.addEventListener('change', () => {
       if (!currentOptions.gamepad) currentOptions.gamepad = {};
       currentOptions.gamepad.useNintendoLayout = nintendoEl.checked;
+    });
+  }
+
+  // Touch ring settings (per-mode behavior)
+  const ring = options.ring || {};
+  const ringStickEl = document.getElementById('ring-stick-target');
+  if (ringStickEl) {
+    ringStickEl.value = ring.ringStickTarget ?? 1;
+    ringStickEl.addEventListener('change', () => {
+      if (!currentOptions.ring) currentOptions.ring = {};
+      currentOptions.ring.ringStickTarget = parseInt(ringStickEl.value, 10);
+    });
+  }
+  const ringKbEl = document.getElementById('ring-keyboard-mode');
+  if (ringKbEl) {
+    ringKbEl.value = ring.ringKeyboardMode ?? 2;
+    const updateScrollWrap = () => {
+      const wrap = document.getElementById('ring-scroll-wrap');
+      if (wrap) wrap.hidden = Number(ringKbEl.value) !== 1;
+    };
+    ringKbEl.addEventListener('change', () => {
+      if (!currentOptions.ring) currentOptions.ring = {};
+      currentOptions.ring.ringKeyboardMode = parseInt(ringKbEl.value, 10);
+      updateScrollWrap();
+    });
+    updateScrollWrap();
+  }
+  const ringAxisEl = document.getElementById('ring-scroll-axis');
+  if (ringAxisEl) {
+    ringAxisEl.value = ring.ringScrollAxis ?? 0;
+    ringAxisEl.addEventListener('change', () => {
+      if (!currentOptions.ring) currentOptions.ring = {};
+      currentOptions.ring.ringScrollAxis = parseInt(ringAxisEl.value, 10);
+    });
+  }
+  const ringMidiEl = document.getElementById('ring-midi-behavior');
+  if (ringMidiEl) {
+    ringMidiEl.value = ring.ringMidiBehavior ?? 1;
+    ringMidiEl.addEventListener('change', () => {
+      if (!currentOptions.ring) currentOptions.ring = {};
+      currentOptions.ring.ringMidiBehavior = parseInt(ringMidiEl.value, 10);
     });
   }
 
@@ -1238,6 +1293,12 @@ function exportSettings() {
       socdMode: currentOptions.gamepad?.socdMode ?? 0,
       useNintendoLayout: currentOptions.gamepad?.useNintendoLayout === true,
     },
+    ring: {
+      ringStickTarget: currentOptions.ring?.ringStickTarget ?? 1,
+      ringKeyboardMode: currentOptions.ring?.ringKeyboardMode ?? 2,
+      ringScrollAxis: currentOptions.ring?.ringScrollAxis ?? 0,
+      ringMidiBehavior: currentOptions.ring?.ringMidiBehavior ?? 1,
+    },
     gamepadMasks: currentOptions.gamepadMasks || [],
     led: {
       ledTimeout: currentOptions.led?.ledTimeout ?? 0,
@@ -1287,6 +1348,12 @@ async function importSettings(file) {
     gamepad: {
       socdMode: Number.isInteger(data.gamepad?.socdMode) ? data.gamepad.socdMode : 0,
       useNintendoLayout: data.gamepad?.useNintendoLayout === true,
+    },
+    ring: {
+      ringStickTarget: Number.isInteger(data.ring?.ringStickTarget) ? data.ring.ringStickTarget : 1,
+      ringKeyboardMode: Number.isInteger(data.ring?.ringKeyboardMode) ? data.ring.ringKeyboardMode : 2,
+      ringScrollAxis: Number.isInteger(data.ring?.ringScrollAxis) ? data.ring.ringScrollAxis : 0,
+      ringMidiBehavior: Number.isInteger(data.ring?.ringMidiBehavior) ? data.ring.ringMidiBehavior : 1,
     },
     gamepadMasks: data.gamepadMasks || [],
   };

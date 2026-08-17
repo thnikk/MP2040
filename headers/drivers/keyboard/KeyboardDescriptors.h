@@ -40,11 +40,15 @@ typedef struct
 	uint8_t multimedia;
 } KeyboardReport;
 
-/// Mouse buttons-only report (sent alongside the keyboard report).
+/// Mouse buttons + wheel report (sent alongside the keyboard report). The
+/// wheel bytes carry the touch ring's scroll (vertical or horizontal) when
+/// the ring is in keyboard scroll mode.
 typedef struct
 {
 	uint8_t reportId = KEYBOARD_MOUSE_REPORT_ID;
 	uint8_t buttons = 0;   /**< MOUSE_BUTTON_*_BIT mask of held mouse buttons. */
+	int8_t wheelY = 0;     /**< Vertical wheel delta. */
+	int8_t wheelX = 0;     /**< Horizontal wheel delta. */
 } MouseReport;
 
 static const uint8_t keyboard_string_language[]    = { 0x09, 0x04 };
@@ -160,7 +164,7 @@ static const uint8_t keyboard_report_descriptor[] =
 		0x81, 0x01,			 //Input (Const,Ary,Abs)
 		0xC0,			//End Collection
 
-		//Report ID (3) — mouse buttons
+		//Report ID (3) — mouse buttons + wheel (wheel carries the ring scroll)
 		0x85, KEYBOARD_MOUSE_REPORT_ID,
 		0x05, 0x01,			 //Usage Page (Generic Desktop)
 		0x09, 0x02,			 //Usage (Mouse)
@@ -178,6 +182,15 @@ static const uint8_t keyboard_report_descriptor[] =
 		0x95, 0x01,			 //Report Count (1)
 		0x75, 0x03,			 //Report Size (3)
 		0x81, 0x01,			 //Input (Const)
+		0x05, 0x01,			 //Usage Page (Generic Desktop)
+		0x09, 0x38,			 //Usage (Wheel)
+		0x15, 0x81,			 //Logical Minimum (-127)
+		0x25, 0x7F,			 //Logical Maximum (127)
+		0x75, 0x08,			 //Report Size (8)
+		0x95, 0x01,			 //Report Count (1)
+		0x81, 0x06,			 //Input (Data, Var, Relative)
+		0x09, 0x30,			 //Usage (X, horizontal wheel)
+		0x81, 0x06,			 //Input (Data, Var, Relative)
 		0xC0,			//End Collection (Physical)
 		0xC0,			//End Collection (Application)
 };

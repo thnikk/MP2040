@@ -1,6 +1,7 @@
 #include "drivers/switchpro/SwitchProDriver.h"
 #include "drivers/shared/driverhelper.h"
 #include "drivers/shared/gamepadhelper.h"
+#include "touch/TouchRing.h"
 #include "storagemanager.h"
 #include "helper.h"
 #include "pico/rand.h"
@@ -136,8 +137,26 @@ void SwitchProDriver::process() {
     switchReport.inputs.buttonL = (gamepad.buttons & GAMEPAD_MASK_L1) != 0;
     switchReport.inputs.buttonZL = (gamepad.buttons & GAMEPAD_MASK_L2) != 0;
 
-    // Analog sticks stay at the neutral position initialized in init()
-    // {0xFF, 0xF7, 0x7F}: MP2040 has no analog inputs.
+    // Analog sticks. A configured touch ring drives the selected stick (left
+    // or right); otherwise sticks stay at the neutral position inited in
+    // initialize() {0xFF, 0xF7, 0x7F}.
+    if (TouchRing::getInstance().isConfigured()) {
+        const RingState& ring = TouchRing::getInstance().getState();
+        const bool rightStick = Storage::getInstance().getRingStickTarget() == 1;
+        applyRingToStick(gamepad, ring.lx, ring.ly, ring.active, rightStick);
+    }
+    // Map the 16-bit centered stick values to the Switch Pro 12-bit range
+    // (neutral 0x7FF), then encode into the packed stick fields.
+    if (gamepad.ringActive) {
+        uint16_t lx12 = scale16To12(gamepad.lx);
+        uint16_t ly12 = scale16To12(gamepad.ly);
+        uint16_t rx12 = scale16To12(gamepad.rx);
+        uint16_t ry12 = scale16To12(gamepad.ry);
+        switchReport.inputs.leftStick.setX(lx12);
+        switchReport.inputs.leftStick.setY(-ly12);
+        switchReport.inputs.rightStick.setX(rx12);
+        switchReport.inputs.rightStick.setY(-ry12);
+    }
 
     switchReport.rumbleReport = 0x09;
 

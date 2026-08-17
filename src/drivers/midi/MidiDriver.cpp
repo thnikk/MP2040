@@ -2,6 +2,7 @@
 #include "storagemanager.h"
 #include "drivers/shared/driverhelper.h"
 #include "drivers/shared/serialhelper.h"
+#include "touch/TouchRing.h"
 #include "types.h"
 
 #include "class/midi/midi_device.h"
@@ -62,6 +63,25 @@ void MidiDriver::process() {
 	}
 
 	lastKeyState = keyState;
+
+	// Touch ring: pitch bend. Center of the ring = center (0x2000), up = max
+	// (0x3FFF), down = min (0). Only when enabled (ringMidiBehavior == 1).
+	if (Storage::getInstance().getRingMidiBehavior() == 1 && TouchRing::getInstance().isConfigured()) {
+		const RingState& ring = TouchRing::getInstance().getState();
+		uint16_t bend = 0x2000;   // center default (no touch)
+		if (ring.active) {
+			// ly in -1..1 (top = +1); map to 14-bit bend: +1 => 0x3FFF,
+			// -1 => 0. Clamp.
+			float f = (ring.ly + 1.0f) / 2.0f;
+			if (f < 0.0f) f = 0.0f;
+			if (f > 1.0f) f = 1.0f;
+			bend = (uint16_t)(f * 0x3FFF);
+		}
+		if (bend != lastPitchBend) {
+			sendPitchBend(bend);
+			lastPitchBend = bend;
+		}
+	}
 }
 
 void MidiDriver::sendNote(uint8_t cin, uint8_t note, uint8_t velocity) {
@@ -71,6 +91,17 @@ void MidiDriver::sendNote(uint8_t cin, uint8_t note, uint8_t velocity) {
 	                      Storage::getInstance().getMidiChannel());
 	packet[2] = note;
 	packet[3] = velocity;
+	tud_midi_packet_write(packet);
+}
+
+// Pitch bend: status 0xE0 | channel, 14-bit value split into LSB/MSB.
+// Code index number for a 3-byte (or 2-data-byte) message is MIDI_CIN_PITCH_BEND.
+void MidiDriver::sendPitchBend(uint16_t value) {
+	uint8_t packet[4];
+	packet[0] = (uint8_t)(0x00 | MIDI_CIN_PITCH_BEND_CHANGE);
+	packet[1] = (uint8_t)(0xE0 | Storage::getInstance().getMidiChannel());
+	packet[2] = (uint8_t)(value & 0x7F);          // LSB
+	packet[3] = (uint8_t)((value >> 7) & 0x7F);   // MSB
 	tud_midi_packet_write(packet);
 }
 

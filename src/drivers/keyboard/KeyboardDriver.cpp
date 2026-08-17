@@ -2,6 +2,7 @@
 #include "storagemanager.h"
 #include "drivers/shared/driverhelper.h"
 #include "drivers/shared/serialhelper.h"
+#include "touch/TouchRing.h"
 #include "helper.h"
 #include "types.h"
 
@@ -75,6 +76,10 @@ void KeyboardDriver::process() {
 	if (tud_suspended())
 		tud_remote_wakeup();
 
+	// Touch ring: volume or scroll, depending on config. Repurposes the
+	// multimedia keys (volume) or the mouse wheel (scroll) from ring rotation.
+	processRing(now);
+
 	void *keyboard_report_payload;
 	uint16_t keyboard_report_size;
 	if ( keyboardReport.reportId == KEYBOARD_KEY_REPORT_ID ) {
@@ -97,20 +102,77 @@ void KeyboardDriver::process() {
 		}
 	}
 
-	// Mouse buttons ride on their own report (0x03), sent independently of the
-	// keyboard report so keys and mouse buttons work at the same time.
-	if (mouseReport.buttons != lastMouseButtons) {
+	// Mouse buttons + wheel ride on their own report (0x03), sent
+	// independently of the keyboard report so keys, mouse buttons and the
+	// ring's scroll can work at the same time. The wheel bytes are relative, so
+	// they're accumulated into the report each frame.
+	mouseReport.wheelY = ringWheelY;
+	mouseReport.wheelX = ringWheelX;
+	constexpr uint8_t MOUSE_PAYLOAD_SIZE = sizeof(mouseReport.buttons) + sizeof(mouseReport.wheelY) + sizeof(mouseReport.wheelX);
+	if (memcmp(&mouseReport.buttons, lastMousePayload, MOUSE_PAYLOAD_SIZE) != 0) {
 		if (tud_hid_ready()) {
-			if (tud_hid_report(mouseReport.reportId, &mouseReport.buttons, sizeof(mouseReport.buttons))) {
-				lastMouseButtons = mouseReport.buttons;
+			if (tud_hid_report(mouseReport.reportId, (uint8_t*)&mouseReport.buttons, MOUSE_PAYLOAD_SIZE)) {
+				memcpy(lastMousePayload, &mouseReport.buttons, MOUSE_PAYLOAD_SIZE);
 			}
 		}
 	}
+	// Consume the accumulated wheel deltas once reported.
+	ringWheelY = 0;
+	ringWheelX = 0;
 
 	// Serial command interface (opt-in via web config). Reads line-based
 	// commands on the CDC port; see serialhelper.h for the shared handler.
 	if (Storage::getInstance().getSerialConfigEnabled())
 		serialCommands.process();
+}
+
+// Keyboard-mode touch ring consumer. Two modes (Config.ringKeyboardMode):
+//   VOLUME (2): ring rotation emits volume up/down multimedia keys. Each 45°
+//               of net angular motion in one direction = one step.
+//   SCROLL (1): ring rotation emits mouse wheel deltas (vertical or horizontal
+//               per ringScrollAxis).
+void KeyboardDriver::processRing(const uint32_t now) {
+	(void)now;
+	const RingState& ring = TouchRing::getInstance().getState();
+	const uint32_t kbMode = Storage::getInstance().getRingKeyboardMode();
+
+	// Volume: accumulate angular motion into steps (one per 45°). Latch a
+	// volume key into the multimedia report for this frame if there were any.
+	// Only when no ordinary key is held (a key and a ring slide at the same
+	// time is unusual; keys take priority over momentary volume steps).
+	if (kbMode == 2) {
+		if (ring.active)
+			ringVolumeSteps += (int)(ring.deltaDegrees / 45.0f);
+		bool keyHeld = false;
+		for (uint8_t i = 0; i < (sizeof(keyboardReport.keycode) / sizeof(keyboardReport.keycode[0])); i++) {
+			if (keyboardReport.keycode[i] != 0) { keyHeld = true; break; }
+		}
+		if (!keyHeld && ringVolumeSteps > 0) {
+			keyboardReport.reportId = KEYBOARD_MULTIMEDIA_REPORT_ID;
+			keyboardReport.multimedia = getMultimedia(KEYBOARD_MULTIMEDIA_VOLUME_UP);
+			ringVolumeSteps--;
+		} else if (!keyHeld && ringVolumeSteps < 0) {
+			keyboardReport.reportId = KEYBOARD_MULTIMEDIA_REPORT_ID;
+			keyboardReport.multimedia = getMultimedia(KEYBOARD_MULTIMEDIA_VOLUME_DOWN);
+			ringVolumeSteps++;
+		}
+	}
+
+	// Scroll: accumulate angular motion into wheel deltas. A gentle slide maps
+	// to an octet-sized wheel tick; the accumulated deltas are sent in the
+	// mouse report by process().
+	if (kbMode == 1) {
+		if (ring.active) {
+			float delta = ring.deltaDegrees;
+			if (delta > 90.0f) delta = 90.0f;
+			if (delta < -90.0f) delta = -90.0f;
+			int8_t tick = (int8_t)(delta * 0.5f);
+			if (Storage::getInstance().getRingScrollAxis() == 1)
+				ringWheelX += tick;
+			else
+				ringWheelY += tick;
+		}
+	}
 }
 
 // Apply a keycode with an explicit modifier mask to the reports. Shared by the
@@ -238,6 +300,8 @@ void KeyboardDriver::releaseAllKeys(void) {
 	}
 	keyboardReport.multimedia = 0;
 	mouseReport.buttons = 0;
+	mouseReport.wheelX = 0;
+	mouseReport.wheelY = 0;
 }
 
 // tud_hid_get_report_cb

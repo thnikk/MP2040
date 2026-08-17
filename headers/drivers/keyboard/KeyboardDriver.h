@@ -6,7 +6,6 @@
 #include "drivers/shared/serialhelper.h"
 #include "keymask.h"
 #include "config.pb.h"
-
 class KeyboardDriver : public GPDriver {
 public:
     virtual void initialize();
@@ -48,7 +47,21 @@ private:
     uint16_t last_report_size;
     KeyboardReport keyboardReport;
     MouseReport mouseReport;
-    uint8_t lastMouseButtons = 0;
+    // Last mouse-report payload (buttons + wheelX + wheelY) for change detect.
+    uint8_t lastMousePayload[3] = { 0, 0, 0 };
+
+    // Touch ring keyboard consumer. The ring is interpreted as volume or
+    // scroll depending on Config.ringKeyboardMode.
+    void processRing(const uint32_t now);
+    // Accumulated wheel deltas since the last report send (driven by the
+    // ring's angular motion). Sent in the mouse report (0x03).
+    int8_t ringWheelX = 0;
+    int8_t ringWheelY = 0;
+    // Rotary accumulator for volume: how many full increments (+ = up, -= down)
+    // of ring angular motion to emit as volume key presses.
+    int ringVolumeSteps = 0;
+    // Buffered multimedia report to act on from ring rotation (volume).
+    bool lastRingActive = false;
 };
 
 #endif

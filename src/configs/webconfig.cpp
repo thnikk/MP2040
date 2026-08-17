@@ -298,6 +298,10 @@ std::string getOptions()
     doc["midi"]["velocity"] = Storage::getInstance().getMidiVelocity();
     doc["gamepad"]["socdMode"] = (uint8_t)Storage::getInstance().getSocdMode();
     doc["gamepad"]["useNintendoLayout"] = Storage::getInstance().getUseNintendoLayout();
+    doc["ring"]["ringStickTarget"] = Storage::getInstance().getRingStickTarget();
+    doc["ring"]["ringKeyboardMode"] = Storage::getInstance().getRingKeyboardMode();
+    doc["ring"]["ringScrollAxis"] = Storage::getInstance().getRingScrollAxis();
+    doc["ring"]["ringMidiBehavior"] = Storage::getInstance().getRingMidiBehavior();
 
     doc["led"]["dataPin"] = ledOptions.dataPin;
     doc["led"]["ledFormat"] = ledOptions.ledFormat;
@@ -429,6 +433,19 @@ std::string setOptions()
             Storage::getInstance().setSocdMode((SOCDMode)gamepad["socdMode"].as<int>());
         if (gamepad["useNintendoLayout"].is<bool>())
             Storage::getInstance().setUseNintendoLayout(gamepad["useNintendoLayout"].as<bool>());
+    }
+
+    JsonObject ring = doc["ring"];
+    if (!ring.isNull())
+    {
+        if (ring["ringStickTarget"].is<int>())
+            Storage::getInstance().setRingStickTarget(ring["ringStickTarget"].as<uint32_t>());
+        if (ring["ringKeyboardMode"].is<int>())
+            Storage::getInstance().setRingKeyboardMode(ring["ringKeyboardMode"].as<uint32_t>());
+        if (ring["ringScrollAxis"].is<int>())
+            Storage::getInstance().setRingScrollAxis(ring["ringScrollAxis"].as<uint32_t>());
+        if (ring["ringMidiBehavior"].is<int>())
+            Storage::getInstance().setRingMidiBehavior(ring["ringMidiBehavior"].as<uint32_t>());
     }
 
     if (doc["debounceInterval"].is<int>())

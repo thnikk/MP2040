@@ -10,6 +10,7 @@
 #include "drivers/xinput/XInputDriver.h"
 #include "drivers/shared/driverhelper.h"
 #include "drivers/shared/gamepadhelper.h"
+#include "touch/TouchRing.h"
 #include "storagemanager.h"
 #include "helper.h"
 #include "types.h"
@@ -148,11 +149,20 @@ void XInputDriver::process() {
     xinputReport.lt = (gamepad.buttons & GAMEPAD_MASK_L2) ? 0xFF : 0;
     xinputReport.rt = (gamepad.buttons & GAMEPAD_MASK_R2) ? 0xFF : 0;
 
-    // Sticks stay centered (no analog inputs in MP2040).
-    xinputReport.lx = 0;
-    xinputReport.ly = 0;
-    xinputReport.rx = 0;
-    xinputReport.ry = 0;
+    // Analog sticks. A configured touch ring drives the selected stick (left
+    // or right); otherwise both stay centered.
+    if (TouchRing::getInstance().isConfigured()) {
+        const RingState& ring = TouchRing::getInstance().getState();
+        const bool rightStick = Storage::getInstance().getRingStickTarget() == 1;
+        applyRingToStick(gamepad, ring.lx, ring.ly, ring.active, rightStick);
+    }
+
+    // XInput reports sticks as signed centering around 0, so the 16-bit
+    // centered values are offset by INT16_MIN.
+    xinputReport.lx = (int16_t)gamepad.lx + INT16_MIN;
+    xinputReport.ly = (int16_t)gamepad.ly + INT16_MIN;
+    xinputReport.rx = (int16_t)gamepad.rx + INT16_MIN;
+    xinputReport.ry = (int16_t)gamepad.ry + INT16_MIN;
 
     // compare against previous report and send new
     if ( memcmp(last_report, &xinputReport, sizeof(XInputReport)) != 0) {

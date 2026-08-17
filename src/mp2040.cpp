@@ -8,6 +8,7 @@
 #include "storagemanager.h"
 #include "drivermanager.h"
 #include "touch/TouchGpio.h"
+#include "touch/TouchRing.h"
 #include "types.h"
 
 #include "pico/bootrom.h"
@@ -152,6 +153,10 @@ void MP2040::initializeKeyGpio(bool configBoot) {
 	}
 
 	TouchGpio::getInstance().setup(touchGpios, configBoot);
+
+	// Initialize the touch ring if the board configures one. The ring reuses
+	// the same PIO capsense driver, so this needs to run after TouchGpio::setup.
+	TouchRing::getInstance().initialize();
 }
 
 /**
@@ -337,6 +342,11 @@ void MP2040::run() {
 		debounceGpioGetAll();
 		// Publish the current key state for the other core (and drivers)
 		Storage::getInstance().publishKeyState(debouncedGpio);
+
+		// Update the touch ring (config-mode ring use isn't meaningful). The
+		// ring reads its pads directly through the TouchGpio driver.
+		if (!configMode)
+			TouchRing::getInstance().process(nullptr);
 
 		// Config Loop (Web-Config does not require keyboard)
 		if (configMode == true) {

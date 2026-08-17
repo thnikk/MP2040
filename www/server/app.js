@@ -141,6 +141,12 @@ function defaultOptions() {
       socdMode: 0,
       useNintendoLayout: false,
     },
+    ring: {
+      ringStickTarget: 1,
+      ringKeyboardMode: 2,
+      ringScrollAxis: 0,
+      ringMidiBehavior: 1,
+    },
     led: {
       dataPin: board?.led?.dataPin ?? -1,
       ledFormat: board?.led?.ledFormat ?? 0,
@@ -260,6 +266,9 @@ export function createMockApp() {
     if (body.gamepad !== undefined) {
       if (Number.isInteger(body.gamepad.socdMode)) current.gamepad.socdMode = Math.max(0, Math.min(4, body.gamepad.socdMode));
       if (typeof body.gamepad.useNintendoLayout === 'boolean') current.gamepad.useNintendoLayout = body.gamepad.useNintendoLayout;
+    }
+    if (body.ring !== undefined) {
+      current.ring = { ...current.ring, ...body.ring };
     }
     if (Number.isInteger(body.debounceInterval)) {
       current.debounceInterval = Math.max(0, Math.min(100, Number(body.debounceInterval) || 0));
