@@ -318,8 +318,10 @@ class BoardView {
       let lines = [];
       if (midiMode) {
         if (midiNote > 0) lines.push(midiNoteName(midiNote));
-      } else if (gamepadMode && gamepadMask > 0) {
-        lines.push(...gamepadMaskLabels(gamepadMask));
+      } else if (gamepadMode) {
+        // Gamepad mode: only gamepad control assignments are shown. A pin with
+        // no controls assigned is unassigned in this mode (not its keyboard key).
+        if (gamepadMask > 0) lines.push(...gamepadMaskLabels(gamepadMask));
       } else if (macroIndex > 0) {
         lines.push('M' + macroIndex);
       } else if (keycode > 0) {
