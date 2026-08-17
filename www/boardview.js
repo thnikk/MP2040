@@ -311,11 +311,15 @@ class BoardView {
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
       const macroIndex = Number(this.options?.macroIndices?.[pinNumber] || 0);
       const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
+      const gamepadMode = [3, 4].includes(Number(this.options?.defaultInputMode || 1));
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
+      const gamepadMask = Number(this.options?.gamepadMasks?.[pinNumber] || 0);
 
       let lines = [];
       if (midiMode) {
         if (midiNote > 0) lines.push(midiNoteName(midiNote));
+      } else if (gamepadMode && gamepadMask > 0) {
+        lines.push(...gamepadMaskLabels(gamepadMask));
       } else if (macroIndex > 0) {
         lines.push('M' + macroIndex);
       } else if (keycode > 0) {

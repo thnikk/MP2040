@@ -153,6 +153,8 @@
           <select id="default-input-mode">
             <option value="1">Keyboard</option>
             <option value="2">MIDI</option>
+            <option value="3">Gamepad (XInput)</option>
+            <option value="4">Switch (Pro Controller)</option>
           </select>
           <div id="midi-settings" hidden>
             <label for="midi-channel">MIDI Channel</label>
@@ -163,6 +165,21 @@
             <div id="midi-velocity-spinner" class="midi-spinner">
               <input type="text" id="midi-velocity" class="spinner-input">
             </div>
+          </div>
+          <div id="gamepad-settings" hidden>
+            <label for="socd-mode">SOCD Mode</label>
+            <select id="socd-mode">
+              <option value="0">Up Priority (U+D=Up)</option>
+              <option value="1">Neutral (U+D=Neutral)</option>
+              <option value="2">Last Input Priority</option>
+              <option value="3">First Input Priority</option>
+              <option value="4">Bypass (no cleaning)</option>
+            </select>
+            <label for="nintendo-layout" class="checkbox-label">
+              <input type="checkbox" id="nintendo-layout">
+              Nintendo face-button layout
+              <span class="icon icon-info field-info" data-tooltip='Switch Pro only. Uses the B/A/Y/X order (B1=A, B2=B, B3=Y, B4=X) instead of the Xbox layout. XInput always uses the Xbox layout.'></span>
+            </label>
           </div>
           <label for="debounce">Debounce (ms)</label>
           <div id="debounce-spinner" class="midi-spinner">
@@ -259,6 +276,7 @@
       <div id="key-modal-select"></div>
       <div id="key-modal-keyboard"></div>
       <div id="key-modal-midi"></div>
+      <div id="key-modal-gamepad"></div>
       <div class="modal-actions">
         <button id="key-modal-save" type="button">Save</button>
       </div>

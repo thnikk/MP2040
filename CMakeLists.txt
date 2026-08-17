@@ -143,6 +143,8 @@ src/configs/webconfig.cpp
 src/drivers/keyboard/KeyboardDriver.cpp
 src/drivers/net/NetDriver.cpp
 src/drivers/midi/MidiDriver.cpp
+src/drivers/xinput/XInputDriver.cpp
+src/drivers/switchpro/SwitchProDriver.cpp
 src/leds/LedController.cpp
 src/touch/TouchGpio.cpp
 ${PROTO_OUTPUT_DIR}/enums.pb.c
@@ -160,6 +162,8 @@ pico_set_program_version(MP2040 ${GIT_REPO_VERSION})
 target_link_libraries(${PROJECT_NAME}
 pico_stdlib
 pico_bootsel_via_double_reset
+pico_unique_id
+pico_rand
 tinyusb_device
 FlashPROM
 CRC32
@@ -180,6 +184,8 @@ headers/drivers/shared
 headers/drivers/keyboard
 headers/drivers/net
 headers/drivers/midi
+headers/drivers/xinput
+headers/drivers/switchpro
 headers/leds
 headers/touch
 configs/${MP2040_BOARDCONFIG}

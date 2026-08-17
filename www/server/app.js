@@ -82,6 +82,7 @@ function makeProfile(src = {}) {
     modifierMasks,
     midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(keyCount()).fill(0),
     midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(keyCount()).fill(0),
+    gamepadMasks: Array.isArray(src.gamepadMasks) ? src.gamepadMasks.slice() : new Array(keyCount()).fill(0),
     midi: {
       channel: src.midi?.channel ?? 0,
       velocity: src.midi?.velocity ?? 127,
@@ -126,6 +127,7 @@ function defaultOptions() {
     modifierMasks,
     midiNotes: new Array(keyCount()).fill(0),
     midiVelocities: new Array(keyCount()).fill(0),
+    gamepadMasks: new Array(keyCount()).fill(0),
     // Global macros: per-key triggers + the M1-M8 definitions.
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
@@ -135,6 +137,10 @@ function defaultOptions() {
     midi: {
       channel: 0,
       velocity: 127,
+    },
+    gamepad: {
+      socdMode: 0,
+      useNintendoLayout: false,
     },
     led: {
       dataPin: board?.led?.dataPin ?? -1,
@@ -232,6 +238,7 @@ export function createMockApp() {
     if (Array.isArray(body.modifierMasks)) profile.modifierMasks = body.modifierMasks;
     if (Array.isArray(body.midiNotes)) profile.midiNotes = body.midiNotes;
     if (Array.isArray(body.midiVelocities)) profile.midiVelocities = body.midiVelocities;
+    if (Array.isArray(body.gamepadMasks)) profile.gamepadMasks = body.gamepadMasks;
     // Global macros (shared across profiles), like the firmware.
     if (Array.isArray(body.macroIndices)) current.macroIndices = body.macroIndices;
     if (Array.isArray(body.macros)) current.macros = body.macros;
@@ -250,6 +257,10 @@ export function createMockApp() {
     }
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;
     if (typeof body.serialConfigEnabled === 'boolean') current.serialConfigEnabled = body.serialConfigEnabled;
+    if (body.gamepad !== undefined) {
+      if (Number.isInteger(body.gamepad.socdMode)) current.gamepad.socdMode = Math.max(0, Math.min(4, body.gamepad.socdMode));
+      if (typeof body.gamepad.useNintendoLayout === 'boolean') current.gamepad.useNintendoLayout = body.gamepad.useNintendoLayout;
+    }
     if (Number.isInteger(body.debounceInterval)) {
       current.debounceInterval = Math.max(0, Math.min(100, Number(body.debounceInterval) || 0));
     }
@@ -264,6 +275,7 @@ export function createMockApp() {
     current.modifierMasks = active.modifierMasks;
     current.midiNotes = active.midiNotes;
     current.midiVelocities = active.midiVelocities;
+    current.gamepadMasks = active.gamepadMasks;
     current.midi = { ...current.midi, ...active.midi };
     current.led = { ...current.led, ...active.led };
 

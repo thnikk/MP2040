@@ -63,6 +63,34 @@ const MULTISELECT_OPTIONS = [
   ...Array.from({ length: 8 }, (_, i) => ({ group: 'macros', label: 'M' + (i + 1), value: i + 1 })),
 ];
 
+// Gamepad multi-select: every control is its own bit in a per-pin mask, so
+// several can be picked at once (a pin fires them together). Values match the
+// GAMEPAD_PIN_MASK_* defines in gamepadhelper.h.
+const GAMEPAD_MULTISELECT_GROUPS = [
+  { id: 'gamepad', label: 'Gamepad' },
+];
+
+const GAMEPAD_MULTISELECT_OPTIONS = [
+  { group: 'gamepad', label: 'Up', value: 0x0001 },
+  { group: 'gamepad', label: 'Down', value: 0x0002 },
+  { group: 'gamepad', label: 'Left', value: 0x0004 },
+  { group: 'gamepad', label: 'Right', value: 0x0008 },
+  { group: 'gamepad', label: 'B1', value: 0x0010 },
+  { group: 'gamepad', label: 'B2', value: 0x0020 },
+  { group: 'gamepad', label: 'B3', value: 0x0040 },
+  { group: 'gamepad', label: 'B4', value: 0x0080 },
+  { group: 'gamepad', label: 'L1', value: 0x0100 },
+  { group: 'gamepad', label: 'R1', value: 0x0200 },
+  { group: 'gamepad', label: 'L2', value: 0x0400 },
+  { group: 'gamepad', label: 'R2', value: 0x0800 },
+  { group: 'gamepad', label: 'S1', value: 0x1000 },
+  { group: 'gamepad', label: 'S2', value: 0x2000 },
+  { group: 'gamepad', label: 'L3', value: 0x4000 },
+  { group: 'gamepad', label: 'R3', value: 0x8000 },
+  { group: 'gamepad', label: 'A1', value: 0x10000 },
+  { group: 'gamepad', label: 'A2', value: 0x20000 },
+];
+
 // Working copy of the config from /api/getOptions, edited via the modal
 let currentOptions = null;
 
@@ -86,6 +114,10 @@ let keyboardWidget = null;
 
 // MIDI note picker (midikeyboard.js) used in the key modal in MIDI mode
 let midiKeyboard = null;
+
+// Gamepad control multi-select (MultiSelect) used in the key modal in
+// gamepad modes
+let gamepadSelect = null;
 
 // Visual macro editor (macrobuilder.js) used on the Settings page
 let macroBuilder = null;
@@ -180,6 +212,7 @@ function cloneProfile(p) {
     modifierMasks: (p.modifierMasks || []).slice(),
     midiNotes: (p.midiNotes || new Array(30).fill(0)).slice(),
     midiVelocities: (p.midiVelocities || new Array(30).fill(0)).slice(),
+    gamepadMasks: (p.gamepadMasks || []).slice(),
     midi: { channel: p.midi?.channel ?? 0, velocity: p.midi?.velocity ?? 127 },
     led: {
       ledMode: p.led?.ledMode ?? 0,
@@ -196,6 +229,7 @@ function applyProfileToOptions(profile, options) {
   options.modifierMasks = profile.modifierMasks.slice();
   options.midiNotes = profile.midiNotes.slice();
   options.midiVelocities = profile.midiVelocities.slice();
+  options.gamepadMasks = profile.gamepadMasks.slice();
   options.midi = { ...(options.midi || {}), ...profile.midi };
   // Speed, brightness and per-mode colors are global; profiles only carry the
   // per-profile LED scalars (mode, per-key colors).
@@ -209,6 +243,7 @@ function applyOptionsToProfile(options, profile) {
   profile.modifierMasks = options.modifierMasks.slice();
   profile.midiNotes = options.midiNotes.slice();
   profile.midiVelocities = options.midiVelocities.slice();
+  profile.gamepadMasks = (options.gamepadMasks || []).slice();
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
   const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...optionsLed } = options.led || {};
   profile.led = { ...(profile.led || {}), ...optionsLed };
@@ -452,6 +487,7 @@ function buildOptionsBody() {
     modifierMasks: currentOptions.modifierMasks,
     midiNotes: currentOptions.midiNotes,
     midiVelocities: currentOptions.midiVelocities,
+    gamepadMasks: currentOptions.gamepadMasks || [],
     macroIndices: currentOptions.macroIndices,
     macros: currentOptions.macros || [],
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
@@ -460,6 +496,14 @@ function buildOptionsBody() {
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
       velocity: midiVelocitySpinner ? midiVelocitySpinner.getValue() : 127,
+    },
+    gamepad: {
+      socdMode: document.getElementById('socd-mode')
+        ? parseInt(document.getElementById('socd-mode').value, 10)
+        : 0,
+      useNintendoLayout: document.getElementById('nintendo-layout')
+        ? document.getElementById('nintendo-layout').checked
+        : false,
     },
     led: {
       ledMode: mode,
@@ -664,6 +708,25 @@ async function load() {
     if (boardView) boardView.refresh();
   });
 
+  // Gamepad settings (XInput / Switch Pro modes)
+  const gamepad = options.gamepad || {};
+  const socdEl = document.getElementById('socd-mode');
+  if (socdEl) {
+    socdEl.value = gamepad.socdMode ?? 0;
+    socdEl.addEventListener('change', () => {
+      if (!currentOptions.gamepad) currentOptions.gamepad = {};
+      currentOptions.gamepad.socdMode = parseInt(socdEl.value, 10);
+    });
+  }
+  const nintendoEl = document.getElementById('nintendo-layout');
+  if (nintendoEl) {
+    nintendoEl.checked = gamepad.useNintendoLayout === true;
+    nintendoEl.addEventListener('change', () => {
+      if (!currentOptions.gamepad) currentOptions.gamepad = {};
+      currentOptions.gamepad.useNintendoLayout = nintendoEl.checked;
+    });
+  }
+
   document.getElementById('serial-config').checked = options.serialConfigEnabled === true;
   document.getElementById('serial-config').addEventListener('change', () => {
     currentOptions.serialConfigEnabled = document.getElementById('serial-config').checked;
@@ -789,6 +852,13 @@ async function load() {
     onChange: () => {},
   });
 
+  gamepadSelect = new MultiSelect({
+    container: document.getElementById('key-modal-gamepad'),
+    options: GAMEPAD_MULTISELECT_OPTIONS,
+    groups: GAMEPAD_MULTISELECT_GROUPS,
+    onChange: () => {},
+  });
+
   initBoard(options);
   updateModalMode();
 
@@ -809,19 +879,26 @@ async function load() {
   renderRoute();
 }
 
-// Show either the key/modifier pickers (keyboard mode) or the MIDI note picker
-// (MIDI mode) in the modal, based on the current default input mode. Also
-// reveals the MIDI Channel / Velocity controls and swaps the Board card
-// description to match the mode.
+// Show either the key/modifier pickers (keyboard mode), the MIDI note picker
+// (MIDI mode) or the gamepad control multi-select (gamepad modes) in the modal,
+// based on the current default input mode. Also reveals the MIDI / gamepad
+// settings and swaps the Board card description to match the mode.
 function updateModalMode() {
-  const midiMode = Number(currentOptions.defaultInputMode || 1) === 2;
-  document.getElementById('key-modal-select').hidden = midiMode;
-  document.getElementById('key-modal-keyboard').hidden = midiMode;
+  const mode = Number(currentOptions.defaultInputMode || 1);
+  const midiMode = mode === 2;
+  const gamepadMode = mode === 3 || mode === 4;
+  const keyboardMode = !midiMode && !gamepadMode;
+  document.getElementById('key-modal-select').hidden = !keyboardMode;
+  document.getElementById('key-modal-keyboard').hidden = !keyboardMode;
   document.getElementById('key-modal-midi').hidden = !midiMode;
+  document.getElementById('key-modal-gamepad').hidden = !gamepadMode;
   document.getElementById('midi-settings').hidden = !midiMode;
+  document.getElementById('gamepad-settings').hidden = !gamepadMode;
   document.getElementById('board-hint').textContent = midiMode
     ? 'Click a button on the board to set its MIDI note and velocity.'
-    : 'Click a button on the board to set its key and modifiers.';
+    : gamepadMode
+      ? 'Click a button on the board to set its gamepad button or direction.'
+      : 'Click a button on the board to set its key and modifiers.';
 }
 
 function initBoard(options) {
@@ -1024,10 +1101,12 @@ function openKeyModal(pin) {
   const mask = Number(currentOptions.modifierMasks[pin] || 0);
   const macroIndex = Number(currentOptions.macroIndices?.[pin] || 0);
   const midiNote = Number(currentOptions.midiNotes?.[pin] || 0);
+  const gamepadMask = Number(currentOptions.gamepadMasks?.[pin] || 0);
   modalSelect.setValue(keycode, mask, macroIndex);
   keyboardWidget.setValue(keycode, mask, macroIndex);
   midiKeyboard.setValue(midiNote);
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
+  gamepadSelect.setGroupMask('gamepad', gamepadMask);
   closeLedColorPopover();
   updateModalMode();
   document.getElementById('key-modal').hidden = false;
@@ -1043,16 +1122,42 @@ function closeKeyModal() {
 
 function saveKeyModal() {
   if (editingPin < 0) return;
-  const { keycode, mask, macroIndex } = keyboardWidget.getValue();
-  // A pin is either a plain key or a macro trigger, never both.
-  currentOptions.keycodes[editingPin] = macroIndex ? 0 : keycode;
-  currentOptions.modifierMasks[editingPin] = macroIndex ? 0 : mask;
-  if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
-  currentOptions.macroIndices[editingPin] = macroIndex;
-  if (!currentOptions.midiNotes) currentOptions.midiNotes = new Array(30).fill(0);
-  if (!currentOptions.midiVelocities) currentOptions.midiVelocities = new Array(30).fill(0);
-  currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
-  currentOptions.midiVelocities[editingPin] = midiKeyboard.getVelocity();
+  const mode = Number(currentOptions.defaultInputMode || 1);
+  const gamepadMode = mode === 3 || mode === 4;
+
+  // Keep the arrays sized for every pin (direct boards: 30, matrix: MAX_KEYS).
+  const perKey = (key) => {
+    if (!currentOptions[key]) currentOptions[key] = new Array(128).fill(0);
+    return currentOptions[key];
+  };
+
+  currentOptions.keycodes = perKey('keycodes');
+  currentOptions.modifierMasks = perKey('modifierMasks');
+  currentOptions.midiNotes = perKey('midiNotes');
+  currentOptions.midiVelocities = perKey('midiVelocities');
+  currentOptions.gamepadMasks = perKey('gamepadMasks');
+
+  if (gamepadMode) {
+    // A pin maps to zero or more gamepad controls, packed into one mask.
+    currentOptions.keycodes[editingPin] = 0;
+    currentOptions.modifierMasks[editingPin] = 0;
+    currentOptions.midiNotes[editingPin] = 0;
+    currentOptions.midiVelocities[editingPin] = 0;
+    if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
+    currentOptions.macroIndices[editingPin] = 0;
+    currentOptions.gamepadMasks[editingPin] = gamepadSelect.getGroupMask('gamepad');
+  } else {
+    const { keycode, mask, macroIndex } = keyboardWidget.getValue();
+    // A pin is either a plain key or a macro trigger, never both.
+    currentOptions.keycodes[editingPin] = macroIndex ? 0 : keycode;
+    currentOptions.modifierMasks[editingPin] = macroIndex ? 0 : mask;
+    if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
+    currentOptions.macroIndices[editingPin] = macroIndex;
+    currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
+    currentOptions.midiVelocities[editingPin] = midiKeyboard.getVelocity();
+    currentOptions.gamepadMasks[editingPin] = 0;
+  }
+
   if (boardView) boardView.setOptions(currentOptions);
   closeKeyModal();
 }
@@ -1135,6 +1240,10 @@ function exportSettings() {
     serialConfigEnabled: currentOptions.serialConfigEnabled === true,
     macroIndices: currentOptions.macroIndices || [],
     macros: currentOptions.macros || [],
+    gamepad: {
+      socdMode: currentOptions.gamepad?.socdMode ?? 0,
+      useNintendoLayout: currentOptions.gamepad?.useNintendoLayout === true,
+    },
     led: {
       ledTimeout: currentOptions.led?.ledTimeout ?? 0,
       statusLedEnabled: currentOptions.led?.statusLedEnabled ?? true,
@@ -1180,6 +1289,10 @@ async function importSettings(file) {
     defaultInputMode: data.defaultInputMode ?? 1,
     serialConfigEnabled: data.serialConfigEnabled === true,
     activeProfile: Number.isInteger(data.activeProfile) ? data.activeProfile : 0,
+    gamepad: {
+      socdMode: Number.isInteger(data.gamepad?.socdMode) ? data.gamepad.socdMode : 0,
+      useNintendoLayout: data.gamepad?.useNintendoLayout === true,
+    },
   };
   try {
     for (let i = 0; i < profiles.length; i++) {
@@ -1190,6 +1303,7 @@ async function importSettings(file) {
         modifierMasks: p.modifierMasks || [],
         midiNotes: p.midiNotes || [],
         midiVelocities: p.midiVelocities || [],
+        gamepadMasks: p.gamepadMasks || [],
         midi: p.midi || {},
         led: {
           ...(p.led || {}),

@@ -209,6 +209,24 @@ const KEY_LABELS = {
   0xf5: 'LMB', 0xf6: 'RMB', 0xf7: 'MMB', 0xf8: 'Back', 0xf9: 'Fwd',
 };
 
+// Labels for the per-pin gamepad control mask (KeyMapping.gamepadMasks).
+// Bit values match GAMEPAD_PIN_MASK_* in gamepadhelper.h: dpad in bits 0-3,
+// buttons B1-A2 in bits 4-17.
+const GAMEPAD_MASK_LABELS = {
+  0x0001: '\u2191', 0x0002: '\u2193', 0x0004: '\u2190', 0x0008: '\u2192',
+  0x0010: 'B1', 0x0020: 'B2', 0x0040: 'B3', 0x0080: 'B4',
+  0x0100: 'L1', 0x0200: 'R1', 0x0400: 'L2', 0x0800: 'R2',
+  0x1000: 'S1', 0x2000: 'S2', 0x4000: 'L3', 0x8000: 'R3',
+  0x10000: 'A1', 0x20000: 'A2',
+};
+
+// Labels for the controls set in a per-pin gamepad mask, in bit order.
+function gamepadMaskLabels(mask) {
+  return Object.entries(GAMEPAD_MASK_LABELS)
+    .filter(([bit]) => mask & Number(bit))
+    .map(([, label]) => label);
+}
+
 // Human label for a keycode (single key). '' for unassigned/unknown codes.
 function keyLabel(code) {
   if (code >= 0x04 && code <= 0x1d) return String.fromCharCode(0x41 + code - 0x04); // A-Z

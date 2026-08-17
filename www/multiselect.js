@@ -83,6 +83,15 @@ class MultiSelect {
 
   // ---- Public API -------------------------------------------------------
 
+  // Swap the option list (e.g. keyboard keys vs gamepad controls) and
+  // re-resolve the selection against the new list.
+  setOptions(options) {
+    this.options = options;
+    this.selected = this.selected.filter(
+      (o) => this.options.some((opt) => opt.group === o.group && opt.value === o.value));
+    this.render();
+  }
+
   setValue(keycode, mask, macroIndex) {
     this.selected = [];
     if (macroIndex > 0) {
@@ -101,6 +110,27 @@ class MultiSelect {
       }
     }
     this.render();
+  }
+
+  // Select every option in `group` whose value bit is set in `mask`. Used by
+  // the gamepad picker, where several controls share one per-pin mask.
+  setGroupMask(group, mask) {
+    this.selected = this.selected.filter((o) => o.group !== group);
+    for (const opt of this.options) {
+      if (opt.group === group && opt.value !== 0 && (mask & opt.value) === opt.value) {
+        this.selected.push(opt);
+      }
+    }
+    this.render();
+  }
+
+  // OR of the selected option values in `group` (0 when none selected).
+  getGroupMask(group) {
+    let mask = 0;
+    for (const opt of this.selected) {
+      if (opt.group === group) mask |= opt.value;
+    }
+    return mask;
   }
 
   getValue() {

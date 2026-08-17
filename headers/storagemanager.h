@@ -92,6 +92,24 @@ public:
 		config.defaultInputMode = mode;
 		config.has_defaultInputMode = true;
 	}
+	// Gamepad options (used when the default input mode is a gamepad mode).
+	// SOCD cleaning mode; defaults to up-priority (SOCD_MODE_UP_PRIORITY = 0)
+	// for configs without the field.
+	SOCDMode getSocdMode() {
+		return config.has_socdMode ? config.socdMode : SOCD_MODE_UP_PRIORITY;
+	}
+	void setSocdMode(SOCDMode mode) {
+		config.socdMode = mode;
+		config.has_socdMode = true;
+	}
+	// Nintendo face-button layout on Switch Pro. Off (Xbox layout) by default.
+	bool getUseNintendoLayout() {
+		return config.has_useNintendoLayout ? config.useNintendoLayout : false;
+	}
+	void setUseNintendoLayout(bool enabled) {
+		config.useNintendoLayout = enabled;
+		config.has_useNintendoLayout = true;
+	}
 	// USB serial (CDC) command interface. Off by default; the board must reboot
 	// after toggling it because the USB descriptors are fixed at enumeration.
 	bool getSerialConfigEnabled() {
