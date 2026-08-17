@@ -82,7 +82,6 @@ function makeProfile(src = {}) {
     modifierMasks,
     midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(keyCount()).fill(0),
     midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(keyCount()).fill(0),
-    gamepadMasks: Array.isArray(src.gamepadMasks) ? src.gamepadMasks.slice() : new Array(keyCount()).fill(0),
     midi: {
       channel: src.midi?.channel ?? 0,
       velocity: src.midi?.velocity ?? 127,
@@ -127,10 +126,10 @@ function defaultOptions() {
     modifierMasks,
     midiNotes: new Array(keyCount()).fill(0),
     midiVelocities: new Array(keyCount()).fill(0),
-    gamepadMasks: new Array(keyCount()).fill(0),
     // Global macros: per-key triggers + the M1-M8 definitions.
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
+    gamepadMasks: new Array(keyCount()).fill(0),
     defaultInputMode: 1,
     debounceInterval: 5,
     serialConfigEnabled: false,
@@ -238,7 +237,8 @@ export function createMockApp() {
     if (Array.isArray(body.modifierMasks)) profile.modifierMasks = body.modifierMasks;
     if (Array.isArray(body.midiNotes)) profile.midiNotes = body.midiNotes;
     if (Array.isArray(body.midiVelocities)) profile.midiVelocities = body.midiVelocities;
-    if (Array.isArray(body.gamepadMasks)) profile.gamepadMasks = body.gamepadMasks;
+    // Global gamepad control mapping (not per-profile), like the firmware.
+    if (Array.isArray(body.gamepadMasks)) current.gamepadMasks = body.gamepadMasks;
     // Global macros (shared across profiles), like the firmware.
     if (Array.isArray(body.macroIndices)) current.macroIndices = body.macroIndices;
     if (Array.isArray(body.macros)) current.macros = body.macros;
@@ -275,7 +275,6 @@ export function createMockApp() {
     current.modifierMasks = active.modifierMasks;
     current.midiNotes = active.midiNotes;
     current.midiVelocities = active.midiVelocities;
-    current.gamepadMasks = active.gamepadMasks;
     current.midi = { ...current.midi, ...active.midi };
     current.led = { ...current.led, ...active.led };
 

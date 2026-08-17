@@ -4,6 +4,10 @@
 #include "pico/time.h"
 #include <stdint.h>
 
+// Gamepad control masks, available before BoardConfig.h so boards can use
+// GAMEPAD_PIN_MASK_* in their GAMEPAD_IDXxx default defines.
+#include "gamepadmapping.h"
+
 #include "BoardConfig.h"
 
 // Time helpers

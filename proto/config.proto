@@ -18,12 +18,19 @@ message KeyMapping
     // MAX_KEYS) uses Custom mode's colorNormalByMode[0] / colorPressedByMode[0].
     repeated uint32 ledNormalColors = 5 [(nanopb).max_count = 128];
     repeated uint32 ledPressedColors = 6 [(nanopb).max_count = 128];
-    // Per-pin gamepad control mask (gamepad input modes only). Bit 0 = dpad
-    // up, 1 = down, 2 = left, 3 = right; buttons B1-A2 in bits 4-17 (see
-    // GAMEPAD_PIN_MASK_* in gamepadhelper.h). Several controls on one pin are
-    // OR'd so a single key can press multiple gamepad inputs at once. Ignored
-    // in keyboard / MIDI modes.
-    repeated uint32 gamepadMasks = 7 [(nanopb).max_count = 128];
+}
+
+// Gamepad control mapping for the gamepad input modes (XInput / Switch Pro).
+// Stored separately from the keyboard KeyMapping so a pin can carry a keyboard
+// key, a MIDI note, AND gamepad controls independently (each mode uses what it
+// needs). Global (not per-profile), like the other gamepad options.
+message GamepadMapping
+{
+    // Per-pin gamepad control mask. Bit 0 = dpad up, 1 = down, 2 = left,
+    // 3 = right; buttons B1-A2 in bits 4-17 (see GAMEPAD_PIN_MASK_* in
+    // gamepadmapping.h). Several controls on one pin are OR'd so a single key
+    // can press multiple gamepad inputs at once. 0 = unmapped.
+    repeated uint32 masks = 1 [(nanopb).max_count = 128];
 }
 
 // Global MIDI output options, used when the default input mode is MIDI.
@@ -158,4 +165,7 @@ message Config
     // B4->X). Off = Xbox layout (B1->B, B2->A, B3->Y, B4->X). XInput always
     // uses the Xbox layout.
     optional bool useNintendoLayout = 15;
+    // Per-pin gamepad control mapping (independent of the keyboard / MIDI
+    // key mapping, see GamepadMapping).
+    optional GamepadMapping gamepadMapping = 16;
 }

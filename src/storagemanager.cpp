@@ -503,6 +503,488 @@
 #define KEYCODE_IDX127 0
 #endif
 
+// Gamepad defaults. GAMEPAD_GPxx are keyed by GPIO (direct boards);
+// GAMEPAD_IDXxx are keyed by key index (matrix boards, like KEYCODE_IDXxx).
+// The default is GAMEPAD_UNMAPPED (-1): the pin has no default gamepad
+// assignment. A board overrides an entry with a GAMEPAD_PIN_MASK_* value (or
+// combination) to give that key a built-in gamepad mapping. No shipping board
+// defines any yet, so gamepad mapping is user-configured everywhere by default.
+#ifndef GAMEPAD_GP00
+#define GAMEPAD_GP00 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP01
+#define GAMEPAD_GP01 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP02
+#define GAMEPAD_GP02 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP03
+#define GAMEPAD_GP03 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP04
+#define GAMEPAD_GP04 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP05
+#define GAMEPAD_GP05 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP06
+#define GAMEPAD_GP06 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP07
+#define GAMEPAD_GP07 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP08
+#define GAMEPAD_GP08 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP09
+#define GAMEPAD_GP09 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP10
+#define GAMEPAD_GP10 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP11
+#define GAMEPAD_GP11 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP12
+#define GAMEPAD_GP12 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP13
+#define GAMEPAD_GP13 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP14
+#define GAMEPAD_GP14 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP15
+#define GAMEPAD_GP15 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP16
+#define GAMEPAD_GP16 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP17
+#define GAMEPAD_GP17 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP18
+#define GAMEPAD_GP18 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP19
+#define GAMEPAD_GP19 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP20
+#define GAMEPAD_GP20 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP21
+#define GAMEPAD_GP21 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP22
+#define GAMEPAD_GP22 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP23
+#define GAMEPAD_GP23 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP24
+#define GAMEPAD_GP24 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP25
+#define GAMEPAD_GP25 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP26
+#define GAMEPAD_GP26 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP27
+#define GAMEPAD_GP27 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP28
+#define GAMEPAD_GP28 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_GP29
+#define GAMEPAD_GP29 GAMEPAD_UNMAPPED
+#endif
+
+#ifndef GAMEPAD_IDX00
+#define GAMEPAD_IDX00 GAMEPAD_GP00
+#endif
+#ifndef GAMEPAD_IDX01
+#define GAMEPAD_IDX01 GAMEPAD_GP01
+#endif
+#ifndef GAMEPAD_IDX02
+#define GAMEPAD_IDX02 GAMEPAD_GP02
+#endif
+#ifndef GAMEPAD_IDX03
+#define GAMEPAD_IDX03 GAMEPAD_GP03
+#endif
+#ifndef GAMEPAD_IDX04
+#define GAMEPAD_IDX04 GAMEPAD_GP04
+#endif
+#ifndef GAMEPAD_IDX05
+#define GAMEPAD_IDX05 GAMEPAD_GP05
+#endif
+#ifndef GAMEPAD_IDX06
+#define GAMEPAD_IDX06 GAMEPAD_GP06
+#endif
+#ifndef GAMEPAD_IDX07
+#define GAMEPAD_IDX07 GAMEPAD_GP07
+#endif
+#ifndef GAMEPAD_IDX08
+#define GAMEPAD_IDX08 GAMEPAD_GP08
+#endif
+#ifndef GAMEPAD_IDX09
+#define GAMEPAD_IDX09 GAMEPAD_GP09
+#endif
+#ifndef GAMEPAD_IDX10
+#define GAMEPAD_IDX10 GAMEPAD_GP10
+#endif
+#ifndef GAMEPAD_IDX11
+#define GAMEPAD_IDX11 GAMEPAD_GP11
+#endif
+#ifndef GAMEPAD_IDX12
+#define GAMEPAD_IDX12 GAMEPAD_GP12
+#endif
+#ifndef GAMEPAD_IDX13
+#define GAMEPAD_IDX13 GAMEPAD_GP13
+#endif
+#ifndef GAMEPAD_IDX14
+#define GAMEPAD_IDX14 GAMEPAD_GP14
+#endif
+#ifndef GAMEPAD_IDX15
+#define GAMEPAD_IDX15 GAMEPAD_GP15
+#endif
+#ifndef GAMEPAD_IDX16
+#define GAMEPAD_IDX16 GAMEPAD_GP16
+#endif
+#ifndef GAMEPAD_IDX17
+#define GAMEPAD_IDX17 GAMEPAD_GP17
+#endif
+#ifndef GAMEPAD_IDX18
+#define GAMEPAD_IDX18 GAMEPAD_GP18
+#endif
+#ifndef GAMEPAD_IDX19
+#define GAMEPAD_IDX19 GAMEPAD_GP19
+#endif
+#ifndef GAMEPAD_IDX20
+#define GAMEPAD_IDX20 GAMEPAD_GP20
+#endif
+#ifndef GAMEPAD_IDX21
+#define GAMEPAD_IDX21 GAMEPAD_GP21
+#endif
+#ifndef GAMEPAD_IDX22
+#define GAMEPAD_IDX22 GAMEPAD_GP22
+#endif
+#ifndef GAMEPAD_IDX23
+#define GAMEPAD_IDX23 GAMEPAD_GP23
+#endif
+#ifndef GAMEPAD_IDX24
+#define GAMEPAD_IDX24 GAMEPAD_GP24
+#endif
+#ifndef GAMEPAD_IDX25
+#define GAMEPAD_IDX25 GAMEPAD_GP25
+#endif
+#ifndef GAMEPAD_IDX26
+#define GAMEPAD_IDX26 GAMEPAD_GP26
+#endif
+#ifndef GAMEPAD_IDX27
+#define GAMEPAD_IDX27 GAMEPAD_GP27
+#endif
+#ifndef GAMEPAD_IDX28
+#define GAMEPAD_IDX28 GAMEPAD_GP28
+#endif
+#ifndef GAMEPAD_IDX29
+#define GAMEPAD_IDX29 GAMEPAD_GP29
+#endif
+#ifndef GAMEPAD_IDX30
+#define GAMEPAD_IDX30 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX31
+#define GAMEPAD_IDX31 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX32
+#define GAMEPAD_IDX32 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX33
+#define GAMEPAD_IDX33 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX34
+#define GAMEPAD_IDX34 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX35
+#define GAMEPAD_IDX35 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX36
+#define GAMEPAD_IDX36 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX37
+#define GAMEPAD_IDX37 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX38
+#define GAMEPAD_IDX38 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX39
+#define GAMEPAD_IDX39 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX40
+#define GAMEPAD_IDX40 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX41
+#define GAMEPAD_IDX41 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX42
+#define GAMEPAD_IDX42 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX43
+#define GAMEPAD_IDX43 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX44
+#define GAMEPAD_IDX44 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX45
+#define GAMEPAD_IDX45 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX46
+#define GAMEPAD_IDX46 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX47
+#define GAMEPAD_IDX47 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX48
+#define GAMEPAD_IDX48 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX49
+#define GAMEPAD_IDX49 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX50
+#define GAMEPAD_IDX50 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX51
+#define GAMEPAD_IDX51 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX52
+#define GAMEPAD_IDX52 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX53
+#define GAMEPAD_IDX53 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX54
+#define GAMEPAD_IDX54 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX55
+#define GAMEPAD_IDX55 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX56
+#define GAMEPAD_IDX56 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX57
+#define GAMEPAD_IDX57 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX58
+#define GAMEPAD_IDX58 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX59
+#define GAMEPAD_IDX59 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX60
+#define GAMEPAD_IDX60 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX61
+#define GAMEPAD_IDX61 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX62
+#define GAMEPAD_IDX62 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX63
+#define GAMEPAD_IDX63 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX64
+#define GAMEPAD_IDX64 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX65
+#define GAMEPAD_IDX65 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX66
+#define GAMEPAD_IDX66 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX67
+#define GAMEPAD_IDX67 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX68
+#define GAMEPAD_IDX68 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX69
+#define GAMEPAD_IDX69 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX70
+#define GAMEPAD_IDX70 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX71
+#define GAMEPAD_IDX71 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX72
+#define GAMEPAD_IDX72 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX73
+#define GAMEPAD_IDX73 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX74
+#define GAMEPAD_IDX74 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX75
+#define GAMEPAD_IDX75 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX76
+#define GAMEPAD_IDX76 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX77
+#define GAMEPAD_IDX77 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX78
+#define GAMEPAD_IDX78 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX79
+#define GAMEPAD_IDX79 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX80
+#define GAMEPAD_IDX80 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX81
+#define GAMEPAD_IDX81 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX82
+#define GAMEPAD_IDX82 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX83
+#define GAMEPAD_IDX83 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX84
+#define GAMEPAD_IDX84 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX85
+#define GAMEPAD_IDX85 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX86
+#define GAMEPAD_IDX86 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX87
+#define GAMEPAD_IDX87 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX88
+#define GAMEPAD_IDX88 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX89
+#define GAMEPAD_IDX89 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX90
+#define GAMEPAD_IDX90 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX91
+#define GAMEPAD_IDX91 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX92
+#define GAMEPAD_IDX92 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX93
+#define GAMEPAD_IDX93 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX94
+#define GAMEPAD_IDX94 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX95
+#define GAMEPAD_IDX95 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX96
+#define GAMEPAD_IDX96 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX97
+#define GAMEPAD_IDX97 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX98
+#define GAMEPAD_IDX98 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX99
+#define GAMEPAD_IDX99 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX100
+#define GAMEPAD_IDX100 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX101
+#define GAMEPAD_IDX101 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX102
+#define GAMEPAD_IDX102 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX103
+#define GAMEPAD_IDX103 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX104
+#define GAMEPAD_IDX104 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX105
+#define GAMEPAD_IDX105 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX106
+#define GAMEPAD_IDX106 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX107
+#define GAMEPAD_IDX107 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX108
+#define GAMEPAD_IDX108 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX109
+#define GAMEPAD_IDX109 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX110
+#define GAMEPAD_IDX110 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX111
+#define GAMEPAD_IDX111 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX112
+#define GAMEPAD_IDX112 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX113
+#define GAMEPAD_IDX113 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX114
+#define GAMEPAD_IDX114 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX115
+#define GAMEPAD_IDX115 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX116
+#define GAMEPAD_IDX116 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX117
+#define GAMEPAD_IDX117 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX118
+#define GAMEPAD_IDX118 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX119
+#define GAMEPAD_IDX119 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX120
+#define GAMEPAD_IDX120 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX121
+#define GAMEPAD_IDX121 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX122
+#define GAMEPAD_IDX122 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX123
+#define GAMEPAD_IDX123 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX124
+#define GAMEPAD_IDX124 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX125
+#define GAMEPAD_IDX125 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX126
+#define GAMEPAD_IDX126 GAMEPAD_UNMAPPED
+#endif
+#ifndef GAMEPAD_IDX127
+#define GAMEPAD_IDX127 GAMEPAD_UNMAPPED
+#endif
+
 #ifndef MODIFIER_GP00
 #define MODIFIER_GP00 0
 #endif
@@ -1730,6 +2212,38 @@ static const uint32_t defaultKeycodes[MAX_KEYS] = {
     KEYCODE_IDX125, KEYCODE_IDX126, KEYCODE_IDX127
 };
 
+// Board default gamepad control masks (GAMEPAD_IDXxx). A value of -1
+// (GAMEPAD_UNMAPPED) means the pin has no default gamepad assignment; only
+// non-negative entries (a GAMEPAD_PIN_MASK_* combination) are seeded.
+static const int32_t defaultGamepadMasks[MAX_KEYS] = {
+    GAMEPAD_IDX00, GAMEPAD_IDX01, GAMEPAD_IDX02, GAMEPAD_IDX03, GAMEPAD_IDX04,
+    GAMEPAD_IDX05, GAMEPAD_IDX06, GAMEPAD_IDX07, GAMEPAD_IDX08, GAMEPAD_IDX09,
+    GAMEPAD_IDX10, GAMEPAD_IDX11, GAMEPAD_IDX12, GAMEPAD_IDX13, GAMEPAD_IDX14,
+    GAMEPAD_IDX15, GAMEPAD_IDX16, GAMEPAD_IDX17, GAMEPAD_IDX18, GAMEPAD_IDX19,
+    GAMEPAD_IDX20, GAMEPAD_IDX21, GAMEPAD_IDX22, GAMEPAD_IDX23, GAMEPAD_IDX24,
+    GAMEPAD_IDX25, GAMEPAD_IDX26, GAMEPAD_IDX27, GAMEPAD_IDX28, GAMEPAD_IDX29,
+    GAMEPAD_IDX30, GAMEPAD_IDX31, GAMEPAD_IDX32, GAMEPAD_IDX33, GAMEPAD_IDX34,
+    GAMEPAD_IDX35, GAMEPAD_IDX36, GAMEPAD_IDX37, GAMEPAD_IDX38, GAMEPAD_IDX39,
+    GAMEPAD_IDX40, GAMEPAD_IDX41, GAMEPAD_IDX42, GAMEPAD_IDX43, GAMEPAD_IDX44,
+    GAMEPAD_IDX45, GAMEPAD_IDX46, GAMEPAD_IDX47, GAMEPAD_IDX48, GAMEPAD_IDX49,
+    GAMEPAD_IDX50, GAMEPAD_IDX51, GAMEPAD_IDX52, GAMEPAD_IDX53, GAMEPAD_IDX54,
+    GAMEPAD_IDX55, GAMEPAD_IDX56, GAMEPAD_IDX57, GAMEPAD_IDX58, GAMEPAD_IDX59,
+    GAMEPAD_IDX60, GAMEPAD_IDX61, GAMEPAD_IDX62, GAMEPAD_IDX63, GAMEPAD_IDX64,
+    GAMEPAD_IDX65, GAMEPAD_IDX66, GAMEPAD_IDX67, GAMEPAD_IDX68, GAMEPAD_IDX69,
+    GAMEPAD_IDX70, GAMEPAD_IDX71, GAMEPAD_IDX72, GAMEPAD_IDX73, GAMEPAD_IDX74,
+    GAMEPAD_IDX75, GAMEPAD_IDX76, GAMEPAD_IDX77, GAMEPAD_IDX78, GAMEPAD_IDX79,
+    GAMEPAD_IDX80, GAMEPAD_IDX81, GAMEPAD_IDX82, GAMEPAD_IDX83, GAMEPAD_IDX84,
+    GAMEPAD_IDX85, GAMEPAD_IDX86, GAMEPAD_IDX87, GAMEPAD_IDX88, GAMEPAD_IDX89,
+    GAMEPAD_IDX90, GAMEPAD_IDX91, GAMEPAD_IDX92, GAMEPAD_IDX93, GAMEPAD_IDX94,
+    GAMEPAD_IDX95, GAMEPAD_IDX96, GAMEPAD_IDX97, GAMEPAD_IDX98, GAMEPAD_IDX99,
+    GAMEPAD_IDX100, GAMEPAD_IDX101, GAMEPAD_IDX102, GAMEPAD_IDX103, GAMEPAD_IDX104,
+    GAMEPAD_IDX105, GAMEPAD_IDX106, GAMEPAD_IDX107, GAMEPAD_IDX108, GAMEPAD_IDX109,
+    GAMEPAD_IDX110, GAMEPAD_IDX111, GAMEPAD_IDX112, GAMEPAD_IDX113, GAMEPAD_IDX114,
+    GAMEPAD_IDX115, GAMEPAD_IDX116, GAMEPAD_IDX117, GAMEPAD_IDX118, GAMEPAD_IDX119,
+    GAMEPAD_IDX120, GAMEPAD_IDX121, GAMEPAD_IDX122, GAMEPAD_IDX123, GAMEPAD_IDX124,
+    GAMEPAD_IDX125, GAMEPAD_IDX126, GAMEPAD_IDX127
+};
+
 static const uint32_t defaultModifiers[MAX_KEYS] = {
     MODIFIER_IDX00, MODIFIER_IDX01, MODIFIER_IDX02, MODIFIER_IDX03, MODIFIER_IDX04,
     MODIFIER_IDX05, MODIFIER_IDX06, MODIFIER_IDX07, MODIFIER_IDX08, MODIFIER_IDX09,
@@ -2024,6 +2538,25 @@ static void normalizeKeyMapping(KeyMapping& km)
     }
 }
 
+// Normalize the gamepad control mapping: pad missing entries to 0 (unmapped)
+// and seed unmapped pins from the board's GAMEPAD_IDXxx defaults. Like the
+// keyboard normalize, a pin left at 0 picks up a board default; -1 defaults
+// are the "no default" sentinel and leave the pin unmapped.
+static void normalizeGamepadMapping(GamepadMapping& mapping)
+{
+    if (mapping.masks_count == 0)
+    {
+        mapping.masks_count = MAX_KEYS;
+        for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+            mapping.masks[pin] = 0;
+    }
+    for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
+    {
+        if (mapping.masks[pin] == 0 && defaultGamepadMasks[pin] >= 0)
+            mapping.masks[pin] = (uint32_t)defaultGamepadMasks[pin];
+    }
+}
+
 // Seed all profiles (0-3) as copies of the current base mapping. Runs once for
 // configs that predate profiles so the alternates always start from a known
 // state and stay editable.
@@ -2092,6 +2625,7 @@ void Storage::init() {
     // config may predate some fields or come from a different board; normalize
     // the working copy so the board has a usable key map.
     normalizeKeyMapping(config.keyMapping);
+    normalizeGamepadMapping(config.gamepadMapping);
     // Macro triggers default to 0 (no macro) for any stored config without
     // the field; the macro definitions stay empty (a no-op when triggered).
     if (config.macroIndices_count == 0)
@@ -2240,6 +2774,7 @@ void Storage::init() {
     // in the web config) with no key assignments. Normalize the working copy
     // again so unassigned keys fall back to the board defaults.
     normalizeKeyMapping(config.keyMapping);
+    normalizeGamepadMapping(config.gamepadMapping);
 }
 
 /**

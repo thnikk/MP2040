@@ -192,7 +192,6 @@ static void writeKeyMappingJson(JsonObject obj, const KeyMapping& km)
     JsonArray modifiers = obj.createNestedArray("modifierMasks");
     JsonArray midiNotes = obj.createNestedArray("midiNotes");
     JsonArray midiVelocities = obj.createNestedArray("midiVelocities");
-    JsonArray gamepadMasks = obj.createNestedArray("gamepadMasks");
     // Emit one entry per key the board actually has; the UI derives its key
     // count from the array length. Keep it under the pool budget.
     const uint32_t keyCount = Storage::getInstance().getKeyCount();
@@ -202,7 +201,6 @@ static void writeKeyMappingJson(JsonObject obj, const KeyMapping& km)
         modifiers.add(pin < (Pin_t)km.modifierMasks_count ? km.modifierMasks[pin] : 0);
         midiNotes.add(pin < (Pin_t)km.midiNotes_count ? km.midiNotes[pin] : 0);
         midiVelocities.add(pin < (Pin_t)km.midiVelocities_count ? km.midiVelocities[pin] : 0);
-        gamepadMasks.add(pin < (Pin_t)km.gamepadMasks_count ? km.gamepadMasks[pin] : 0);
     }
 }
 
@@ -267,7 +265,7 @@ std::string getOptions()
         modifiers.add(pin < (Pin_t)keyMapping.modifierMasks_count ? keyMapping.modifierMasks[pin] : 0);
         midiNotes.add(pin < (Pin_t)keyMapping.midiNotes_count ? keyMapping.midiNotes[pin] : 0);
         midiVelocities.add(pin < (Pin_t)keyMapping.midiVelocities_count ? keyMapping.midiVelocities[pin] : 0);
-        gamepadMasks.add(pin < (Pin_t)keyMapping.gamepadMasks_count ? keyMapping.gamepadMasks[pin] : 0);
+        gamepadMasks.add(Storage::getInstance().getGamepadMask(pin));
     }
 
     // Global macro triggers (per-key, 0 = none) and definitions (M1-M8).
@@ -394,7 +392,6 @@ std::string setOptions()
     JsonArray modifiers = doc["modifierMasks"];
     JsonArray midiNotes = doc["midiNotes"];
     JsonArray midiVelocities = doc["midiVelocities"];
-    JsonArray gamepadMasks = doc["gamepadMasks"];
     // Store the array length the client sent (capped at MAX_KEYS) so the
     // stored counts match what getOptions emits, keeping the JSON small.
     keyMapping.keycodes_count = keycodes.size() > MAX_KEYS ? MAX_KEYS : keycodes.size();
@@ -409,9 +406,18 @@ std::string setOptions()
     keyMapping.midiVelocities_count = midiVelocities.size() > MAX_KEYS ? MAX_KEYS : midiVelocities.size();
     for (Pin_t pin = 0; pin < (Pin_t)keyMapping.midiVelocities_count; pin++)
         keyMapping.midiVelocities[pin] = midiVelocities[pin];
-    keyMapping.gamepadMasks_count = gamepadMasks.size() > MAX_KEYS ? MAX_KEYS : gamepadMasks.size();
-    for (Pin_t pin = 0; pin < (Pin_t)keyMapping.gamepadMasks_count; pin++)
-        keyMapping.gamepadMasks[pin] = gamepadMasks[pin];
+
+    // Gamepad control mapping is global (not per-profile), written every call
+    // like the other global fields.
+    JsonArray gamepadMasks = doc["gamepadMasks"];
+    pb_size_t gamepadMasksCount = gamepadMasks.size() > MAX_KEYS ? MAX_KEYS : gamepadMasks.size();
+    if (gamepadMasksCount > 0)
+    {
+        GamepadMapping& gamepadMapping = Storage::getInstance().getGamepadMapping();
+        Storage::getInstance().setGamepadMappingCount(gamepadMasksCount);
+        for (Pin_t pin = 0; pin < (Pin_t)gamepadMasksCount; pin++)
+            gamepadMapping.masks[pin] = gamepadMasks[pin];
+    }
 
     if (doc["defaultInputMode"].is<int>())
         Storage::getInstance().setDefaultInputMode((InputMode)doc["defaultInputMode"].as<int>());

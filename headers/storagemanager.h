@@ -110,6 +110,22 @@ public:
 		config.useNintendoLayout = enabled;
 		config.has_useNintendoLayout = true;
 	}
+	// Gamepad control mapping (per-pin masks), independent of the keyboard /
+	// MIDI key mapping. Global, not per-profile.
+	GamepadMapping& getGamepadMapping() {
+		return config.gamepadMapping;
+	}
+	uint32_t getGamepadMask(uint32_t pin) {
+		return config.has_gamepadMapping && pin < config.gamepadMapping.masks_count
+			? config.gamepadMapping.masks[pin] : 0;
+	}
+	pb_size_t getGamepadMasksCount() {
+		return config.has_gamepadMapping ? config.gamepadMapping.masks_count : 0;
+	}
+	void setGamepadMappingCount(pb_size_t count) {
+		config.gamepadMapping.masks_count = count > MAX_KEYS ? MAX_KEYS : count;
+		config.has_gamepadMapping = true;
+	}
 	// USB serial (CDC) command interface. Off by default; the board must reboot
 	// after toggling it because the USB descriptors are fixed at enumeration.
 	bool getSerialConfigEnabled() {

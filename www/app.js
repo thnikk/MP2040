@@ -212,7 +212,6 @@ function cloneProfile(p) {
     modifierMasks: (p.modifierMasks || []).slice(),
     midiNotes: (p.midiNotes || new Array(30).fill(0)).slice(),
     midiVelocities: (p.midiVelocities || new Array(30).fill(0)).slice(),
-    gamepadMasks: (p.gamepadMasks || []).slice(),
     midi: { channel: p.midi?.channel ?? 0, velocity: p.midi?.velocity ?? 127 },
     led: {
       ledMode: p.led?.ledMode ?? 0,
@@ -229,7 +228,6 @@ function applyProfileToOptions(profile, options) {
   options.modifierMasks = profile.modifierMasks.slice();
   options.midiNotes = profile.midiNotes.slice();
   options.midiVelocities = profile.midiVelocities.slice();
-  options.gamepadMasks = profile.gamepadMasks.slice();
   options.midi = { ...(options.midi || {}), ...profile.midi };
   // Speed, brightness and per-mode colors are global; profiles only carry the
   // per-profile LED scalars (mode, per-key colors).
@@ -243,7 +241,6 @@ function applyOptionsToProfile(options, profile) {
   profile.modifierMasks = options.modifierMasks.slice();
   profile.midiNotes = options.midiNotes.slice();
   profile.midiVelocities = options.midiVelocities.slice();
-  profile.gamepadMasks = (options.gamepadMasks || []).slice();
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
   const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...optionsLed } = options.led || {};
   profile.led = { ...(profile.led || {}), ...optionsLed };
@@ -1122,10 +1119,11 @@ function closeKeyModal() {
 
 function saveKeyModal() {
   if (editingPin < 0) return;
-  const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4;
 
-  // Keep the arrays sized for every pin (direct boards: 30, matrix: MAX_KEYS).
+  // Gamepad mapping is separate from the keyboard / MIDI mapping (each lives
+  // in its own per-pin array, and they coexist the way a pin can hold both a
+  // key and a MIDI note). Which picker saves what is decided by the active
+  // mode; neither branch clears the other's data.
   const perKey = (key) => {
     if (!currentOptions[key]) currentOptions[key] = new Array(128).fill(0);
     return currentOptions[key];
@@ -1137,14 +1135,11 @@ function saveKeyModal() {
   currentOptions.midiVelocities = perKey('midiVelocities');
   currentOptions.gamepadMasks = perKey('gamepadMasks');
 
+  const mode = Number(currentOptions.defaultInputMode || 1);
+  const gamepadMode = mode === 3 || mode === 4;
+
   if (gamepadMode) {
     // A pin maps to zero or more gamepad controls, packed into one mask.
-    currentOptions.keycodes[editingPin] = 0;
-    currentOptions.modifierMasks[editingPin] = 0;
-    currentOptions.midiNotes[editingPin] = 0;
-    currentOptions.midiVelocities[editingPin] = 0;
-    if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
-    currentOptions.macroIndices[editingPin] = 0;
     currentOptions.gamepadMasks[editingPin] = gamepadSelect.getGroupMask('gamepad');
   } else {
     const { keycode, mask, macroIndex } = keyboardWidget.getValue();
@@ -1155,7 +1150,6 @@ function saveKeyModal() {
     currentOptions.macroIndices[editingPin] = macroIndex;
     currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
     currentOptions.midiVelocities[editingPin] = midiKeyboard.getVelocity();
-    currentOptions.gamepadMasks[editingPin] = 0;
   }
 
   if (boardView) boardView.setOptions(currentOptions);
@@ -1244,6 +1238,7 @@ function exportSettings() {
       socdMode: currentOptions.gamepad?.socdMode ?? 0,
       useNintendoLayout: currentOptions.gamepad?.useNintendoLayout === true,
     },
+    gamepadMasks: currentOptions.gamepadMasks || [],
     led: {
       ledTimeout: currentOptions.led?.ledTimeout ?? 0,
       statusLedEnabled: currentOptions.led?.statusLedEnabled ?? true,
@@ -1293,6 +1288,7 @@ async function importSettings(file) {
       socdMode: Number.isInteger(data.gamepad?.socdMode) ? data.gamepad.socdMode : 0,
       useNintendoLayout: data.gamepad?.useNintendoLayout === true,
     },
+    gamepadMasks: data.gamepadMasks || [],
   };
   try {
     for (let i = 0; i < profiles.length; i++) {
@@ -1303,7 +1299,6 @@ async function importSettings(file) {
         modifierMasks: p.modifierMasks || [],
         midiNotes: p.midiNotes || [],
         midiVelocities: p.midiVelocities || [],
-        gamepadMasks: p.gamepadMasks || [],
         midi: p.midi || {},
         led: {
           ...(p.led || {}),
