@@ -942,6 +942,21 @@ html[data-theme="light"] .ms-caret {
   display: none;
 }
 
+/* Gamepad-only General controls (hidden unless the input mode is a gamepad
+   mode). Full-width so they sit on their own row below the input mode /
+   MIDI settings. */
+#gamepad-settings {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#gamepad-settings[hidden] {
+  display: none;
+}
+
 /* MIDI keyboard picker in the key modal */
 #key-modal-midi[hidden],
 #key-modal-select[hidden],

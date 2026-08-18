@@ -897,6 +897,8 @@ function updateModalMode() {
   document.getElementById('key-modal-gamepad').hidden = !gamepadMode;
   document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('gamepad-settings').hidden = !gamepadMode;
+  // The Nintendo layout toggle only applies to Switch Pro.
+  document.getElementById('nintendo-layout-wrap').hidden = mode !== 4;
   document.getElementById('board-hint').textContent = midiMode
     ? 'Click a button on the board to set its MIDI note and velocity.'
     : gamepadMode
