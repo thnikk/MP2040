@@ -34,6 +34,8 @@
 #define GAMEPAD_GP02 GAMEPAD_PIN_MASK_B4   // button 3 -> B3
 #define GAMEPAD_GP01 GAMEPAD_PIN_MASK_R1   // button 2 -> B2
 
+#define DEFAULT_INPUT_MODE INPUT_MODE_XINPUT
+
 // Capacitive touch pads: hand these pins to the touch driver instead of
 // treating them as plain buttons.
 #define TOUCH_GP00 1

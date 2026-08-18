@@ -23,6 +23,14 @@
 #define DEFAULT_PIN_KEYCODE(pin) KEYCODE_ ## pin
 #define DEFAULT_PIN_MODIFIER(pin) MODIFIER_ ## pin
 
+// Input mode used at boot for a fresh / reset config. A board can override
+// this in BoardConfig.h (e.g. "#define DEFAULT_INPUT_MODE INPUT_MODE_SWITCH_PRO")
+// so the default boots into that mode; the user's saved choice still wins once
+// set via the web config (applyDefaults only seeds fresh/reset configs).
+#ifndef DEFAULT_INPUT_MODE
+#define DEFAULT_INPUT_MODE INPUT_MODE_KEYBOARD
+#endif
+
 #ifndef KEYCODE_GP00
 #define KEYCODE_GP00 0
 #endif
@@ -2465,6 +2473,8 @@ static void applyDefaults(Config& config)
     config.midiOptions.channel = 0;
     config.midiOptions.velocity = 127;
     config.debounceInterval = 5;
+    config.defaultInputMode = DEFAULT_INPUT_MODE;
+    config.has_defaultInputMode = true;
     config.ledOptions.dataPin = LED_PIN;
     config.ledOptions.ledFormat = LED_FORMAT;
     config.ledOptions.ledsPerKey = LEDS_PER_KEY;
