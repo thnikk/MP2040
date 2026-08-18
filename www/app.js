@@ -503,18 +503,10 @@ function buildOptionsBody() {
         : false,
     },
     ring: {
-      ringStickTarget: document.getElementById('ring-stick-target')
-        ? parseInt(document.getElementById('ring-stick-target').value, 10)
-        : 0,
-      ringKeyboardMode: document.getElementById('ring-keyboard-mode')
-        ? parseInt(document.getElementById('ring-keyboard-mode').value, 10)
-        : 2,
-      ringScrollAxis: document.getElementById('ring-scroll-axis')
-        ? parseInt(document.getElementById('ring-scroll-axis').value, 10)
-        : 0,
-      ringMidiBehavior: document.getElementById('ring-midi-behavior')
-        ? parseInt(document.getElementById('ring-midi-behavior').value, 10)
-        : 1,
+      ringStickTarget: currentOptions.ring?.ringStickTarget ?? 1,
+      ringKeyboardMode: currentOptions.ring?.ringKeyboardMode ?? 2,
+      ringScrollAxis: currentOptions.ring?.ringScrollAxis ?? 0,
+      ringMidiBehavior: currentOptions.ring?.ringMidiBehavior ?? 1,
     },
     led: {
       ledMode: mode,
@@ -735,47 +727,6 @@ async function load() {
     nintendoEl.addEventListener('change', () => {
       if (!currentOptions.gamepad) currentOptions.gamepad = {};
       currentOptions.gamepad.useNintendoLayout = nintendoEl.checked;
-    });
-  }
-
-  // Touch ring settings (per-mode behavior)
-  const ring = options.ring || {};
-  const ringStickEl = document.getElementById('ring-stick-target');
-  if (ringStickEl) {
-    ringStickEl.value = ring.ringStickTarget ?? 1;
-    ringStickEl.addEventListener('change', () => {
-      if (!currentOptions.ring) currentOptions.ring = {};
-      currentOptions.ring.ringStickTarget = parseInt(ringStickEl.value, 10);
-    });
-  }
-  const ringKbEl = document.getElementById('ring-keyboard-mode');
-  if (ringKbEl) {
-    ringKbEl.value = ring.ringKeyboardMode ?? 2;
-    const updateScrollWrap = () => {
-      const wrap = document.getElementById('ring-scroll-wrap');
-      if (wrap) wrap.hidden = Number(ringKbEl.value) !== 1;
-    };
-    ringKbEl.addEventListener('change', () => {
-      if (!currentOptions.ring) currentOptions.ring = {};
-      currentOptions.ring.ringKeyboardMode = parseInt(ringKbEl.value, 10);
-      updateScrollWrap();
-    });
-    updateScrollWrap();
-  }
-  const ringAxisEl = document.getElementById('ring-scroll-axis');
-  if (ringAxisEl) {
-    ringAxisEl.value = ring.ringScrollAxis ?? 0;
-    ringAxisEl.addEventListener('change', () => {
-      if (!currentOptions.ring) currentOptions.ring = {};
-      currentOptions.ring.ringScrollAxis = parseInt(ringAxisEl.value, 10);
-    });
-  }
-  const ringMidiEl = document.getElementById('ring-midi-behavior');
-  if (ringMidiEl) {
-    ringMidiEl.value = ring.ringMidiBehavior ?? 1;
-    ringMidiEl.addEventListener('change', () => {
-      if (!currentOptions.ring) currentOptions.ring = {};
-      currentOptions.ring.ringMidiBehavior = parseInt(ringMidiEl.value, 10);
     });
   }
 
@@ -1214,17 +1165,27 @@ function saveKeyModal() {
 
 // ---- touch ring modal ----------------------------------------------------
 
-// Populate the ring modal from currentOptions.ring (shared with the Settings
-// "Touch Ring" section — both edit the same object).
+// Populate the ring modal from currentOptions.ring. Only the control for the
+// current input mode is shown (gamepad = stick, keyboard = behavior + axis,
+// MIDI = behavior).
 function openRingModal() {
   if (!currentOptions.ring) currentOptions.ring = {};
   const r = currentOptions.ring;
+  const mode = Number(currentOptions.defaultInputMode || 1);
+  const gamepadMode = mode === 3 || mode === 4;
+  const midiMode = mode === 2;
+
+  document.getElementById('ring-modal-stick-wrap').hidden = !gamepadMode;
+  document.getElementById('ring-modal-keyboard-wrap').hidden = gamepadMode || midiMode;
+  document.getElementById('ring-modal-midi-wrap').hidden = !midiMode;
+
   document.getElementById('ring-modal-stick').value = r.ringStickTarget ?? 1;
   const kbEl = document.getElementById('ring-modal-keyboard');
   kbEl.value = r.ringKeyboardMode ?? 2;
   document.getElementById('ring-modal-scroll-wrap').hidden = Number(kbEl.value) !== 1;
   document.getElementById('ring-modal-axis').value = r.ringScrollAxis ?? 0;
   document.getElementById('ring-modal-midi').value = r.ringMidiBehavior ?? 1;
+
   closeLedColorPopover();
   document.getElementById('ring-modal').hidden = false;
 }
@@ -1235,10 +1196,19 @@ function closeRingModal() {
 
 function saveRingModal() {
   if (!currentOptions.ring) currentOptions.ring = {};
-  currentOptions.ring.ringStickTarget = parseInt(document.getElementById('ring-modal-stick').value, 10);
-  currentOptions.ring.ringKeyboardMode = parseInt(document.getElementById('ring-modal-keyboard').value, 10);
-  currentOptions.ring.ringScrollAxis = parseInt(document.getElementById('ring-modal-axis').value, 10);
-  currentOptions.ring.ringMidiBehavior = parseInt(document.getElementById('ring-modal-midi').value, 10);
+  const mode = Number(currentOptions.defaultInputMode || 1);
+  const gamepadMode = mode === 3 || mode === 4;
+  const midiMode = mode === 2;
+  // Save only the control shown for the current mode; the others are left
+  // unchanged (they're configured when that mode is active).
+  if (gamepadMode)
+    currentOptions.ring.ringStickTarget = parseInt(document.getElementById('ring-modal-stick').value, 10);
+  else if (midiMode)
+    currentOptions.ring.ringMidiBehavior = parseInt(document.getElementById('ring-modal-midi').value, 10);
+  else {
+    currentOptions.ring.ringKeyboardMode = parseInt(document.getElementById('ring-modal-keyboard').value, 10);
+    currentOptions.ring.ringScrollAxis = parseInt(document.getElementById('ring-modal-axis').value, 10);
+  }
   closeRingModal();
 }
 

@@ -868,17 +868,7 @@ html[data-theme="light"] .ms-caret {
   white-space: nowrap;
 }
 
-/* Sub-heading inside the general settings form (e.g. the touch-ring block).
-   Full-width, styled like a mini section header to separate ring controls. */
-.settings-subtitle {
-  flex-basis: 100%;
-  margin: 8px 0 0;
-  font-size: 0.85em;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-}
+
 
 /* Checkbox row in the general form (e.g. Serial control). Full-width so it
    sits on its own line, with the checkbox aligned to the text baseline. */
@@ -1522,17 +1512,17 @@ button:disabled {
   gap: 10px;
 }
 
-/* Label + select form layout inside a modal (e.g. the touch ring modal). */
+/* Select form layout inside a modal (e.g. the touch ring modal). Each control
+   group stacks its selects full-width, one per row. */
 .modal-form {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px 16px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   margin: 0.5rem 0 1rem;
 }
 
-.modal-form label {
-  white-space: nowrap;
+.modal-form select {
+  width: 100%;
 }
 
 /* Reboot mode picker */
