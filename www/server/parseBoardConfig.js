@@ -67,6 +67,30 @@ const MODIFIER_MASK = {
   KEYBOARD_MODIFIER_RIGHTGUI: 0x80,
 };
 
+// Gamepad per-pin control mask bits (GAMEPAD_PIN_MASK_* from
+// headers/gamepadmapping.h). A BoardConfig.h GAMEPAD_GPxx / GAMEPAD_IDXxx
+// define can be a single constant or an OR'd combination of several.
+const GAMEPAD_PIN_MASK = {
+  GAMEPAD_PIN_MASK_UP: 1 << 0,
+  GAMEPAD_PIN_MASK_DOWN: 1 << 1,
+  GAMEPAD_PIN_MASK_LEFT: 1 << 2,
+  GAMEPAD_PIN_MASK_RIGHT: 1 << 3,
+  GAMEPAD_PIN_MASK_B1: 1 << 4,
+  GAMEPAD_PIN_MASK_B2: 1 << 5,
+  GAMEPAD_PIN_MASK_B3: 1 << 6,
+  GAMEPAD_PIN_MASK_B4: 1 << 7,
+  GAMEPAD_PIN_MASK_L1: 1 << 8,
+  GAMEPAD_PIN_MASK_R1: 1 << 9,
+  GAMEPAD_PIN_MASK_L2: 1 << 10,
+  GAMEPAD_PIN_MASK_R2: 1 << 11,
+  GAMEPAD_PIN_MASK_S1: 1 << 12,
+  GAMEPAD_PIN_MASK_S2: 1 << 13,
+  GAMEPAD_PIN_MASK_L3: 1 << 14,
+  GAMEPAD_PIN_MASK_R3: 1 << 15,
+  GAMEPAD_PIN_MASK_A1: 1 << 16,
+  GAMEPAD_PIN_MASK_A2: 1 << 17,
+};
+
 // MP2040's enums.proto LEDFormat values
 const LED_FORMAT_MAP = {
   LED_FORMAT_RGB: 0,
@@ -160,6 +184,23 @@ function parseModifier(raw) {
   return 0;
 }
 
+// Parse a GAMEPAD_GPxx / GAMEPAD_IDXxx define into a control mask. The value
+// is a GAMEPAD_PIN_MASK_* constant or an OR'd combination of several (e.g.
+// "GAMEPAD_PIN_MASK_B1 | GAMEPAD_PIN_MASK_B2"); GAMEPAD_UNMAPPED (-1) and
+// unknown values map to 0 (unmapped in the web config's representation).
+function parseGamepadMask(raw) {
+  const val = String(raw || '').trim().replace(/;$/, '').trim();
+  if (val === '' || val === 'GAMEPAD_UNMAPPED') return 0;
+  if (/^-?\d+$/.test(val)) return Math.max(0, parseInt(val, 10));
+  let mask = 0;
+  // Split on the OR operator, resolving each GAMEPAD_PIN_MASK_* token.
+  for (const part of val.split('|')) {
+    const token = part.trim();
+    if (GAMEPAD_PIN_MASK[token] !== undefined) mask |= GAMEPAD_PIN_MASK[token];
+  }
+  return mask;
+}
+
 // Parse a brace-list define like { 26, 27, 28, 29 } into an array of numbers.
 function parsePinArray(raw) {
   const val = String(raw || '').trim().replace(/;$/, '').trim();
@@ -195,6 +236,7 @@ export function parseBoardConfig(configDir, rootDir) {
   const keycodes = [];
   const modifierMasks = [];
   const pinLedIndices = [];
+  const gamepadMasks = [];
   // Key index arrays are MAX_KEYS (128) long; matrix boards can use indices
   // beyond the GPIO count. Direct boards only use the first 30.
   for (let i = 0; i < 128; i++) {
@@ -205,6 +247,9 @@ export function parseBoardConfig(configDir, rootDir) {
     modifierMasks.push(parseModifier(d[`MODIFIER_IDX${n}`] ?? d[`MODIFIER_GP${n}`]));
     const ledIdx = parseNum(d[`LED_INDEX_IDX${n}`] ?? d[`LED_INDEX_GP${n}`]);
     pinLedIndices.push(ledIdx === undefined ? -1 : ledIdx);
+    // Gamepad default mapping, like the keyboard defaults: GAMEPAD_IDXxx
+    // (matrix) or GAMEPAD_GPxx (direct), IDX preferred when present.
+    gamepadMasks.push(parseGamepadMask(d[`GAMEPAD_IDX${n}`] ?? d[`GAMEPAD_GP${n}`]));
   }
 
   let boardConfigLabel = configDir;
@@ -227,6 +272,7 @@ export function parseBoardConfig(configDir, rootDir) {
     keycodes,
     modifierMasks,
     pinLedIndices,
+    gamepadMasks,
     matrix: {
       enabled: matrixRows > 0 && matrixCols > 0,
       rows: matrixRows,

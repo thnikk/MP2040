@@ -19,12 +19,20 @@
 // All 10 pads use the ~1M ohm resistor PIO capsense driver.
 //
 // Keycodes (keyboard mode):
-#define KEYCODE_GP00 HID_KEY_F17
-#define KEYCODE_GP01 HID_KEY_F16
-#define KEYCODE_GP02 HID_KEY_F15
 #define KEYCODE_GP04 HID_KEY_F13
-#define KEYCODE_GP06 HID_KEY_F19
-#define KEYCODE_GP07 HID_KEY_F18
+#define KEYCODE_GP02 HID_KEY_F14
+#define KEYCODE_GP01 HID_KEY_F15
+#define KEYCODE_GP00 HID_KEY_F16
+#define KEYCODE_GP07 HID_KEY_F17
+#define KEYCODE_GP06 HID_KEY_F18
+
+// Gamepad default mapping (used in gamepad input modes)
+#define GAMEPAD_GP00 GAMEPAD_PIN_MASK_B1   // button 1 -> B1
+#define GAMEPAD_GP07 GAMEPAD_PIN_MASK_B2   // button 6 -> R1
+#define GAMEPAD_GP06 GAMEPAD_PIN_MASK_L1   // button 5 -> L1
+#define GAMEPAD_GP04 GAMEPAD_PIN_MASK_B3   // button 4 -> B4
+#define GAMEPAD_GP02 GAMEPAD_PIN_MASK_B4   // button 3 -> B3
+#define GAMEPAD_GP01 GAMEPAD_PIN_MASK_R1   // button 2 -> B2
 
 // Capacitive touch pads: hand these pins to the touch driver instead of
 // treating them as plain buttons.

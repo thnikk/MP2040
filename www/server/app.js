@@ -115,11 +115,14 @@ function defaultOptions() {
   const modifierMasks = [];
   const pinLedIndices = [];
   const macroIndices = [];
+  const gamepadMasks = [];
   for (let i = 0; i < keyCount(); i++) {
     keycodes.push(board?.keycodes?.[i] ?? 0);
     modifierMasks.push(board?.modifierMasks?.[i] ?? 0);
     pinLedIndices.push(board?.pinLedIndices?.[i] ?? -1);
     macroIndices.push(0);
+    // Board default gamepad mapping (from GAMEPAD_GPxx / GAMEPAD_IDXxx).
+    gamepadMasks.push(board?.gamepadMasks?.[i] ?? 0);
   }
   const base = {
     keycodes,
@@ -129,7 +132,7 @@ function defaultOptions() {
     // Global macros: per-key triggers + the M1-M8 definitions.
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
-    gamepadMasks: new Array(keyCount()).fill(0),
+    gamepadMasks,
     defaultInputMode: 1,
     debounceInterval: 5,
     serialConfigEnabled: false,
