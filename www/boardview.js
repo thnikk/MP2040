@@ -295,6 +295,14 @@ class BoardView {
   updateLabels() {
     if (!this.svgRoot) return;
 
+    // Scale factor from SVG user units to screen pixels (horizontal). The
+    // board SVG is scaled responsively, so SVG text (which uses user units)
+    // would grow/shrink with it. Counter-scale the label so it stays a
+    // constant pixel size on screen regardless of the board's render width.
+    let labelScale = 1;
+    const ctm = this.svgRoot.getScreenCTM();
+    if (ctm && ctm.a > 0) labelScale = ctm.a;
+
     for (const { id, pinNumber, name } of this.pinElements) {
       const el = this.container.querySelector(`#${CSS.escape(id)}`);
       if (!el) continue;
@@ -307,7 +315,7 @@ class BoardView {
         labelEl.setAttribute('text-anchor', 'middle');
         labelEl.setAttribute('dominant-baseline', 'central');
         labelEl.setAttribute('font-family', 'Nunito');
-        labelEl.setAttribute('font-size', '11');
+        labelEl.setAttribute('font-size', '24');
         labelEl.setAttribute('font-weight', 'bold');
         labelEl.setAttribute('fill', 'currentColor');
 
@@ -322,6 +330,9 @@ class BoardView {
           el.appendChild(labelEl);
         }
       }
+      // Counter-scale the font so the label stays ~24px on screen regardless
+      // of the board's CSS scale factor (labelScale = screen px / user unit).
+      labelEl.setAttribute('font-size', String(24 / labelScale));
 
       const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
@@ -385,7 +396,8 @@ class BoardView {
       labelEl.removeAttribute('x');
       labelEl.removeAttribute('y');
       if (lines.length > 0) {
-        const lineHeight = 14;
+        // 26px on screen per line, counter-scaled like the font.
+        const lineHeight = 26 / labelScale;
         lines.forEach((line, idx) => {
           const tspan = document.createElementNS(ns, 'tspan');
           tspan.textContent = line;
