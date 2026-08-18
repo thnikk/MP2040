@@ -324,6 +324,43 @@
     </div>
   </div>
 
+  <div id="ring-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Touch Ring</h3>
+        <button id="ring-modal-close" class="modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div class="modal-form">
+        <label for="ring-modal-stick">Gamepad: Ring stick</label>
+        <select id="ring-modal-stick">
+          <option value="0">Left stick</option>
+          <option value="1">Right stick</option>
+        </select>
+        <label for="ring-modal-keyboard">Keyboard: Ring behavior</label>
+        <select id="ring-modal-keyboard">
+          <option value="0">Off</option>
+          <option value="1">Scroll</option>
+          <option value="2">Volume</option>
+        </select>
+        <div id="ring-modal-scroll-wrap" hidden>
+          <label for="ring-modal-axis">Scroll axis</label>
+          <select id="ring-modal-axis">
+            <option value="0">Vertical</option>
+            <option value="1">Horizontal</option>
+          </select>
+        </div>
+        <label for="ring-modal-midi">MIDI: Ring behavior</label>
+        <select id="ring-modal-midi">
+          <option value="0">Off</option>
+          <option value="1">Pitch bend</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button id="ring-modal-save" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/toast.js"></script>
   <script src="/multiselect.js"></script>
   <script src="/spinner.js"></script>

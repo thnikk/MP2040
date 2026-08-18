@@ -147,6 +147,8 @@ class BoardView {
     this.options = null;
     this.svgRoot = null;
     this.pinElements = [];
+    this.ringElement = null;
+    this.ringShapes = [];
     this.heldPins = new Set();
     this.wired = false;
     this.ledSim = null;
@@ -176,6 +178,7 @@ class BoardView {
       this.updateLabels();
       this.applyLeds();
       this.applyPins();
+      this.applyRing();
       this.applyLedCursors();
     }
     this.updateLedSim();
@@ -221,20 +224,31 @@ class BoardView {
     // skipping the "*-label" guide elements.
     const isMatrix = !!this.options?.matrix?.enabled;
     this.pinElements = [];
+    // A touch ring is a single clickable object (id/inkscape:label "ring"),
+    // not a set of buttons. Its descendant/self shapes must not be treated as
+    // individual pins.
+    const ringEl = findByRef(doc, 'ring');
     doc.querySelectorAll('[id]').forEach((el) => {
       const match = matchButtonIndex(el, isMatrix);
       if (match) this.pinElements.push({ id: el.id, ...match });
     });
+    // Drop anything that is the ring or lives inside it.
+    if (ringEl) this.pinElements = this.pinElements.filter((p) => p.id !== ringEl.id && !ringEl.contains(
+      doc.getElementById(p.id)));
     this.pinElements.sort((a, b) => a.pinNumber - b.pinNumber);
 
     this.container.innerHTML = prepareSvg(svgText);
     this.svgRoot = this.container.querySelector('svg');
     if (!this.svgRoot) return;
 
+    this.ringElement = findByRef(this.svgRoot, 'ring');
+    this.ringShapes = this.ringElement ? shapesOf(this.ringElement) : [];
+
     this.themeStyle();
     this.updateLabels();
     this.applyLeds();
     this.applyPins();
+    this.applyRing();
     this.applyLedCursors();
     this.styleTestButton();
     this.wireEvents();
@@ -254,6 +268,8 @@ class BoardView {
       el.setAttribute('vector-effect', 'non-scaling-stroke');
       if (matchesRef(el, ['logo'])) return;
       if (matchesRef(el, ['board-led'])) return;
+      // Elements inside an "ignore" group keep their authored fill/stroke.
+      if (matchesRef(el, ['ignore'])) return;
       el.style.fill = 'var(--bg-1)';
       if (matchesRef(el, ['oled'])) {
         el.style.stroke = 'none';
@@ -622,6 +638,18 @@ class BoardView {
     });
   }
 
+  // Style the touch ring as a single object: base fill + one label at its
+  // center. Called on render and on mouseleave (to undo the hover highlight).
+  applyRing() {
+    if (!this.ringElement) return;
+    this.ringShapes.forEach((s) => {
+      s.style.setProperty('fill', 'var(--bg-2)', 'important');
+      s.style.removeProperty('fill-opacity');
+      s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+      s.style.setProperty('stroke-width', '2', 'important');
+    });
+  }
+
   // ---- events -----------------------------------------------------------
 
   wireEvents() {
@@ -642,6 +670,19 @@ class BoardView {
       });
       el.addEventListener('mouseleave', () => this.applyPins());
     });
+
+    // The touch ring is one clickable object that opens the ring modal.
+    if (this.ringElement) {
+      this.ringElement.addEventListener('click', () => this.callbacks.onRingClick?.());
+      this.ringElement.style.setProperty('cursor', 'pointer');
+      this.ringShapes.forEach((s) => {
+        s.style.setProperty('cursor', 'pointer');
+      });
+      this.ringElement.addEventListener('mouseenter', () => {
+        this.ringShapes.forEach((s) => s.style.setProperty('fill-opacity', '0.6', 'important'));
+      });
+      this.ringElement.addEventListener('mouseleave', () => this.applyRing());
+    }
 
     this.container.querySelectorAll('[id]').forEach((el) => {
       const m = el.id.match(/^led-?\d+$/);

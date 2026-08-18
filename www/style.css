@@ -1522,6 +1522,19 @@ button:disabled {
   gap: 10px;
 }
 
+/* Label + select form layout inside a modal (e.g. the touch ring modal). */
+.modal-form {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px 16px;
+  align-items: center;
+  margin: 0.5rem 0 1rem;
+}
+
+.modal-form label {
+  white-space: nowrap;
+}
+
 /* Reboot mode picker */
 .modal-options {
   display: flex;

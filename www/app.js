@@ -960,6 +960,7 @@ function initBoard(options) {
   boardView = new BoardView(panel, {
     onPinClick: (pin) => openKeyModal(pin),
     onLedClick: (ledIdx, el) => openLedColorPopover(ledIdx, el),
+    onRingClick: () => openRingModal(),
   });
   boardView.setOptions(options);
 }
@@ -1211,6 +1212,36 @@ function saveKeyModal() {
   closeKeyModal();
 }
 
+// ---- touch ring modal ----------------------------------------------------
+
+// Populate the ring modal from currentOptions.ring (shared with the Settings
+// "Touch Ring" section — both edit the same object).
+function openRingModal() {
+  if (!currentOptions.ring) currentOptions.ring = {};
+  const r = currentOptions.ring;
+  document.getElementById('ring-modal-stick').value = r.ringStickTarget ?? 1;
+  const kbEl = document.getElementById('ring-modal-keyboard');
+  kbEl.value = r.ringKeyboardMode ?? 2;
+  document.getElementById('ring-modal-scroll-wrap').hidden = Number(kbEl.value) !== 1;
+  document.getElementById('ring-modal-axis').value = r.ringScrollAxis ?? 0;
+  document.getElementById('ring-modal-midi').value = r.ringMidiBehavior ?? 1;
+  closeLedColorPopover();
+  document.getElementById('ring-modal').hidden = false;
+}
+
+function closeRingModal() {
+  document.getElementById('ring-modal').hidden = true;
+}
+
+function saveRingModal() {
+  if (!currentOptions.ring) currentOptions.ring = {};
+  currentOptions.ring.ringStickTarget = parseInt(document.getElementById('ring-modal-stick').value, 10);
+  currentOptions.ring.ringKeyboardMode = parseInt(document.getElementById('ring-modal-keyboard').value, 10);
+  currentOptions.ring.ringScrollAxis = parseInt(document.getElementById('ring-modal-axis').value, 10);
+  currentOptions.ring.ringMidiBehavior = parseInt(document.getElementById('ring-modal-midi').value, 10);
+  closeRingModal();
+}
+
 async function save() {
   const saveBtn = document.getElementById('save');
   saveBtn.disabled = true;
@@ -1418,6 +1449,13 @@ document.getElementById('set-boot-profile').addEventListener('click', () => {
 });
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
 document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
+document.getElementById('ring-modal-save').addEventListener('click', saveRingModal);
+document.getElementById('ring-modal-close').addEventListener('click', closeRingModal);
+
+// Toggle the ring modal's scroll-axis field based on the keyboard-mode select.
+document.getElementById('ring-modal-keyboard').addEventListener('change', (e) => {
+  document.getElementById('ring-modal-scroll-wrap').hidden = Number(e.target.value) !== 1;
+});
 
 document.getElementById('reboot-modal-close').addEventListener('click', closeRebootModal);
 document.getElementById('reboot-normal').addEventListener('click', () => rebootTo(0));
@@ -1428,11 +1466,15 @@ document.getElementById('reboot-webconfig').addEventListener('click', () => rebo
 document.getElementById('key-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeKeyModal();
 });
+document.getElementById('ring-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeRingModal();
+});
 document.getElementById('reboot-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeRebootModal();
 });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !document.getElementById('key-modal').hidden) closeKeyModal();
+  if (e.key === 'Escape' && !document.getElementById('ring-modal').hidden) closeRingModal();
   if (e.key === 'Escape' && !document.getElementById('reboot-modal').hidden) closeRebootModal();
   if (e.key === 'Escape' && ledColorPopover) closeLedColorPopover();
 });
