@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 562.36985 140.06002"
+   width="562.36987"
+   height="140.06001"
+   version="1.1"
+   id="svg69"
+   sodipodi:docname="board.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview69"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="2"
+     inkscape:cx="198.75"
+     inkscape:cy="167.5"
+     inkscape:window-width="1261"
+     inkscape:window-height="1371"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer2" />
+  <desc
+     id="desc1">2kmt.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc>
+  <defs
+     id="defs4">
+    <marker
+       id="DistanceX"
+       orient="auto"
+       refX="0"
+       refY="0"
+       style="overflow:visible">
+      <path
+         d="M 3,-3 -3,3 M 0,-5 V 5"
+         style="stroke:#000000;stroke-width:0.5"
+         id="path1" />
+    </marker>
+    <pattern
+       id="Hatch"
+       patternUnits="userSpaceOnUse"
+       width="8"
+       height="8"
+       x="0"
+       y="0">
+      <path
+         d="M8 4 l-4,4"
+         stroke="#000000"
+         stroke-width="0.25"
+         linecap="square"
+         id="path2" />
+      <path
+         d="M6 2 l-4,4"
+         stroke="#000000"
+         stroke-width="0.25"
+         linecap="square"
+         id="path3" />
+      <path
+         d="M4 0 l-4,4"
+         stroke="#000000"
+         stroke-width="0.25"
+         linecap="square"
+         id="path4" />
+    </pattern>
+    <symbol
+       id="*MODEL_SPACE" />
+    <symbol
+       id="*PAPER_SPACE" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer1"
+     inkscape:label="Layer 1"
+     transform="translate(69.031502,-1053.49)">
+    <rect
+       style="fill:#1c1f26;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="case"
+       width="560.36987"
+       height="138.06001"
+       x="-68.031502"
+       y="1054.49"
+       rx="15.118111"
+       ry="15.118111" />
+    <rect
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="pin26"
+       width="113.386"
+       height="113.38"
+       x="-56.692902"
+       y="1065.83"
+       rx="3.7795277"
+       ry="3.7795277" />
+    <rect
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="pin27"
+       width="113.386"
+       height="113.38"
+       x="64.251991"
+       y="1065.83"
+       rx="3.7795277"
+       ry="3.7795277" />
+    <rect
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="pin02"
+       width="52.912998"
+       height="52.91"
+       x="185.19701"
+       y="1065.83"
+       rx="3.7795277"
+       ry="3.7795277" />
+    <rect
+       style="fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="pin04"
+       width="52.912998"
+       height="52.91"
+       x="185.19701"
+       y="1126.3"
+       rx="3.7795277"
+       ry="3.7795277" />
+    <rect
+       style="display:inline;fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="pin00"
+       width="113.386"
+       height="113.38"
+       x="314.70038"
+       y="12.339956"
+       rx="3.7795277"
+       ry="3.7795277"
+       transform="translate(-69.031502,1053.49)" />
+    <rect
+       style="display:inline;fill:#2b303b;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="pin01"
+       width="113.386"
+       height="113.38"
+       x="435.64526"
+       y="12.339956"
+       rx="3.7795277"
+       ry="3.7795277"
+       transform="translate(-69.031502,1053.49)" />
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led0"
+       width="37.795277"
+       height="15.118111"
+       x="-21.812023"
+       y="1072.4993"
+       rx="7.5590553"
+       ry="7.5590553" />
+    <rect
+       style="fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led1"
+       width="37.795277"
+       height="15.118111"
+       x="102.04736"
+       y="1072.4993"
+       rx="7.5590553"
+       ry="7.5590553" />
+    <rect
+       style="display:inline;fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led2"
+       width="37.794998"
+       height="15.118111"
+       x="352.49576"
+       y="19.009268"
+       rx="7.5590553"
+       ry="7.5590553"
+       transform="translate(-69.031502,1053.49)" />
+    <rect
+       style="display:inline;fill:#ff0101;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="led3"
+       width="37.795277"
+       height="15.118111"
+       x="473.44064"
+       y="19.009268"
+       rx="7.5590553"
+       ry="7.5590553"
+       transform="translate(-69.031502,1053.49)" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="layout"
+     style="display:none">
+    <rect
+       style="display:inline;fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="rect79-6-2"
+       width="11.338583"
+       height="11.338583"
+       x="365.72409"
+       y="12.339956" />
+    <rect
+       style="display:inline;fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="rect79-6-2-6"
+       width="11.338583"
+       height="11.338583"
+       x="486.66898"
+       y="12.339956" />
+    <rect
+       style="display:inline;fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="rect79-6"
+       width="11.338583"
+       height="11.338583"
+       x="115.2757"
+       y="1065.83"
+       transform="translate(69.0315,-1053.49)" />
+    <rect
+       style="display:inline;fill:#ff0101;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       id="rect79"
+       width="11.338583"
+       height="11.338583"
+       x="-8.5836735"
+       y="1065.83"
+       transform="translate(69.0315,-1053.49)" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="text-alignment"
+     style="display:inline">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       d="M -56.692902,1122.52 H 56.6929"
+       id="pin26-label"
+       transform="translate(69.0315,-1053.49)" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       d="m 64.25199,1122.52 h 113.386"
+       id="pin27-label"
+       transform="translate(69.0315,-1053.49)" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       d="m 314.70037,69.03 h 113.386"
+       id="pin00-label" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       d="m 435.64527,69.03 h 113.386"
+       id="pin01-label" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       d="M 185.19701,1092.285 H 238.11"
+       id="pin02-label"
+       transform="translate(69.0315,-1053.49)" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none"
+       d="M 185.19701,1152.7551 H 238.11"
+       id="pin04-label"
+       transform="translate(69.0315,-1053.49)" />
+  </g>
+</svg>
