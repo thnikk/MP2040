@@ -358,38 +358,91 @@ class BoardView {
         lines.push(keycode < 0xe0 ? keyLabel(keycode) : (MODIFIER_SHORT[keycode] || keyLabel(keycode)));
       }
 
-      // Position: use the <name>-label guide path if present, else shape
-      // center. Looked up by id or inkscape:label so buttons named either way
-      // still land their label on the guide.
+      // Position the label. Prefer the <name>-label guide path (id or
+      // inkscape:label) for intentional placement/rotation, but only trust it
+      // when it actually lies on (or near) the button: guides are authored in
+      // the button's layer coordinate space, and boards whose button layer is
+      // transformed independently of the guide layer would otherwise misplace
+      // the label. Fall back to the shape's true center (transform-aware) when
+      // the guide doesn't overlap the shape.
       const guidePath = findByRef(this.container, `${name}-label`);
+      const shape = shapesOf(el)[0];
+      let shapeBox = null;
+      const ctm = this.svgRoot.getScreenCTM();
+      if (shape && ctm) {
+        const r = shape.getBoundingClientRect();
+        const tl = new DOMPoint(r.left, r.top).matrixTransform(ctm.inverse());
+        const br = new DOMPoint(r.right, r.bottom).matrixTransform(ctm.inverse());
+        shapeBox = {
+          x: Math.min(tl.x, br.x),
+          y: Math.min(tl.y, br.y),
+          width: Math.abs(br.x - tl.x),
+          height: Math.abs(br.y - tl.y),
+        };
+      }
+
       let cx, cy, rotation = null;
       if (guidePath) {
         const ep = parsePathEndpoints(guidePath.getAttribute('d') || '');
         if (ep) {
-          cx = (ep.x1 + ep.x2) / 2;
-          cy = (ep.y1 + ep.y2) / 2;
-          const dx = ep.x2 - ep.x1;
-          const dy = ep.y2 - ep.y1;
-          if (dx !== 0 || dy !== 0) {
-            rotation = Math.atan2(dy, dx) * (180 / Math.PI);
-            if (rotation > 90 || rotation < -90) rotation += 180;
+          const gx = (ep.x1 + ep.x2) / 2;
+          const gy = (ep.y1 + ep.y2) / 2;
+          // Trust the guide only if it plausibly sits on the button. The
+          // tolerance (half the shape's diagonal) allows guides that offset
+          // the label slightly from dead-center while rejecting guides in a
+          // mismatched coordinate space.
+          let guideOnShape = true;
+          if (shapeBox) {
+            const tol = Math.hypot(shapeBox.width, shapeBox.height) / 2 + 2;
+            guideOnShape =
+              gx >= shapeBox.x - tol && gx <= shapeBox.x + shapeBox.width + tol &&
+              gy >= shapeBox.y - tol && gy <= shapeBox.y + shapeBox.height + tol;
           }
-        }
-      } else {
-        const shape = shapesOf(el)[0];
-        if (shape) {
-          const rect = shape.getBoundingClientRect();
-          cx = rect.left + rect.width / 2;
-          cy = rect.top + rect.height / 2;
-          const ctm = this.svgRoot.getScreenCTM();
-          if (ctm) {
-            const pt = new DOMPoint(cx, cy).matrixTransform(ctm.inverse());
-            cx = pt.x;
-            cy = pt.y;
+          if (guideOnShape) {
+            cx = gx;
+            cy = gy;
+            const dx = ep.x2 - ep.x1;
+            const dy = ep.y2 - ep.y1;
+            if (dx !== 0 || dy !== 0) {
+              rotation = Math.atan2(dy, dx) * (180 / Math.PI);
+              if (rotation > 90 || rotation < -90) rotation += 180;
+            }
           }
         }
       }
+      if (cx === undefined && shapeBox) {
+        // Fall back to the shape's true center (transform-aware).
+        cx = shapeBox.x + shapeBox.width / 2;
+        cy = shapeBox.y + shapeBox.height / 2;
+      } else if (cx === undefined && shape) {
+        const rect = shape.getBoundingClientRect();
+        cx = rect.left + rect.width / 2;
+        cy = rect.top + rect.height / 2;
+        if (ctm) {
+          const pt = new DOMPoint(cx, cy).matrixTransform(ctm.inverse());
+          cx = pt.x;
+          cy = pt.y;
+        }
+      }
       if (cx === undefined || cy === undefined) continue;
+
+      // cx/cy are in SVG-root user units (from the guide path or the shape's
+      // transform-aware center). The label text, however, lives inside the
+      // button's <g>, which may be nested in a transformed layer (e.g. a
+      // "buttons" layer with a translate). Placing it at root units directly
+      // would double-apply that layer transform and push it off-screen. Convert
+      // the root-space position into the label's own local coordinate system so
+      // it renders at the intended screen location regardless of layer nesting.
+      const labelCtm = labelEl.getScreenCTM();
+      if (labelCtm) {
+        const svgCtm = this.svgRoot.getScreenCTM();
+        if (svgCtm) {
+          const screenPt = new DOMPoint(cx, cy).matrixTransform(svgCtm);
+          const local = screenPt.matrixTransform(labelCtm.inverse());
+          cx = local.x;
+          cy = local.y;
+        }
+      }
 
       const ns = 'http://www.w3.org/2000/svg';
       while (labelEl.firstChild) labelEl.removeChild(labelEl.firstChild);
