@@ -5,7 +5,8 @@
 #include "pico/types.h"
 #include "types.h"
 
-// Capacitive touch input using one PIO state machine per pad.
+// Capacitive touch input using a small pool of PIO state machines shared
+// across all pads (one SM does NOT need to be dedicated per pad).
 //
 // Each pad connects to a GPIO with a ~1M ohm resistor to ground. A PIO state
 // machine charges the pad HIGH, releases it to an input, and counts cycles
@@ -13,6 +14,13 @@
 // capacitance, slowing the discharge and raising the count. Because the timing
 // is done entirely in the PIO, measurements are deterministic and cost the CPU
 // only two FIFO accesses per pad.
+//
+// Measurements are synchronous (put_blocking -> SM runs -> get_blocking), so
+// a single SM can serve many pads by retargeting its pins between reads. The
+// pads are multiplexed round-robin over a pool of up to 4 SMs on pio1; this
+// keeps the SM count independent of pad count, so a board can have more pads
+// than a PIO has state machines (e.g. BeatBoard's 10 pads) while the LED strip
+// keeps its own SM on pio0.
 //
 // Thresholds are auto-calibrated at setup() from the idle baseline (the
 // lowest of several samples). A pad can instead pin a fixed threshold with the
@@ -59,10 +67,17 @@ private:
 	void calibratePin(Pin_t pin);
 	uint32_t readPin(Pin_t pin);
 
+	// All pads are multiplexed over a small shared pool of state machines on
+	// pio1. Each measurement is synchronous (put_blocking -> SM runs ->
+	// get_blocking), so a single SM can serve many pads by retargeting its
+	// 'set pins' / 'jmp pin' to the pad being read between measurements. This
+	// keeps a board's pad count from exhausting the PIO's 4 state machines
+	// (the LED strip owns one on pio0; a board like BeatBoard has 10 pads).
 	PIO pio;
 	uint32_t smOffset;
-	GpioMask mask;
-	uint8_t smForPin[NUM_BANK0_GPIOS];      // 0xFF = pin not configured
+	uint32_t smCount;                       // number of pool SMs actually claimed
+	GpioMask mask;                          // set bits = configured touch pads
+	uint8_t smForPin[NUM_BANK0_GPIOS];      // pool slot for each pad (0xFF = not configured)
 	uint32_t thresholdOn[NUM_BANK0_GPIOS];
 	uint32_t thresholdOff[NUM_BANK0_GPIOS];
 	bool active[NUM_BANK0_GPIOS];

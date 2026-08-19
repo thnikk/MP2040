@@ -134,7 +134,7 @@ static const uint32_t defaultTouchThresholds[NUM_BANK0_GPIOS] = {
 };
 
 TouchGpio::TouchGpio()
-    : pio(nullptr), smOffset(0), mask(0)
+    : pio(nullptr), smOffset(0), smCount(0), mask(0)
 {
     for (uint32_t i = 0; i < NUM_BANK0_GPIOS; i++)
     {
@@ -151,31 +151,52 @@ void TouchGpio::setup(GpioMask touchMask, bool useStored)
     mask = touchMask & ((1u << NUM_BANK0_GPIOS) - 1u);
     if (mask == 0) return;
 
-    // The ws2812 LED driver uses pio0, so run touch sensing on pio1.
+    // All pads are multiplexed over a shared pool of state machines on pio1.
+    // The ws2812 LED driver uses pio0, so pio1 is entirely ours. Claiming is
+    // non-fatal: a board that exhausts the pool (more pads than SMs) degrades
+    // gracefully - pads just share SMs - and can never panic the device and
+    // kill USB enumeration.
     pio = pio1;
     smOffset = pio_add_program(pio, &capsense_program);
 
+    // Claim up to 4 SMs. Non-fatal so we never halt the CPU on a tight board.
+    uint32_t pool[NUM_BANK0_GPIOS];
+    smCount = 0;
+    for (uint32_t i = 0; i < 4; i++)
+    {
+        int sm = pio_claim_unused_sm(pio, false);
+        if (sm < 0) break;
+        pool[smCount++] = (uint32_t)sm;
+    }
+    if (smCount == 0) return;   // no SMs at all: nothing can be measured
+
+    // Initialize each pool SM once so its program counter sits at the program
+    // start (`begin`), waiting for a trigger. readPin() only retargets the
+    // SM's pins via pio_sm_set_config, which leaves the PC at `begin`; without
+    // this init the SM never runs the capsense program and get_blocking would
+    // hang forever.
+    for (uint32_t i = 0; i < smCount; i++)
+    {
+        pio_sm_config init_cfg = capsense_program_get_default_config(smOffset);
+        pio_sm_clear_fifos(pio, pool[i]);
+        pio_sm_init(pio, pool[i], smOffset, &init_cfg);
+        pio_sm_set_enabled(pio, pool[i], true);
+    }
+
+    // Round-robin bind each pad to a pool SM. All pads are configured on the
+    // GPIO now; the SM is retargeted to the right pin at read time.
+    uint32_t slot = 0;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (!(mask & (1u << pin))) continue;
 
-        int sm = pio_claim_unused_sm(pio, true);
-        if (sm < 0) continue;   // out of state machines
-
-        smForPin[pin] = (uint8_t)sm;
+        smForPin[pin] = (uint8_t)pool[slot % smCount];
+        slot++;
 
         // No internal pulls: the pad's ~1M ohm resistor to ground provides the
         // discharge path, and the PIO owns the pin for its full drive cycle.
         gpio_set_pulls(pin, false, false);
         pio_gpio_init(pio, pin);
-
-        pio_sm_config c = capsense_program_get_default_config(smOffset);
-        sm_config_set_set_pins(&c, pin, 1);    // 'set pins' drives the pad
-        sm_config_set_jmp_pin(&c, pin);        // 'jmp pin' watches the pad
-
-        pio_sm_clear_fifos(pio, sm);
-        pio_sm_init(pio, sm, smOffset, &c);
-        pio_sm_set_enabled(pio, sm, true);
     }
 
     if (useStored)
@@ -317,7 +338,17 @@ uint32_t TouchGpio::readPin(Pin_t pin)
 {
     if (smForPin[pin] == 0xFF) return TOUCH_TIMEOUT;
 
-    uint sm = smForPin[pin];
+    const uint sm = smForPin[pin];
+
+    // Retarget this SM's 'set pins' / 'jmp pin' to the pad being read. The
+    // pads multiplex over a shared SM pool, so the SM is pointed at a specific
+    // pin for the duration of one measurement. pio_sm_set_config safely
+    // disables the SM, applies the config, and re-enables it.
+    pio_sm_config c = capsense_program_get_default_config(smOffset);
+    sm_config_set_set_pins(&c, pin, 1);    // 'set pins' drives the pad
+    sm_config_set_jmp_pin(&c, pin);        // 'jmp pin' watches the pad
+    pio_sm_set_config(pio, sm, &c);
+
     pio_sm_put_blocking(pio, sm, TOUCH_TIMEOUT);   // trigger a measurement
     uint32_t remaining = pio_sm_get_blocking(pio, sm);
     if (remaining == 0) return TOUCH_TIMEOUT;      // 0 sentinel: never discharged
