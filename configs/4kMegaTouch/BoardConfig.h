@@ -8,7 +8,7 @@
 
 #include "class/hid/hid.h"
 
-#define BOARD_CONFIG_LABEL "MegaTouch"
+#define BOARD_CONFIG_LABEL "4kMegaTouch"
 
 // Capacitive touch keypad. Each key is a copper pad on a GPIO with a ~1M ohm
 // resistor to ground; the PIO measures the pad's discharge time (see
