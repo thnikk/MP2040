@@ -20,12 +20,22 @@ configurator, the addon system) has been removed.
 
 ## Supported Boards
 
-- 2k
-- 2kw
-- 4kw
-- MacroPad
-- MegaTouch
-- MiniTouch
+All boards require an RP2040 microcontroller. Existing boards using the SAMD21 are __NOT__ compatible.
+
+### Mechanical Keypads
+<table>
+<tr>
+<td> 2k </td> <td> 2kw </td> <td> 4kw </td>
+</tr>
+</table>
+
+### Touch Keypads
+
+<table>
+<tr>
+<td> MiniTouch </td> <td> MegaTouch </td> <td> 4kMegaTouch </td> <td> BeatBoard </td>
+</tr>
+</table>
 
 ## Flashing
 
