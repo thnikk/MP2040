@@ -175,6 +175,6 @@ jobs:
             ./artifacts/**/*.uf2
             ./artifacts/**/*.elf
             tools/flash_nuke.uf2
-          prerelease: ${{ prerelease.outputs.is_prerelease }}
+          prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
