@@ -65,11 +65,11 @@ jobs:
 
     - name: Pico Build Configure CMake
       shell: bash
-      run: MP2040_BOARDCONFIG=${{ matrix.MP2040_BOARDCONFIG }} cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: PICO_SDK_PATH=${{github.workspace}}/pico-sdk MP2040_BOARDCONFIG=${{ matrix.MP2040_BOARDCONFIG }} cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Pico Build
       shell: bash
-      run: MP2040_BOARDCONFIG=${{ matrix.MP2040_BOARDCONFIG }} cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel ${{steps.core_count.outputs.output}}
+      run: PICO_SDK_PATH=${{github.workspace}}/pico-sdk MP2040_BOARDCONFIG=${{ matrix.MP2040_BOARDCONFIG }} cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel ${{steps.core_count.outputs.output}}
 
     - name: Upload Pico Artifact
       uses: actions/upload-artifact@v4.3.1
