@@ -25,7 +25,7 @@ All boards require an RP2040 microcontroller. Existing boards using the SAMD21 a
 ### Mechanical Keypads
 <table>
 <tr>
-<td> 2k </td> <td> 2kw </td> <td> 4kw </td>
+<td> 2k </td> <td> 2kw </td> <td> 4kw </td> <td> 3x3 </td> <td> MacroPad </td>
 </tr>
 </table>
 
