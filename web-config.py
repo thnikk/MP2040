@@ -27,6 +27,8 @@ def main():
                         help="Initial board for the mock server (VITE_MP2040_BOARD)")
     parser.add_argument("-u", "--fake-update", metavar="VERSION",
                         help="Show a fake update on the welcome page (VITE_FAKE_UPDATE), e.g. v9.9.9")
+    parser.add_argument("-l", "--latency", type=int, metavar="MS",
+                        help="Fake latency in ms for /api/* responses (VITE_FAKE_LATENCY), e.g. 800")
     parser.add_argument("-p", "--port", type=int,
                         help="Port for the Vite dev server")
     parser.add_argument("--dev-board", action="store_true",
@@ -48,6 +50,8 @@ def main():
         env["VITE_MP2040_BOARD"] = args.board
     if args.fake_update:
         env["VITE_FAKE_UPDATE"] = args.fake_update
+    if args.latency is not None:
+        env["VITE_FAKE_LATENCY"] = str(args.latency)
 
     script = "dev-board" if args.dev_board else "dev"
     cmd = [NPM, "run", script]

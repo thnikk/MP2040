@@ -14,6 +14,8 @@
 // UI can distinguish the mock from a real board. VITE_FAKE_UPDATE (e.g.
 // "v9.9.9") makes the mock report an old version plus a fake latest release so
 // the welcome page's update card can be tested without GitHub access.
+// VITE_FAKE_LATENCY (e.g. "800") delays every /api/* response by that many ms
+// so the loading state is easy to see while testing.
 
 import express from 'express';
 import { readFileSync } from 'fs';
@@ -210,6 +212,13 @@ export function createMockApp() {
   // repeated GET (e.g. the /api/getPinState long-poll) with a 304 instead
   // of the JSON body.
   app.set('etag', false);
+
+  // Optional fake latency (ms) for /api/* so the loading state is easy to see.
+  // Controlled by VITE_FAKE_LATENCY (e.g. "800"); defaults to 0 (no delay).
+  const fakeLatency = Math.max(0, parseInt(process.env.VITE_FAKE_LATENCY || '0', 10) || 0);
+  if (fakeLatency) {
+    app.use('/api', (req, res, next) => setTimeout(next, fakeLatency));
+  }
 
   app.get('/api/getOptions', (req, res) => {
     if (!store) store = defaultOptions();
