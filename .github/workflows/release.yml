@@ -1,0 +1,180 @@
+name: Release
+run-name: Release ${{ github.ref_name || inputs.tag_name }}
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Version tag (e.g., v1.0.0) - optional for builds'
+        required: false
+        type: string
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        MP2040_BOARDCONFIG:
+          [2k,
+          2kw,
+          3x3,
+          4kMegaTouch,
+          4kw,
+          BeatBoard,
+          MacroPad,
+          MegaTouch,
+          MiniTouch]
+
+    steps:
+    - name: Checkout MP2040
+      uses: actions/checkout@v4.1.1
+      with:
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: Setup SDK pipeline
+      uses: Fortinbra/RaspberryPiPicoBuild@v3
+
+    - name: Get core count
+      id: core_count
+      run: cat /proc/cpuinfo | grep processor | wc -l
+
+    - name: Get short commit hash
+      id: git_hash
+      shell: bash
+      run: echo "SHORT_SHA=$(git describe --always --abbrev=7)" >> $GITHUB_OUTPUT
+
+    - name: Set version from tag
+      shell: bash
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag_name }}" ]; then
+          TAG="${{ github.event.inputs.tag_name }}"
+        elif [ "${{ github.event_name }}" = "push" ]; then
+          TAG="${GITHUB_REF#refs/tags/}"
+        else
+          TAG=""
+        fi
+        if [ -n "$TAG" ]; then
+          sed -i "s/^set(GIT_REPO_VERSION \".*\")/set(GIT_REPO_VERSION \"$TAG\")/" CMakeLists.txt
+        fi
+
+    - name: Pico Build Configure CMake
+      shell: bash
+      run: MP2040_BOARDCONFIG=${{ matrix.MP2040_BOARDCONFIG }} cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Pico Build
+      shell: bash
+      run: MP2040_BOARDCONFIG=${{ matrix.MP2040_BOARDCONFIG }} cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel ${{steps.core_count.outputs.output}}
+
+    - name: Upload Pico Artifact
+      uses: actions/upload-artifact@v4.3.1
+      with:
+        name: MP2040 - ${{ steps.git_hash.outputs.SHORT_SHA }} - ${{ matrix.MP2040_BOARDCONFIG }}
+        path: ${{github.workspace}}/build/MP2040_*_${{ matrix.MP2040_BOARDCONFIG }}.uf2
+        if-no-files-found: error
+
+    - name: Upload .elf Artifact
+      if: ${{ matrix.MP2040_BOARDCONFIG == 'MacroPad' }}
+      uses: actions/upload-artifact@v4.3.1
+      with:
+        name: elf - ${{ steps.git_hash.outputs.SHORT_SHA }}
+        path: ${{github.workspace}}/build/MP2040_*_${{ matrix.MP2040_BOARDCONFIG }}.elf
+        if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      startsWith(github.ref, 'refs/tags/') ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.event.inputs.tag_name != '')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4.1.2
+        with:
+          path: ./artifacts
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          TAG_NAME="${{ steps.version.outputs.tag }}"
+          PREV_TAG=$(git tag --list 'v*' --sort=-version:refname | grep -E -v '(alpha|beta|rc|pre)' | head -1)
+          {
+            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "$TAG_NAME" ]; then
+              echo "## Changes"
+              echo ""
+              COUNT=$(git rev-list --count ${PREV_TAG}..HEAD)
+              if [ "$COUNT" -gt 10 ]; then
+                echo "See the [full changelog](https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG_NAME}) for all ${COUNT} commits."
+              else
+                git log ${PREV_TAG}..HEAD --pretty=format:"* %s (%h)"
+              fi
+              echo ""
+            fi
+            echo "## Installation"
+            echo ""
+            echo "1. Download the \`.uf2\` firmware file for your board below"
+            echo "2. Enter BOOTSEL mode — hold the BOOTSEL button while plugging in (or double-press the reset button)"
+            echo "3. A removable drive named \`RPI-RP2\` will appear — copy the \`.uf2\` file onto it"
+            echo "4. The device will flash and reboot automatically"
+            echo ""
+            echo "> If the device was previously used for other firmware, flash [\`flash_nuke.uf2\`](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/flash_nuke.uf2) first to clear memory."
+            echo ""
+            echo "## Firmware"
+            echo ""
+            echo "| Board | File |"
+            echo "|-------|------|"
+            for f in ./artifacts/*/*.uf2; do
+              basename=$(basename "$f")
+              board=$(echo "$basename" | sed 's/.*_\(.*\)\.uf2/\1/')
+              display=$(echo "$board" | sed -e 's/4kMegaTouch/4K Mega Touch/' -e 's/BeatBoard/Beat Board/' -e 's/MegaTouch/Mega Touch/' -e 's/MiniTouch/Mini Touch/' -e 's/MacroPad/Macro Pad/' -e 's/\([a-z0-9]\)\([A-Z]\)/\1 \2/g' -e 's/4 K/4K/' -e 's/\([0-9]\)\([a-z]\)\b/\1\2/')
+              url="https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${basename}"
+              echo "| ${display} | [\`${basename}\`](${url}) |"
+            done
+          } > notes.md
+
+      - name: Check if pre-release
+        id: prerelease
+        run: |
+          TAG_NAME="${{ steps.version.outputs.tag }}"
+          if echo "$TAG_NAME" | grep -qE '(alpha|beta|rc|pre)'; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: notes.md
+          files: |
+            ./artifacts/**/*.uf2
+            ./artifacts/**/*.elf
+            tools/flash_nuke.uf2
+          prerelease: ${{ prerelease.outputs.is_prerelease }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
