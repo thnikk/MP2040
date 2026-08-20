@@ -958,13 +958,20 @@ html[data-theme="light"] .ms-caret {
 }
 
 /* Touch pad controls (Margin / Hysteresis). Full-width so they sit on their
-   own row, below Debounce. */
+   own row, below Debounce. Labels are inline-flex so the text and info icon
+   are vertically centered together within the row. */
 #touch-settings {
   flex-basis: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+#touch-settings label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 #touch-settings[hidden] {
