@@ -302,6 +302,9 @@ export function parseBoardConfig(configDir, rootDir) {
       colorPressedByMode: perModeDefaults(d, 'LED_COLOR_PRESSED', parseColor, parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
+    // Capacitive touch pads: any TOUCH_GPxx define set to 1 hands that pin to
+    // the touch driver. Mirrors the firmware's TOUCH_GPxx board config.
+    hasTouchPads: Object.keys(d).some((k) => /^TOUCH_GP\d+$/.test(k) && parseNum(d[k]) === 1),
     // Number of keys the board can report, mirroring firmware getKeyCount():
     // matrix boards report rows*cols, direct boards report all bank-0 GPIOs.
     keyCount: matrixRows > 0 && matrixCols > 0 ? matrixRows * matrixCols : 30,

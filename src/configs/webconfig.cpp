@@ -295,6 +295,9 @@ std::string getOptions()
     doc["debounceInterval"] = Storage::getInstance().getConfig().debounceInterval;
     doc["touchMargin"] = Storage::getInstance().getConfig().touchMargin;
     doc["touchRelease"] = Storage::getInstance().getConfig().touchRelease;
+    // Board property: whether this board has capacitive touch pads (the UI
+    // hides the touch margin/release settings when false).
+    doc["touch"]["hasTouchPads"] = Storage::getInstance().getTouchPinMask() != 0;
     doc["serialConfigEnabled"] = Storage::getInstance().getSerialConfigEnabled();
     doc["midi"]["channel"] = Storage::getInstance().getMidiChannel();
     doc["midi"]["velocity"] = Storage::getInstance().getMidiVelocity();

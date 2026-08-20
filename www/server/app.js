@@ -137,6 +137,9 @@ function defaultOptions() {
     debounceInterval: 5,
     touchMargin: 15,
     touchRelease: 10,
+    touch: {
+      hasTouchPads: !!board?.hasTouchPads,
+    },
     serialConfigEnabled: false,
     midi: {
       channel: 0,

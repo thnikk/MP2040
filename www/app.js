@@ -790,6 +790,12 @@ async function load() {
     onChange: () => {},
   });
 
+  // Boards without capacitive touch pads don't show the touch settings row.
+  const touchSettingsEl = document.getElementById('touch-settings');
+  if (touchSettingsEl) {
+    touchSettingsEl.hidden = options.touch?.hasTouchPads === false;
+  }
+
   document.getElementById('led-mode').value = led.ledMode ?? 0;
   document.getElementById('led-mode').addEventListener('change', () => {
     syncBrightnessSliderToMode();
