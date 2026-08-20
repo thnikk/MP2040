@@ -12,7 +12,7 @@
 #define TOUCH_MARGIN 15
 #endif
 #ifndef TOUCH_RELEASE
-#define TOUCH_RELEASE 10
+#define TOUCH_RELEASE 15
 #endif
 
 // Capacitive touch input using a small pool of PIO state machines shared
