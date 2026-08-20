@@ -469,6 +469,8 @@ const previewLedDebounced = debounce(previewLed, 150);
 let midiChannelSpinner = null;
 let midiVelocitySpinner = null;
 let debounceSpinner = null;
+let touchMarginSpinner = null;
+let touchReleaseSpinner = null;
 
 // Gather the current controls into a full config payload for /api/setOptions.
 // Includes the profile being edited (profileIndex) and the boot profile.
@@ -489,6 +491,8 @@ function buildOptionsBody() {
     macros: currentOptions.macros || [],
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
+    touchMargin: touchMarginSpinner ? touchMarginSpinner.getValue() : 15,
+    touchRelease: touchReleaseSpinner ? touchReleaseSpinner.getValue() : 10,
     serialConfigEnabled: document.getElementById('serial-config').checked,
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
@@ -767,6 +771,22 @@ async function load() {
     min: 0,
     max: 100,
     value: options.debounceInterval ?? 5,
+    onChange: () => {},
+  });
+
+  touchMarginSpinner = new Spinner({
+    container: document.getElementById('touch-margin-spinner'),
+    min: 0,
+    max: 100,
+    value: options.touchMargin ?? 15,
+    onChange: () => {},
+  });
+
+  touchReleaseSpinner = new Spinner({
+    container: document.getElementById('touch-release-spinner'),
+    min: 0,
+    max: 100,
+    value: options.touchRelease ?? 10,
     onChange: () => {},
   });
 

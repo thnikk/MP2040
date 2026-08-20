@@ -166,25 +166,36 @@ message Config
     // Touch pad auto-calibration, indexed by GPIO pin (only auto-calibrated
     // pads are populated; 0 = no stored entry). Saved at every normal boot
     // (pads idle) and loaded instead of re-sampling on a web config reboot,
-    // where the pad that triggered the reboot is still being held.
-    repeated uint32 touchThresholdsOn = 11 [(nanopb).max_count = 30];
-    repeated uint32 touchThresholdsOff = 12 [(nanopb).max_count = 30];
+    // where the pad that triggered the reboot is still being held. This stores
+    // the raw idle baseline; the press/release thresholds are derived from it
+    // each boot with touchMargin / touchRelease, so tuning those two values
+    // applies without re-sampling.
+    repeated uint32 touchBaselines = 11 [(nanopb).max_count = 30];
+    // Percent over the idle baseline that counts as a touch (press threshold).
+    optional uint32 touchMargin = 12;
+    // Percent of the press threshold that must be shed before a touch
+    // releases. The release threshold is derived as
+    // thresholdOn * (1 - touchRelease/100), so higher = a wider anti-chatter
+    // dead-band (less chatter) and lower = a snappier release. Unlike a second
+    // offset from baseline, this can never put the release above the press
+    // threshold.
+    optional uint32 touchRelease = 13;
     // Enable a USB serial (CDC) command interface alongside the keyboard. The
     // device re-enumerates with an extra serial port on the next boot; from a
     // terminal you can issue commands (type "help") to control the board live,
     // e.g. switch profiles. Off by default.
-    optional bool serialConfigEnabled = 13;
+    optional bool serialConfigEnabled = 14;
     // Gamepad options, only consulted when the default input mode is a gamepad
     // mode (XInput / Switch Pro). Global like defaultInputMode.
     // SOCD cleaning mode for the dpad (see SOCDMode in enums.proto).
-    optional SOCDMode socdMode = 14;
+    optional SOCDMode socdMode = 15;
     // Use the Nintendo face-button layout on Switch Pro (B1->A, B2->B, B3->Y,
     // B4->X). Off = Xbox layout (B1->B, B2->A, B3->Y, B4->X). XInput always
     // uses the Xbox layout.
-    optional bool useNintendoLayout = 15;
+    optional bool useNintendoLayout = 16;
     // Per-pin gamepad control mapping (independent of the keyboard / MIDI
     // key mapping, see GamepadMapping).
-    optional GamepadMapping gamepadMapping = 16;
+    optional GamepadMapping gamepadMapping = 17;
     // Touch ring per-mode behavior (see RingOptions).
-    optional RingOptions ringOptions = 17;
+    optional RingOptions ringOptions = 18;
 }

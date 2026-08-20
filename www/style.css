@@ -957,6 +957,20 @@ html[data-theme="light"] .ms-caret {
   display: none;
 }
 
+/* Touch pad controls (Margin / Hysteresis). Full-width so they sit on their
+   own row, below Debounce. */
+#touch-settings {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#touch-settings[hidden] {
+  display: none;
+}
+
 /* MIDI keyboard picker in the key modal */
 #key-modal-midi[hidden],
 #key-modal-select[hidden],

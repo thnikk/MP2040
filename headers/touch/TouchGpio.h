@@ -5,6 +5,16 @@
 #include "pico/types.h"
 #include "types.h"
 
+// Board tuning defaults (override in BoardConfig.h). These seed the stored
+// config's touchMargin / touchRelease when a config is reset or first
+// created; at runtime the percentages come from the config, not these macros.
+#ifndef TOUCH_MARGIN
+#define TOUCH_MARGIN 15
+#endif
+#ifndef TOUCH_RELEASE
+#define TOUCH_RELEASE 10
+#endif
+
 // Capacitive touch input using a small pool of PIO state machines shared
 // across all pads (one SM does NOT need to be dedicated per pad).
 //
@@ -46,6 +56,12 @@ public:
 	// Applies per-pad thresholds with release hysteresis.
 	GpioMask scan();
 
+	// Re-apply the current config's touchMargin / touchRelease to the live
+	// thresholds, deriving them from the stored baselines (or the fixed board
+	// threshold). Called after a web config save so tuning takes effect without
+	// a reboot.
+	void applyConfig();
+
 	// Read the raw discharge counts for a set of pins (bit set in `pins`).
 	// out[pin] is set to the raw value for each requested configured pad (0 if
 	// the pin isn't a configured touch pad). Returns the mask of pins that were
@@ -65,6 +81,9 @@ private:
 	// Calibrate a single pad (fixed threshold from the board config, or the
 	// lowest of several idle samples + margin).
 	void calibratePin(Pin_t pin);
+	// Derive thresholdOn/thresholdOff from baseline[pin] using the configured
+	// margin (press) and hysteresis (release) percentages.
+	void deriveThresholds(Pin_t pin);
 	uint32_t readPin(Pin_t pin);
 
 	// All pads are multiplexed over a small shared pool of state machines on
@@ -78,8 +97,11 @@ private:
 	uint32_t smCount;                       // number of pool SMs actually claimed
 	GpioMask mask;                          // set bits = configured touch pads
 	uint8_t smForPin[NUM_BANK0_GPIOS];      // pool slot for each pad (0xFF = not configured)
+	uint32_t baseline[NUM_BANK0_GPIOS];     // raw idle baseline per pad
 	uint32_t thresholdOn[NUM_BANK0_GPIOS];
 	uint32_t thresholdOff[NUM_BANK0_GPIOS];
+	uint32_t margin;                        // press % over baseline (config)
+	uint32_t release;                       // release % of press threshold (config)
 	bool active[NUM_BANK0_GPIOS];
 	bool touched[NUM_BANK0_GPIOS];
 };

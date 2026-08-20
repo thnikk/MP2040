@@ -1,6 +1,7 @@
 #include "storagemanager.h"
 
 #include "BoardConfig.h"
+#include "touch/TouchGpio.h"
 #include "FlashPROM.h"
 #include "config.pb.h"
 #include "hardware/watchdog.h"
@@ -2473,6 +2474,8 @@ static void applyDefaults(Config& config)
     config.midiOptions.channel = 0;
     config.midiOptions.velocity = 127;
     config.debounceInterval = 5;
+    config.touchMargin = TOUCH_MARGIN;
+    config.touchRelease = TOUCH_RELEASE;
     config.defaultInputMode = DEFAULT_INPUT_MODE;
     config.has_defaultInputMode = true;
     config.ledOptions.dataPin = LED_PIN;

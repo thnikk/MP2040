@@ -20,16 +20,6 @@
 #define TOUCH_CAL_SAMPLES 8
 #endif
 
-// Percent over the baseline that counts as a touch.
-#ifndef TOUCH_MARGIN
-#define TOUCH_MARGIN 15
-#endif
-
-// Percent over the baseline below which a touch releases (hysteresis).
-#ifndef TOUCH_HYSTERESIS
-#define TOUCH_HYSTERESIS 5
-#endif
-
 // Fixed threshold overrides (0 = auto-calibrate at boot).
 #ifndef TOUCH_THRESHOLD_GP00
 #define TOUCH_THRESHOLD_GP00 0
@@ -134,13 +124,14 @@ static const uint32_t defaultTouchThresholds[NUM_BANK0_GPIOS] = {
 };
 
 TouchGpio::TouchGpio()
-    : pio(nullptr), smOffset(0), smCount(0), mask(0)
+    : pio(nullptr), smOffset(0), smCount(0), mask(0), margin(TOUCH_MARGIN), release(TOUCH_RELEASE)
 {
     for (uint32_t i = 0; i < NUM_BANK0_GPIOS; i++)
     {
         smForPin[i] = 0xFF;
         thresholdOn[i] = 0;
         thresholdOff[i] = 0;
+        baseline[i] = 0;
         active[i] = false;
         touched[i] = false;
     }
@@ -150,6 +141,18 @@ void TouchGpio::setup(GpioMask touchMask, bool useStored)
 {
     mask = touchMask & ((1u << NUM_BANK0_GPIOS) - 1u);
     if (mask == 0) return;
+
+    const Config& config = Storage::getInstance().getConfig();
+    margin = config.has_touchMargin ? config.touchMargin : TOUCH_MARGIN;
+    release = config.has_touchRelease ? config.touchRelease : TOUCH_RELEASE;
+
+    // Legacy configs predate the margin/release fields. Their stored
+    // thresholds reused wire fields 11/12, which now decode as baselines and
+    // would be ~margin too high. Detect them by the missing margin field and
+    // force a fresh calibration (which re-persists real baselines), rather
+    // than trusting the stale values.
+    if (!config.has_touchMargin)
+        useStored = false;
 
     // All pads are multiplexed over a shared pool of state machines on pio1.
     // The ws2812 LED driver uses pio0, so pio1 is entirely ours. Claiming is
@@ -213,29 +216,26 @@ void TouchGpio::calibrate()
         calibratePin(pin);
     }
 
-    // Persist the freshly-calibrated thresholds so a web config reboot (where
+    // Persist the freshly-calibrated baselines so a web config reboot (where
     // the pad that triggered the reboot is still being held) can load them
-    // instead of re-sampling mid-touch. Fixed-threshold pads are board
+    // instead of re-sampling mid-touch, and so a margin/release change can
+    // re-derive thresholds without re-sampling. Fixed-threshold pads are board
     // properties and don't need storing. save() only commits to flash when
     // the config actually changed, so a stable calibration is a no-op.
     Config& config = Storage::getInstance().getConfig();
-    config.touchThresholdsOn_count = 0;
-    config.touchThresholdsOff_count = 0;
+    config.touchBaselines_count = 0;
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         // Clear stale entries first so a pad that is no longer active (e.g.
-        // saturated / missing) doesn't keep an outdated stored threshold.
-        config.touchThresholdsOn[pin] = 0;
-        config.touchThresholdsOff[pin] = 0;
+        // saturated / missing) doesn't keep an outdated stored baseline.
+        config.touchBaselines[pin] = 0;
     }
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (smForPin[pin] == 0xFF || !active[pin]) continue;
         if (defaultTouchThresholds[pin] > 0) continue;
-        config.touchThresholdsOn[pin] = thresholdOn[pin];
-        config.touchThresholdsOff[pin] = thresholdOff[pin];
-        config.touchThresholdsOn_count = pin + 1;
-        config.touchThresholdsOff_count = pin + 1;
+        config.touchBaselines[pin] = baseline[pin];
+        config.touchBaselines_count = pin + 1;
     }
     Storage::getInstance().save(true);
 }
@@ -251,17 +251,20 @@ void TouchGpio::loadCalibration()
         {
             // Fixed threshold from the board config: no calibration needed.
             thresholdOn[pin] = defaultTouchThresholds[pin];
-            thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * TOUCH_HYSTERESIS / 100);
+            thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
             active[pin] = true;
             touched[pin] = false;
             continue;
         }
 
-        if (pin < (Pin_t)config.touchThresholdsOn_count && config.touchThresholdsOn[pin] > 0)
+        if (pin < (Pin_t)config.touchBaselines_count && config.touchBaselines[pin] > 0)
         {
-            // Stored calibration from the last normal boot (pads idle).
-            thresholdOn[pin] = config.touchThresholdsOn[pin];
-            thresholdOff[pin] = config.touchThresholdsOff[pin];
+            // Stored baseline from the last normal boot (pads idle). Derive
+            // the press/release thresholds from it with the configured margin
+            // and release, so tuning those values applies without
+            // re-sampling.
+            baseline[pin] = config.touchBaselines[pin];
+            deriveThresholds(pin);
             active[pin] = true;
             touched[pin] = false;
         }
@@ -280,7 +283,7 @@ void TouchGpio::calibratePin(Pin_t pin)
     {
         // Fixed threshold from the board config: no calibration needed.
         thresholdOn[pin] = defaultTouchThresholds[pin];
-        thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * TOUCH_HYSTERESIS / 100);
+        thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
         active[pin] = true;
         touched[pin] = false;
         return;
@@ -288,26 +291,58 @@ void TouchGpio::calibratePin(Pin_t pin)
 
     // Idle baseline: the lowest of several samples is robust to noise and
     // to a finger resting on the pad during boot.
-    uint32_t baseline = 0xFFFFFFFF;
+    uint32_t baselineVal = 0xFFFFFFFF;
     bool saturated = false;
     for (uint32_t i = 0; i < TOUCH_CAL_SAMPLES; i++)
     {
         uint32_t v = readPin(pin);
         if (v >= TOUCH_TIMEOUT) { saturated = true; break; }
-        if (v < baseline) baseline = v;
+        if (v < baselineVal) baselineVal = v;
     }
 
     // The pad never discharged: no resistor or pad connected. Disable it.
-    if (saturated || baseline == 0xFFFFFFFF)
+    if (saturated || baselineVal == 0xFFFFFFFF)
     {
         active[pin] = false;
         return;
     }
 
-    thresholdOn[pin] = baseline + (baseline * TOUCH_MARGIN / 100);
-    thresholdOff[pin] = baseline + (baseline * TOUCH_HYSTERESIS / 100);
+    baseline[pin] = baselineVal;
+    deriveThresholds(pin);
     active[pin] = true;
     touched[pin] = false;
+}
+
+void TouchGpio::deriveThresholds(Pin_t pin)
+{
+    thresholdOn[pin] = baseline[pin] + (baseline[pin] * margin / 100);
+    thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
+}
+
+void TouchGpio::applyConfig()
+{
+    if (mask == 0) return;
+
+    const Config& config = Storage::getInstance().getConfig();
+    margin = config.has_touchMargin ? config.touchMargin : TOUCH_MARGIN;
+    release = config.has_touchRelease ? config.touchRelease : TOUCH_RELEASE;
+
+    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    {
+        if (smForPin[pin] == 0xFF || !active[pin]) continue;
+
+        if (defaultTouchThresholds[pin] > 0)
+        {
+            // Fixed threshold: the ON value is a board property, only the
+            // release threshold follows the release percentage.
+            thresholdOn[pin] = defaultTouchThresholds[pin];
+            thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
+        }
+        else
+        {
+            deriveThresholds(pin);
+        }
+    }
 }
 
 GpioMask TouchGpio::scan()
@@ -322,8 +357,10 @@ GpioMask TouchGpio::scan()
         uint32_t v = readPin(pin);
         if (v >= TOUCH_TIMEOUT) continue;   // saturated: keep the previous state
 
-        // Threshold with release hysteresis so a noisy reading near the edge
-        // can't chatter the key.
+        // Threshold with a release dead-band so a noisy reading near the edge
+        // can't chatter the key. The gap between thresholdOn and thresholdOff
+        // (set by the release percentage) stops a finger held right at the
+        // press threshold from rapidly re-triggering the key.
         if (!touched[pin] && v > thresholdOn[pin])
             touched[pin] = true;
         else if (touched[pin] && v < thresholdOff[pin])

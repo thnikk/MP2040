@@ -185,6 +185,20 @@
           <div id="debounce-spinner" class="midi-spinner">
             <input type="text" id="debounce" class="spinner-input">
           </div>
+          <div id="touch-settings">
+            <label for="touch-margin">Touch Margin
+              <span class="icon icon-info field-info" data-tooltip='Percent over the idle baseline that counts as a touch (press threshold).'></span>
+            </label>
+            <div id="touch-margin-spinner" class="midi-spinner">
+              <input type="text" id="touch-margin" class="spinner-input">
+            </div>
+            <label for="touch-release">Touch Release
+              <span class="icon icon-info field-info" data-tooltip='How far below the press threshold the reading must fall before the key releases. Higher = wider anti-chatter dead-band; lower = snappier release.'></span>
+            </label>
+            <div id="touch-release-spinner" class="midi-spinner">
+              <input type="text" id="touch-release" class="spinner-input">
+            </div>
+          </div>
           <label for="serial-config" class="checkbox-label">
             <input type="checkbox" id="serial-config">
             Serial control (CDC)

@@ -293,6 +293,8 @@ std::string getOptions()
 
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
     doc["debounceInterval"] = Storage::getInstance().getConfig().debounceInterval;
+    doc["touchMargin"] = Storage::getInstance().getConfig().touchMargin;
+    doc["touchRelease"] = Storage::getInstance().getConfig().touchRelease;
     doc["serialConfigEnabled"] = Storage::getInstance().getSerialConfigEnabled();
     doc["midi"]["channel"] = Storage::getInstance().getMidiChannel();
     doc["midi"]["velocity"] = Storage::getInstance().getMidiVelocity();
@@ -453,6 +455,22 @@ std::string setOptions()
         uint32_t debounce = doc["debounceInterval"].as<uint32_t>();
         config.debounceInterval = debounce > 100 ? 100 : debounce;
     }
+
+    if (doc["touchMargin"].is<int>())
+    {
+        uint32_t margin = doc["touchMargin"].as<uint32_t>();
+        config.touchMargin = margin > 100 ? 100 : margin;
+    }
+
+    if (doc["touchRelease"].is<int>())
+    {
+        uint32_t release = doc["touchRelease"].as<uint32_t>();
+        config.touchRelease = release > 100 ? 100 : release;
+    }
+
+    // Apply the touch margin/release live so tuning takes effect without a
+    // reboot (re-derives thresholds from the stored baselines).
+    TouchGpio::getInstance().applyConfig();
 
     if (doc["serialConfigEnabled"].is<bool>())
         Storage::getInstance().setSerialConfigEnabled(doc["serialConfigEnabled"].as<bool>());

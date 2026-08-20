@@ -135,6 +135,8 @@ function defaultOptions() {
     gamepadMasks,
     defaultInputMode: 1,
     debounceInterval: 5,
+    touchMargin: 15,
+    touchRelease: 10,
     serialConfigEnabled: false,
     midi: {
       channel: 0,
@@ -275,6 +277,12 @@ export function createMockApp() {
     }
     if (Number.isInteger(body.debounceInterval)) {
       current.debounceInterval = Math.max(0, Math.min(100, Number(body.debounceInterval) || 0));
+    }
+    if (Number.isInteger(body.touchMargin)) {
+      current.touchMargin = Math.max(0, Math.min(100, Number(body.touchMargin) || 0));
+    }
+    if (Number.isInteger(body.touchRelease)) {
+      current.touchRelease = Math.max(0, Math.min(100, Number(body.touchRelease) || 0));
     }
     if (Number.isInteger(body.activeProfile)) {
       current.activeProfile = Math.min(3, Math.max(0, body.activeProfile));
