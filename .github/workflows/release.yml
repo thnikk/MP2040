@@ -43,7 +43,15 @@ jobs:
     - name: Setup ARM toolchain
       uses: carlosperate/arm-none-eabi-gcc-action@v1.13.0
 
+    - name: Cache pico-sdk
+      id: cache-sdk
+      uses: actions/cache@v6.1.0
+      with:
+        path: pico-sdk
+        key: pico-sdk-2.2.0
+
     - name: Checkout pico-sdk
+      if: steps.cache-sdk.outputs.cache-hit != 'true'
       uses: actions/checkout@v7.0.1
       with:
         repository: raspberrypi/pico-sdk
@@ -51,6 +59,7 @@ jobs:
         path: pico-sdk
 
     - name: Checkout pico-sdk submodules
+      if: steps.cache-sdk.outputs.cache-hit != 'true'
       working-directory: ${{github.workspace}}/pico-sdk
       run: git submodule update --init --recursive
       shell: bash
