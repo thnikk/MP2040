@@ -264,6 +264,36 @@ main {
   display: none;
 }
 
+/* Loading indicator shown in the main content until the config loads. Uses
+   the same flex layout as .page so it occupies the same area. */
+.loading {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: var(--text-secondary, #888);
+}
+
+.loading[hidden] {
+  display: none;
+}
+
+.loading-spinner {
+  width: 56px;
+  height: 56px;
+  border: 5px solid var(--border, rgba(0, 0, 0, 0.15));
+  border-top-color: var(--accent, #4a90d9);
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Footer */
 .footer {
   background: var(--footer-bg);

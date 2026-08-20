@@ -906,6 +906,14 @@ async function load() {
   loadProfileIntoUi();
 
   renderRoute();
+
+  const loading = document.getElementById('loading');
+  if (loading) loading.hidden = true;
+}
+
+function loadError() {
+  const loading = document.getElementById('loading');
+  if (loading) loading.hidden = true;
 }
 
 // Show either the key/modifier pickers (keyboard mode), the MIDI note picker
@@ -1502,4 +1510,4 @@ document.querySelectorAll('.theme-btn').forEach((btn) => {
   });
 });
 
-load();
+load().catch(loadError);
