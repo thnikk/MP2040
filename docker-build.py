@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent
-DEFAULT_IMAGE = "gp2040-ce-builder"
+DEFAULT_IMAGE = "mp2040-builder"
 DEFAULT_FLASH_PATH = os.path.expandvars("/run/media/$USER/RPI-RP2")
 NUKE_FILE = REPO_ROOT / "tools" / "flash_nuke.uf2"
 
