@@ -67,6 +67,14 @@
 #define BOARD_LED_POSITIONS \
     { 0, 1 }
 
+// Mode indicator LED: a single WS2812 on the PCB showing the active input
+// mode. Board-fixed colors (keyboard / MIDI / web config). -1 = none.
+#define STATUS_LED_PIN 12
+#define STATUS_LED_ENABLE_PIN 11 // power gate; pulled high to enable the LED
+// Default state of the mode indicator LED on fresh/reset configs. 1 = on,
+// 0 = off. The web config can still toggle it per-save.
+#define STATUS_LED_ENABLED_DEFAULT 0
+
 // Web config boot key: the first main key. Hold it to ground at boot to
 // enter web config mode. The round ESC button (GP27) is an extra button,
 // not a config/boot key.

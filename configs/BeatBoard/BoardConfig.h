@@ -114,9 +114,13 @@
 #define BOARD_LED_POSITIONS \
     { 0, 1, 2, 3, 4, 5 }
 
-// Mode indicator LED: -1 = none (no spare LED for a status indicator; the
-// strip is fully used by the 6 buttons).
-#define STATUS_LED_PIN -1
+// Mode indicator LED: a single WS2812 on the PCB showing the active input
+// mode. Board-fixed colors (keyboard / MIDI / web config). -1 = none.
+#define STATUS_LED_PIN 12
+#define STATUS_LED_ENABLE_PIN 11 // power gate; pulled high to enable the LED
+// Default state of the mode indicator LED on fresh/reset configs. 1 = on,
+// 0 = off. The web config can still toggle it per-save.
+#define STATUS_LED_ENABLED_DEFAULT 0
 
 // Web config boot pin. GP01 is a touch pad: the keyboard doesn't start until
 // ~3 seconds after power-on (WEB_CONFIG_TOUCH_WINDOW_MS); touch and hold the

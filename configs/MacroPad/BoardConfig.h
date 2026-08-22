@@ -90,9 +90,6 @@
 // mode. Board-fixed colors (keyboard / MIDI / web config). -1 = none.
 #define STATUS_LED_PIN 12
 #define STATUS_LED_ENABLE_PIN 11 // power gate; pulled high to enable the LED
-#define STATUS_LED_COLOR_KEYBOARD 0x00FF00
-#define STATUS_LED_COLOR_MIDI 0xFFA500
-#define STATUS_LED_COLOR_CONFIG 0x00FFFF
 
 // Key index -> LED strip index mapping. -1 = key has no LED. The LED(s) at
 // the mapped index (LEDS_PER_KEY of them) light up when the key is pressed.

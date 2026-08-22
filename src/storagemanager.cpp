@@ -1,6 +1,13 @@
 #include "storagemanager.h"
 
 #include "BoardConfig.h"
+
+// Mode indicator LED (board-fixed pin): default state on fresh/reset configs.
+// 1 = on, 0 = off. Boards with a status LED can override to default it off.
+#ifndef STATUS_LED_ENABLED_DEFAULT
+#define STATUS_LED_ENABLED_DEFAULT 1
+#endif
+
 #include "touch/TouchGpio.h"
 #include "FlashPROM.h"
 #include "config.pb.h"
@@ -2503,7 +2510,7 @@ static void applyDefaults(Config& config)
     for (uint32_t i = 0; i < 7; i++)
         config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
     config.ledOptions.ledTimeout = LED_TIMEOUT;
-    config.ledOptions.statusLedEnabled = 1;
+    config.ledOptions.statusLedEnabled = STATUS_LED_ENABLED_DEFAULT;
     config.ledOptions.pinLedIndices_count = MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
@@ -2671,7 +2678,7 @@ void Storage::init() {
         for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
         config.ledOptions.ledTimeout = LED_TIMEOUT;
-        config.ledOptions.statusLedEnabled = 1;
+        config.ledOptions.statusLedEnabled = STATUS_LED_ENABLED_DEFAULT;
     }
     // ledSpeed changed from a 1-255 scale to 0-100 percent. Discard any
     // legacy stored value (out of the new range) in favor of the board default.
@@ -2717,7 +2724,7 @@ void Storage::init() {
     if (!config.ledOptions.has_statusLedEnabled)
     {
         config.ledOptions.has_statusLedEnabled = true;
-        config.ledOptions.statusLedEnabled = 1;
+        config.ledOptions.statusLedEnabled = STATUS_LED_ENABLED_DEFAULT;
     }
 
     // Seed the profiles (0-3) once from the current base mapping so configs
