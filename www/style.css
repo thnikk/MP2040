@@ -935,6 +935,16 @@ html[data-theme="light"] .ms-caret {
   flex-basis: 100%;
 }
 
+/* Input mode + debounce row. Always keeps the debounce control on the same
+   line as the input mode selector, regardless of the current mode. */
+#mode-row {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
 /* Import/Export + Reset row at the bottom of the General card */
 .general-import-export {
   flex-basis: 100%;
@@ -959,7 +969,8 @@ html[data-theme="light"] .ms-caret {
 }
 
 /* MIDI-only General controls (hidden unless the input mode is MIDI).
-   Full-width so they sit on their own row below Default Input Mode. */
+   Full-width so they sit on their own row below the input mode / debounce
+   row. */
 #midi-settings {
   flex-basis: 100%;
   display: flex;
@@ -985,6 +996,21 @@ html[data-theme="light"] .ms-caret {
 
 #gamepad-settings[hidden] {
   display: none;
+}
+
+/* SOCD + Nintendo layout row inside the gamepad settings. Keeps both controls
+   on the same line; the Nintendo toggle is pushed to the right edge. */
+#socd-row {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+#socd-row .checkbox-label {
+  flex-basis: auto;
+  margin-left: auto;
 }
 
 /* Touch pad controls (Margin / Hysteresis). Full-width so they sit on their

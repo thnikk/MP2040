@@ -153,13 +153,19 @@
       <section>
         <h2><span class="heading-icon icon icon-microchip" aria-hidden="true"></span>Input</h2>
         <div class="general-form">
-          <label for="default-input-mode">Default Input Mode</label>
-          <select id="default-input-mode">
-            <option value="1">Keyboard</option>
-            <option value="2">MIDI</option>
-            <option value="3">XInput</option>
-            <option value="4">Switch Pro</option>
-          </select>
+          <div id="mode-row">
+            <label for="default-input-mode">Input Mode</label>
+            <select id="default-input-mode">
+              <option value="1">Keyboard</option>
+              <option value="2">MIDI</option>
+              <option value="3">XInput</option>
+              <option value="4">Switch Pro</option>
+            </select>
+            <label for="debounce">Debounce (ms)</label>
+            <div id="debounce-spinner" class="midi-spinner">
+              <input type="text" id="debounce" class="spinner-input">
+            </div>
+          </div>
           <div id="midi-settings" hidden>
             <label for="midi-channel">MIDI Channel</label>
             <div id="midi-channel-spinner" class="midi-spinner">
@@ -171,23 +177,21 @@
             </div>
           </div>
           <div id="gamepad-settings" hidden>
-            <label for="socd-mode">SOCD Mode</label>
-            <select id="socd-mode">
-              <option value="0">Up Priority (U+D=Up)</option>
-              <option value="1">Neutral (U+D=Neutral)</option>
-              <option value="2">Last Input Priority</option>
-              <option value="3">First Input Priority</option>
-              <option value="4">Bypass (no cleaning)</option>
-            </select>
-            <label for="nintendo-layout" id="nintendo-layout-wrap" class="checkbox-label">
-              <input type="checkbox" id="nintendo-layout">
-              Nintendo face-button layout
-              <span class="icon icon-info field-info" data-tooltip='Switch Pro only. Uses the B/A/Y/X order (B1=A, B2=B, B3=Y, B4=X) instead of the Xbox layout. XInput always uses the Xbox layout.'></span>
-            </label>
-          </div>
-          <label for="debounce">Debounce (ms)</label>
-          <div id="debounce-spinner" class="midi-spinner">
-            <input type="text" id="debounce" class="spinner-input">
+            <div id="socd-row">
+              <label for="socd-mode">SOCD Mode</label>
+              <select id="socd-mode">
+                <option value="0">Up Priority (U+D=Up)</option>
+                <option value="1">Neutral (U+D=Neutral)</option>
+                <option value="2">Last Input Priority</option>
+                <option value="3">First Input Priority</option>
+                <option value="4">Bypass (no cleaning)</option>
+              </select>
+              <label for="nintendo-layout" id="nintendo-layout-wrap" class="checkbox-label">
+                <input type="checkbox" id="nintendo-layout">
+                Nintendo face-button layout
+                <span class="icon icon-info field-info" data-tooltip='Switch Pro only. Uses the B/A/Y/X order (B1=A, B2=B, B3=Y, B4=X) instead of the Xbox layout. XInput always uses the Xbox layout.'></span>
+              </label>
+            </div>
           </div>
           <div id="touch-settings">
             <label for="touch-margin">Touch Margin
