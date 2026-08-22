@@ -1,4 +1,7 @@
-# MP2040
+<p align="center">
+	<img alt="Logo" src="assets/mp2040-logo.svg#gh-dark-mode-only" width="300px" />
+	<img alt="Logo" src="assets/mp2040-logo-light.svg#gh-light-mode-only" width="300px" />
+</p><br>
 
 Firmware for RP2040-based keypads. This is a replacement for the old
 [Unified 2022](https://github.com/thnikk/unified-2022) firmware, utilizing
@@ -6,17 +9,6 @@ the advantages of [GP2040-th](https://github.com/thnikk/GP2040-th) like
 the RNDIS web server and removing unnecessary features.
 The intention is to have a more stripped down and stable base
 to work with and focus on usability over runtime board configuration.
-
-- **Keyboard input**: each GPIO maps directly to a USB HID keycode (or
-  modifier / multimedia key), sent as a full 256-key NKRO report.
-- **Basic LEDs**: a small PIO WS2812 driver lights a per-key LED strip.
-- **RNDIS web config**: hold the web-config pin at boot to expose the device
-  as a network device with a tiny web page for remapping keys and LED colors.
-- **Board config files**: pin/keycode/LED defaults live in
-  `configs/<Board>/BoardConfig.h`; new boards are just a new folder.
-
-Everything else from GP2040-th (console drivers, display, USB host, the React
-configurator, the addon system) has been removed.
 
 ## Supported Boards
 
