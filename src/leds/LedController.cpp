@@ -59,6 +59,12 @@ static const SpeedRange speedRanges[] = {
 #ifndef STATUS_LED_COLOR_CONFIG
 #define STATUS_LED_COLOR_CONFIG 0x00FFFF
 #endif
+#ifndef STATUS_LED_COLOR_XINPUT
+#define STATUS_LED_COLOR_XINPUT 0x00FF00
+#endif
+#ifndef STATUS_LED_COLOR_SWITCH_PRO
+#define STATUS_LED_COLOR_SWITCH_PRO 0xFF0000
+#endif
 
 // Suspend/wake fade step (0-255 per 20ms render tick). 255/10 = ~25 ticks,
 // so the fade in/out takes roughly half a second.
@@ -512,10 +518,11 @@ void LedController::update()
 }
 
 // Light the mode indicator LED in the board-fixed color for the active input
-// mode: web config (cyan), MIDI (amber), keyboard (green). The main strip's
-// inactivity fade (ledDim) is applied so the status LED sleeps and wakes with
-// it. The LED is re-shown only when the scaled output changes, so the 80us
-// WS2812 latch wait doesn't run every 20ms frame while idle.
+// mode: web config (cyan), MIDI (amber), keyboard (green), XInput (green),
+// Switch Pro (red). The main strip's inactivity fade (ledDim) is applied so
+// the status LED sleeps and wakes with it. The LED is re-shown only when the
+// scaled output changes, so the 80us WS2812 latch wait doesn't run every 20ms
+// frame while idle.
 void LedController::updateStatusLed()
 {
     if (statusLed == nullptr) return;
@@ -532,10 +539,15 @@ void LedController::updateStatusLed()
     }
 
     uint32_t color = STATUS_LED_COLOR_KEYBOARD;
+    const InputMode inputMode = Storage::getInstance().getDefaultInputMode();
     if (Storage::getInstance().GetConfigMode())
         color = STATUS_LED_COLOR_CONFIG;
-    else if (Storage::getInstance().getDefaultInputMode() == INPUT_MODE_MIDI)
+    else if (inputMode == INPUT_MODE_MIDI)
         color = STATUS_LED_COLOR_MIDI;
+    else if (inputMode == INPUT_MODE_XINPUT)
+        color = STATUS_LED_COLOR_XINPUT;
+    else if (inputMode == INPUT_MODE_SWITCH_PRO)
+        color = STATUS_LED_COLOR_SWITCH_PRO;
 
     uint32_t r = ((color >> 16) & 0xFF) * ledDim / 255;
     uint32_t g = ((color >> 8) & 0xFF) * ledDim / 255;
