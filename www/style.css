@@ -150,6 +150,18 @@ html[data-theme="light"] .logo-link:hover {
   aspect-ratio: 228.846 / 121.94489;
 }
 
+.mp2040-logo {
+  display: block;
+  background-color: var(--text);
+  -webkit-mask-image: url("/icons/mp2040.svg");
+  mask-image: url("/icons/mp2040.svg");
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  aspect-ratio: 228.846 / 121.94489;
+}
+
 .nav-logo {
   height: 40px;
 }
