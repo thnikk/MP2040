@@ -6,6 +6,7 @@
 - `-c` clean build, `-v` verbose, `-f` flash to board, `-n` nuke first, `-p <path>` flash mount
 - First time (or after Dockerfile changes): `docker build -t gp2040-ce-builder .`
 - Output: `build/MP2040_<version>_<sha>_<Board>.uf2`
+- Firmware version comes from `git describe --tags` (`v0.1.0`, `v0.1.0+5`) or `dev` when no tag is reachable. `docker-build.py` fetches tags automatically; release builds are versioned by the workflow via the `MP2040_VERSION` env var; the web/mock server is separate (`www/package.json`).
 
 ## Build (web configurator, dev only)
 - `./web-config.py` — initialize (if needed) and run the web configurator from the repo root. Flags: `-b <Board>` (mock board), `-u <version>` (fake update), `-l <ms>` (fake API latency), `-p <port>`, `--dev-board` (proxy to a real board).

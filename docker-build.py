@@ -4,7 +4,7 @@
 Runs the CMake build inside the gp2040-ce-builder Docker image (no local ARM
 toolchain needed) and optionally flashes a connected board. Pipeline:
 
-    nuke → ensure builder image → clean → build → flash
+    nuke → ensure builder image → clean → fetch tags → build → flash
 
 Examples:
     python3 docker-build.py -b 2k
@@ -203,6 +203,18 @@ def clean_build_dir(args):
                log_file=args.output, verbose=args.verbose)
 
 
+def fetch_tags(args):
+    """Fetch tags from origin so git describe can version the build."""
+    log_msg("Fetching tags...", args.output)
+    try:
+        subprocess.run(["git", "fetch", "--tags"], cwd=REPO_ROOT,
+                       check=True, stdout=subprocess.DEVNULL,
+                       stderr=subprocess.DEVNULL)
+    except (subprocess.CalledProcessError, OSError):
+        log_msg("Warning: could not fetch tags, using fallback version",
+                args.output)
+
+
 def build_firmware(args):
     """Configure and build the firmware in the container. Returns the built
     UF2 path, or None if the build failed / produced no UF2."""
@@ -323,9 +335,11 @@ def main():
     ensure_builder_image(args)
     # 3. Fix ownership / clean build dir
     clean_build_dir(args)
-    # 4. Configure + build firmware
+    # 4. Fetch tags so git describe can version the build
+    fetch_tags(args)
+    # 5. Configure + build firmware
     uf2 = build_firmware(args)
-    # 5. Copy the UF2 to the board (optional)
+    # 6. Copy the UF2 to the board (optional)
     flash_firmware(uf2, args, flash_dir)
 
 

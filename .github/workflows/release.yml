@@ -85,14 +85,9 @@ jobs:
       shell: bash
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.tag_name }}" ]; then
-          TAG="${{ github.event.inputs.tag_name }}"
+          echo "MP2040_VERSION=${{ github.event.inputs.tag_name }}" >> "$GITHUB_ENV"
         elif [ "${{ github.event_name }}" = "push" ]; then
-          TAG="${GITHUB_REF#refs/tags/}"
-        else
-          TAG=""
-        fi
-        if [ -n "$TAG" ]; then
-          sed -i "s/^set(GIT_REPO_VERSION \".*\")/set(GIT_REPO_VERSION \"$TAG\")/" CMakeLists.txt
+          echo "MP2040_VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
         fi
 
     - name: Pico Build Configure CMake
