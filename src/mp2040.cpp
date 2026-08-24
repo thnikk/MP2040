@@ -32,12 +32,20 @@
 #endif
 
 void MP2040::setup() {
+	// A one-time flag baked into the flashed UF2 (docker-build.py --webconfig)
+	// requests web config mode on the next boot. Read and consumed first so the
+	// erase happens before any config flash access.
+	const System::BootMode flagMode = System::takeBootFlag();
+
 	Storage::getInstance().init();
 
 	// Read the boot mode once: a watchdog reboot can request web config / USB
 	// bootloader / gamepad mode. Stored so getBootAction() and the key GPIO
 	// setup can both use it without consuming the scratch register twice.
 	bootMode = System::takeBootMode();
+	if (flagMode != System::BootMode::DEFAULT) {
+		bootMode = flagMode;
+	}
 
 	// Initialize key GPIOs (buttons and touch pads) up front so the boot-mode
 	// check below can use touch detection when the web config pin is a pad.

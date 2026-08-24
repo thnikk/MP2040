@@ -29,6 +29,10 @@ namespace System {
     void reboot(BootMode bootMode);
     // Retrieves the BootMode value from the watchdog scratch register and resets its value to BootMode::DEFAULT
     BootMode takeBootMode();
+    // Reads a one-time boot flag baked into the flashed UF2 (by
+    // docker-build.py --webconfig) and consumes it. Returns the requested
+    // BootMode, or BootMode::DEFAULT when no flag is set.
+    BootMode takeBootFlag();
 }
 
 #endif

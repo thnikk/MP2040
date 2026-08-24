@@ -3,7 +3,7 @@
 ## Build (firmware)
 - **Docker only** — no local ARM toolchain
 - `python3 docker-build.py -b <Board>` — board from `configs/` dir names (default: `MacroPad`)
-- `-c` clean build, `-v` verbose, `-f` flash to board, `-n` nuke first, `-p <path>` flash mount
+- `-c` clean build, `-v` verbose, `-f` flash to board, `-n` nuke first, `-p <path>` flash mount, `-w` flash a UF2 that boots once into web config mode
 - First time (or after Dockerfile changes): `docker build -t gp2040-ce-builder .`
 - Output: `build/MP2040_<version>_<sha>_<Board>.uf2`
 - Firmware version comes from `git describe --tags` (`v0.1.0`, `v0.1.0+5`) or `dev` when no tag is reachable. `docker-build.py` fetches tags automatically; release builds are versioned by the workflow via the `MP2040_VERSION` env var; the web/mock server is separate (`www/package.json`).

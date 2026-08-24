@@ -16,6 +16,7 @@ import glob
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import time
@@ -215,6 +216,57 @@ def fetch_tags(args):
                 args.output)
 
 
+# One-time boot flag baked into the flashed UF2 to boot once into web config
+# mode. Must match BOOT_FLAG_ADDR / BOOT_FLAG_MAGIC in src/system.cpp.
+BOOT_FLAG_ADDR = 0x101F6000
+BOOT_FLAG_MAGIC = 0x57424743
+UF2_MAGIC0 = 0x0A324655
+UF2_MAGIC1 = 0x9E5D5157
+UF2_MAGIC_END = 0x0AB16F30
+UF2_FAMILY_RP2040 = 0xE48BFF56
+UF2_FLAGS = 0x2000
+
+
+def mark_webconfig_uf2(uf2_path):
+    """Return a patched UF2 that boots once into web config mode.
+
+    Appends one 256-byte page block at BOOT_FLAG_ADDR containing the magic
+    dword; the firmware reads it on first boot, enters web config mode, and
+    erases the sector. All blocks get their block count bumped so the file
+    remains a valid UF2.
+    """
+    data = uf2_path.read_bytes()
+    if len(data) % 512:
+        raise ValueError(f"{uf2_path} is not a valid UF2 (size not a multiple of 512)")
+    num_blocks = len(data) // 512
+    blocks = [data[i * 512:(i + 1) * 512] for i in range(num_blocks)]
+
+    # Every block must end with the RP2040 magic_end field or the bootrom
+    # rejects it and never flashes (and never reboots).
+    for i, blk in enumerate(blocks):
+        if struct.unpack('<I', blk[508:512])[0] != UF2_MAGIC_END:
+            raise ValueError(f"{uf2_path} block {i} missing magic_end field")
+
+    # Page payload: magic dword + erased (0xFF) fill for the rest of the page.
+    payload = bytearray(b'\xff' * 256)
+    payload[0:4] = struct.pack('<I', BOOT_FLAG_MAGIC)
+    marker = struct.pack('<8I', UF2_MAGIC0, UF2_MAGIC1, UF2_FLAGS,
+                         BOOT_FLAG_ADDR, 256, num_blocks, num_blocks + 1,
+                         UF2_FAMILY_RP2040) + bytes(payload) + bytes(220) \
+        + struct.pack('<I', UF2_MAGIC_END)
+
+    out = []
+    for blk in blocks:
+        header = list(struct.unpack('<8I', blk[:32]))
+        header[6] = num_blocks + 1  # new total block count
+        out.append(struct.pack('<8I', *header) + blk[32:])
+    out.append(marker)
+
+    patched = uf2_path.with_name(uf2_path.stem + "_webconfig.uf2")
+    patched.write_bytes(b"".join(out))
+    return patched
+
+
 def build_firmware(args):
     """Configure and build the firmware in the container. Returns the built
     UF2 path, or None if the build failed / produced no UF2."""
@@ -301,6 +353,8 @@ def parse_args(valid_boards):
                         help="Flash nuke UF2 to board before build")
     parser.add_argument("-f", "--flash", action="store_true",
                         help="Copy built UF2 to board after build")
+    parser.add_argument("-w", "--webconfig", action="store_true",
+                        help="Flash a UF2 that boots once into web config mode")
     parser.add_argument("-p", "--path", default=DEFAULT_FLASH_PATH,
                         help=f"RPI-RP2 mount point (default: {DEFAULT_FLASH_PATH})")
     parser.add_argument("-t", "--timeout", type=int, default=30,
@@ -339,7 +393,15 @@ def main():
     fetch_tags(args)
     # 5. Configure + build firmware
     uf2 = build_firmware(args)
-    # 6. Copy the UF2 to the board (optional)
+    # 6. Optionally bake a one-time web config boot flag into the UF2
+    if args.webconfig:
+        if uf2 is None:
+            log_msg("Warning: --webconfig skipped (no UF2 produced)",
+                    args.output)
+        else:
+            uf2 = mark_webconfig_uf2(uf2)
+            log_msg(f"Web config boot flag added → {uf2.name}", args.output)
+    # 7. Copy the UF2 to the board (optional)
     flash_firmware(uf2, args, flash_dir)
 
 

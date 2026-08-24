@@ -87,3 +87,22 @@ System::BootMode System::takeBootMode() {
 
     return bootMode;
 }
+
+// One-time boot flag baked into the flashed UF2 by docker-build.py --webconfig.
+// Lives in the 4KB sector directly below the config EEPROM (EEPROM_ADDRESS_START
+// in FlashPROM.h), which the firmware binary never reaches (it is a few hundred
+// KB into a 2MB flash) and config saves never touch. The value must stay in
+// sync with the BOOT_FLAG_MAGIC used by docker-build.py.
+#define BOOT_FLAG_ADDR 0x101F6000u
+#define BOOT_FLAG_MAGIC 0x57424743u
+
+System::BootMode System::takeBootFlag() {
+    // A freshly-erased sector reads 0xFFFFFFFF, never the magic.
+    if (*reinterpret_cast<const uint32_t*>(BOOT_FLAG_ADDR) != BOOT_FLAG_MAGIC) {
+        return BootMode::DEFAULT;
+    }
+    // Consume the flag so the next reboot boots normally. Runs early on core 0
+    // (before Storage::init / core 1), so the erase only touches the flag sector.
+    flash_range_erase(BOOT_FLAG_ADDR - XIP_BASE, FLASH_SECTOR_SIZE);
+    return BootMode::WEBCONFIG;
+}
