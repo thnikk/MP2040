@@ -51,10 +51,12 @@ up macros, and adjust LED colors.
 
 ## Input Modes
 
-MP2040 currently supports two input modes:
+MP2040 currently supports four input modes:
 
-- **Keyboard**: Full NKRO HID report
+- **Keyboard**: Full NKRO HID report (default)
 - **MIDI**: Send MIDI notes on a configured channel with global and per-key velocities
+- **XInput**: Presents as an Xbox 360 controller (PC)
+- **Switch Pro**: Emulates a Pro Controller (Nintendo hardware)
 
 ## Key Scanning
 
