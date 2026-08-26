@@ -8,6 +8,10 @@
 const SHAPE_TAGS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line'];
 const SHAPE_SEL = 'path, rect, circle, ellipse, polygon, polyline, line';
 const LABEL_RE = /-label$/i;
+// Display multiplier for the board's natural physical size: boards render at
+// 1.5× their real footprint (mm) so they read better in the panel while
+// staying proportional to each other and clamped to the container.
+const BOARD_VIEW_SCALE = 1.5;
 
 // Returns { pinNumber, name } if el is a button: the element id or its
 // inkscape:label starts with "pin"/"key" followed by digits (matrix boards
@@ -85,6 +89,30 @@ function prepareSvg(svg) {
     }
     return `<svg${cleaned}>`;
   });
+}
+
+// Parse the authored <svg> width/height into physical millimetres. The board
+// SVGs are drawn to scale but mix two unit systems: some declare mm units
+// (e.g. 3x3), the rest are Inkscape px at 96dpi (1 unit = 1/96 inch). Convert
+// px to mm (× 25.4/96) so every board's rendered size reflects its real size.
+function parseSvgSizeMm(svgText) {
+  const parse = (attr) => {
+    const m = svgText.match(new RegExp(`\\b${attr}="([0-9.]+)(mm|cm|in|pt|pc|px)?"`, 'i'));
+    if (!m) return null;
+    const value = parseFloat(m[1]);
+    switch ((m[2] || 'px').toLowerCase()) {
+      case 'mm': return value;
+      case 'cm': return value * 10;
+      case 'in': return value * 25.4;
+      case 'pt': return value * 25.4 / 72;
+      case 'pc': return value * 25.4 / 6;
+      default: return value * 25.4 / 96; // px
+    }
+  };
+  const w = parse('width');
+  const h = parse('height');
+  if (w == null && h == null) return null;
+  return { w, h };
 }
 
 function parsePathEndpoints(d) {
@@ -240,6 +268,19 @@ class BoardView {
     this.container.innerHTML = prepareSvg(svgText);
     this.svgRoot = this.container.querySelector('svg');
     if (!this.svgRoot) return;
+
+    // Size the board by its real physical footprint (mm) × BOARD_VIEW_SCALE,
+    // clamped to the panel by CSS. Browsers render mm at 96dpi, so the SVG
+    // scales naturally and the container's max-width/max-height clamp it while
+    // preserving aspect ratio.
+    const sizeMm = parseSvgSizeMm(svgText);
+    if (sizeMm) {
+      if (sizeMm.w != null) this.svgRoot.setAttribute('width', `${sizeMm.w * BOARD_VIEW_SCALE}mm`);
+      if (sizeMm.h != null) this.svgRoot.setAttribute('height', `${sizeMm.h * BOARD_VIEW_SCALE}mm`);
+    } else {
+      // No parsable size: fall back to filling the panel width.
+      this.svgRoot.style.width = '100%';
+    }
 
     this.ringElement = findByRef(this.svgRoot, 'ring');
     this.ringShapes = this.ringElement ? shapesOf(this.ringElement) : [];

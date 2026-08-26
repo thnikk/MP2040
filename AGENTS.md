@@ -52,6 +52,7 @@
 ## Testing
 - **Never kill the user's running mock/Vite dev server** (`npm run dev`, usually on port 3000). To test the web server, start a separate instance on port 1357 and clean up only that one; don't kill existing instances.
 - Don't build the firmware unless necessary.
+- Headless UI checks: start a mock server on 1357, then drive a headless Chromium over CDP. `chromium --headless=new --no-sandbox --disable-gpu --remote-debugging-port=9223 about:blank` (keep it alive), then a tiny Node script using the built-in `WebSocket` (no deps): connect to `http://127.0.0.1:9223/json/list` → `webSocketDebuggerUrl`, send `Page.navigate` to `http://localhost:1357/<route>`, poll `Runtime.evaluate` on a real 400ms timer until the target element exists, and read attributes (e.g. board `svg` `width`/`height`). **Do not use `--dump-dom`/`--virtual-time-budget`** — the configurator long-polls `/api/getPinState`, whose request the mock parks forever, so virtual time never advances and `--dump-dom` hangs. Clean up the 1357 server and the Chromium instance afterwards.
 
 ## Web conventions
 - Don't inline SVGs, styling, or js.
