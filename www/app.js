@@ -743,7 +743,7 @@ async function load() {
   if (statusLedEl) {
     // Boards without a status LED don't show the toggle at all.
     statusLedEl.closest('label').hidden = options.led?.hasStatusLed === false;
-    statusLedEl.checked = options.led?.statusLedEnabled !== 0;
+    statusLedEl.checked = Boolean(options.led?.statusLedEnabled);
     statusLedEl.addEventListener('change', () => {
       if (!currentOptions.led) currentOptions.led = {};
       currentOptions.led.statusLedEnabled = statusLedEl.checked;
