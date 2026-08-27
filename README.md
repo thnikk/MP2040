@@ -1,6 +1,12 @@
 <p align="center">
 	<img alt="Logo" src="assets/mp2040-logo.svg#gh-dark-mode-only" width="300px" />
 	<img alt="Logo" src="assets/mp2040-logo-light.svg#gh-light-mode-only" width="300px" />
+</p>
+
+<p align="center">
+	<a href="https://github.com/thnikk/GP2040-th">
+		<img alt="Fork Badge" src="assets/fork-label.svg" height="24px">
+	</a>
 </p><br>
 
 Firmware for RP2040-based keypads. This is a replacement for the old
