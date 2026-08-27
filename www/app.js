@@ -538,7 +538,6 @@ function buildOptionsBody() {
       ledPressedColors: currentOptions.led?.ledPressedColors || [],
     },
     display: {
-      enabled: document.getElementById('display-enabled').checked,
       size: currentOptions.display?.size ?? 3,
       flip: currentOptions.display?.flip ?? 0,
       invert: currentOptions.display?.invert ?? false,
@@ -778,19 +777,11 @@ async function load() {
   }
 
   // Display settings (SSD1306 OLED). Only shown when the board has display
-  // wiring; the toggle still lets the user turn it off.
+  // wiring (enabled and wiring are board-fixed, not editable).
   const display = options.display || {};
   const displaySection = document.getElementById('display-settings');
   if (displaySection) {
     displaySection.hidden = display.hasDisplay !== true;
-  }
-  const displayEnabledEl = document.getElementById('display-enabled');
-  if (displayEnabledEl) {
-    displayEnabledEl.checked = display.enabled === true;
-    displayEnabledEl.addEventListener('change', () => {
-      if (!currentOptions.display) currentOptions.display = {};
-      currentOptions.display.enabled = displayEnabledEl.checked;
-    });
   }
   const bindSelect = (id, key) => {
     const el = document.getElementById(id);

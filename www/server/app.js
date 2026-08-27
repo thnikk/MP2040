@@ -318,8 +318,9 @@ export function createMockApp() {
     if (body.display !== undefined) {
       current.display = { ...current.display, ...body.display };
       // Never let the client override the physical wiring indicator or the
-      // board-fixed layout fields (buttonLayout/orientation/splashMode).
+      // board-fixed fields (enabled/buttonLayout/orientation/splashMode).
       current.display.hasDisplay = board?.display?.hasDisplay ?? false;
+      current.display.enabled = board?.display?.enabled ?? false;
       current.display.buttonLayout = board?.display?.buttonLayout ?? 5;
       current.display.orientation = board?.display?.orientation ?? 0;
       current.display.splashMode = board?.display?.splashMode ?? 0;

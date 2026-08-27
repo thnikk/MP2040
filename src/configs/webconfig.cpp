@@ -624,14 +624,13 @@ std::string setOptions()
             config.ledOptions.statusLedEnabled = led["statusLedEnabled"].as<bool>() ? 1 : 0;
     }
 
-    // Display options (SSD1306 over I2C). The I2C block/pins are physical
-    // board properties and are not editable here; the rest is user config.
+    // Display options (SSD1306 over I2C). The I2C block/pins, the enable flag and
+    // the shipped layout (buttonLayout/orientation/splashMode) are board-fixed
+    // and not editable here; the rest is user config.
     JsonObject display = doc["display"];
     if (!display.isNull())
     {
         DisplayOptions& d = Storage::getInstance().getDisplayOptions();
-        if (display["enabled"].is<bool>())
-            d.enabled = display["enabled"].as<bool>();
         if (display["size"].is<int>())
         {
             uint32_t size = display["size"].as<uint32_t>();

@@ -1045,6 +1045,13 @@ html[data-theme="light"] .ms-caret {
   display: none;
 }
 
+/* Display settings: hidden entirely on boards without an OLED display.
+   (The generic section rule sets display:flex, which would otherwise beat
+   the [hidden] attribute.) */
+#display-settings[hidden] {
+  display: none;
+}
+
 /* MIDI keyboard picker in the key modal */
 #key-modal-midi[hidden],
 #key-modal-select[hidden],

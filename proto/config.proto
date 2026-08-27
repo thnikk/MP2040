@@ -208,7 +208,8 @@ message Config
 // Single full-panel layout (no GP2040-CE left/right split).
 message DisplayOptions
 {
-    // Master enable: the display controller runs when true.
+    // Master enable. Board-fixed: re-applied from the board config (the display
+    // runs whenever the board ships one), not editable via the web config.
     optional bool enabled = 1;
     // I2C block (0 = i2c0, 1 = i2c1) and pins. Board properties, re-applied
     // from the board config at load.

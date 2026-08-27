@@ -2664,10 +2664,10 @@ static void seedDisplayOptions(Config& config)
 }
 
 // Backfill missing display fields from the board defaults and always re-apply
-// the physical/board-fixed properties: the I2C wiring (block/pins) and the
-// shipped layout (buttonLayout/orientation/splashMode), which can't be changed
-// from the web config. User-settable fields keep their stored values when
-// present.
+// the physical/board-fixed properties: the I2C wiring (block/pins), the enable
+// flag, and the shipped layout (buttonLayout/orientation/splashMode), which
+// can't be changed from the web config. User-settable fields keep their stored
+// values when present.
 static void normalizeDisplayOptions(Config& config)
 {
     if (!config.has_displayOptions)
@@ -2691,7 +2691,10 @@ static void normalizeDisplayOptions(Config& config)
     d.has_orientation = true;
     d.splashMode = s.splashMode;
     d.has_splashMode = true;
-    if (!d.has_enabled) { d.enabled = s.enabled; d.has_enabled = true; }
+    // The display enable is board-fixed too: the display runs whenever the
+    // board ships one (HAS_I2C_DISPLAY), and can't be toggled from the web.
+    d.enabled = s.enabled;
+    d.has_enabled = true;
     if (!d.has_i2cAddress) { d.i2cAddress = s.i2cAddress; d.has_i2cAddress = true; }
     if (!d.has_size) { d.size = s.size; d.has_size = true; }
     if (!d.has_flip) { d.flip = s.flip; d.has_flip = true; }
