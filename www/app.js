@@ -471,6 +471,20 @@ let midiVelocitySpinner = null;
 let debounceSpinner = null;
 let touchMarginSpinner = null;
 let touchReleaseSpinner = null;
+let displaySplashDurationSpinner = null;
+let displaySaverTimeoutSpinner = null;
+let displayHistoryTimeoutSpinner = null;
+
+// Parse a comma-separated list of key indices (menu combo) into an array of
+// ints. Empty input = disabled.
+function parseCombo(text) {
+  return String(text || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+    .map((s) => parseInt(s, 10))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n < 128);
+}
 
 // Gather the current controls into a full config payload for /api/setOptions.
 // Includes the profile being edited (profileIndex) and the boot profile.
@@ -522,6 +536,18 @@ function buildOptionsBody() {
       colorPressedByMode: colors.pressed,
       ledNormalColors: currentOptions.led?.ledNormalColors || [],
       ledPressedColors: currentOptions.led?.ledPressedColors || [],
+    },
+    display: {
+      enabled: document.getElementById('display-enabled').checked,
+      size: currentOptions.display?.size ?? 3,
+      flip: currentOptions.display?.flip ?? 0,
+      invert: currentOptions.display?.invert ?? false,
+      splashDuration: displaySplashDurationSpinner ? displaySplashDurationSpinner.getValue() : 3,
+      displaySaverTimeout: displaySaverTimeoutSpinner ? displaySaverTimeoutSpinner.getValue() : 0,
+      displaySaverMode: parseInt(document.getElementById('display-saver-mode').value, 10),
+      inputHistoryEnabled: document.getElementById('display-input-history').checked,
+      inputHistoryTimeout: displayHistoryTimeoutSpinner ? displayHistoryTimeoutSpinner.getValue() : 3,
+      menuCombo: parseCombo(document.getElementById('display-menu-combo').value),
     },
     profileIndex: currentProfileIndex,
     activeProfile,
@@ -748,6 +774,73 @@ async function load() {
       if (!currentOptions.led) currentOptions.led = {};
       currentOptions.led.statusLedEnabled = statusLedEl.checked;
       previewLed();
+    });
+  }
+
+  // Display settings (SSD1306 OLED). Only shown when the board has display
+  // wiring; the toggle still lets the user turn it off.
+  const display = options.display || {};
+  const displaySection = document.getElementById('display-settings');
+  if (displaySection) {
+    displaySection.hidden = display.hasDisplay !== true;
+  }
+  const displayEnabledEl = document.getElementById('display-enabled');
+  if (displayEnabledEl) {
+    displayEnabledEl.checked = display.enabled === true;
+    displayEnabledEl.addEventListener('change', () => {
+      if (!currentOptions.display) currentOptions.display = {};
+      currentOptions.display.enabled = displayEnabledEl.checked;
+    });
+  }
+  const bindSelect = (id, key) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = display[key] ?? 0;
+    el.addEventListener('change', () => {
+      if (!currentOptions.display) currentOptions.display = {};
+      currentOptions.display[key] = parseInt(el.value, 10);
+    });
+  };
+  // buttonLayout / orientation / splashMode are board-fixed (not editable).
+  bindSelect('display-saver-mode', 'displaySaverMode');
+  const displayHistoryEl = document.getElementById('display-input-history');
+  if (displayHistoryEl) {
+    displayHistoryEl.checked = display.inputHistoryEnabled !== false;
+    displayHistoryEl.addEventListener('change', () => {
+      if (!currentOptions.display) currentOptions.display = {};
+      currentOptions.display.inputHistoryEnabled = displayHistoryEl.checked;
+    });
+  }
+  displaySplashDurationSpinner = new Spinner({
+    container: document.getElementById('display-splash-duration-spinner'),
+    min: 0,
+    max: 60,
+    step: 1,
+    value: display.splashDuration ?? 3,
+    onChange: () => {},
+  });
+  displaySaverTimeoutSpinner = new Spinner({
+    container: document.getElementById('display-saver-timeout-spinner'),
+    min: 0,
+    max: 3600,
+    step: 5,
+    value: display.displaySaverTimeout ?? 0,
+    onChange: () => {},
+  });
+  displayHistoryTimeoutSpinner = new Spinner({
+    container: document.getElementById('display-history-timeout-spinner'),
+    min: 0,
+    max: 300,
+    step: 1,
+    value: display.inputHistoryTimeout ?? 3,
+    onChange: () => {},
+  });
+  const menuComboEl = document.getElementById('display-menu-combo');
+  if (menuComboEl) {
+    menuComboEl.value = Array.isArray(display.menuCombo) ? display.menuCombo.join(', ') : '';
+    menuComboEl.addEventListener('change', () => {
+      if (!currentOptions.display) currentOptions.display = {};
+      currentOptions.display.menuCombo = parseCombo(menuComboEl.value);
     });
   }
 

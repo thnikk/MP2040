@@ -11,6 +11,7 @@ MP2040Aux::~MP2040Aux() {
 // MP2040 setup function for certain setup functions.
 void MP2040Aux::setup() {
 	ledController.setup();
+	displayController.setup();
 
 	// Ready to sync Core0 and Core1
 	isReady = true;
@@ -19,5 +20,6 @@ void MP2040Aux::setup() {
 void MP2040Aux::run() {
 	while (1) {
 		ledController.update();
+		displayController.update();
 	}
 }

@@ -198,4 +198,58 @@ message Config
     optional GamepadMapping gamepadMapping = 17;
     // Touch ring per-mode behavior (see RingOptions).
     optional RingOptions ringOptions = 18;
+    // On-screen display options (SSD1306/SH1106 over I2C). Physical wiring
+    // (I2C block/pins) is a board property seeded from BoardConfig.h; the rest
+    // is user config editable via the web config / on-device mini menu.
+    optional DisplayOptions displayOptions = 19;
+}
+
+// On-screen display configuration. See DisplayController for how it's used.
+// Single full-panel layout (no GP2040-CE left/right split).
+message DisplayOptions
+{
+    // Master enable: the display controller runs when true.
+    optional bool enabled = 1;
+    // I2C block (0 = i2c0, 1 = i2c1) and pins. Board properties, re-applied
+    // from the board config at load.
+    optional uint32 i2cBlock = 2;
+    optional int32 sdaPin = 3;
+    optional int32 sclPin = 4;
+    optional uint32 i2cAddress = 5;   // default 0x3C
+    // Panel size (GPGFX_DisplaySize: 128x32 = 2, 128x64 = 3).
+    optional uint32 size = 6;
+    // Rotation 0-3 and color invert, baked into the init command sequence.
+    optional uint32 flip = 7;
+    optional bool invert = 8;
+    // Full-panel button layout. Board-fixed: ships with the board config and
+    // is re-applied at load, not editable via the web config.
+    optional ButtonLayout buttonLayout = 9;
+    optional ButtonLayoutOrientation orientation = 10;
+    // Custom layout params (used when buttonLayout = BUTTON_LAYOUT_CUSTOM):
+    // where the first button starts and how buttons tile from there.
+    optional uint32 startX = 11;
+    optional uint32 startY = 12;
+    optional uint32 buttonRadius = 13;
+    optional uint32 buttonPadding = 14;
+    // Splash mode is board-fixed (ships with the board config); the duration is
+    // a user setting in seconds.
+    optional SplashMode splashMode = 15;
+    optional uint32 splashDuration = 16;   // seconds (0 = stay on splash)
+    // Display saver: timeout in seconds (0 = never) and scene.
+    optional uint32 displaySaverTimeout = 17;   // seconds (0 = never)
+    optional DisplaySaverMode displaySaverMode = 18;
+    // Bottom-of-screen input history.
+    optional bool inputHistoryEnabled = 19;
+    optional uint32 inputHistoryTimeout = 20;   // seconds
+    // Key combo that toggles the mini menu (key indices; all must be held for
+    // ~500ms). Seeded from the board's DISPLAY_MENU_COMBO define.
+    repeated uint32 menuCombo = 21 [(nanopb).max_count = 8];
+    // Mini-menu navigation key indices. Board-defined defaults (the dpad keys
+    // + B1/B2); -1 = resolve from the active profile's key mapping instead.
+    optional int32 menuUpPin = 22;
+    optional int32 menuDownPin = 23;
+    optional int32 menuLeftPin = 24;
+    optional int32 menuRightPin = 25;
+    optional int32 menuSelectPin = 26;
+    optional int32 menuBackPin = 27;
 }

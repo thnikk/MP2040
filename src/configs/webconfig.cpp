@@ -351,6 +351,36 @@ std::string getOptions()
 
     doc["webConfigPin"] = Storage::getInstance().getWebConfigPin();
 
+    // Display options (SSD1306 over I2C). The physical wiring (i2c block/pins)
+    // is board-fixed; the rest is user config.
+    const DisplayOptions& display = Storage::getInstance().getDisplayOptions();
+    doc["display"]["enabled"] = display.enabled;
+    doc["display"]["hasDisplay"] = Storage::getInstance().getDisplayOptions().sdaPin >= 0;
+    doc["display"]["size"] = display.size;
+    doc["display"]["flip"] = display.flip;
+    doc["display"]["invert"] = display.invert;
+    doc["display"]["buttonLayout"] = display.buttonLayout;
+    doc["display"]["orientation"] = display.orientation;
+    doc["display"]["startX"] = display.startX;
+    doc["display"]["startY"] = display.startY;
+    doc["display"]["buttonRadius"] = display.buttonRadius;
+    doc["display"]["buttonPadding"] = display.buttonPadding;
+    doc["display"]["splashMode"] = display.splashMode;
+    doc["display"]["splashDuration"] = display.splashDuration;
+    doc["display"]["displaySaverTimeout"] = display.displaySaverTimeout;
+    doc["display"]["displaySaverMode"] = display.displaySaverMode;
+    doc["display"]["inputHistoryEnabled"] = display.inputHistoryEnabled;
+    doc["display"]["inputHistoryTimeout"] = display.inputHistoryTimeout;
+    JsonArray menuCombo = doc["display"].createNestedArray("menuCombo");
+    for (uint32_t i = 0; i < display.menuCombo_count; i++)
+        menuCombo.add(display.menuCombo[i]);
+    doc["display"]["menuUpPin"] = display.menuUpPin;
+    doc["display"]["menuDownPin"] = display.menuDownPin;
+    doc["display"]["menuLeftPin"] = display.menuLeftPin;
+    doc["display"]["menuRightPin"] = display.menuRightPin;
+    doc["display"]["menuSelectPin"] = display.menuSelectPin;
+    doc["display"]["menuBackPin"] = display.menuBackPin;
+
     // Matrix input mode geometry (board property). rows/cols are 0 when the
     // board is in direct-pin mode.
     doc["matrix"]["rows"] = Storage::getInstance().getMatrixRows();
@@ -592,6 +622,69 @@ std::string setOptions()
         // The status LED toggle is a global (non-profile) LED option.
         if (led["statusLedEnabled"].is<bool>())
             config.ledOptions.statusLedEnabled = led["statusLedEnabled"].as<bool>() ? 1 : 0;
+    }
+
+    // Display options (SSD1306 over I2C). The I2C block/pins are physical
+    // board properties and are not editable here; the rest is user config.
+    JsonObject display = doc["display"];
+    if (!display.isNull())
+    {
+        DisplayOptions& d = Storage::getInstance().getDisplayOptions();
+        if (display["enabled"].is<bool>())
+            d.enabled = display["enabled"].as<bool>();
+        if (display["size"].is<int>())
+        {
+            uint32_t size = display["size"].as<uint32_t>();
+            d.size = (size == 2 || size == 3) ? size : 3;
+        }
+        if (display["flip"].is<int>())
+            d.flip = display["flip"].as<uint32_t>() % 4;
+        if (display["invert"].is<bool>())
+            d.invert = display["invert"].as<bool>();
+        // buttonLayout / orientation / splashMode are board-fixed (ships with
+        // the board config) and are not editable here.
+        if (display["splashDuration"].is<int>())
+        {
+            uint32_t dur = display["splashDuration"].as<uint32_t>();
+            d.splashDuration = dur > 60 ? 60 : dur; // seconds
+        }
+        if (display["displaySaverTimeout"].is<int>())
+        {
+            uint32_t t = display["displaySaverTimeout"].as<uint32_t>();
+            d.displaySaverTimeout = t > 3600 ? 3600 : t; // seconds
+        }
+        if (display["displaySaverMode"].is<int>())
+        {
+            int32_t m = display["displaySaverMode"].as<int>();
+            if (m >= DISPLAY_SAVER_DISPLAY_OFF && m <= DISPLAY_SAVER_STARS)
+                d.displaySaverMode = (DisplaySaverMode)m;
+        }
+        if (display["inputHistoryEnabled"].is<bool>())
+            d.inputHistoryEnabled = display["inputHistoryEnabled"].as<bool>();
+        if (display["inputHistoryTimeout"].is<int>())
+        {
+            uint32_t t = display["inputHistoryTimeout"].as<uint32_t>();
+            d.inputHistoryTimeout = t > 300 ? 300 : t;
+        }
+        JsonArray menuCombo = display["menuCombo"];
+        if (menuCombo.size() > 0)
+        {
+            d.menuCombo_count = menuCombo.size() > 8 ? 8 : menuCombo.size();
+            for (uint32_t i = 0; i < d.menuCombo_count; i++)
+                d.menuCombo[i] = menuCombo[i].as<uint32_t>();
+        }
+        if (display["menuUpPin"].is<int>())
+            d.menuUpPin = display["menuUpPin"].as<int>();
+        if (display["menuDownPin"].is<int>())
+            d.menuDownPin = display["menuDownPin"].as<int>();
+        if (display["menuLeftPin"].is<int>())
+            d.menuLeftPin = display["menuLeftPin"].as<int>();
+        if (display["menuRightPin"].is<int>())
+            d.menuRightPin = display["menuRightPin"].as<int>();
+        if (display["menuSelectPin"].is<int>())
+            d.menuSelectPin = display["menuSelectPin"].as<int>();
+        if (display["menuBackPin"].is<int>())
+            d.menuBackPin = display["menuBackPin"].as<int>();
     }
 
     if (doc["activeProfile"].is<int>())

@@ -188,6 +188,34 @@ function defaultOptions() {
       ledPressedColors: [],
       pinLedIndices,
     },
+    display: {
+      enabled: board?.display?.enabled ?? false,
+      hasDisplay: board?.display?.hasDisplay ?? false,
+      size: board?.display?.size ?? 3,
+      flip: board?.display?.flip ?? 0,
+      invert: board?.display?.invert ?? false,
+      buttonLayout: board?.display?.buttonLayout ?? 5,
+      orientation: board?.display?.orientation ?? 0,
+      startX: board?.display?.startX ?? 0,
+      startY: board?.display?.startY ?? 0,
+      buttonRadius: board?.display?.buttonRadius ?? 8,
+      buttonPadding: board?.display?.buttonPadding ?? 0,
+      splashMode: board?.display?.splashMode ?? 0,
+      splashDuration: board?.display?.splashDuration ?? 3, // seconds
+      displaySaverTimeout: board?.display?.displaySaverTimeout ?? 0, // seconds
+      displaySaverMode: board?.display?.displaySaverMode ?? 5,
+      inputHistoryEnabled: board?.display?.inputHistoryEnabled ?? true,
+      inputHistoryTimeout: board?.display?.inputHistoryTimeout ?? 3,
+      menuCombo: Array.isArray(board?.display?.menuCombo)
+        ? board.display.menuCombo.slice()
+        : [],
+      menuUpPin: board?.display?.menuUpPin ?? -1,
+      menuDownPin: board?.display?.menuDownPin ?? -1,
+      menuLeftPin: board?.display?.menuLeftPin ?? -1,
+      menuRightPin: board?.display?.menuRightPin ?? -1,
+      menuSelectPin: board?.display?.menuSelectPin ?? -1,
+      menuBackPin: board?.display?.menuBackPin ?? -1,
+    },
     webConfigPin: board?.webConfigPin ?? -1,
     matrix: {
       enabled: !!board?.matrix?.enabled,
@@ -286,6 +314,15 @@ export function createMockApp() {
     }
     if (body.ring !== undefined) {
       current.ring = { ...current.ring, ...body.ring };
+    }
+    if (body.display !== undefined) {
+      current.display = { ...current.display, ...body.display };
+      // Never let the client override the physical wiring indicator or the
+      // board-fixed layout fields (buttonLayout/orientation/splashMode).
+      current.display.hasDisplay = board?.display?.hasDisplay ?? false;
+      current.display.buttonLayout = board?.display?.buttonLayout ?? 5;
+      current.display.orientation = board?.display?.orientation ?? 0;
+      current.display.splashMode = board?.display?.splashMode ?? 0;
     }
     if (Number.isInteger(body.debounceInterval)) {
       current.debounceInterval = Math.max(0, Math.min(100, Number(body.debounceInterval) || 0));

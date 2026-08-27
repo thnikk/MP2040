@@ -39,3 +39,76 @@ enum LEDFormat_Proto
     LED_FORMAT_GRBW = 2;
     LED_FORMAT_RGBW = 3;
 }
+
+// Full-panel display layout. Unlike GP2040-CE there is no left/right split:
+// a layout is one ordered list of elements spanning the whole panel.
+enum ButtonLayout
+{
+    option (nanopb_enumopt).long_names = false;
+
+    BUTTON_LAYOUT_STICK = 0;        // dpad (left) + arcade buttons (right)
+    BUTTON_LAYOUT_STICKLESS = 1;    // WASD box (left) + arcade buttons (right)
+    BUTTON_LAYOUT_VLX = 2;          // Vewlix arcade layout
+    BUTTON_LAYOUT_FIGHTBOARD = 3;   // stickless / fightboard all-button layout
+    BUTTON_LAYOUT_CUSTOM = 4;       // generated from buttonLayoutCustomParams
+    BUTTON_LAYOUT_BOARD_DEFINED = 5; // from the board's BOARD_DISPLAY_LAYOUT
+}
+
+enum SplashMode
+{
+    option (nanopb_enumopt).long_names = false;
+
+    SPLASH_MODE_STATIC = 0;
+    SPLASH_MODE_CLOSEIN = 1;
+    SPLASH_MODE_NONE = 2;
+}
+
+enum DisplaySaverMode
+{
+    option (nanopb_enumopt).long_names = false;
+
+    DISPLAY_SAVER_DISPLAY_OFF = 0;
+    DISPLAY_SAVER_SNOW = 1;
+    DISPLAY_SAVER_BOUNCE = 2;
+    DISPLAY_SAVER_PIPES = 3;
+    DISPLAY_SAVER_TOAST = 4;
+    DISPLAY_SAVER_STARS = 5;
+}
+
+enum ButtonLayoutOrientation
+{
+    option (nanopb_enumopt).long_names = false;
+
+    BUTTON_ORIENTATION_DEFAULT = 0;
+    BUTTON_ORIENTATION_SOUTHPAW = 1;
+    BUTTON_ORIENTATION_SWITCHED = 2;
+}
+
+// Layout element kinds (mirrors GP2040-CE's GPElement). PIN_BUTTON is a key
+// index in key state; BTN_BUTTON / DIR_BUTTON are gamepad controls resolved
+// through GamepadMapping.
+enum GPElement
+{
+    option (nanopb_enumopt).long_names = false;
+
+    GP_ELEMENT_WIDGET = 0;
+    GP_ELEMENT_SCREEN = 1;
+    GP_ELEMENT_BTN_BUTTON = 2;
+    GP_ELEMENT_DIR_BUTTON = 3;
+    GP_ELEMENT_PIN_BUTTON = 4;
+    GP_ELEMENT_LEVER = 5;
+    GP_ELEMENT_LABEL = 6;
+    GP_ELEMENT_SPRITE = 7;
+    GP_ELEMENT_SHAPE = 8;
+}
+
+enum GPShape_Type
+{
+    option (nanopb_enumopt).long_names = false;
+
+    GP_SHAPE_ELLIPSE = 0;
+    GP_SHAPE_SQUARE = 1;
+    GP_SHAPE_LINE = 2;
+    GP_SHAPE_POLYGON = 3;
+    GP_SHAPE_ARC = 4;
+}

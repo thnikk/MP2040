@@ -204,9 +204,9 @@ function parseGamepadMask(raw) {
 // Parse a brace-list define like { 26, 27, 28, 29 } into an array of numbers.
 function parsePinArray(raw) {
   const val = String(raw || '').trim().replace(/;$/, '').trim();
-  const m = val.match(/^\{(.*)\}$/s);
-  if (!m) return [];
-  return m[1]
+  // Accept `{1, 2, 3}` or a bare comma list `1, 2, 3`.
+  const inner = val.match(/^\{(.*)\}$/s) ? val.slice(1, -1) : val;
+  return inner
     .split(',')
     .map((s) => s.trim())
     .filter((s) => s.length > 0)
@@ -303,6 +303,34 @@ export function parseBoardConfig(configDir, rootDir) {
       colorPressedByMode: perModeDefaults(d, 'LED_COLOR_PRESSED', parseColor, parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
+    // On-screen display (SSD1306 over I2C): enabled + wiring from the board
+    // config. hasDisplay mirrors the firmware's "physical I2C pins present".
+    display: {
+      enabled: (parseNum(d.HAS_I2C_DISPLAY) ?? 0) === 1,
+      hasDisplay: (parseNum(d.HAS_I2C_DISPLAY) ?? 0) === 1,
+      size: parseNum(d.DISPLAY_SIZE) ?? 3,
+      flip: parseNum(d.DISPLAY_FLIP) ?? 0,
+      invert: (parseNum(d.DISPLAY_INVERT) ?? 0) === 1,
+      buttonLayout: parseNum(d.DISPLAY_BUTTON_LAYOUT) ?? 5,
+      orientation: parseNum(d.DISPLAY_ORIENTATION) ?? 0,
+      startX: parseNum(d.DISPLAY_CUSTOM_START_X) ?? 0,
+      startY: parseNum(d.DISPLAY_CUSTOM_START_Y) ?? 0,
+      buttonRadius: parseNum(d.DISPLAY_CUSTOM_RADIUS) ?? 8,
+      buttonPadding: parseNum(d.DISPLAY_CUSTOM_PADDING) ?? 0,
+      splashMode: parseNum(d.SPLASH_MODE) ?? 0,
+      splashDuration: parseNum(d.SPLASH_DURATION) ?? 3, // seconds
+      displaySaverTimeout: parseNum(d.DISPLAY_SAVER_TIMEOUT) ?? 0, // seconds
+      displaySaverMode: parseNum(d.DISPLAY_SAVER_MODE) ?? 5,
+      inputHistoryEnabled: (parseNum(d.DISPLAY_INPUT_HISTORY) ?? 1) === 1,
+      inputHistoryTimeout: parseNum(d.INPUT_HISTORY_TIMEOUT) ?? 3,
+      menuCombo: parsePinArray(d.DISPLAY_MENU_COMBO),
+      menuUpPin: parseNum(d.DISPLAY_MENU_UP_PIN) ?? -1,
+      menuDownPin: parseNum(d.DISPLAY_MENU_DOWN_PIN) ?? -1,
+      menuLeftPin: parseNum(d.DISPLAY_MENU_LEFT_PIN) ?? -1,
+      menuRightPin: parseNum(d.DISPLAY_MENU_RIGHT_PIN) ?? -1,
+      menuSelectPin: parseNum(d.DISPLAY_MENU_SELECT_PIN) ?? -1,
+      menuBackPin: parseNum(d.DISPLAY_MENU_BACK_PIN) ?? -1,
+    },
     // Capacitive touch pads: any TOUCH_GPxx define set to 1 hands that pin to
     // the touch driver. Mirrors the firmware's TOUCH_GPxx board config.
     hasTouchPads: Object.keys(d).some((k) => /^TOUCH_GP\d+$/.test(k) && parseNum(d[k]) === 1),

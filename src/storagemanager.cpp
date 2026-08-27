@@ -523,8 +523,8 @@
 // GAMEPAD_IDXxx are keyed by key index (matrix boards, like KEYCODE_IDXxx).
 // The default is GAMEPAD_UNMAPPED (-1): the pin has no default gamepad
 // assignment. A board overrides an entry with a GAMEPAD_PIN_MASK_* value (or
-// combination) to give that key a built-in gamepad mapping. No shipping board
-// defines any yet, so gamepad mapping is user-configured everywhere by default.
+// combination) to give that key a built-in gamepad mapping (e.g. the
+// Fightboard and BeatBoard define one per key).
 #ifndef GAMEPAD_GP00
 #define GAMEPAD_GP00 GAMEPAD_UNMAPPED
 #endif
@@ -1696,6 +1696,83 @@
 #define PIN_BOOT -1
 #endif
 
+// Display (SSD1306 over I2C) board defaults from BoardConfig.h. HAS_I2C_DISPLAY
+// gates the whole subsystem; the rest are seed values overridable via the web
+// config / mini menu, except the I2C block/pins and the shipped layout
+// (buttonLayout / orientation / splashMode) which are physical/board
+// properties.
+#ifndef HAS_I2C_DISPLAY
+#define HAS_I2C_DISPLAY 0
+#endif
+#ifndef DISPLAY_I2C_BLOCK
+#define DISPLAY_I2C_BLOCK 0
+#endif
+#ifndef DISPLAY_I2C_ADDR
+#define DISPLAY_I2C_ADDR 0x3C
+#endif
+#ifndef DISPLAY_I2C_SDA_PIN
+#define DISPLAY_I2C_SDA_PIN -1
+#endif
+#ifndef DISPLAY_I2C_SCL_PIN
+#define DISPLAY_I2C_SCL_PIN -1
+#endif
+#ifndef DISPLAY_SIZE
+#define DISPLAY_SIZE 3 // GPGFX_DisplaySize: 3 = SIZE_128x64
+#endif
+#ifndef DISPLAY_FLIP
+#define DISPLAY_FLIP 0
+#endif
+#ifndef DISPLAY_INVERT
+#define DISPLAY_INVERT 0
+#endif
+#ifndef DISPLAY_BUTTON_LAYOUT
+#define DISPLAY_BUTTON_LAYOUT 5 // ButtonLayout: 5 = BOARD_DEFINED
+#endif
+#ifndef DISPLAY_ORIENTATION
+#define DISPLAY_ORIENTATION 0 // ButtonLayoutOrientation: DEFAULT
+#endif
+#ifndef DISPLAY_SAVER_TIMEOUT
+#define DISPLAY_SAVER_TIMEOUT 0 // seconds, 0 = never
+#endif
+#ifndef DISPLAY_SAVER_MODE
+#define DISPLAY_SAVER_MODE 5 // DisplaySaverMode: STARS
+#endif
+#ifndef SPLASH_MODE
+#define SPLASH_MODE 0 // SplashMode: STATIC
+#endif
+#ifndef SPLASH_DURATION
+#define SPLASH_DURATION 3 // seconds
+#endif
+#ifndef DISPLAY_INPUT_HISTORY
+#define DISPLAY_INPUT_HISTORY 1
+#endif
+#ifndef INPUT_HISTORY_TIMEOUT
+#define INPUT_HISTORY_TIMEOUT 3
+#endif
+// Menu combo keys: a comma-separated list of key indices that opens the mini
+// menu when all are held (~500ms). Empty = combo disabled.
+#ifndef DISPLAY_MENU_COMBO
+#define DISPLAY_MENU_COMBO
+#endif
+#ifndef DISPLAY_MENU_UP_PIN
+#define DISPLAY_MENU_UP_PIN -1
+#endif
+#ifndef DISPLAY_MENU_DOWN_PIN
+#define DISPLAY_MENU_DOWN_PIN -1
+#endif
+#ifndef DISPLAY_MENU_LEFT_PIN
+#define DISPLAY_MENU_LEFT_PIN -1
+#endif
+#ifndef DISPLAY_MENU_RIGHT_PIN
+#define DISPLAY_MENU_RIGHT_PIN -1
+#endif
+#ifndef DISPLAY_MENU_SELECT_PIN
+#define DISPLAY_MENU_SELECT_PIN -1
+#endif
+#ifndef DISPLAY_MENU_BACK_PIN
+#define DISPLAY_MENU_BACK_PIN -1
+#endif
+
 // Pin → LED strip index defaults (from BoardConfig.h's LED_INDEX_GPxx macros)
 #ifndef LED_INDEX_GP00
 #define LED_INDEX_GP00 -1
@@ -2459,6 +2536,10 @@ static const uint32_t defaultLedSpeedsByMode[7] = {
     LED_SPEED_MODE_FIRE,
 };
 
+// Apply board defaults to a fresh config (used for resets and as the seed for
+// normalization). Kept near the top of the defaults section.
+static void seedDisplayOptions(Config& config);
+
 static void applyDefaults(Config& config)
 {
     config = Config Config_init_zero;
@@ -2515,6 +2596,118 @@ static void applyDefaults(Config& config)
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
     config.webConfigPin = PIN_WEBCONFIG;
+    seedDisplayOptions(config);
+}
+
+// -----------------------------------------------------
+// Display options defaults
+// -----------------------------------------------------
+
+// Board display defaults from BoardConfig.h defines. Fills every field so a
+// fresh config (or one missing displayOptions) starts from the board's wiring
+// and preferences.
+static void seedDisplayOptions(Config& config)
+{
+    static const uint32_t combo[8] = { DISPLAY_MENU_COMBO };
+
+    config.displayOptions.enabled = !!HAS_I2C_DISPLAY;
+    config.displayOptions.has_enabled = true;
+    config.displayOptions.i2cBlock = DISPLAY_I2C_BLOCK;
+    config.displayOptions.has_i2cBlock = true;
+    config.displayOptions.sdaPin = DISPLAY_I2C_SDA_PIN;
+    config.displayOptions.has_sdaPin = true;
+    config.displayOptions.sclPin = DISPLAY_I2C_SCL_PIN;
+    config.displayOptions.has_sclPin = true;
+    config.displayOptions.i2cAddress = DISPLAY_I2C_ADDR;
+    config.displayOptions.has_i2cAddress = true;
+    config.displayOptions.size = DISPLAY_SIZE;
+    config.displayOptions.has_size = true;
+    config.displayOptions.flip = DISPLAY_FLIP;
+    config.displayOptions.has_flip = true;
+    config.displayOptions.invert = DISPLAY_INVERT;
+    config.displayOptions.has_invert = true;
+    config.displayOptions.buttonLayout = (ButtonLayout)DISPLAY_BUTTON_LAYOUT;
+    config.displayOptions.has_buttonLayout = true;
+    config.displayOptions.orientation = (ButtonLayoutOrientation)DISPLAY_ORIENTATION;
+    config.displayOptions.has_orientation = true;
+    config.displayOptions.splashMode = (SplashMode)SPLASH_MODE;
+    config.displayOptions.has_splashMode = true;
+    config.displayOptions.splashDuration = SPLASH_DURATION;
+    config.displayOptions.has_splashDuration = true;
+    config.displayOptions.displaySaverTimeout = DISPLAY_SAVER_TIMEOUT;
+    config.displayOptions.has_displaySaverTimeout = true;
+    config.displayOptions.displaySaverMode = (DisplaySaverMode)DISPLAY_SAVER_MODE;
+    config.displayOptions.has_displaySaverMode = true;
+    config.displayOptions.inputHistoryEnabled = DISPLAY_INPUT_HISTORY;
+    config.displayOptions.has_inputHistoryEnabled = true;
+    config.displayOptions.inputHistoryTimeout = INPUT_HISTORY_TIMEOUT;
+    config.displayOptions.has_inputHistoryTimeout = true;
+    config.displayOptions.menuCombo_count = 0;
+    for (uint32_t i = 0; i < 8 && combo[i] != 0; i++)
+    {
+        config.displayOptions.menuCombo[i] = combo[i];
+        config.displayOptions.menuCombo_count++;
+    }
+    config.displayOptions.menuUpPin = DISPLAY_MENU_UP_PIN;
+    config.displayOptions.has_menuUpPin = true;
+    config.displayOptions.menuDownPin = DISPLAY_MENU_DOWN_PIN;
+    config.displayOptions.has_menuDownPin = true;
+    config.displayOptions.menuLeftPin = DISPLAY_MENU_LEFT_PIN;
+    config.displayOptions.has_menuLeftPin = true;
+    config.displayOptions.menuRightPin = DISPLAY_MENU_RIGHT_PIN;
+    config.displayOptions.has_menuRightPin = true;
+    config.displayOptions.menuSelectPin = DISPLAY_MENU_SELECT_PIN;
+    config.displayOptions.has_menuSelectPin = true;
+    config.displayOptions.menuBackPin = DISPLAY_MENU_BACK_PIN;
+    config.displayOptions.has_menuBackPin = true;
+    config.has_displayOptions = true;
+}
+
+// Backfill missing display fields from the board defaults and always re-apply
+// the physical/board-fixed properties: the I2C wiring (block/pins) and the
+// shipped layout (buttonLayout/orientation/splashMode), which can't be changed
+// from the web config. User-settable fields keep their stored values when
+// present.
+static void normalizeDisplayOptions(Config& config)
+{
+    if (!config.has_displayOptions)
+    {
+        seedDisplayOptions(config);
+        return;
+    }
+    Config seed = Config_init_zero;
+    seedDisplayOptions(seed);
+    DisplayOptions& d = config.displayOptions;
+    const DisplayOptions& s = seed.displayOptions;
+    d.i2cBlock = s.i2cBlock;
+    d.has_i2cBlock = true;
+    d.sdaPin = s.sdaPin;
+    d.has_sdaPin = true;
+    d.sclPin = s.sclPin;
+    d.has_sclPin = true;
+    d.buttonLayout = s.buttonLayout;
+    d.has_buttonLayout = true;
+    d.orientation = s.orientation;
+    d.has_orientation = true;
+    d.splashMode = s.splashMode;
+    d.has_splashMode = true;
+    if (!d.has_enabled) { d.enabled = s.enabled; d.has_enabled = true; }
+    if (!d.has_i2cAddress) { d.i2cAddress = s.i2cAddress; d.has_i2cAddress = true; }
+    if (!d.has_size) { d.size = s.size; d.has_size = true; }
+    if (!d.has_flip) { d.flip = s.flip; d.has_flip = true; }
+    if (!d.has_invert) { d.invert = s.invert; d.has_invert = true; }
+    if (!d.has_splashDuration) { d.splashDuration = s.splashDuration; d.has_splashDuration = true; }
+    if (!d.has_displaySaverTimeout) { d.displaySaverTimeout = s.displaySaverTimeout; d.has_displaySaverTimeout = true; }
+    if (!d.has_displaySaverMode) { d.displaySaverMode = s.displaySaverMode; d.has_displaySaverMode = true; }
+    if (!d.has_inputHistoryEnabled) { d.inputHistoryEnabled = s.inputHistoryEnabled; d.has_inputHistoryEnabled = true; }
+    if (!d.has_inputHistoryTimeout) { d.inputHistoryTimeout = s.inputHistoryTimeout; d.has_inputHistoryTimeout = true; }
+    if (d.menuCombo_count == 0) { d.menuCombo_count = s.menuCombo_count; for (uint32_t i = 0; i < 8; i++) d.menuCombo[i] = s.menuCombo[i]; }
+    if (!d.has_menuUpPin) { d.menuUpPin = s.menuUpPin; d.has_menuUpPin = true; }
+    if (!d.has_menuDownPin) { d.menuDownPin = s.menuDownPin; d.has_menuDownPin = true; }
+    if (!d.has_menuLeftPin) { d.menuLeftPin = s.menuLeftPin; d.has_menuLeftPin = true; }
+    if (!d.has_menuRightPin) { d.menuRightPin = s.menuRightPin; d.has_menuRightPin = true; }
+    if (!d.has_menuSelectPin) { d.menuSelectPin = s.menuSelectPin; d.has_menuSelectPin = true; }
+    if (!d.has_menuBackPin) { d.menuBackPin = s.menuBackPin; d.has_menuBackPin = true; }
 }
 
 // -----------------------------------------------------
@@ -2561,9 +2754,13 @@ static void normalizeKeyMapping(KeyMapping& km)
 // Normalize the gamepad control mapping: pad missing entries to 0 (unmapped)
 // and seed unmapped pins from the board's GAMEPAD_IDXxx defaults. Like the
 // keyboard normalize, a pin left at 0 picks up a board default; -1 defaults
-// are the "no default" sentinel and leave the pin unmapped.
-static void normalizeGamepadMapping(GamepadMapping& mapping)
+// are the "no default" sentinel and leave the pin unmapped. Always marks the
+// mapping present (has_gamepadMapping) so the seeded defaults are visible to
+// getGamepadMask() even on a fresh/nuked config — otherwise the drivers would
+// read an all-zero mapping until the user saved via the web config.
+static void normalizeGamepadMapping(Config& config)
 {
+    GamepadMapping& mapping = config.gamepadMapping;
     if (mapping.masks_count == 0)
     {
         mapping.masks_count = MAX_KEYS;
@@ -2575,6 +2772,7 @@ static void normalizeGamepadMapping(GamepadMapping& mapping)
         if (mapping.masks[pin] == 0 && defaultGamepadMasks[pin] >= 0)
             mapping.masks[pin] = (uint32_t)defaultGamepadMasks[pin];
     }
+    config.has_gamepadMapping = true;
 }
 
 // Seed all profiles (0-3) as copies of the current base mapping. Runs once for
@@ -2645,7 +2843,10 @@ void Storage::init() {
     // config may predate some fields or come from a different board; normalize
     // the working copy so the board has a usable key map.
     normalizeKeyMapping(config.keyMapping);
-    normalizeGamepadMapping(config.gamepadMapping);
+    normalizeGamepadMapping(config);
+    // Display options: seed from board defaults when missing, and re-apply the
+    // physical I2C wiring (block/pins) from the board.
+    normalizeDisplayOptions(config);
     // Macro triggers default to 0 (no macro) for any stored config without
     // the field; the macro definitions stay empty (a no-op when triggered).
     if (config.macroIndices_count == 0)
@@ -2794,7 +2995,7 @@ void Storage::init() {
     // in the web config) with no key assignments. Normalize the working copy
     // again so unassigned keys fall back to the board defaults.
     normalizeKeyMapping(config.keyMapping);
-    normalizeGamepadMapping(config.gamepadMapping);
+    normalizeGamepadMapping(config);
 }
 
 /**

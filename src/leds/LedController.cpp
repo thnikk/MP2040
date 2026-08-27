@@ -50,6 +50,12 @@ static const SpeedRange speedRanges[] = {
 #ifndef STATUS_LED_ENABLE_PIN
 #define STATUS_LED_ENABLE_PIN -1
 #endif
+// WS2812 color order of the status LED. Some boards wire the mode LED in RGB
+// order (different from the main strip's GRB), e.g. the Fightboard's onboard
+// chip.
+#ifndef STATUS_LED_FORMAT
+#define STATUS_LED_FORMAT LED_FORMAT_GRB
+#endif
 #ifndef STATUS_LED_COLOR_KEYBOARD
 #define STATUS_LED_COLOR_KEYBOARD 0xFFFF00
 #endif
@@ -267,7 +273,7 @@ void LedController::configure()
             gpio_set_dir(STATUS_LED_ENABLE_PIN, GPIO_OUT);
             gpio_put(STATUS_LED_ENABLE_PIN, 1);
         }
-        statusLed = new Neopixel(STATUS_LED_PIN, 1, LED_FORMAT_GRB);
+        statusLed = new Neopixel(STATUS_LED_PIN, 1, STATUS_LED_FORMAT);
         statusLed->off();
     }
 

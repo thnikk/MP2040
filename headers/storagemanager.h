@@ -62,6 +62,14 @@ public:
 	Config& getConfig() { return config; }
 	KeyMapping& getKeyMapping() { return config.keyMapping; }
 	LEDOptions& getLedOptions() { return config.ledOptions; }
+	// On-screen display options (SSD1306 over I2C). Physical wiring (I2C
+	// block/pins) is re-applied from the board config at load; the rest is user
+	// config edited via the web config or the on-device mini menu.
+	DisplayOptions& getDisplayOptions() { return config.displayOptions; }
+	// On-device menu active flag. Set by the core-1 DisplayController when a
+	// menu/remap screen is showing; core 0 checks it to suppress USB input.
+	void SetMenuActive(bool active) { menuActive = active; }
+	bool GetMenuActive() { return menuActive; }
 	int32_t getWebConfigPin() { return config.webConfigPin; }
 	// Global MIDI output options (channel 0-15, velocity 1-127). Defaults are
 	// 0 / 127 for configs without the field.
@@ -275,6 +283,7 @@ private:
 	volatile uint32_t ledPreviewGen = 0;
 	LedPreview ledPreview;
 	uint32_t lastConsumedLedPreviewGen = 0;
+	volatile bool menuActive = false; // on-device menu showing (set by core 1)
 };
 
 #endif

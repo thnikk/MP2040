@@ -2,6 +2,7 @@
 #define MP2040CORE1_H_
 
 #include "leds/LedController.h"
+#include "display/DisplayController.h"
 
 class MP2040Aux {
 public:
@@ -12,6 +13,7 @@ public:
     bool ready(){ return isReady; }
 private:
     LedController ledController;
+    DisplayController displayController;
     bool isReady;
 };
 

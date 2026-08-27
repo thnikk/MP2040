@@ -156,6 +156,24 @@ src/drivers/midi/MidiDriver.cpp
 src/drivers/xinput/XInputDriver.cpp
 src/drivers/switchpro/SwitchProDriver.cpp
 src/leds/LedController.cpp
+src/display/GPGFX.cpp
+src/display/tiny_ssd1306.cpp
+src/display/DisplayController.cpp
+src/display/GPGFX_UI.cpp
+src/display/ui/layoutmanager.cpp
+src/display/ui/elements/GPButton.cpp
+src/display/ui/elements/GPLabel.cpp
+src/display/ui/elements/GPLever.cpp
+src/display/ui/elements/GPMenu.cpp
+src/display/ui/elements/GPScreen.cpp
+src/display/ui/elements/GPShape.cpp
+src/display/ui/elements/GPSprite.cpp
+src/display/ui/elements/GPWidget.cpp
+src/display/ui/screens/ButtonLayoutScreen.cpp
+src/display/ui/screens/DisplaySaverScreen.cpp
+src/display/ui/screens/MainMenuScreen.cpp
+src/display/ui/screens/RemapScreen.cpp
+src/display/ui/screens/SplashScreen.cpp
 src/touch/TouchGpio.cpp
 src/touch/TouchRing.cpp
 ${PROTO_OUTPUT_DIR}/enums.pb.c
@@ -184,6 +202,7 @@ httpd
 lwip-port
 ws2812
 hardware_pio
+hardware_i2c
 nanopb
 )
 
@@ -199,6 +218,11 @@ headers/drivers/xinput
 headers/drivers/switchpro
 headers/leds
 headers/touch
+headers/display
+headers/display/ui
+headers/display/ui/elements
+headers/display/ui/screens
+headers/display/fonts
 configs/${MP2040_BOARDCONFIG}
 ${PROTO_OUTPUT_DIR}
 ${CMAKE_BINARY_DIR}/headers

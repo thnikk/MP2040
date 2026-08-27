@@ -362,6 +362,13 @@ void MP2040::run() {
 			continue;
 		}
 
+		// On-device menu active: keep the USB stack alive but suppress HID
+		// output (the display controller consumes key presses for navigation).
+		if (Storage::getInstance().GetMenuActive()) {
+			tud_task();
+			continue;
+		}
+
 		// Process Input Driver
 		inputDriver->process();
 
