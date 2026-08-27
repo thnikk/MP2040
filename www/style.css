@@ -1453,7 +1453,7 @@ html[data-theme="light"] .ms-caret {
 }
 
 .pill-slider.disabled {
-  opacity: 0.5;
+  opacity: 0.3;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -1468,11 +1468,20 @@ html[data-theme="light"] .ms-caret {
 }
 
 .pill-slider-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text);
   font-size: 1rem;
 	font-weight: 600;
   pointer-events: none;
   z-index: 1;
+}
+
+.pill-slider-value {
+  display: inline-block;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .pill-slider-label-fill {

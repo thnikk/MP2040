@@ -32,6 +32,14 @@ class PillSlider {
     this.labelFill = document.createElement('span');
     this.labelFill.className = 'pill-slider-label-fill';
 
+    this.valueEl = document.createElement('span');
+    this.valueEl.className = 'pill-slider-value';
+    this.valueFillEl = document.createElement('span');
+    this.valueFillEl.className = 'pill-slider-value';
+
+    this.labelEl.append(`${this.label}: `, this.valueEl, this.unit);
+    this.labelFill.append(`${this.label}: `, this.valueFillEl, this.unit);
+
     this.root.appendChild(this.fill);
     this.root.appendChild(this.labelEl);
     this.root.appendChild(this.labelFill);
@@ -98,12 +106,11 @@ class PillSlider {
   render() {
     const pct = Math.max(0, Math.min(100, ((this.value - this.min) / (this.max - this.min)) * 100));
     this.fill.style.width = `${pct}%`;
-    const valueStr = this.padLength
-      ? String(this.value).padStart(this.padLength, '0')
-      : String(this.value);
-    const text = `${this.label}: ${valueStr}${this.unit}`;
-    this.labelEl.textContent = text;
-    this.labelFill.textContent = text;
+    const valueText = String(this.value);
+    this.valueEl.textContent = valueText;
+    this.valueFillEl.textContent = valueText;
+    this.valueEl.style.minWidth = this.padLength ? `${this.padLength}ch` : undefined;
+    this.valueFillEl.style.minWidth = this.padLength ? `${this.padLength}ch` : undefined;
     this.labelFill.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
     this.root.setAttribute('aria-valuenow', String(this.value));
   }
