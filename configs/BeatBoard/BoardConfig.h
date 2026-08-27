@@ -51,14 +51,14 @@
 
 // Touch ring pins, in order of their angle around the ring. The TouchRing
 // mapping places pad at 0° = right, 90° = up, 180° = left, 270° = down, so:
-//   RING_GP00 (right, 0°)   = GP27
-//   RING_GP01 (up,   90°)   = GP26
-//   RING_GP02 (left, 180°)  = GP29
-//   RING_GP03 (down, 270°)  = GP28
-#define RING_GP00 27
-#define RING_GP01 26
-#define RING_GP02 29
-#define RING_GP03 28
+//   RING_PAD0 (right, 0°)   = GP27
+//   RING_PAD1 (up,   90°)   = GP26
+//   RING_PAD2 (left, 180°)  = GP29
+//   RING_PAD3 (down, 270°)  = GP28
+#define RING_PAD0 27
+#define RING_PAD1 26
+#define RING_PAD2 29
+#define RING_PAD3 28
 
 // LEDs
 #define LED_PIN 3

@@ -13,7 +13,7 @@
 // pad a finger is over. This helper combines the four readings into a single
 // contact point: an angle around the ring and a touch magnitude.
 //
-// Boards opt in by defining RING_GP00..RING_GP03 (the four pins, in physical
+// Boards opt in by defining RING_PAD0..RING_PAD3 (the four pins, in physical
 // order around the ring) plus the tunables below in BoardConfig.h. The ring is
 // then interpreted per input mode by the active driver (analog stick in
 // gamepad modes, volume/scroll in keyboard mode, pitch bend in MIDI mode).
@@ -21,7 +21,7 @@
 
 // Result of a ring read. `active` means a touch was detected on the ring;
 // `magnitude` (0..1) is how strongly, `angleDeg` (0..359) the position around
-// the ring (0 = the RING_GP00 direction, increasing toward RING_GP01), and
+// the ring (0 = the RING_PAD0 direction, increasing toward RING_PAD1), and
 // `deltaDegrees` the angular motion since the previous read (for rate-based
 // consumers like volume / scroll). lx/ly are the cartesian stick vector
 // derived from angle + magnitude, ready to feed a gamepad stick.

@@ -10,22 +10,22 @@
 // ---- Board tuning defaults (override in BoardConfig.h) ----
 
 // Which pins are the 4 ring pads, in physical order around the ring
-// (RING_GP00 .. RING_GP03). Ring is disabled if these are not all set.
-#ifndef RING_GP00
-#define RING_GP00 0xFF
+// (RING_PAD0 .. RING_PAD3). Ring is disabled if these are not all set.
+#ifndef RING_PAD0
+#define RING_PAD0 0xFF
 #endif
-#ifndef RING_GP01
-#define RING_GP01 0xFF
+#ifndef RING_PAD1
+#define RING_PAD1 0xFF
 #endif
-#ifndef RING_GP02
-#define RING_GP02 0xFF
+#ifndef RING_PAD2
+#define RING_PAD2 0xFF
 #endif
-#ifndef RING_GP03
-#define RING_GP03 0xFF
+#ifndef RING_PAD3
+#define RING_PAD3 0xFF
 #endif
 
 // Rotation offset (degrees) applied to the reported angle so that the
-// physical direction of RING_GP00 relative to "up" can be tuned.
+// physical direction of RING_PAD0 relative to "up" can be tuned.
 #ifndef RING_ROTATION_OFFSET
 #define RING_ROTATION_OFFSET 0
 #endif
@@ -62,7 +62,7 @@ TouchRing::TouchRing()
 
 bool TouchRing::initialize()
 {
-	static const Pin_t boardPins[4] = { RING_GP00, RING_GP01, RING_GP02, RING_GP03 };
+	static const Pin_t boardPins[4] = { RING_PAD0, RING_PAD1, RING_PAD2, RING_PAD3 };
 	bool ok = true;
 	for (int i = 0; i < 4; i++)
 	{
