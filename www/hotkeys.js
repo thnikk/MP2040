@@ -34,16 +34,21 @@ const HOTKEY_ACTIONS = [
   { value: 17, label: 'Macro 6' },
   { value: 18, label: 'Macro 7' },
   { value: 19, label: 'Macro 8' },
+  // Only offered for boards with a display (see HotkeysPanel menuToggle).
+  { value: 20, label: 'Mini Menu Toggle' },
 ];
 
 const HK_MAX_HOTKEYS = 16;
 const HK_MAX_KEYS = 8;
 
 class HotkeysPanel {
-  constructor({ container, hotkeys, keyOptions, onChange }) {
+  constructor({ container, hotkeys, keyOptions, menuToggle, onChange }) {
     this.keyOptions = keyOptions || [];
     this.onChange = onChange || (() => {});
     this.rows = [];
+    this.actions = menuToggle
+      ? HOTKEY_ACTIONS
+      : HOTKEY_ACTIONS.filter((o) => o.value !== 20);
     this.buildDom(container);
     this.setValue(hotkeys || []);
   }
@@ -120,7 +125,7 @@ class HotkeysPanel {
     actionWrap.className = 'hotkey-action-wrap';
     row.actionSelect = document.createElement('select');
     row.actionSelect.className = 'hotkey-action';
-    for (const opt of HOTKEY_ACTIONS) {
+    for (const opt of this.actions) {
       const o = document.createElement('option');
       o.value = opt.value;
       o.textContent = opt.label;

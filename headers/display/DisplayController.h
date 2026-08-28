@@ -15,9 +15,10 @@
 // framebuffer, which stays a member, not on the 4KB core-1 stack) and the
 // screen state machine.
 //
-// Screen flow: SPLASH -> BUTTONS -> (combo held ~500ms) MAIN_MENU / REMAP,
-// and BUTTONS -> SAVER after the inactivity timeout. The mini menu / remap set
-// Storage.menuActive so core 0 stops sending key presses to USB while open.
+// Screen flow: SPLASH -> BUTTONS -> (a "toggle menu" hotkey from core 0)
+// MAIN_MENU / REMAP, and BUTTONS -> SAVER after the inactivity timeout. The
+// mini menu / remap set Storage.menuActive so core 0 stops sending key presses
+// to USB while open.
 class DisplayController {
 public:
 	DisplayController();
@@ -54,10 +55,8 @@ private:
 	bool detectDisplay();
 
 	// input handling
-	void processCombo();
 	void processNav();
 	bool navHeld(uint8_t action);
-	bool menuComboHeld();
 
 	DisplayOptions& opts() { return Storage::getInstance().getDisplayOptions(); }
 
@@ -70,8 +69,6 @@ private:
 
 	KeyMask prevKeyState;
 	uint32_t lastActivity = 0;
-	uint32_t comboHeldSince = 0;
-	bool comboArmed = false;
 
 	// nav edge tracking
 	bool navPrev[6] = {};

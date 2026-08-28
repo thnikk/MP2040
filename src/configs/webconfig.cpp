@@ -384,9 +384,6 @@ std::string getOptions()
     doc["display"]["displaySaverMode"] = display.displaySaverMode;
     doc["display"]["inputHistoryEnabled"] = display.inputHistoryEnabled;
     doc["display"]["inputHistoryTimeout"] = display.inputHistoryTimeout;
-    JsonArray menuCombo = doc["display"].createNestedArray("menuCombo");
-    for (uint32_t i = 0; i < display.menuCombo_count; i++)
-        menuCombo.add(display.menuCombo[i]);
     doc["display"]["menuUpPin"] = display.menuUpPin;
     doc["display"]["menuDownPin"] = display.menuDownPin;
     doc["display"]["menuLeftPin"] = display.menuLeftPin;
@@ -699,13 +696,6 @@ std::string setOptions()
         {
             uint32_t t = display["inputHistoryTimeout"].as<uint32_t>();
             d.inputHistoryTimeout = t > 300 ? 300 : t;
-        }
-        JsonArray menuCombo = display["menuCombo"];
-        if (menuCombo.size() > 0)
-        {
-            d.menuCombo_count = menuCombo.size() > 8 ? 8 : menuCombo.size();
-            for (uint32_t i = 0; i < d.menuCombo_count; i++)
-                d.menuCombo[i] = menuCombo[i].as<uint32_t>();
         }
         if (display["menuUpPin"].is<int>())
             d.menuUpPin = display["menuUpPin"].as<int>();

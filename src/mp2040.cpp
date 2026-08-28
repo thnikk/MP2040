@@ -363,6 +363,11 @@ void MP2040::run() {
 			continue;
 		}
 
+		// Process hotkeys even while the on-device menu is open so a "toggle
+		// menu" hotkey can close it; other actions are suppressed by the hotkey
+		// controller while the menu is showing.
+		HotkeyController::getInstance().process();
+
 		// On-device menu active: keep the USB stack alive but suppress HID
 		// output (the display controller consumes key presses for navigation).
 		if (Storage::getInstance().GetMenuActive()) {
@@ -371,7 +376,6 @@ void MP2040::run() {
 		}
 
 		// Process Input Driver
-		HotkeyController::getInstance().process();
 		inputDriver->process();
 
 		tud_task(); // TinyUSB Task update

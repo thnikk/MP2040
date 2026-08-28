@@ -19,6 +19,7 @@ void HotkeyController::process()
 	Storage& s = Storage::getInstance();
 	const Config& config = s.getConfig();
 	const KeyMask& keyState = s.keyState;
+	const bool menuActive = s.GetMenuActive();
 
 	KeyMask suppressed;
 	uint8_t macroIndex = 0;
@@ -35,6 +36,13 @@ void HotkeyController::process()
 			continue;
 
 		const HotkeyAction action = (HotkeyAction)hotkey.action;
+
+		// While the on-device menu is open only a "toggle menu" hotkey acts (it
+		// closes the menu); other actions stay inert so menu navigation can't
+		// trip profile / SOCD / macro hotkeys.
+		if (menuActive && action != HOTKEY_TOGGLE_MENU)
+			continue;
+
 		const uint16_t bit = 1u << i;
 		held = bit;
 		const bool rising = !(prevComboHeld & bit);
@@ -68,6 +76,11 @@ void HotkeyController::dispatch(HotkeyAction action)
 	Storage& s = Storage::getInstance();
 	switch (action)
 	{
+		case HOTKEY_TOGGLE_MENU:
+			// No config change: just ask the core-1 display controller to flip
+			// the mini menu.
+			s.requestMenuToggle();
+			return;
 		case HOTKEY_SOCD_UP_PRIORITY:
 			s.setSocdMode(SOCD_MODE_UP_PRIORITY);
 			break;

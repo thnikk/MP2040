@@ -114,6 +114,7 @@ const HOTKEY_ACTION = {
   HOTKEY_TRIGGER_MACRO_6: 17,
   HOTKEY_TRIGGER_MACRO_7: 18,
   HOTKEY_TRIGGER_MACRO_8: 19,
+  HOTKEY_TOGGLE_MENU: 20,
 };
 
 // MP2040's enums.proto LEDFormat values
@@ -366,7 +367,6 @@ export function parseBoardConfig(configDir, rootDir) {
       displaySaverMode: parseNum(d.DISPLAY_SAVER_MODE) ?? 5,
       inputHistoryEnabled: (parseNum(d.DISPLAY_INPUT_HISTORY) ?? 1) === 1,
       inputHistoryTimeout: parseNum(d.INPUT_HISTORY_TIMEOUT) ?? 3,
-      menuCombo: parsePinArray(d.DISPLAY_MENU_COMBO),
       menuUpPin: parseNum(d.DISPLAY_MENU_UP_PIN) ?? -1,
       menuDownPin: parseNum(d.DISPLAY_MENU_DOWN_PIN) ?? -1,
       menuLeftPin: parseNum(d.DISPLAY_MENU_LEFT_PIN) ?? -1,

@@ -213,9 +213,6 @@ function defaultOptions() {
       displaySaverMode: board?.display?.displaySaverMode ?? 5,
       inputHistoryEnabled: board?.display?.inputHistoryEnabled ?? true,
       inputHistoryTimeout: board?.display?.inputHistoryTimeout ?? 3,
-      menuCombo: Array.isArray(board?.display?.menuCombo)
-        ? board.display.menuCombo.slice()
-        : [],
       menuUpPin: board?.display?.menuUpPin ?? -1,
       menuDownPin: board?.display?.menuDownPin ?? -1,
       menuLeftPin: board?.display?.menuLeftPin ?? -1,

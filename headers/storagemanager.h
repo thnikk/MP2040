@@ -75,6 +75,16 @@ public:
 	// menu/remap screen is showing; core 0 checks it to suppress USB input.
 	void SetMenuActive(bool active) { menuActive = active; }
 	bool GetMenuActive() { return menuActive; }
+	// One-shot "toggle the on-device menu" request from a core-0 "toggle menu"
+	// hotkey. Consumed (and cleared) by the core-1 DisplayController, which
+	// flips between the layout and the menu. A volatile bool suffices: a press
+	// is edge-triggered and the controller polls it every core-1 loop.
+	void requestMenuToggle() { menuToggleRequested = true; }
+	bool consumeMenuToggle() {
+		const bool request = menuToggleRequested;
+		menuToggleRequested = false;
+		return request;
+	}
 	int32_t getWebConfigPin() { return config.webConfigPin; }
 	// Global MIDI output options (channel 0-15, velocity 1-127). Defaults are
 	// 0 / 127 for configs without the field.
@@ -305,6 +315,7 @@ private:
 	LedPreview ledPreview;
 	uint32_t lastConsumedLedPreviewGen = 0;
 	volatile bool menuActive = false; // on-device menu showing (set by core 1)
+	volatile bool menuToggleRequested = false; // core-0 hotkey -> core-1 toggle
 };
 
 #endif

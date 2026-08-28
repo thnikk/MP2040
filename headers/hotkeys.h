@@ -16,10 +16,13 @@
 // held wins (slot 0 has the highest priority). When a hotkey fires:
 //   - its trigger keys are added to Storage.hotkeySuppressed so the active
 //     driver doesn't also emit their normal output (key / MIDI note / gamepad
-//     control), and
+//     control),
 //   - one-shot actions (SOCD mode, profile switch) dispatch on the press edge
 //     and persist, while macro actions hold-to-play by publishing
-//     Storage.hotkeyMacroIndex until the combo is released.
+//     Storage.hotkeyMacroIndex until the combo is released. "Toggle menu"
+//     requests a core-1 menu flip without persisting. While the on-device menu
+//     is open only the toggle-menu action acts (so navigation can't trip the
+//     others).
 class HotkeyController {
 public:
 	static HotkeyController& getInstance() {

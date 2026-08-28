@@ -149,8 +149,10 @@
 #define INPUT_HISTORY_TIMEOUT 3
 #define DISPLAY_BUTTON_LAYOUT 5 // BUTTON_LAYOUT_BOARD_DEFINED
 
-// Mini-menu key combo: B1(5) + L3(9) + R3(13), all held ~500ms.
-#define DISPLAY_MENU_COMBO 5, 9, 13
+// Mini-menu toggle hotkey: B1(5) + L3(9) + R3(13) (the former menu combo).
+#define HOTKEY_03_KEYS   { 5, 9, 13 }
+#define HOTKEY_03_ACTION HOTKEY_TOGGLE_MENU
+
 // Menu navigation pins: the dpad keys + B1/B2.
 #define DISPLAY_MENU_UP_PIN 29
 #define DISPLAY_MENU_DOWN_PIN 27

@@ -259,9 +259,6 @@ message DisplayOptions
     // Bottom-of-screen input history.
     optional bool inputHistoryEnabled = 19;
     optional uint32 inputHistoryTimeout = 20;   // seconds
-    // Key combo that toggles the mini menu (key indices; all must be held for
-    // ~500ms). Seeded from the board's DISPLAY_MENU_COMBO define.
-    repeated uint32 menuCombo = 21 [(nanopb).max_count = 8];
     // Mini-menu navigation key indices. Board-defined defaults (the dpad keys
     // + B1/B2); -1 = resolve from the active profile's key mapping instead.
     optional int32 menuUpPin = 22;

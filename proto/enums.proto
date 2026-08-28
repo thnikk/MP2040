@@ -147,4 +147,8 @@ enum HotkeyAction
     HOTKEY_TRIGGER_MACRO_6 = 17;
     HOTKEY_TRIGGER_MACRO_7 = 18;
     HOTKEY_TRIGGER_MACRO_8 = 19;
+    // Toggle the on-device mini menu (boards with a display). Fires on the
+    // press edge; the hotkey controller requests the toggle and the display
+    // controller flips between the layout and the menu.
+    HOTKEY_TOGGLE_MENU = 20;
 }

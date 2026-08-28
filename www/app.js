@@ -119,9 +119,6 @@ let midiKeyboard = null;
 // gamepad modes
 let gamepadSelect = null;
 
-// MultiSelect used for the on-device menu combo (Settings page)
-let menuComboSelect = null;
-
 // Visual macro editor (macrobuilder.js) used on the Settings page
 let macroBuilder = null;
 
@@ -585,7 +582,6 @@ function buildOptionsBody() {
       displaySaverMode: parseInt(document.getElementById('display-saver-mode').value, 10),
       inputHistoryEnabled: document.getElementById('display-input-history').checked,
       inputHistoryTimeout: displayHistoryTimeoutSpinner ? displayHistoryTimeoutSpinner.getValue() : 3,
-      menuCombo: menuComboSelect ? menuComboSelect.getGroupValues('combo') : [],
     },
     profileIndex: currentProfileIndex,
     activeProfile,
@@ -777,7 +773,6 @@ async function load() {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
     if (boardView) boardView.refresh();
-    if (menuComboSelect) menuComboSelect.setOptions(buildComboOptions());
     if (hotkeysPanel) hotkeysPanel.setKeyOptions(buildComboOptions('hotkey'));
   });
 
@@ -867,19 +862,6 @@ async function load() {
     value: display.inputHistoryTimeout ?? 3,
     onChange: () => {},
   });
-  const menuComboContainer = document.getElementById('display-menu-combo');
-  if (menuComboContainer) {
-    menuComboSelect = new MultiSelect({
-      container: menuComboContainer,
-      groups: [{ id: 'combo', label: 'Keys' }],
-      options: buildComboOptions(),
-      onChange: () => {
-        if (!currentOptions.display) currentOptions.display = {};
-        currentOptions.display.menuCombo = menuComboSelect.getGroupValues('combo');
-      },
-    });
-    menuComboSelect.setGroupValues('combo', Array.isArray(display.menuCombo) ? display.menuCombo : []);
-  }
 
   midiChannelSpinner = new Spinner({
     container: document.getElementById('midi-channel-spinner'),
@@ -992,6 +974,8 @@ async function load() {
       container: hotkeysPanelEl,
       hotkeys: Array.isArray(options.hotkeys) ? options.hotkeys : [],
       keyOptions: buildComboOptions('hotkey'),
+      // Only display boards can use the mini-menu toggle action.
+      menuToggle: display.hasDisplay === true,
       onChange: (hotkeys) => { currentOptions.hotkeys = hotkeys; },
     });
   }

@@ -80,8 +80,20 @@ void DisplayController::update() {
 		prevKeyState = keyState;
 	}
 
-	// Combo toggles the mini menu; nav drives it while open.
-	processCombo();
+	// A "toggle menu" hotkey (requested by core 0) flips the mini menu; nav
+	// drives it while open.
+	if (Storage::getInstance().consumeMenuToggle()) {
+		if (mode == MAIN_MENU || mode == REMAP) {
+			setMode(BUTTONS);
+		} else if (mode == BUTTONS || mode == SAVER) {
+			setMode(MAIN_MENU);
+			// Seed the nav edge tracker with the current key states so the
+			// hotkey's trigger keys (often B1 + others) don't immediately
+			// trigger a select/back on the freshly opened menu.
+			for (uint8_t a = 0; a < 6; a++)
+				navPrev[a] = navHeld(a);
+		}
+	}
 
 	if (mode == MAIN_MENU || mode == REMAP) {
 		processNav();
@@ -111,43 +123,6 @@ void DisplayController::update() {
 	}
 
 	Storage::getInstance().SetMenuActive(mode == MAIN_MENU || mode == REMAP);
-}
-
-void DisplayController::processCombo() {
-	const uint32_t now = getMillis();
-	const bool held = menuComboHeld();
-
-	if (held && !comboArmed) {
-		comboArmed = true;
-		comboHeldSince = now;
-	} else if (!held) {
-		comboArmed = false;
-	}
-
-	if (held && comboArmed && (now - comboHeldSince) >= 500) {
-		comboArmed = false; // one toggle per press
-		if (mode == MAIN_MENU || mode == REMAP) {
-			setMode(BUTTONS);
-		} else if (mode == BUTTONS || mode == SAVER) {
-			setMode(MAIN_MENU);
-			// Seed the nav edge tracker with the current key states so the
-			// combo keys (often B1 + others) don't immediately trigger a
-			// select/back on the freshly opened menu.
-			for (uint8_t a = 0; a < 6; a++)
-				navPrev[a] = navHeld(a);
-		}
-	}
-}
-
-bool DisplayController::menuComboHeld() {
-	const DisplayOptions& options = opts();
-	if (options.menuCombo_count == 0) return false;
-	KeyMask keyState = Storage::getInstance().getKeyState();
-	for (uint32_t i = 0; i < options.menuCombo_count; i++) {
-		if (options.menuCombo[i] >= MAX_KEYS || !keyState.test(options.menuCombo[i]))
-			return false;
-	}
-	return true;
 }
 
 bool DisplayController::navHeld(uint8_t action) {

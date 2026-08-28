@@ -1749,11 +1749,6 @@
 #ifndef INPUT_HISTORY_TIMEOUT
 #define INPUT_HISTORY_TIMEOUT 3
 #endif
-// Menu combo keys: a comma-separated list of key indices that opens the mini
-// menu when all are held (~500ms). Empty = combo disabled.
-#ifndef DISPLAY_MENU_COMBO
-#define DISPLAY_MENU_COMBO
-#endif
 #ifndef DISPLAY_MENU_UP_PIN
 #define DISPLAY_MENU_UP_PIN -1
 #endif
@@ -3757,8 +3752,6 @@ static void applyDefaults(Config& config)
 // and preferences.
 static void seedDisplayOptions(Config& config)
 {
-    static const uint32_t combo[8] = { DISPLAY_MENU_COMBO };
-
     config.displayOptions.enabled = !!HAS_I2C_DISPLAY;
     config.displayOptions.has_enabled = true;
     config.displayOptions.i2cBlock = DISPLAY_I2C_BLOCK;
@@ -3791,12 +3784,6 @@ static void seedDisplayOptions(Config& config)
     config.displayOptions.has_inputHistoryEnabled = true;
     config.displayOptions.inputHistoryTimeout = INPUT_HISTORY_TIMEOUT;
     config.displayOptions.has_inputHistoryTimeout = true;
-    config.displayOptions.menuCombo_count = 0;
-    for (uint32_t i = 0; i < 8 && combo[i] != 0; i++)
-    {
-        config.displayOptions.menuCombo[i] = combo[i];
-        config.displayOptions.menuCombo_count++;
-    }
     config.displayOptions.menuUpPin = DISPLAY_MENU_UP_PIN;
     config.displayOptions.has_menuUpPin = true;
     config.displayOptions.menuDownPin = DISPLAY_MENU_DOWN_PIN;
@@ -3876,7 +3863,6 @@ static void normalizeDisplayOptions(Config& config)
     if (!d.has_displaySaverMode) { d.displaySaverMode = s.displaySaverMode; d.has_displaySaverMode = true; }
     if (!d.has_inputHistoryEnabled) { d.inputHistoryEnabled = s.inputHistoryEnabled; d.has_inputHistoryEnabled = true; }
     if (!d.has_inputHistoryTimeout) { d.inputHistoryTimeout = s.inputHistoryTimeout; d.has_inputHistoryTimeout = true; }
-    if (d.menuCombo_count == 0) { d.menuCombo_count = s.menuCombo_count; for (uint32_t i = 0; i < 8; i++) d.menuCombo[i] = s.menuCombo[i]; }
     if (!d.has_menuUpPin) { d.menuUpPin = s.menuUpPin; d.has_menuUpPin = true; }
     if (!d.has_menuDownPin) { d.menuDownPin = s.menuDownPin; d.has_menuDownPin = true; }
     if (!d.has_menuLeftPin) { d.menuLeftPin = s.menuLeftPin; d.has_menuLeftPin = true; }
