@@ -71,6 +71,11 @@ static const SpeedRange speedRanges[] = {
 #ifndef STATUS_LED_COLOR_SWITCH_PRO
 #define STATUS_LED_COLOR_SWITCH_PRO 0xFF0000
 #endif
+// Brightness of the mode indicator LED (0-255), scaled on top of the
+// inactivity fade. 255 = full brightness.
+#ifndef STATUS_LED_BRIGHTNESS_DEFAULT
+#define STATUS_LED_BRIGHTNESS_DEFAULT 255
+#endif
 
 // Suspend/wake fade step (0-255 per 20ms render tick). 255/10 = ~25 ticks,
 // so the fade in/out takes roughly half a second.
@@ -555,9 +560,9 @@ void LedController::updateStatusLed()
     else if (inputMode == INPUT_MODE_SWITCH_PRO)
         color = STATUS_LED_COLOR_SWITCH_PRO;
 
-    uint32_t r = ((color >> 16) & 0xFF) * ledDim / 255;
-    uint32_t g = ((color >> 8) & 0xFF) * ledDim / 255;
-    uint32_t b = (color & 0xFF) * ledDim / 255;
+    uint32_t r = ((color >> 16) & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
+    uint32_t g = ((color >> 8) & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
+    uint32_t b = (color & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
     uint32_t out = (r << 16) | (g << 8) | b;
 
     if (out == lastStatusColor) return;

@@ -77,6 +77,17 @@
 #define LED_INDEX_GP28 10
 #define LED_INDEX_GP29 11
 
+// Default LED theme mode (0=custom, 1=cycle, 2=reactive, 3=bps, 4=ripple, 5=rain)
+#define LED_MODE 1
+
+// Default LED animation speed (0-100 percent, higher = faster; 50 = default)
+#define LED_SPEED 80
+
+// LED inactivity timeout (seconds): strip turns off after this long with no
+// key held (any press wakes it). 0 = always on.
+#define LED_TIMEOUT 60
+#define LED_BRIGHTNESS_DEFAULT 20
+
 // Spatial layout of the LED strip for 2D effects (ripple, chase, ...).
 // Each entry is the LED strip index at that (row, col); -1 = empty cell.
 #define BOARD_LED_POSITION_COLS 7
@@ -88,6 +99,7 @@
 // mode. This chip is wired RGB (not GRB like the per-key chain).
 #define STATUS_LED_PIN 16
 #define STATUS_LED_FORMAT LED_FORMAT_RGB
+#define STATUS_LED_BRIGHTNESS_DEFAULT 20
 
 // Web config boot key (S2 / Start) and bootloader shortcut (S1).
 #define PIN_WEBCONFIG 12
@@ -129,25 +141,25 @@
 #define BOARD_DISPLAY_LAYOUT \
     { \
     /* dpad: GP29 up, GP28 left, GP27 down, GP26 right */ \
-    {GP_ELEMENT_PIN_BUTTON, {27, 23, 8, 8, 1, 1, 29, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 9, 39, 8, 8, 1, 1, 28, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {25, 42, 8, 8, 1, 1, 27, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {27, 21, 8, 8, 1, 1, 29, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 3, 35, 8, 8, 1, 1, 28, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {22, 40, 8, 8, 1, 1, 27, GP_SHAPE_ELLIPSE}}, \
     {GP_ELEMENT_PIN_BUTTON, {41, 45, 8, 8, 1, 1, 26, GP_SHAPE_ELLIPSE}}, \
     /* action buttons: B3(1) B4(2) R1(3) L1(4) / B1(5) B2(6) R2(7) L2(8) */ \
     {GP_ELEMENT_PIN_BUTTON, { 68, 25, 8, 8, 1, 1,  1, GP_SHAPE_ELLIPSE}}, \
     {GP_ELEMENT_PIN_BUTTON, { 68, 45, 8, 8, 1, 1,  5, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 85, 15, 8, 8, 1, 1,  2, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 85, 35, 8, 8, 1, 1,  6, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {101, 15, 8, 8, 1, 1,  3, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {101, 35, 8, 8, 1, 1,  7, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {118, 15, 8, 8, 1, 1,  4, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {118, 35, 8, 8, 1, 1,  8, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 87, 15, 8, 8, 1, 1,  2, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 87, 35, 8, 8, 1, 1,  6, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {106, 15, 8, 8, 1, 1,  3, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {106, 35, 8, 8, 1, 1,  7, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {125, 15, 8, 8, 1, 1,  4, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {125, 35, 8, 8, 1, 1,  8, GP_SHAPE_ELLIPSE}}, \
     /* utility row: L3(9) S1(10) A1(11) S2(12) R3(13) */ \
-    {GP_ELEMENT_PIN_BUTTON, { 81, 50, 4, 4, 1, 1,  9, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 91, 50, 4, 4, 1, 1, 10, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {101, 50, 4, 4, 1, 1, 11, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {112, 50, 4, 4, 1, 1, 12, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {122, 50, 4, 4, 1, 1, 13, GP_SHAPE_ELLIPSE}} \
+    {GP_ELEMENT_PIN_BUTTON, { 83, 50, 4, 4, 1, 1,  9, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 94, 50, 4, 4, 1, 1, 10, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {105, 50, 4, 4, 1, 1, 11, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {116, 50, 4, 4, 1, 1, 12, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {127, 50, 4, 4, 1, 1, 13, GP_SHAPE_ELLIPSE}} \
     }
 
 #endif
