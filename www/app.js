@@ -119,6 +119,9 @@ let midiKeyboard = null;
 // gamepad modes
 let gamepadSelect = null;
 
+// MultiSelect used for the on-device menu combo (Settings page)
+let menuComboSelect = null;
+
 // Visual macro editor (macrobuilder.js) used on the Settings page
 let macroBuilder = null;
 
@@ -475,15 +478,46 @@ let displaySplashDurationSpinner = null;
 let displaySaverTimeoutSpinner = null;
 let displayHistoryTimeoutSpinner = null;
 
-// Parse a comma-separated list of key indices (menu combo) into an array of
-// ints. Empty input = disabled.
-function parseCombo(text) {
-  return String(text || '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0)
-    .map((s) => parseInt(s, 10))
-    .filter((n) => Number.isInteger(n) && n >= 0 && n < 128);
+// Human label for a menu-combo option, mirroring the board view: the pin's
+// mapping in the current input mode (key assignment, macro, MIDI note or
+// gamepad controls) when set, otherwise the bare pin index.
+function comboPinLabel(options, index) {
+  const mode = Number(options.defaultInputMode || 1);
+  const midiMode = mode === 2;
+  const gamepadMode = mode === 3 || mode === 4;
+  const macroIndex = Number(options.macroIndices?.[index] || 0);
+  const midiNote = Number(options.midiNotes?.[index] || 0);
+  const gamepadMask = Number(options.gamepadMasks?.[index] || 0);
+
+  let base = '';
+  if (midiMode) {
+    if (midiNote > 0) base = midiNoteName(midiNote);
+  } else if (gamepadMode) {
+    if (gamepadMask > 0) base = gamepadMaskLabels(gamepadMask).join('+');
+  } else if (macroIndex > 0) {
+    base = 'M' + macroIndex;
+  } else {
+    const mods = [];
+    const mask = Number(options.modifierMasks?.[index] || 0);
+    for (let i = 0; i < 8; i++) {
+      if (mask & (1 << i)) mods.push(MODIFIER_SHORT[0xe0 + i] || '');
+    }
+    const code = Number(options.keycodes?.[index] || 0);
+    const key = code ? keyLabel(code) : '';
+    base = mods.length ? mods.join('+') + '+' + key : key;
+  }
+  return base ? `${base} (Pin ${index})` : `Pin ${index}`;
+}
+
+// Options for the menu-combo multi-select: one entry per key, labeled with
+// the pin's mapping in the current input mode.
+function buildComboOptions() {
+  const count = (currentOptions.keycodes || []).length;
+  return Array.from({ length: count }, (_, i) => ({
+    group: 'combo',
+    label: comboPinLabel(currentOptions, i),
+    value: i,
+  }));
 }
 
 // Gather the current controls into a full config payload for /api/setOptions.
@@ -546,7 +580,7 @@ function buildOptionsBody() {
       displaySaverMode: parseInt(document.getElementById('display-saver-mode').value, 10),
       inputHistoryEnabled: document.getElementById('display-input-history').checked,
       inputHistoryTimeout: displayHistoryTimeoutSpinner ? displayHistoryTimeoutSpinner.getValue() : 3,
-      menuCombo: parseCombo(document.getElementById('display-menu-combo').value),
+      menuCombo: menuComboSelect ? menuComboSelect.getGroupValues('combo') : [],
     },
     profileIndex: currentProfileIndex,
     activeProfile,
@@ -738,6 +772,7 @@ async function load() {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
     if (boardView) boardView.refresh();
+    if (menuComboSelect) menuComboSelect.setOptions(buildComboOptions());
   });
 
   // Gamepad settings (XInput / Switch Pro modes)
@@ -826,13 +861,18 @@ async function load() {
     value: display.inputHistoryTimeout ?? 3,
     onChange: () => {},
   });
-  const menuComboEl = document.getElementById('display-menu-combo');
-  if (menuComboEl) {
-    menuComboEl.value = Array.isArray(display.menuCombo) ? display.menuCombo.join(', ') : '';
-    menuComboEl.addEventListener('change', () => {
-      if (!currentOptions.display) currentOptions.display = {};
-      currentOptions.display.menuCombo = parseCombo(menuComboEl.value);
+  const menuComboContainer = document.getElementById('display-menu-combo');
+  if (menuComboContainer) {
+    menuComboSelect = new MultiSelect({
+      container: menuComboContainer,
+      groups: [{ id: 'combo', label: 'Keys' }],
+      options: buildComboOptions(),
+      onChange: () => {
+        if (!currentOptions.display) currentOptions.display = {};
+        currentOptions.display.menuCombo = menuComboSelect.getGroupValues('combo');
+      },
     });
+    menuComboSelect.setGroupValues('combo', Array.isArray(display.menuCombo) ? display.menuCombo : []);
   }
 
   midiChannelSpinner = new Spinner({

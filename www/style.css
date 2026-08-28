@@ -423,7 +423,6 @@ section {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow: hidden;
   transition: border-radius 0.15s;
 }
 
@@ -1586,7 +1585,6 @@ button:disabled {
   width: 100%;
   max-width: 820px;
   max-height: 90vh;
-  overflow-y: auto;
 	display: flex;
 	flex-direction: column;
 	gap: 10px;

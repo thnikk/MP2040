@@ -133,6 +133,24 @@ class MultiSelect {
     return mask;
   }
 
+  // Select every option in `group` whose value appears in `values` (used by
+  // pickers that store a plain list of indices, e.g. the menu combo). Values
+  // without a matching option are dropped.
+  setGroupValues(group, values) {
+    this.selected = this.selected.filter((o) => o.group !== group);
+    for (const opt of this.options) {
+      if (opt.group === group && values.includes(opt.value)) this.selected.push(opt);
+    }
+    this.render();
+  }
+
+  // Values of the selected options in `group` (empty when none selected).
+  getGroupValues(group) {
+    return this.selected
+      .filter((o) => o.group === group)
+      .map((o) => o.value);
+  }
+
   getValue() {
     let keycode = 0;
     let mask = 0;
