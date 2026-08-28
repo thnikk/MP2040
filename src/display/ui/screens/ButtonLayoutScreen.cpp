@@ -212,7 +212,11 @@ void ButtonLayoutScreen::init() {
 	inputHistory.clear();
 	lastInput.fill(false);
 
-	setViewport((isInputHistoryEnabled ? 8 : 0), 0, (isInputHistoryEnabled ? 56 : getRenderer()->getDriver()->getMetrics()->height), getRenderer()->getDriver()->getMetrics()->width);
+	// Layout coordinates map 1:1 to the panel (authored for 128x64): use the
+	// full panel as the viewport so no scaling/offset is applied at draw time.
+	// The status bar and input-history footer are drawn on top at fixed rows,
+	// so layouts should keep their buttons clear of rows 0-7 and 56-63.
+	setViewport(0, 0, getRenderer()->getDriver()->getMetrics()->height, getRenderer()->getDriver()->getMetrics()->width);
 
 	// load layout (pushElement adds each element to the display list)
 	LayoutManager::LayoutList currLayout = LayoutManager::getInstance().getLayout(

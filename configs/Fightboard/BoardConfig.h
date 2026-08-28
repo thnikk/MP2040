@@ -134,32 +134,30 @@
 
 // Single-panel display layout (128x64). Ported from GP2040-th's Fightboard-v3
 // BoardConfig (DEFAULT_BOARD_LAYOUT_A dpad + DEFAULT_BOARD_LAYOUT_B action
-// buttons). The original x coordinates were authored for the old split-design
-// offsets (dpad centered at x=0 and buttons out to x=134), which hang off a
-// 128-wide panel; the whole layout is uniformly compressed horizontally so
-// every button renders on screen while keeping the v3 arrangement.
+// buttons). Layouts now render at 1:1 with the panel, so these coordinates are
+// literal display positions.
 #define BOARD_DISPLAY_LAYOUT \
     { \
     /* dpad: GP29 up, GP28 left, GP27 down, GP26 right */ \
-    {GP_ELEMENT_PIN_BUTTON, {27, 21, 8, 8, 1, 1, 29, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 3, 35, 8, 8, 1, 1, 28, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {22, 40, 8, 8, 1, 1, 27, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {41, 45, 8, 8, 1, 1, 26, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {36, 23, 6, 6, 1, 1, 29, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {18, 34, 6, 6, 1, 1, 28, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {32, 38, 6, 6, 1, 1, 27, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {46, 41, 6, 6, 1, 1, 26, GP_SHAPE_ELLIPSE}}, \
     /* action buttons: B3(1) B4(2) R1(3) L1(4) / B1(5) B2(6) R2(7) L2(8) */ \
-    {GP_ELEMENT_PIN_BUTTON, { 68, 25, 8, 8, 1, 1,  1, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 68, 45, 8, 8, 1, 1,  5, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 87, 15, 8, 8, 1, 1,  2, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 87, 35, 8, 8, 1, 1,  6, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {106, 15, 8, 8, 1, 1,  3, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {106, 35, 8, 8, 1, 1,  7, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {125, 15, 8, 8, 1, 1,  4, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {125, 35, 8, 8, 1, 1,  8, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 67, 26, 6, 6, 1, 1,  1, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 67, 41, 6, 6, 1, 1,  5, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 81, 19, 6, 6, 1, 1,  2, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 81, 34, 6, 6, 1, 1,  6, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 95, 19, 6, 6, 1, 1,  3, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 95, 34, 6, 6, 1, 1,  7, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {109, 19, 6, 6, 1, 1,  4, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {109, 34, 6, 6, 1, 1,  8, GP_SHAPE_ELLIPSE}}, \
     /* utility row: L3(9) S1(10) A1(11) S2(12) R3(13) */ \
-    {GP_ELEMENT_PIN_BUTTON, { 83, 50, 4, 4, 1, 1,  9, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, { 94, 50, 4, 4, 1, 1, 10, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {105, 50, 4, 4, 1, 1, 11, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {116, 50, 4, 4, 1, 1, 12, GP_SHAPE_ELLIPSE}}, \
-    {GP_ELEMENT_PIN_BUTTON, {127, 50, 4, 4, 1, 1, 13, GP_SHAPE_ELLIPSE}} \
+    {GP_ELEMENT_PIN_BUTTON, { 78, 45, 3, 3, 1, 1,  9, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 86, 45, 3, 3, 1, 1, 10, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, { 94, 45, 3, 3, 1, 1, 11, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {103, 45, 3, 3, 1, 1, 12, GP_SHAPE_ELLIPSE}}, \
+    {GP_ELEMENT_PIN_BUTTON, {111, 45, 3, 3, 1, 1, 13, GP_SHAPE_ELLIPSE}} \
     }
 
 #endif
