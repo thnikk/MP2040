@@ -19,7 +19,7 @@ const BOARD_VIEW_SCALE = 1.5;
 // (e.g. "pin27-label"), which are label-positioning paths, not buttons.
 // name is the matched id or inkscape:label (used to find the "-label" guide).
 function matchButtonIndex(el, isMatrix) {
-  const re = isMatrix ? /^key(\d+)/i : /^pin(\d+)/i;
+  const re = isMatrix ? /^key(\d+)$/i : /^pin(\d+)$/i;
   for (const name of [el.id, el.getAttribute('inkscape:label')]) {
     if (!name || LABEL_RE.test(name)) continue;
     const m = name.match(re);
