@@ -11,9 +11,13 @@ class GPWidget : public GPGFX_UI {
 		virtual void draw() {}
 		virtual int8_t update() { return 0; }
 		// Optional navigation hook for menu/remap screens, fed by the
-		// DisplayController from the configured menu pins. Returns a screen
-		// change request (1 = back to the buttons screen) or -1 to stay.
+		// DisplayController from the configured menu pins. Returns a target
+		// DisplayMode (see GPGFX_UI_screens.h) to switch to, or -1 to stay.
 		virtual int8_t handleNavigation(uint8_t action) { (void)action; return -1; }
+		// Whether holding the given nav action should auto-repeat (spinner
+		// value scrubbing). Default off; menu screens override for UP/DOWN
+		// when the current row is a spinner.
+		virtual bool wantsNavRepeat(uint8_t action) { (void)action; return false; }
 
 		void setPosition(uint16_t x, uint16_t y) { this->x = x; this->y = y; }
 

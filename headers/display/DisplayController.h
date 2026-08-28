@@ -29,14 +29,6 @@ public:
 	bool isDisplayPresent() { return displayPresent; }
 
 private:
-	enum DisplayMode {
-		SPLASH = 0,
-		BUTTONS,
-		MAIN_MENU,
-		REMAP,
-		SAVER,
-	};
-
 	// navigation actions shared by the menu/remap screens
 	enum NavAction {
 		NAV_UP = 0,
@@ -46,6 +38,15 @@ private:
 		NAV_SELECT,
 		NAV_BACK,
 	};
+
+	// Hold-to-repeat tuning for menu spinner scrubbing (matches GP2040-th):
+	// the first repeat fires after REPEAT_INITIAL_MS, then every
+	// REPEAT_INTERVAL_MS, accelerating by REPEAT_DECREMENT_MS each repeat
+	// down to REPEAT_MIN_MS.
+	static const uint32_t REPEAT_INITIAL_MS = 120;
+	static const uint32_t REPEAT_INTERVAL_MS = 100;
+	static const uint32_t REPEAT_DECREMENT_MS = 5;
+	static const uint32_t REPEAT_MIN_MS = 5;
 
 	void setMode(DisplayMode mode);
 	void destroyScreen();
@@ -74,6 +75,12 @@ private:
 
 	// nav edge tracking
 	bool navPrev[6] = {};
+
+	// hold-to-repeat state (indexed by NavAction)
+	uint32_t repeatSince[6] = {};
+	uint32_t repeatInterval[6] = {};
+	bool repeatActive[6] = {};
+	bool repeatInitial[6] = {};
 
 	uint32_t lastSaverCheck = 0;
 	uint32_t lastModeChange = 0;

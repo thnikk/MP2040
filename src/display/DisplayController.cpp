@@ -100,12 +100,8 @@ void DisplayController::update() {
 	// Update the current screen (handles splash -> buttons, saver exit, etc.)
 	if (screen != nullptr) {
 		int8_t result = screen->update();
-		if (result != -1 && result != 0) {
-			if (mode == SPLASH || mode == SAVER) {
-				setMode(BUTTONS);
-			} else if (mode == BUTTONS) {
-				// (not used; screens return -1 on the buttons screen)
-			}
+		if (result >= 0 && result != (int8_t)mode) {
+			setMode((DisplayMode)result);
 		}
 	}
 
@@ -186,13 +182,40 @@ bool DisplayController::navHeld(uint8_t action) {
 
 void DisplayController::processNav() {
 	if (screen == nullptr) return;
+	const uint32_t now = getMillis();
 	for (uint8_t action = 0; action < 6; action++) {
 		const bool held = navHeld(action);
 		if (held && !navPrev[action]) {
+			// Edge-trigger: fire the action once, then arm hold-to-repeat if
+			// the screen wants it (spinner scrubbing).
 			int8_t result = screen->handleNavigation(action);
-			if (result != -1) {
-				setMode(BUTTONS);
+			if (result >= 0 && result != (int8_t)mode) {
+				setMode((DisplayMode)result);
+				return;
 			}
+			if (screen->wantsNavRepeat(action)) {
+				repeatActive[action] = true;
+				repeatInitial[action] = true;
+				repeatSince[action] = now;
+				repeatInterval[action] = REPEAT_INTERVAL_MS;
+			}
+		} else if (held && repeatActive[action] && screen->wantsNavRepeat(action)) {
+			// Hold-to-repeat: after the initial delay, re-fire so spinner
+			// value scrubbing works. Acceleration matches GP2040-th.
+			const uint32_t wait = repeatInitial[action] ? REPEAT_INITIAL_MS : repeatInterval[action];
+			if (now - repeatSince[action] >= wait) {
+				repeatInitial[action] = false;
+				repeatSince[action] = now;
+				if (repeatInterval[action] > REPEAT_MIN_MS)
+					repeatInterval[action] = repeatInterval[action] - REPEAT_DECREMENT_MS;
+				int8_t result = screen->handleNavigation(action);
+				if (result >= 0 && result != (int8_t)mode) {
+					setMode((DisplayMode)result);
+					return;
+				}
+			}
+		} else if (!held) {
+			repeatActive[action] = false;
 		}
 		navPrev[action] = held;
 	}
