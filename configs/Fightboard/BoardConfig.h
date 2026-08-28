@@ -78,7 +78,7 @@
 #define LED_INDEX_GP29 11
 
 // Default LED theme mode (0=custom, 1=cycle, 2=reactive, 3=bps, 4=ripple, 5=rain)
-#define LED_MODE 1
+#define LED_MODE 0
 
 // Default LED animation speed (0-100 percent, higher = faster; 50 = default)
 #define LED_SPEED 80
@@ -94,6 +94,26 @@
 #define BOARD_LED_POSITIONS \
     { -1, 11, -1,  0,  1,  2,  3 }, \
     { 10,  9,  8,  7,  6,  5,  4 }
+
+// Optional per-key colors for Custom mode (LED_MODE 0). Each key's normal
+// (unpressed) color overrides LED_COLOR_NORMAL_MODE_CUSTOM for that key.
+// Indexed by the button's GPIO pin (direct-pin board), like KEYCODE_GPxx.
+// 0 = unset (key uses the mode colors).
+#define LED_COLOR_NORMAL_GP05 0x00FF00 // B1 green
+#define LED_COLOR_NORMAL_GP06 0xFF0000 // B2 red
+#define LED_COLOR_NORMAL_GP01 0x0000FF // B3 blue
+#define LED_COLOR_NORMAL_GP02 0xFFFF00 // B4 yellow
+#define LED_COLOR_NORMAL_GP03 0x8800FF // R1 purple
+#define LED_COLOR_NORMAL_GP07 0x00FFFF // R2 aqua
+#define LED_COLOR_NORMAL_GP04 0xFF8800 // L1 orange
+#define LED_COLOR_NORMAL_GP08 0xFF0088 // L2 pink
+#define LED_COLOR_NORMAL_GP29 0xFFFFFF // Up
+#define LED_COLOR_NORMAL_GP28 0xFFFFFF // Left
+#define LED_COLOR_NORMAL_GP27 0xFFFFFF // Down
+#define LED_COLOR_NORMAL_GP26 0xFFFFFF // Right
+
+// Custom mode pressed color: black for every key (no per-key overrides).
+#define LED_COLOR_PRESSED_MODE_CUSTOM 0x000000
 
 // Mode indicator LED: the onboard WS2812 (GPIO16) showing the active input
 // mode. This chip is wired RGB (not GRB like the per-key chain).

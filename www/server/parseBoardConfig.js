@@ -236,6 +236,8 @@ export function parseBoardConfig(configDir, rootDir) {
   const keycodes = [];
   const modifierMasks = [];
   const pinLedIndices = [];
+  const ledNormalColors = [];
+  const ledPressedColors = [];
   const gamepadMasks = [];
   // Key index arrays are MAX_KEYS (128) long; matrix boards can use indices
   // beyond the GPIO count. Direct boards only use the first 30.
@@ -247,6 +249,10 @@ export function parseBoardConfig(configDir, rootDir) {
     modifierMasks.push(parseModifier(d[`MODIFIER_IDX${n}`] ?? d[`MODIFIER_GP${n}`]));
     const ledIdx = parseNum(d[`LED_INDEX_IDX${n}`] ?? d[`LED_INDEX_GP${n}`]);
     pinLedIndices.push(ledIdx === undefined ? -1 : ledIdx);
+    // Per-key Custom-mode colors: LED_COLOR_NORMAL_IDXxx (matrix) or
+    // LED_COLOR_NORMAL_GPxx (direct), IDX preferred; 0 = unset.
+    ledNormalColors.push(parseColor(d[`LED_COLOR_NORMAL_IDX${n}`] ?? d[`LED_COLOR_NORMAL_GP${n}`]) ?? 0);
+    ledPressedColors.push(parseColor(d[`LED_COLOR_PRESSED_IDX${n}`] ?? d[`LED_COLOR_PRESSED_GP${n}`]) ?? 0);
     // Gamepad default mapping, like the keyboard defaults: GAMEPAD_IDXxx
     // (matrix) or GAMEPAD_GPxx (direct), IDX preferred when present.
     gamepadMasks.push(parseGamepadMask(d[`GAMEPAD_IDX${n}`] ?? d[`GAMEPAD_GP${n}`]));
@@ -301,6 +307,9 @@ export function parseBoardConfig(configDir, rootDir) {
       colorPressed: parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff,
       colorNormalByMode: perModeDefaults(d, 'LED_COLOR_NORMAL', parseColor, parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00),
       colorPressedByMode: perModeDefaults(d, 'LED_COLOR_PRESSED', parseColor, parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
+      // Per-key Custom-mode colors from the board config (0 = use mode colors).
+      ledNormalColors,
+      ledPressedColors,
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
     // On-screen display (SSD1306 over I2C): enabled + wiring from the board

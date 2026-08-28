@@ -182,10 +182,14 @@ function defaultOptions() {
       colorPressedByMode: Array.isArray(board?.led?.colorPressedByMode)
         ? board.led.colorPressedByMode.slice()
         : Array(7).fill(board?.led?.colorPressed ?? 0xffffff),
-      // Empty per-key color arrays = "use the global colors" (legacy config),
-      // matching the firmware.
-      ledNormalColors: [],
-      ledPressedColors: [],
+      // Per-key Custom-mode colors (0 = use the mode's colors), from the board
+      // config when defined.
+      ledNormalColors: Array.isArray(board?.led?.ledNormalColors)
+        ? board.led.ledNormalColors.slice()
+        : [],
+      ledPressedColors: Array.isArray(board?.led?.ledPressedColors)
+        ? board.led.ledPressedColors.slice()
+        : [],
       pinLedIndices,
     },
     display: {

@@ -79,6 +79,14 @@ function intToCss(value) {
   return '#' + value.toString(16).padStart(6, '0');
 }
 
+// Mode indicator LED color for the active input mode, mirroring the firmware's
+// defaults (LedController::updateStatusLed): keyboard=yellow, MIDI=amber,
+// XInput=green, Switch Pro=red.
+function statusLedColor(mode) {
+  const colors = { 1: 0xFFFF00, 2: 0xFF8000, 3: 0x00FF00, 4: 0xFF0000 };
+  return intToCss(colors[Number(mode)] ?? 0xFFFF00);
+}
+
 function prepareSvg(svg) {
   return svg.replace(/<svg([^>]*)>/, (match, attrs) => {
     let cleaned = attrs
@@ -208,6 +216,7 @@ class BoardView {
       this.applyPins();
       this.applyRing();
       this.applyLedCursors();
+      this.applyStatusLed();
     }
     this.updateLedSim();
   }
@@ -228,6 +237,7 @@ class BoardView {
     this.updateLabels();
     this.applyPins();
     this.applyLedCursors();
+    this.applyStatusLed();
     if (!this.ledSim) this.updateLedSim();
   }
 
@@ -239,6 +249,7 @@ class BoardView {
     if (this.options) this.options.led = { ...(this.options.led || {}), ...led };
     if (this.ledSim) this.ledSim.setParams(this.options?.led);
     this.applyLedCursors();
+    this.applyStatusLed();
   }
 
   // ---- render -----------------------------------------------------------
@@ -291,6 +302,7 @@ class BoardView {
     this.applyPins();
     this.applyRing();
     this.applyLedCursors();
+    this.applyStatusLed();
     this.styleTestButton();
     this.wireEvents();
     this.buildLedSim();
@@ -308,7 +320,6 @@ class BoardView {
     this.container.querySelectorAll(SHAPE_SEL).forEach((el) => {
       el.setAttribute('vector-effect', 'non-scaling-stroke');
       if (matchesRef(el, ['logo'])) return;
-      if (matchesRef(el, ['board-led'])) return;
       // Elements inside an "ignore" group keep their authored fill/stroke.
       if (matchesRef(el, ['ignore'])) return;
       el.style.fill = 'var(--bg-1)';
@@ -751,6 +762,21 @@ class BoardView {
     this.ringShapes.forEach((s) => {
       s.style.setProperty('fill', 'var(--bg-2)', 'important');
       s.style.removeProperty('fill-opacity');
+      s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+      s.style.setProperty('stroke-width', '2', 'important');
+    });
+  }
+
+  // The mode indicator LED (authored #board-led element, if present). Theme it
+  // like a button (same stroke) and fill it with the status LED color for the
+  // active input mode; dark when the status LED toggle is off.
+  applyStatusLed() {
+    const el = findByRef(this.container, 'board-led');
+    if (!el) return;
+    const enabled = this.options?.led?.statusLedEnabled !== false;
+    const fill = enabled ? statusLedColor(this.options?.defaultInputMode) : 'var(--bg-1)';
+    shapesOf(el).forEach((s) => {
+      s.style.setProperty('fill', fill, 'important');
       s.style.setProperty('stroke', 'var(--bg-4)', 'important');
       s.style.setProperty('stroke-width', '2', 'important');
     });
