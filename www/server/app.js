@@ -134,6 +134,9 @@ function defaultOptions() {
     // Global macros: per-key triggers + the M1-M8 definitions.
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
+    // Configurable hotkeys: board-defined defaults (HOTKEY_0X_*), mirroring the
+    // firmware's fresh-config seed. The user's saved set is stored on setOptions.
+    hotkeys: board?.hotkeys ?? [],
     gamepadMasks,
     defaultInputMode: 1,
     debounceInterval: 5,
@@ -297,6 +300,8 @@ export function createMockApp() {
     // Global macros (shared across profiles), like the firmware.
     if (Array.isArray(body.macroIndices)) current.macroIndices = body.macroIndices;
     if (Array.isArray(body.macros)) current.macros = body.macros;
+    // Global configurable hotkeys (shared across profiles), like the firmware.
+    if (Array.isArray(body.hotkeys)) current.hotkeys = body.hotkeys;
     if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
     if (body.led) {
       // ledTimeout / statusLedEnabled are global (non-profile) LED options,

@@ -291,6 +291,19 @@ std::string getOptions()
         }
     }
 
+    // Configurable hotkeys: simultaneous key combos that trigger an action
+    // (SOCD mode, profile switch, macro playback). Global like the macros.
+    JsonArray hotkeys = doc.createNestedArray("hotkeys");
+    for (pb_size_t h = 0; h < config.hotkeys_count; h++)
+    {
+        JsonObject hotkeyJson = hotkeys.createNestedObject();
+        const HotkeyEntry& hotkey = config.hotkeys[h];
+        JsonArray keys = hotkeyJson.createNestedArray("keys");
+        for (pb_size_t k = 0; k < hotkey.keys_count; k++)
+            keys.add(hotkey.keys[k]);
+        hotkeyJson["action"] = (uint8_t)hotkey.action;
+    }
+
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
     doc["debounceInterval"] = Storage::getInstance().getConfig().debounceInterval;
     doc["touchMargin"] = Storage::getInstance().getConfig().touchMargin;
@@ -536,6 +549,28 @@ std::string setOptions()
             macro.steps_count++;
         }
         config.macros_count++;
+    }
+
+    // Configurable hotkeys (global). Only entries with at least one usable key
+    // are stored; out-of-range key indices are dropped.
+    JsonArray hotkeys = doc["hotkeys"];
+    config.hotkeys_count = 0;
+    for (pb_size_t h = 0; h < MAX_HOTKEYS && h < (pb_size_t)hotkeys.size(); h++)
+    {
+        JsonObject hotkeyJson = hotkeys[h];
+        if (hotkeyJson.isNull()) continue;
+        JsonArray keys = hotkeyJson["keys"];
+        HotkeyEntry& hotkey = config.hotkeys[config.hotkeys_count];
+        hotkey.keys_count = 0;
+        for (pb_size_t k = 0; k < MAX_HOTKEY_KEYS && k < (pb_size_t)keys.size(); k++)
+        {
+            uint32_t key = keys[k].as<uint32_t>();
+            if (key >= MAX_KEYS) continue;
+            hotkey.keys[hotkey.keys_count++] = key;
+        }
+        if (hotkey.keys_count == 0) continue;
+        hotkey.action = (HotkeyAction)(hotkeyJson["action"] | 0);
+        config.hotkeys_count++;
     }
 
     JsonObject midi = doc["midi"];

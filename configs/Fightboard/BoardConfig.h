@@ -128,6 +128,13 @@
 // Default input mode for a fight stick.
 #define DEFAULT_INPUT_MODE INPUT_MODE_XINPUT
 
+// Configurable hotkeys (seeded into a fresh config). L3+R3+Left / L3+R3+Right
+// step to the previous / next profile (pins 9=L3, 13=R3, 28=Left, 26=Right).
+#define HOTKEY_01_KEYS   { 9, 13, 28 }
+#define HOTKEY_01_ACTION HOTKEY_PREVIOUS_PROFILE
+#define HOTKEY_02_KEYS   { 9, 13, 26 }
+#define HOTKEY_02_ACTION HOTKEY_NEXT_PROFILE
+
 // ---- On-screen display (SSD1306/SH1106, 128x64, I2C1 SDA 14 / SCL 15) ----
 #define HAS_I2C_DISPLAY 1
 #define DISPLAY_I2C_BLOCK 1

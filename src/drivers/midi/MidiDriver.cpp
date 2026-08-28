@@ -33,6 +33,13 @@ void MidiDriver::process() {
 	if (Storage::getInstance().getSerialConfigEnabled())
 		serialCommands.process();
 
+	// Pins suppressed by a fired hotkey are treated as unpressed so the combo's
+	// trigger keys don't send notes. lastKeyState tracks the same filtered
+	// state so note-on/off edges stay consistent (a note stops while its pin
+	// is suppressed and resumes when the hotkey is released).
+	KeyMask trackedState = keyState;
+	trackedState &= ~Storage::getInstance().hotkeySuppressed;
+
 	// Only produce note events while a host has claimed the MIDI interfaces.
 	// Keep the previous state in sync so a later mount doesn't send spurious
 	// note-offs for keys already held down.
@@ -54,7 +61,7 @@ void MidiDriver::process() {
 		if (pin < (Pin_t)keyMapping.midiVelocities_count && keyMapping.midiVelocities[pin] != 0)
 			velocity = (uint8_t)keyMapping.midiVelocities[pin];
 
-		bool pressed = keyState.test(pin);
+		bool pressed = trackedState.test(pin);
 		bool wasPressed = lastKeyState.test(pin);
 		if (pressed && !wasPressed)
 			sendNote(MIDI_CIN_NOTE_ON, note, velocity);
@@ -62,7 +69,7 @@ void MidiDriver::process() {
 			sendNote(MIDI_CIN_NOTE_OFF, note, velocity);
 	}
 
-	lastKeyState = keyState;
+	lastKeyState = trackedState;
 
 	// Touch ring: pitch bend. Center of the ring = center (0x2000), up = max
 	// (0x3FFF), down = min (0). Only when enabled (ringMidiBehavior == 1).

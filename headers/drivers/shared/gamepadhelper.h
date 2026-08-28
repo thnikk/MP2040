@@ -71,12 +71,16 @@ static inline uint8_t getMaskFromDirection(DpadDirection direction)
 static inline void buildGamepadState(GamepadState& state)
 {
 	const KeyMask& keyState = Storage::getInstance().keyState;
+	const KeyMask& hotkeySuppressed = Storage::getInstance().hotkeySuppressed;
 
 	state.buttons = 0;
 	state.dpad = 0;
 
 	const uint32_t keyCount = Storage::getInstance().getKeyCount();
 	for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++) {
+		// Pins that are the trigger keys of a fired hotkey don't contribute
+		// their gamepad controls (the combo shouldn't also press buttons).
+		if (hotkeySuppressed.test(pin)) continue;
 		if (!keyState.test(pin)) continue;
 		const uint32_t mask = Storage::getInstance().getGamepadMask(pin);
 		if (mask == 0) continue;

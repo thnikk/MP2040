@@ -91,6 +91,31 @@ const GAMEPAD_PIN_MASK = {
   GAMEPAD_PIN_MASK_A2: 1 << 17,
 };
 
+// Hotkey action values (HotkeyAction in proto/enums.proto). BoardConfig.h
+// HOTKEY_0X_ACTION defines use these token names.
+const HOTKEY_ACTION = {
+  HOTKEY_NONE: 0,
+  HOTKEY_SOCD_UP_PRIORITY: 1,
+  HOTKEY_SOCD_NEUTRAL: 2,
+  HOTKEY_SOCD_LAST_INPUT: 3,
+  HOTKEY_SOCD_FIRST_INPUT: 4,
+  HOTKEY_SOCD_BYPASS: 5,
+  HOTKEY_LOAD_PROFILE_1: 6,
+  HOTKEY_LOAD_PROFILE_2: 7,
+  HOTKEY_LOAD_PROFILE_3: 8,
+  HOTKEY_LOAD_PROFILE_4: 9,
+  HOTKEY_NEXT_PROFILE: 10,
+  HOTKEY_PREVIOUS_PROFILE: 11,
+  HOTKEY_TRIGGER_MACRO_1: 12,
+  HOTKEY_TRIGGER_MACRO_2: 13,
+  HOTKEY_TRIGGER_MACRO_3: 14,
+  HOTKEY_TRIGGER_MACRO_4: 15,
+  HOTKEY_TRIGGER_MACRO_5: 16,
+  HOTKEY_TRIGGER_MACRO_6: 17,
+  HOTKEY_TRIGGER_MACRO_7: 18,
+  HOTKEY_TRIGGER_MACRO_8: 19,
+};
+
 // MP2040's enums.proto LEDFormat values
 const LED_FORMAT_MAP = {
   LED_FORMAT_RGB: 0,
@@ -212,6 +237,15 @@ function parsePinArray(raw) {
     .filter((s) => s.length > 0)
     .map((s) => parseInt(s, 10))
     .filter((n) => !Number.isNaN(n));
+}
+
+// Resolve a HOTKEY_0X_ACTION define (a HotkeyAction token or a raw number) to
+// its numeric value; 0 (HOTKEY_NONE) means the slot is unset.
+function parseHotkeyAction(raw) {
+  const val = String(raw || '').trim().replace(/;$/, '').trim();
+  if (/^\d+$/.test(val)) return parseInt(val, 10);
+  if (HOTKEY_ACTION[val] !== undefined) return HOTKEY_ACTION[val];
+  return 0;
 }
 
 // Per-mode LED defaults mirroring firmware: LED_<SETTING>_MODE_<NAME> for each
@@ -343,6 +377,16 @@ export function parseBoardConfig(configDir, rootDir) {
     // Capacitive touch pads: any TOUCH_GPxx define set to 1 hands that pin to
     // the touch driver. Mirrors the firmware's TOUCH_GPxx board config.
     hasTouchPads: Object.keys(d).some((k) => /^TOUCH_GP\d+$/.test(k) && parseNum(d[k]) === 1),
+    // Configurable hotkeys seeded into a fresh config (HOTKEY_0X_KEYS +
+    // HOTKEY_0X_ACTION). Slots with no keys or no action are omitted, matching
+    // the firmware's seedHotkeys.
+    hotkeys: Array.from({ length: 16 }, (_, i) => {
+      const slot = String(i + 1).padStart(2, '0');
+      const keys = parsePinArray(d[`HOTKEY_${slot}_KEYS`]);
+      const action = parseHotkeyAction(d[`HOTKEY_${slot}_ACTION`]);
+      if (keys.length === 0 || action === 0) return null;
+      return { keys, action };
+    }).filter(Boolean),
     // Number of keys the board can report, mirroring firmware getKeyCount():
     // matrix boards report rows*cols, direct boards report all bank-0 GPIOs.
     keyCount: matrixRows > 0 && matrixCols > 0 ? matrixRows * matrixCols : 30,

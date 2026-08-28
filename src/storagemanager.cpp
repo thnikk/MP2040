@@ -3230,6 +3230,133 @@
 #define MATRIX_ACTIVE_HIGH 0
 #endif
 
+// Configurable hotkey board defaults. Each slot comes from two optional
+// BoardConfig.h defines:
+//   HOTKEY_0X_KEYS   { key1, key2, ... }  key indices held together (<= 8)
+//   HOTKEY_0X_ACTION HOTKEY_LOAD_PROFILE_2  a HotkeyAction enum constant
+// Slots 01-16 are matched in order (01 has the highest priority); omitted
+// slots default to no keys / no action and are not seeded. Key indices follow
+// the board's model (GPIO pin on direct boards, linear matrix index on matrix
+// boards), the same as KEYCODE_GPxx / KEYCODE_IDXxx. Board defaults are only
+// applied to a fresh/nuked config (applyDefaults), never over a stored one.
+#ifndef HOTKEY_01_KEYS
+#define HOTKEY_01_KEYS {}
+#endif
+#ifndef HOTKEY_01_ACTION
+#define HOTKEY_01_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_02_KEYS
+#define HOTKEY_02_KEYS {}
+#endif
+#ifndef HOTKEY_02_ACTION
+#define HOTKEY_02_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_03_KEYS
+#define HOTKEY_03_KEYS {}
+#endif
+#ifndef HOTKEY_03_ACTION
+#define HOTKEY_03_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_04_KEYS
+#define HOTKEY_04_KEYS {}
+#endif
+#ifndef HOTKEY_04_ACTION
+#define HOTKEY_04_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_05_KEYS
+#define HOTKEY_05_KEYS {}
+#endif
+#ifndef HOTKEY_05_ACTION
+#define HOTKEY_05_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_06_KEYS
+#define HOTKEY_06_KEYS {}
+#endif
+#ifndef HOTKEY_06_ACTION
+#define HOTKEY_06_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_07_KEYS
+#define HOTKEY_07_KEYS {}
+#endif
+#ifndef HOTKEY_07_ACTION
+#define HOTKEY_07_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_08_KEYS
+#define HOTKEY_08_KEYS {}
+#endif
+#ifndef HOTKEY_08_ACTION
+#define HOTKEY_08_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_09_KEYS
+#define HOTKEY_09_KEYS {}
+#endif
+#ifndef HOTKEY_09_ACTION
+#define HOTKEY_09_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_10_KEYS
+#define HOTKEY_10_KEYS {}
+#endif
+#ifndef HOTKEY_10_ACTION
+#define HOTKEY_10_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_11_KEYS
+#define HOTKEY_11_KEYS {}
+#endif
+#ifndef HOTKEY_11_ACTION
+#define HOTKEY_11_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_12_KEYS
+#define HOTKEY_12_KEYS {}
+#endif
+#ifndef HOTKEY_12_ACTION
+#define HOTKEY_12_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_13_KEYS
+#define HOTKEY_13_KEYS {}
+#endif
+#ifndef HOTKEY_13_ACTION
+#define HOTKEY_13_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_14_KEYS
+#define HOTKEY_14_KEYS {}
+#endif
+#ifndef HOTKEY_14_ACTION
+#define HOTKEY_14_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_15_KEYS
+#define HOTKEY_15_KEYS {}
+#endif
+#ifndef HOTKEY_15_ACTION
+#define HOTKEY_15_ACTION HOTKEY_NONE
+#endif
+#ifndef HOTKEY_16_KEYS
+#define HOTKEY_16_KEYS {}
+#endif
+#ifndef HOTKEY_16_ACTION
+#define HOTKEY_16_ACTION HOTKEY_NONE
+#endif
+
+// Element count of a brace-list define (e.g. HOTKEY_01_KEYS). Unset slots
+// expand to an empty list, so their array is zero-length and the count is 0.
+#define HK_KEYS(n)   static const uint32_t hk##n##Keys[] = HOTKEY_##n##_KEYS
+#define HK_ENTRY(n)  { hk##n##Keys, sizeof(hk##n##Keys) / sizeof(uint32_t), HOTKEY_##n##_ACTION }
+
+HK_KEYS(01); HK_KEYS(02); HK_KEYS(03); HK_KEYS(04); HK_KEYS(05); HK_KEYS(06); HK_KEYS(07); HK_KEYS(08);
+HK_KEYS(09); HK_KEYS(10); HK_KEYS(11); HK_KEYS(12); HK_KEYS(13); HK_KEYS(14); HK_KEYS(15); HK_KEYS(16);
+
+// Board default hotkeys, indexed by slot (0-15) matching HOTKEY_0X_*.
+static const struct {
+    const uint32_t* keys;
+    pb_size_t count;
+    HotkeyAction action;
+} defaultHotkeys[MAX_HOTKEYS] = {
+    HK_ENTRY(01), HK_ENTRY(02), HK_ENTRY(03), HK_ENTRY(04), HK_ENTRY(05), HK_ENTRY(06), HK_ENTRY(07), HK_ENTRY(08),
+    HK_ENTRY(09), HK_ENTRY(10), HK_ENTRY(11), HK_ENTRY(12), HK_ENTRY(13), HK_ENTRY(14), HK_ENTRY(15), HK_ENTRY(16),
+};
+
+#undef HK_KEYS
+#undef HK_ENTRY
+
 static const uint32_t defaultKeycodes[MAX_KEYS] = {
     KEYCODE_IDX00, KEYCODE_IDX01, KEYCODE_IDX02, KEYCODE_IDX03, KEYCODE_IDX04,
     KEYCODE_IDX05, KEYCODE_IDX06, KEYCODE_IDX07, KEYCODE_IDX08, KEYCODE_IDX09,
@@ -3554,6 +3681,7 @@ static const uint32_t defaultLedSpeedsByMode[7] = {
 // Apply board defaults to a fresh config (used for resets and as the seed for
 // normalization). Kept near the top of the defaults section.
 static void seedDisplayOptions(Config& config);
+static void seedHotkeys(Config& config);
 
 static void applyDefaults(Config& config)
 {
@@ -3617,6 +3745,7 @@ static void applyDefaults(Config& config)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
     config.webConfigPin = PIN_WEBCONFIG;
     seedDisplayOptions(config);
+    seedHotkeys(config);
 }
 
 // -----------------------------------------------------
@@ -3681,6 +3810,29 @@ static void seedDisplayOptions(Config& config)
     config.displayOptions.menuBackPin = DISPLAY_MENU_BACK_PIN;
     config.displayOptions.has_menuBackPin = true;
     config.has_displayOptions = true;
+}
+
+// Seed the configurable hotkeys from the board's HOTKEY_0X_KEYS / ACTION
+// defines. Only slots with a defined action and at least one key are seeded;
+// the rest stay empty. Board defaults apply to a fresh config only (see
+// applyDefaults) and are never re-applied over a stored config, so a user's
+// saved hotkey set (including an intentionally empty one) is preserved.
+static void seedHotkeys(Config& config)
+{
+    config.hotkeys_count = 0;
+    for (pb_size_t h = 0; h < MAX_HOTKEYS; h++)
+    {
+        if (defaultHotkeys[h].action == HOTKEY_NONE || defaultHotkeys[h].count == 0)
+            continue;
+        HotkeyEntry& hotkey = config.hotkeys[config.hotkeys_count];
+        hotkey.keys_count = defaultHotkeys[h].count > MAX_HOTKEY_KEYS
+            ? MAX_HOTKEY_KEYS : defaultHotkeys[h].count;
+        for (pb_size_t k = 0; k < hotkey.keys_count; k++)
+            hotkey.keys[k] = defaultHotkeys[h].keys[k];
+        hotkey.action = defaultHotkeys[h].action;
+        hotkey.has_action = true;
+        config.hotkeys_count++;
+    }
 }
 
 // Backfill missing display fields from the board defaults and always re-apply

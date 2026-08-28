@@ -40,9 +40,17 @@ private:
         uint32_t until;       // ms when the current phase (hold/delay) ends
     };
     static constexpr uint8_t MAX_ACTIVE_MACROS = 8;
+    // Virtual "pin" used for macro playback started by a hotkey (a fired combo
+    // with a macro action). Never a real key index, so keyState.test() on it is
+    // always false: playback loops while the hotkey is held and stops at a
+    // cycle boundary once released.
+    static constexpr uint8_t HOTKEY_MACRO_PIN = 0xFF;
     void updateMacros(const Config& config, const KeyMask& keyState, uint32_t now);
     MacroPlayback activeMacros[MAX_ACTIVE_MACROS];
     KeyMask lastKeyState;
+    // Previous frame's hotkey-triggered macro (Storage.hotkeyMacroIndex), for
+    // rising-edge detection of a hotkey macro start/restart.
+    uint8_t prevHotkeyMacro = 0;
     uint8_t last_report[CFG_TUD_ENDPOINT0_SIZE] = { };
     uint16_t last_report_size;
     KeyboardReport keyboardReport;

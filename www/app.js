@@ -125,6 +125,9 @@ let menuComboSelect = null;
 // Visual macro editor (macrobuilder.js) used on the Settings page
 let macroBuilder = null;
 
+// Configurable hotkeys editor (hotkeys.js) used on the Settings page
+let hotkeysPanel = null;
+
 // Pin currently being edited in the modal
 let editingPin = -1;
 
@@ -509,12 +512,13 @@ function comboPinLabel(options, index) {
   return base ? `${base} (Pin ${index})` : `Pin ${index}`;
 }
 
-// Options for the menu-combo multi-select: one entry per key, labeled with
-// the pin's mapping in the current input mode.
-function buildComboOptions() {
+// Options for the menu-combo / hotkey multi-selects: one entry per key,
+// labeled with the pin's mapping in the current input mode. group is the
+// MultiSelect group id to attach them to.
+function buildComboOptions(group = 'combo') {
   const count = (currentOptions.keycodes || []).length;
   return Array.from({ length: count }, (_, i) => ({
-    group: 'combo',
+    group,
     label: comboPinLabel(currentOptions, i),
     value: i,
   }));
@@ -537,6 +541,7 @@ function buildOptionsBody() {
     gamepadMasks: currentOptions.gamepadMasks || [],
     macroIndices: currentOptions.macroIndices,
     macros: currentOptions.macros || [],
+    hotkeys: hotkeysPanel ? hotkeysPanel.getValue() : (currentOptions.hotkeys || []),
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
     touchMargin: touchMarginSpinner ? touchMarginSpinner.getValue() : 15,
@@ -773,6 +778,7 @@ async function load() {
     updateModalMode();
     if (boardView) boardView.refresh();
     if (menuComboSelect) menuComboSelect.setOptions(buildComboOptions());
+    if (hotkeysPanel) hotkeysPanel.setKeyOptions(buildComboOptions('hotkey'));
   });
 
   // Gamepad settings (XInput / Switch Pro modes)
@@ -977,6 +983,16 @@ async function load() {
       container: macrosPanel,
       macros: currentOptions.macros,
       onChange: (macros) => { currentOptions.macros = macros; },
+    });
+  }
+
+  const hotkeysPanelEl = document.getElementById('hotkeys-panel');
+  if (hotkeysPanelEl) {
+    hotkeysPanel = new HotkeysPanel({
+      container: hotkeysPanelEl,
+      hotkeys: Array.isArray(options.hotkeys) ? options.hotkeys : [],
+      keyOptions: buildComboOptions('hotkey'),
+      onChange: (hotkeys) => { currentOptions.hotkeys = hotkeys; },
     });
   }
 

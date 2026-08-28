@@ -34,6 +34,7 @@ void KeyboardDriver::initialize() {
 	for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++)
 		activeMacros[i].macroIndex = 0;
 	lastKeyState.clear();
+	prevHotkeyMacro = 0;
 }
 
 uint8_t KeyboardDriver::getMultimedia(uint8_t code) {
@@ -53,6 +54,7 @@ void KeyboardDriver::process() {
 	const Config& config = Storage::getInstance().getConfig();
 	const KeyMapping& keyMapping = config.keyMapping;
 	const KeyMask& keyState = Storage::getInstance().keyState;
+	const KeyMask& hotkeySuppressed = Storage::getInstance().hotkeySuppressed;
 	releaseAllKeys();
 
 	const uint32_t now = getMillis();
@@ -63,9 +65,12 @@ void KeyboardDriver::process() {
 	// Direct pin -> keycode mapping. Each pressed pin emits its key (or
 	// modifier / multimedia key) while held. A pin with no keycode but a
 	// modifier mask still acts as a pure modifier (e.g. a Shift key). Pins
-	// mapped to a macro (macroIndices > 0) are handled by updateMacros.
+	// mapped to a macro (macroIndices > 0) are handled by updateMacros. Pins
+	// that are the trigger keys of a fired hotkey are skipped so the combo
+	// doesn't also type its normal keys.
 	for (Pin_t pin = 0; pin < (Pin_t)keyMapping.keycodes_count; pin++) {
 		if (pin < (Pin_t)MAX_KEYS && config.macroIndices[pin] != 0) continue;
+		if (hotkeySuppressed.test(pin)) continue;
 		if (!keyState.test(pin)) continue;
 
 		uint8_t keycode = keyMapping.keycodes[pin];
@@ -206,12 +211,39 @@ void KeyboardDriver::pressKey(uint8_t code) {
 void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState, uint32_t now) {
 	const Macro* macros = config.macros;
 	const pb_size_t macroCount = config.macros_count;
+	const KeyMask& hotkeySuppressed = Storage::getInstance().hotkeySuppressed;
+
+	// Hotkey-triggered macro: a fired hotkey with a macro action plays through
+	// a virtual slot (pin = HOTKEY_MACRO_PIN, which never reads as held). It
+	// starts/restarts on the rising edge of Storage.hotkeyMacroIndex and, like
+	// a held pin, loops until the combo is released (then stops at a cycle
+	// boundary because the virtual pin is never held).
+	const uint8_t hotkeyMacro = Storage::getInstance().hotkeyMacroIndex;
+	if (hotkeyMacro != 0 && hotkeyMacro <= macroCount && hotkeyMacro != prevHotkeyMacro)
+	{
+		for (uint8_t i = 0; i < MAX_ACTIVE_MACROS; i++)
+		{
+			if (activeMacros[i].macroIndex == 0)
+			{
+				activeMacros[i].pin = HOTKEY_MACRO_PIN;
+				activeMacros[i].macroIndex = hotkeyMacro;
+				activeMacros[i].step = 0;
+				activeMacros[i].holding = true;
+				activeMacros[i].started = false; // hold timer armed on the first frame
+				activeMacros[i].until = now;
+				break;
+			}
+		}
+	}
+	prevHotkeyMacro = hotkeyMacro;
 
 	// Start (or restart) playback on the rising edge of each macro pin. A
-	// re-press while a run is still finishing resets it back to step 0.
+	// re-press while a run is still finishing resets it back to step 0. Pins
+	// suppressed by a fired hotkey don't start their own macro.
 	for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++) {
 		const uint32_t macroIndex = pin < (Pin_t)MAX_KEYS ? config.macroIndices[pin] : 0;
 		if (macroIndex == 0 || macroIndex > macroCount) continue;
+		if (hotkeySuppressed.test(pin)) continue;
 		if (!keyState.test(pin) || lastKeyState.test(pin)) continue;
 
 		MacroPlayback* slot = nullptr;
@@ -272,12 +304,20 @@ void KeyboardDriver::updateMacros(const Config& config, const KeyMask& keyState,
 		} else if (now >= m.until) {
 			// Delay finished: move to the next step (looping at the end). A
 			// completed pass keeps going only if the button is still held;
-			// otherwise the run stops at the cycle boundary.
+			// otherwise the run stops at the cycle boundary. A hotkey-triggered
+			// macro (virtual pin) stays alive while its hotkey is held and stops
+			// at the boundary once released.
 			m.step = (m.step + 1) % stepCount;
-			if (m.step == 0 && !keyState.test(m.pin))
+			if (m.step == 0)
 			{
-				m.macroIndex = 0;
-				continue;
+				const bool stillHeld = (m.pin == HOTKEY_MACRO_PIN)
+					? (Storage::getInstance().hotkeyMacroIndex == m.macroIndex)
+					: keyState.test(m.pin);
+				if (!stillHeld)
+				{
+					m.macroIndex = 0;
+					continue;
+				}
 			}
 			m.holding = true;
 			m.started = false;

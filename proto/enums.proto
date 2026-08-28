@@ -112,3 +112,39 @@ enum GPShape_Type
     GP_SHAPE_POLYGON = 3;
     GP_SHAPE_ARC = 4;
 }
+
+// Action triggered by a configurable hotkey. A hotkey is a set of key indices
+// held simultaneously; when the combo fires, the hotkey controller dispatches
+// the action below. New actions are appended (never renumbered) so stored
+// configs stay valid across firmware updates.
+enum HotkeyAction
+{
+    option (nanopb_enumopt).long_names = false;
+
+    HOTKEY_NONE = 0;
+    // Set the gamepad SOCD cleaning mode (matches SOCDMode values). Persists
+    // like the web-config setting.
+    HOTKEY_SOCD_UP_PRIORITY = 1;
+    HOTKEY_SOCD_NEUTRAL = 2;
+    HOTKEY_SOCD_LAST_INPUT = 3;
+    HOTKEY_SOCD_FIRST_INPUT = 4;
+    HOTKEY_SOCD_BYPASS = 5;
+    // Load a profile (1-based; profiles are indexed 0-3 in config). Switches
+    // live and persists.
+    HOTKEY_LOAD_PROFILE_1 = 6;
+    HOTKEY_LOAD_PROFILE_2 = 7;
+    HOTKEY_LOAD_PROFILE_3 = 8;
+    HOTKEY_LOAD_PROFILE_4 = 9;
+    HOTKEY_NEXT_PROFILE = 10;
+    HOTKEY_PREVIOUS_PROFILE = 11;
+    // Play a macro (M1-M8) while the hotkey is held, looping like a per-pin
+    // macro trigger. The macro runs even if its trigger keys are elsewhere.
+    HOTKEY_TRIGGER_MACRO_1 = 12;
+    HOTKEY_TRIGGER_MACRO_2 = 13;
+    HOTKEY_TRIGGER_MACRO_3 = 14;
+    HOTKEY_TRIGGER_MACRO_4 = 15;
+    HOTKEY_TRIGGER_MACRO_5 = 16;
+    HOTKEY_TRIGGER_MACRO_6 = 17;
+    HOTKEY_TRIGGER_MACRO_7 = 18;
+    HOTKEY_TRIGGER_MACRO_8 = 19;
+}

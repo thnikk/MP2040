@@ -14,6 +14,11 @@
 
 #define SI Storage::getInstance()
 
+// Maximum number of configurable hotkeys (Config.hotkeys).
+#define MAX_HOTKEYS 16
+// Maximum number of keys that can trigger one hotkey (HotkeyEntry.keys).
+#define MAX_HOTKEY_KEYS 8
+
 // Sentinel for LedPreview.statusLedEnabled: "leave the status LED untouched".
 // Used by previews that don't carry the toggle (e.g. the boot-window cue) so
 // applying them doesn't turn the mode indicator off.
@@ -200,6 +205,22 @@ public:
 	// index via config.macroIndices.
 	Macro* getMacros() { return config.macros; }
 	pb_size_t getMacroCount() { return config.macros_count; }
+	// Configurable hotkeys (see HotkeyEntry): simultaneous key combos that
+	// trigger an action. Global, not per-profile. Matched in array order.
+	HotkeyEntry* getHotkeys() { return config.hotkeys; }
+	pb_size_t getHotkeyCount() { return config.hotkeys_count; }
+	void setHotkeyCount(pb_size_t count) {
+		config.hotkeys_count = count > MAX_HOTKEYS ? MAX_HOTKEYS : count;
+	}
+	// Per-frame hotkey runtime state, set by the hotkey controller (core 0)
+	// and read by the input drivers (also core 0), so plain members suffice.
+	// Not persisted.
+	// KeyMask of the trigger keys of whichever hotkey fired this frame; drivers
+	// skip these pins so the combo doesn't also emit its normal output.
+	KeyMask hotkeySuppressed;
+	// Macro (1-8) being played because a hotkey fired, 0 = none. Cleared when
+	// the hotkey combo is released.
+	uint8_t hotkeyMacroIndex = 0;
 	// Boot-mode shortcut pin (USB bootloader), from the board's PIN_BOOT define.
 	// A physical board property (like the web config pin), never a user setting.
 	int32_t getBootPin() { return bootPin; }

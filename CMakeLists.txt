@@ -147,6 +147,7 @@ src/helper.cpp
 src/storagemanager.cpp
 src/configmanager.cpp
 src/drivermanager.cpp
+src/hotkeys.cpp
 src/usbdriver.cpp
 src/system.cpp
 src/configs/webconfig.cpp

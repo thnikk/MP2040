@@ -7,6 +7,7 @@
 #include "configmanager.h"
 #include "storagemanager.h"
 #include "drivermanager.h"
+#include "hotkeys.h"
 #include "touch/TouchGpio.h"
 #include "touch/TouchRing.h"
 #include "types.h"
@@ -370,6 +371,7 @@ void MP2040::run() {
 		}
 
 		// Process Input Driver
+		HotkeyController::getInstance().process();
 		inputDriver->process();
 
 		tud_task(); // TinyUSB Task update
