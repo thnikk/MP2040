@@ -3352,6 +3352,73 @@ static const struct {
 #undef HK_KEYS
 #undef HK_ENTRY
 
+// Configurable boot key board defaults. Each slot comes from two optional
+// BoardConfig.h defines:
+//   BOOT_KEY_0X_PIN  <GPIO / linear key index>  held at power-on
+//   BOOT_KEY_0X_MODE <InputMode constant>       mode to boot into
+// Slots 01-08 are matched in order (the first held pin wins); a slot with pin
+// -1 is skipped. Pin semantics match the web config pin (GPIO on direct
+// boards, linear matrix key index on matrix boards). Board defaults are only
+// applied to a fresh/nuked config (applyDefaults), never over a stored one.
+#ifndef BOOT_KEY_01_PIN
+#define BOOT_KEY_01_PIN -1
+#endif
+#ifndef BOOT_KEY_01_MODE
+#define BOOT_KEY_01_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_02_PIN
+#define BOOT_KEY_02_PIN -1
+#endif
+#ifndef BOOT_KEY_02_MODE
+#define BOOT_KEY_02_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_03_PIN
+#define BOOT_KEY_03_PIN -1
+#endif
+#ifndef BOOT_KEY_03_MODE
+#define BOOT_KEY_03_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_04_PIN
+#define BOOT_KEY_04_PIN -1
+#endif
+#ifndef BOOT_KEY_04_MODE
+#define BOOT_KEY_04_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_05_PIN
+#define BOOT_KEY_05_PIN -1
+#endif
+#ifndef BOOT_KEY_05_MODE
+#define BOOT_KEY_05_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_06_PIN
+#define BOOT_KEY_06_PIN -1
+#endif
+#ifndef BOOT_KEY_06_MODE
+#define BOOT_KEY_06_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_07_PIN
+#define BOOT_KEY_07_PIN -1
+#endif
+#ifndef BOOT_KEY_07_MODE
+#define BOOT_KEY_07_MODE INPUT_MODE_KEYBOARD
+#endif
+#ifndef BOOT_KEY_08_PIN
+#define BOOT_KEY_08_PIN -1
+#endif
+#ifndef BOOT_KEY_08_MODE
+#define BOOT_KEY_08_MODE INPUT_MODE_KEYBOARD
+#endif
+
+// Board default boot keys, indexed by slot (0-7) matching BOOT_KEY_0X_*.
+static const int32_t defaultBootKeyPins[MAX_BOOT_KEYS] = {
+    BOOT_KEY_01_PIN, BOOT_KEY_02_PIN, BOOT_KEY_03_PIN, BOOT_KEY_04_PIN,
+    BOOT_KEY_05_PIN, BOOT_KEY_06_PIN, BOOT_KEY_07_PIN, BOOT_KEY_08_PIN
+};
+static const InputMode defaultBootKeyModes[MAX_BOOT_KEYS] = {
+    BOOT_KEY_01_MODE, BOOT_KEY_02_MODE, BOOT_KEY_03_MODE, BOOT_KEY_04_MODE,
+    BOOT_KEY_05_MODE, BOOT_KEY_06_MODE, BOOT_KEY_07_MODE, BOOT_KEY_08_MODE
+};
+
 static const uint32_t defaultKeycodes[MAX_KEYS] = {
     KEYCODE_IDX00, KEYCODE_IDX01, KEYCODE_IDX02, KEYCODE_IDX03, KEYCODE_IDX04,
     KEYCODE_IDX05, KEYCODE_IDX06, KEYCODE_IDX07, KEYCODE_IDX08, KEYCODE_IDX09,
@@ -3677,6 +3744,7 @@ static const uint32_t defaultLedSpeedsByMode[7] = {
 // normalization). Kept near the top of the defaults section.
 static void seedDisplayOptions(Config& config);
 static void seedHotkeys(Config& config);
+static void seedBootKeys(Config& config);
 
 static void applyDefaults(Config& config)
 {
@@ -3741,6 +3809,7 @@ static void applyDefaults(Config& config)
     config.webConfigPin = PIN_WEBCONFIG;
     seedDisplayOptions(config);
     seedHotkeys(config);
+    seedBootKeys(config);
 }
 
 // -----------------------------------------------------
@@ -3819,6 +3888,27 @@ static void seedHotkeys(Config& config)
         hotkey.action = defaultHotkeys[h].action;
         hotkey.has_action = true;
         config.hotkeys_count++;
+    }
+}
+
+// Seed the configurable boot keys from the board's BOOT_KEY_0X_PIN / MODE
+// defines. Only slots with a pin >= 0 are seeded. Board defaults apply to a
+// fresh config only (see applyDefaults) and are never re-applied over a stored
+// config, so a user's saved boot-key set (including an intentionally empty
+// one) is preserved.
+static void seedBootKeys(Config& config)
+{
+    config.bootKeys_count = 0;
+    for (pb_size_t k = 0; k < MAX_BOOT_KEYS; k++)
+    {
+        if (defaultBootKeyPins[k] < 0)
+            continue;
+        BootKey& bootKey = config.bootKeys[config.bootKeys_count];
+        bootKey.pin = defaultBootKeyPins[k];
+        bootKey.has_pin = true;
+        bootKey.mode = defaultBootKeyModes[k];
+        bootKey.has_mode = true;
+        config.bootKeys_count++;
     }
 }
 

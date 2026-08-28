@@ -4,6 +4,7 @@
 #include "types.h"
 #include "keymask.h"
 #include "system.h"
+#include "enums.pb.h"
 #include "pico/types.h"
 #include "hardware/gpio.h"
 
@@ -37,8 +38,14 @@ private:
         NONE,
         ENTER_WEBCONFIG_MODE,
         ENTER_USB_MODE,
+        SET_INPUT_MODE_KEYBOARD,
+        SET_INPUT_MODE_MIDI,
+        SET_INPUT_MODE_XINPUT,
+        SET_INPUT_MODE_SWITCH_PRO,
     };
     BootAction getBootAction();
+    // InputMode for a SET_INPUT_MODE_* boot action (CONFIG/unknown -> keyboard).
+    InputMode bootActionToInputMode(BootAction action);
     // True if the given pin/index is held at boot. Handles direct-pin buttons
     // and matrix key indices; touch pads defer to the boot window in run().
     bool isBootPinHeld(int32_t pin);

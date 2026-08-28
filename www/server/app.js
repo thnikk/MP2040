@@ -137,6 +137,9 @@ function defaultOptions() {
     // Configurable hotkeys: board-defined defaults (HOTKEY_0X_*), mirroring the
     // firmware's fresh-config seed. The user's saved set is stored on setOptions.
     hotkeys: board?.hotkeys ?? [],
+    // Configurable boot keys: board-defined defaults (BOOT_KEY_0X_*), mirroring
+    // the firmware's fresh-config seed.
+    bootKeys: board?.bootKeys ?? [],
     gamepadMasks,
     defaultInputMode: 1,
     debounceInterval: 5,
@@ -299,6 +302,8 @@ export function createMockApp() {
     if (Array.isArray(body.macros)) current.macros = body.macros;
     // Global configurable hotkeys (shared across profiles), like the firmware.
     if (Array.isArray(body.hotkeys)) current.hotkeys = body.hotkeys;
+    // Global configurable boot keys (shared across profiles), like the firmware.
+    if (Array.isArray(body.bootKeys)) current.bootKeys = body.bootKeys;
     if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
     if (body.led) {
       // ledTimeout / statusLedEnabled are global (non-profile) LED options,

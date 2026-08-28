@@ -125,6 +125,9 @@ let macroBuilder = null;
 // Configurable hotkeys editor (hotkeys.js) used on the Settings page
 let hotkeysPanel = null;
 
+// Configurable boot keys editor (bootkeys.js) used on the Settings page
+let bootKeysPanel = null;
+
 // Pin currently being edited in the modal
 let editingPin = -1;
 
@@ -521,6 +524,18 @@ function buildComboOptions(group = 'combo') {
   }));
 }
 
+// Options for the boot-key dropdowns: "None" (disabled) plus one entry per key,
+// labeled with the pin's mapping in the current input mode.
+function buildBootPinOptions() {
+  const count = (currentOptions.keycodes || []).length;
+  return [{ value: -1, label: 'None' }].concat(
+    Array.from({ length: count }, (_, i) => ({
+      value: i,
+      label: comboPinLabel(currentOptions, i),
+    }))
+  );
+}
+
 // Gather the current controls into a full config payload for /api/setOptions.
 // Includes the profile being edited (profileIndex) and the boot profile.
 function buildOptionsBody() {
@@ -539,6 +554,7 @@ function buildOptionsBody() {
     macroIndices: currentOptions.macroIndices,
     macros: currentOptions.macros || [],
     hotkeys: hotkeysPanel ? hotkeysPanel.getValue() : (currentOptions.hotkeys || []),
+    bootKeys: bootKeysPanel ? bootKeysPanel.getValue() : (currentOptions.bootKeys || []),
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
     touchMargin: touchMarginSpinner ? touchMarginSpinner.getValue() : 15,
@@ -774,6 +790,7 @@ async function load() {
     updateModalMode();
     if (boardView) boardView.refresh();
     if (hotkeysPanel) hotkeysPanel.setKeyOptions(buildComboOptions('hotkey'));
+    if (bootKeysPanel) bootKeysPanel.setKeyOptions(buildBootPinOptions());
   });
 
   // Gamepad settings (XInput / Switch Pro modes)
@@ -977,6 +994,16 @@ async function load() {
       // Only display boards can use the mini-menu toggle action.
       menuToggle: display.hasDisplay === true,
       onChange: (hotkeys) => { currentOptions.hotkeys = hotkeys; },
+    });
+  }
+
+  const bootKeysPanelEl = document.getElementById('boot-keys-panel');
+  if (bootKeysPanelEl) {
+    bootKeysPanel = new BootKeysPanel({
+      container: bootKeysPanelEl,
+      bootKeys: Array.isArray(options.bootKeys) ? options.bootKeys : [],
+      keyOptions: buildBootPinOptions(),
+      onChange: (bootKeys) => { currentOptions.bootKeys = bootKeys; },
     });
   }
 

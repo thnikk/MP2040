@@ -117,6 +117,15 @@ const HOTKEY_ACTION = {
   HOTKEY_TOGGLE_MENU: 20,
 };
 
+// Input mode values (InputMode in proto/enums.proto). BoardConfig.h
+// BOOT_KEY_0X_MODE defines use these token names.
+const INPUT_MODE = {
+  INPUT_MODE_KEYBOARD: 1,
+  INPUT_MODE_MIDI: 2,
+  INPUT_MODE_XINPUT: 3,
+  INPUT_MODE_SWITCH_PRO: 4,
+};
+
 // MP2040's enums.proto LEDFormat values
 const LED_FORMAT_MAP = {
   LED_FORMAT_RGB: 0,
@@ -247,6 +256,15 @@ function parseHotkeyAction(raw) {
   if (/^\d+$/.test(val)) return parseInt(val, 10);
   if (HOTKEY_ACTION[val] !== undefined) return HOTKEY_ACTION[val];
   return 0;
+}
+
+// Resolve a BOOT_KEY_0X_MODE define (an InputMode token or a raw number) to its
+// numeric value; defaults to keyboard when unknown.
+function parseInputMode(raw) {
+  const val = String(raw || '').trim().replace(/;$/, '').trim();
+  if (/^\d+$/.test(val)) return parseInt(val, 10);
+  if (INPUT_MODE[val] !== undefined) return INPUT_MODE[val];
+  return INPUT_MODE.INPUT_MODE_KEYBOARD;
 }
 
 // Per-mode LED defaults mirroring firmware: LED_<SETTING>_MODE_<NAME> for each
@@ -386,6 +404,15 @@ export function parseBoardConfig(configDir, rootDir) {
       const action = parseHotkeyAction(d[`HOTKEY_${slot}_ACTION`]);
       if (keys.length === 0 || action === 0) return null;
       return { keys, action };
+    }).filter(Boolean),
+    // Boot keys seeded into a fresh config (BOOT_KEY_0X_PIN + BOOT_KEY_0X_MODE).
+    // Slots without a valid pin are omitted, matching the firmware's
+    // seedBootKeys.
+    bootKeys: Array.from({ length: 8 }, (_, i) => {
+      const slot = String(i + 1).padStart(2, '0');
+      const pin = parseNum(d[`BOOT_KEY_${slot}_PIN`]);
+      if (pin === undefined || pin < 0) return null;
+      return { pin, mode: parseInputMode(d[`BOOT_KEY_${slot}_MODE`]) };
     }).filter(Boolean),
     // Number of keys the board can report, mirroring firmware getKeyCount():
     // matrix boards report rows*cols, direct boards report all bank-0 GPIOs.

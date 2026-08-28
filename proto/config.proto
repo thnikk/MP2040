@@ -91,6 +91,18 @@ message HotkeyEntry
     optional HotkeyAction action = 2;
 }
 
+// A boot key: hold `pin` while powering on to boot directly into `mode`. Pin
+// is a GPIO on direct boards or a linear matrix key index on matrix boards
+// (like the web config pin). Boot keys are matched in Config.bootKeys order
+// (first held pin wins); the selected mode also becomes the persisted default.
+message BootKey
+{
+    // GPIO / linear key index held at power-on. -1 = disabled.
+    optional int32 pin = 1;
+    // Input mode to boot into (INPUT_MODE_CONFIG maps to KEYBOARD).
+    optional InputMode mode = 2;
+}
+
 message LEDOptions
 {
     optional int32 dataPin = 1;
@@ -219,6 +231,9 @@ message Config
     // trigger an action (SOCD mode, profile switch, macro playback). Global
     // (not per-profile), like macros. Up to 16, matched in order.
     repeated HotkeyEntry hotkeys = 20 [(nanopb).max_count = 16];
+    // Configurable boot keys (see BootKey): hold a key at power-on to boot
+    // directly into an input mode. Global, up to 8, matched in order.
+    repeated BootKey bootKeys = 21 [(nanopb).max_count = 8];
 }
 
 // On-screen display configuration. See DisplayController for how it's used.

@@ -304,6 +304,16 @@ std::string getOptions()
         hotkeyJson["action"] = (uint8_t)hotkey.action;
     }
 
+    // Configurable boot keys: hold a key at power-on to boot into an input
+    // mode. Global like the hotkeys.
+    JsonArray bootKeys = doc.createNestedArray("bootKeys");
+    for (pb_size_t k = 0; k < config.bootKeys_count; k++)
+    {
+        JsonObject bootKeyJson = bootKeys.createNestedObject();
+        bootKeyJson["pin"] = config.bootKeys[k].pin;
+        bootKeyJson["mode"] = (uint8_t)config.bootKeys[k].mode;
+    }
+
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
     doc["debounceInterval"] = Storage::getInstance().getConfig().debounceInterval;
     doc["touchMargin"] = Storage::getInstance().getConfig().touchMargin;
@@ -568,6 +578,24 @@ std::string setOptions()
         if (hotkey.keys_count == 0) continue;
         hotkey.action = (HotkeyAction)(hotkeyJson["action"] | 0);
         config.hotkeys_count++;
+    }
+
+    // Configurable boot keys (global). Only entries with a valid pin are
+    // stored; out-of-range pins are dropped.
+    JsonArray bootKeys = doc["bootKeys"];
+    config.bootKeys_count = 0;
+    for (pb_size_t k = 0; k < MAX_BOOT_KEYS && k < (pb_size_t)bootKeys.size(); k++)
+    {
+        JsonObject bootKeyJson = bootKeys[k];
+        if (bootKeyJson.isNull()) continue;
+        int32_t pin = bootKeyJson["pin"] | -1;
+        if (pin < 0 || pin >= (int32_t)MAX_KEYS) continue;
+        BootKey& bootKey = config.bootKeys[config.bootKeys_count];
+        bootKey.pin = pin;
+        bootKey.has_pin = true;
+        bootKey.mode = (InputMode)(bootKeyJson["mode"] | INPUT_MODE_KEYBOARD);
+        bootKey.has_mode = true;
+        config.bootKeys_count++;
     }
 
     JsonObject midi = doc["midi"];

@@ -18,6 +18,8 @@
 #define MAX_HOTKEYS 16
 // Maximum number of keys that can trigger one hotkey (HotkeyEntry.keys).
 #define MAX_HOTKEY_KEYS 8
+// Maximum number of configurable boot keys (Config.bootKeys).
+#define MAX_BOOT_KEYS 8
 
 // Sentinel for LedPreview.statusLedEnabled: "leave the status LED untouched".
 // Used by previews that don't carry the toggle (e.g. the boot-window cue) so
@@ -221,6 +223,13 @@ public:
 	pb_size_t getHotkeyCount() { return config.hotkeys_count; }
 	void setHotkeyCount(pb_size_t count) {
 		config.hotkeys_count = count > MAX_HOTKEYS ? MAX_HOTKEYS : count;
+	}
+	// Configurable boot keys (see BootKey): hold a key at power-on to boot
+	// directly into an input mode. Global, matched in list order.
+	BootKey* getBootKeys() { return config.bootKeys; }
+	pb_size_t getBootKeyCount() { return config.bootKeys_count; }
+	void setBootKeyCount(pb_size_t count) {
+		config.bootKeys_count = count > MAX_BOOT_KEYS ? MAX_BOOT_KEYS : count;
 	}
 	// Per-frame hotkey runtime state, set by the hotkey controller (core 0)
 	// and read by the input drivers (also core 0), so plain members suffice.

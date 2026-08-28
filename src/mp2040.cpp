@@ -67,6 +67,16 @@ void MP2040::setup() {
 		case BootAction::ENTER_USB_MODE:
 			reset_usb_boot(0, 0);
 			return;
+		case BootAction::SET_INPUT_MODE_KEYBOARD:
+		case BootAction::SET_INPUT_MODE_MIDI:
+		case BootAction::SET_INPUT_MODE_XINPUT:
+		case BootAction::SET_INPUT_MODE_SWITCH_PRO:
+			// A boot key was held: persist it as the new default input mode so
+			// the selection sticks until changed (matches GP2040-th), then boot
+			// that mode via the normal path below.
+			Storage::getInstance().setDefaultInputMode(bootActionToInputMode(bootAction));
+			Storage::getInstance().save(true);
+			break;
 		case BootAction::NONE:
 		default:
 			break;
@@ -422,7 +432,49 @@ MP2040::BootAction MP2040::getBootAction() {
 	if (bootHeld)
 		return BootAction::ENTER_USB_MODE;
 
+	// Configurable boot keys: hold a key at power-on to boot directly into an
+	// input mode. Probed like the webconfig/boot pins; the first held pin in
+	// list order wins.
+	const BootKey* bootKeys = Storage::getInstance().getBootKeys();
+	for (pb_size_t i = 0; i < Storage::getInstance().getBootKeyCount(); i++)
+	{
+		if (bootKeys[i].pin < 0)
+			continue;
+		if (isBootPinHeld(bootKeys[i].pin))
+		{
+			switch (bootKeys[i].mode)
+			{
+				case INPUT_MODE_MIDI:
+					return BootAction::SET_INPUT_MODE_MIDI;
+				case INPUT_MODE_XINPUT:
+					return BootAction::SET_INPUT_MODE_XINPUT;
+				case INPUT_MODE_SWITCH_PRO:
+					return BootAction::SET_INPUT_MODE_SWITCH_PRO;
+				case INPUT_MODE_KEYBOARD:
+				default:
+					return BootAction::SET_INPUT_MODE_KEYBOARD;
+			}
+		}
+	}
+
 	return BootAction::NONE;
+}
+
+// InputMode for a SET_INPUT_MODE_* boot action. INPUT_MODE_CONFIG and unknown
+// values map to keyboard (config mode is only ever entered via the web config
+// pin).
+InputMode MP2040::bootActionToInputMode(BootAction action) {
+	switch (action) {
+		case BootAction::SET_INPUT_MODE_MIDI:
+			return INPUT_MODE_MIDI;
+		case BootAction::SET_INPUT_MODE_XINPUT:
+			return INPUT_MODE_XINPUT;
+		case BootAction::SET_INPUT_MODE_SWITCH_PRO:
+			return INPUT_MODE_SWITCH_PRO;
+		case BootAction::SET_INPUT_MODE_KEYBOARD:
+		default:
+			return INPUT_MODE_KEYBOARD;
+	}
 }
 
 // True if the given pin or linear matrix key index is held at boot. Button

@@ -149,6 +149,17 @@
 #define HOTKEY_03_KEYS   { 6, 9, 12 }
 #define HOTKEY_03_ACTION HOTKEY_TOGGLE_MENU
 
+// Boot keys: hold a button at power-on to boot directly into an input mode
+// (B1=XInput, B2=Switch Pro, B3=Keyboard, B4=MIDI). First held pin wins.
+#define BOOT_KEY_01_PIN 6
+#define BOOT_KEY_01_MODE INPUT_MODE_XINPUT
+#define BOOT_KEY_02_PIN 7
+#define BOOT_KEY_02_MODE INPUT_MODE_SWITCH_PRO
+#define BOOT_KEY_03_PIN 5
+#define BOOT_KEY_03_MODE INPUT_MODE_KEYBOARD
+#define BOOT_KEY_04_PIN 3
+#define BOOT_KEY_04_MODE INPUT_MODE_MIDI
+
 // Menu navigation pins: the dpad keys + B1/B2.
 #define DISPLAY_MENU_UP_PIN 28
 #define DISPLAY_MENU_DOWN_PIN 15

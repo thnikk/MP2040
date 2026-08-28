@@ -67,4 +67,15 @@
 // Default input mode for a fight stick.
 #define DEFAULT_INPUT_MODE INPUT_MODE_XINPUT
 
+// Boot keys: hold a button at power-on to boot directly into an input mode
+// (B1=XInput, B2=Switch Pro, B3=Keyboard, B4=MIDI). First held pin wins.
+#define BOOT_KEY_01_PIN 9
+#define BOOT_KEY_01_MODE INPUT_MODE_XINPUT
+#define BOOT_KEY_02_PIN 12
+#define BOOT_KEY_02_MODE INPUT_MODE_SWITCH_PRO
+#define BOOT_KEY_03_PIN 15
+#define BOOT_KEY_03_MODE INPUT_MODE_KEYBOARD
+#define BOOT_KEY_04_PIN 28
+#define BOOT_KEY_04_MODE INPUT_MODE_MIDI
+
 #endif
