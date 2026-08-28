@@ -288,7 +288,7 @@ void ButtonLayoutScreen::generateHeader() {
 	if (bannerDisplay) {
 		if (((getMillis() - bannerDelayStart) / 1000) < bannerDelay) {
 			if (bannerMessage.empty()) {
-				statusBar = "PROFILE " + std::to_string(Storage::getInstance().getActiveProfile());
+				statusBar = "PROFILE " + std::to_string(Storage::getInstance().getActiveProfile() + 1);
 			} else {
 				statusBar = bannerMessage;
 			}
@@ -312,7 +312,7 @@ void ButtonLayoutScreen::generateHeader() {
 
 	if (showProfileMode) {
 		statusBarRight += " P:";
-		statusBarRight += std::to_string(Storage::getInstance().getActiveProfile());
+		statusBarRight += std::to_string(Storage::getInstance().getActiveProfile() + 1);
 	}
 
 	if (showMacroMode && macroEnabled) statusBarRight += " M";

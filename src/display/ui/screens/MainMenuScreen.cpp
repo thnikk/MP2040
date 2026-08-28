@@ -75,7 +75,7 @@ void MainMenuScreen::init() {
     uint8_t profileCount = Storage::getInstance().getProfileCount();
     if (profileCount == 0) profileCount = 1;
     for (uint8_t profileCtr = 0; profileCtr < profileCount; profileCtr++) {
-        std::string menuLabel = "Profile #" + std::to_string(profileCtr);
+        std::string menuLabel = "Profile " + std::to_string(profileCtr + 1);
         MenuEntry menuEntry = {menuLabel, NULL, nullptr, std::bind(&MainMenuScreen::currentProfile, this), std::bind(&MainMenuScreen::selectProfile, this), profileCtr};
         profilesMenu.push_back(menuEntry);
     }
