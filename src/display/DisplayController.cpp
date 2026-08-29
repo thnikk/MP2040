@@ -166,6 +166,8 @@ void DisplayController::processNav() {
 			int8_t result = screen->handleNavigation(action);
 			if (result >= 0 && result != (int8_t)mode) {
 				setMode((DisplayMode)result);
+				navPrev[action] = held;
+				repeatActive[action] = false;
 				return;
 			}
 			if (screen->wantsNavRepeat(action)) {
@@ -186,6 +188,8 @@ void DisplayController::processNav() {
 				int8_t result = screen->handleNavigation(action);
 				if (result >= 0 && result != (int8_t)mode) {
 					setMode((DisplayMode)result);
+					navPrev[action] = held;
+					repeatActive[action] = false;
 					return;
 				}
 			}
