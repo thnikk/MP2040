@@ -506,6 +506,7 @@ int32_t MainMenuScreen::currentSOCDMode() {
 }
 
 void MainMenuScreen::resetOptions() {
+    Storage& s = Storage::getInstance();
     if (changeRequiresSave) {
         if (prevInputMode != updateInputMode) updateInputMode = prevInputMode;
         if (prevSocdMode != updateSocdMode) updateSocdMode = prevSocdMode;
@@ -523,6 +524,11 @@ void MainMenuScreen::resetOptions() {
     changeRequiresSave = false;
     changeRequiresReboot = false;
     screenIsPrompting = false;
+
+    // Discard any live LED preview (the strip may still show a staged mode).
+    LedPreview preview;
+    s.buildLedPreviewFromConfig(preview);
+    s.publishLedPreview(preview);
 }
 
 void MainMenuScreen::saveOptions() {
@@ -666,12 +672,12 @@ int32_t MainMenuScreen::currentInputHistoryTimeout() {
 void MainMenuScreen::selectAnimation() {
     if (currentMenu->at(menuIndex).optionValue != -1) {
         uint8_t valueToSave = currentMenu->at(menuIndex).optionValue;
-        prevAnimationIndex = (uint8_t)Storage::getInstance().getLedOptions().ledMode;
         updateAnimationIndex = valueToSave;
-        if (prevAnimationIndex != valueToSave) {
+        if (prevAnimationIndex != valueToSave)
             changeRequiresSave = true;
-            previewLedState();
-        }
+        // Always push a preview so re-selecting the saved mode (e.g. switching
+        // back to static/Custom after staging another) applies it live too.
+        previewLedState();
     }
 }
 
