@@ -2,6 +2,7 @@
 #define _TOUCH_RING_H_
 
 #include <stdint.h>
+#include "hardware/platform_defs.h"
 #include "types.h"
 
 //
@@ -50,13 +51,28 @@ public:
 	bool initialize();
 
 	// Read the ring once, computing the contact point. Uses the TouchGpio raw
-	// readings. Safe to call every scan cycle (EMA smoothing provides
-	// stability). Consumes a `touchValues` array (NUM_BANK0_GPIOS entries) or,
-	// if null, reads the pads directly via TouchGpio.
+	// readings with each pad's idle baseline subtracted (so only the finger's
+	// added capacitance drives the centroid). Safe to call every scan cycle
+	// (EMA smoothing provides stability). Consumes a `touchValues` array
+	// (NUM_BANK0_GPIOS raw readings) or, if null, reads the pads directly via
+	// TouchGpio.
 	void process(const uint32_t* touchValues);
 
 	bool isConfigured() const { return configured; }
 	const RingState& getState() const { return state; }
+
+	// Bitmask of the four ring pads. Used by the key setup so the ring pads
+	// get handed to the PIO capsense driver even though they have no keycode
+	// (the ring reads them as proportional capacitance, not as keys).
+	GpioMask getRingMask() const {
+		GpioMask m = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			if (pins[i] < (Pin_t)NUM_BANK0_GPIOS)
+				m |= 1u << pins[i];
+		}
+		return m;
+	}
 
 private:
 	TouchRing();
@@ -65,6 +81,10 @@ private:
 	RingState state;
 	float prevAngleDeg;
 	bool hadPrev;
+	// Active-state latch for engage/release hysteresis. Unlike state.active
+	// (cleared each process()), this persists so a marginal hold that dips
+	// below the engage threshold doesn't flicker the ring off.
+	bool wasActive;
 	// EMA of the vector (normalized) for stability.
 	float emaX;
 	float emaY;

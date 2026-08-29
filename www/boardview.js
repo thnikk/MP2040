@@ -3,7 +3,7 @@
 // Loads the board's SVG (served as /board.svg), styles it dark, labels each
 // button element (identified by "pin"/"key" in its id or inkscape:label) with
 // its key assignment (key + modifiers), colors the #led-N slots that are
-// mapped in pinLedIndices, and wires pin / LED / test clicks.
+// mapped in pinLedIndices, and wires pin / LED clicks.
 
 const SHAPE_TAGS = ['path', 'rect', 'circle', 'ellipse', 'polygon', 'polyline', 'line'];
 const SHAPE_SEL = 'path, rect, circle, ellipse, polygon, polyline, line';
@@ -303,7 +303,6 @@ class BoardView {
     this.applyRing();
     this.applyLedCursors();
     this.applyStatusLed();
-    this.styleTestButton();
     this.wireEvents();
     this.buildLedSim();
 
@@ -621,58 +620,6 @@ class BoardView {
     });
   }
 
-  // ---- test button ------------------------------------------------------
-
-  // Represent the test button the way GP2040 does: a green shape with a
-  // "Test" label. If the SVG has it as a bare shape, wrap it in a <g> so it
-  // carries the #test-btn id for click handling.
-  styleTestButton() {
-    let btn = findByRef(this.container, 'test-btn');
-    if (!btn) return;
-
-    const isShape = SHAPE_TAGS.includes(btn.tagName.toLowerCase());
-    let target = btn;
-    if (isShape) {
-      if (!btn.querySelector('text')) {
-        const ns = 'http://www.w3.org/2000/svg';
-        const g = document.createElementNS(ns, 'g');
-        g.setAttribute('id', 'test-btn');
-        const parent = btn.parentNode;
-        if (!parent) return;
-        const x = parseFloat(btn.getAttribute('x') || '0');
-        const y = parseFloat(btn.getAttribute('y') || '0');
-        const w = parseFloat(btn.getAttribute('width') || '60');
-        const h = parseFloat(btn.getAttribute('height') || '30');
-        const label = document.createElementNS(ns, 'text');
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('dominant-baseline', 'central');
-        label.setAttribute('font-family', 'Nunito');
-        label.setAttribute('font-size', '12');
-        label.setAttribute('font-weight', 'bold');
-        label.setAttribute('fill', 'currentColor');
-        label.setAttribute('stroke', 'var(--bg-1)');
-        label.setAttribute('stroke-width', '2');
-        label.setAttribute('stroke-linejoin', 'round');
-        label.setAttribute('paint-order', 'stroke fill');
-        label.setAttribute('x', String(btn.hasAttribute('transform') ? -(x + w / 2) : x + w / 2));
-        label.setAttribute('y', String(y + h / 2));
-        label.textContent = 'Test';
-        parent.insertBefore(g, btn);
-        g.appendChild(btn);
-        g.appendChild(label);
-      }
-      target = btn;
-    } else {
-      target = btn.querySelector(SHAPE_SEL);
-    }
-
-    if (target) {
-      target.style.setProperty('fill', '#a3be8c', 'important');
-      target.style.setProperty('stroke', '#b5d9a5', 'important');
-      target.style.removeProperty('opacity');
-    }
-  }
-
   // ---- pin styling / highlight ------------------------------------------
 
   // Per-key LEDs only open the color popover in custom LED mode, so only show
@@ -829,10 +776,5 @@ class BoardView {
       el.addEventListener('mouseleave', () => this.hideLedTooltip());
     });
 
-    const testBtn = findByRef(this.container, 'test-btn');
-    if (testBtn) {
-      testBtn.addEventListener('click', () => this.callbacks.onTest?.());
-      testBtn.style.setProperty('cursor', 'pointer');
     }
-  }
 }

@@ -118,7 +118,7 @@ static inline void applyRingToStick(GamepadState& state, float lx, float ly, boo
 	float cx = lx < -1.0f ? -1.0f : (lx > 1.0f ? 1.0f : lx);
 	float cy = ly < -1.0f ? -1.0f : (ly > 1.0f ? 1.0f : ly);
 	x = (uint16_t)(mid + cx * half);
-	y = (uint16_t)(mid - cy * half);   // screen Y up => stick Y inverted
+	y = (uint16_t)(mid + cy * half);   // ring +Y is up; stick Y positive = up
 }
 
 /**

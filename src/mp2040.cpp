@@ -118,6 +118,13 @@ void MP2040::initializeKeyGpio(bool configBoot) {
 	touchGpios = 0;
 	debouncedGpio = KeyMask();
 
+	// Ring pads (RING_PAD0..3) are analog capacitance sensors, not keys: they
+	// have no keycode entry but still need the PIO capsense driver configured
+	// so TouchRing::process can read their proportional capacitance. Initialize
+	// the ring first so its pins are known before building the touch mask.
+	TouchRing::getInstance().initialize();
+	const GpioMask ringMask = TouchRing::getInstance().getRingMask();
+
 	if (Storage::getInstance().isMatrixMode())
 	{
 		const bool activeHigh = Storage::getInstance().isMatrixActiveHigh();
@@ -152,10 +159,13 @@ void MP2040::initializeKeyGpio(bool configBoot) {
 	{
 		// A pin is active if it has a keycode, a MIDI note, or a macro
 		// trigger assigned. The active mode determines which table is used.
+		// Ring pads are always active: they have no key but are read as
+		// proportional capacitance by the touch ring.
+		const bool isRingPin = (ringMask & (1u << pin)) != 0;
 		const bool hasKey = pin < (Pin_t)keyMapping.keycodes_count && keyMapping.keycodes[pin] != 0;
 		const bool hasNote = pin < (Pin_t)keyMapping.midiNotes_count && keyMapping.midiNotes[pin] != 0;
 		const bool hasMacro = pin < (Pin_t)MAX_KEYS && config.macroIndices[pin] != 0;
-		if (hasKey || hasNote || hasMacro)
+		if (isRingPin || hasKey || hasNote || hasMacro)
 		{
 			if (touchPinMask & (1 << pin))
 			{
@@ -172,10 +182,6 @@ void MP2040::initializeKeyGpio(bool configBoot) {
 	}
 
 	TouchGpio::getInstance().setup(touchGpios, configBoot);
-
-	// Initialize the touch ring if the board configures one. The ring reuses
-	// the same PIO capsense driver, so this needs to run after TouchGpio::setup.
-	TouchRing::getInstance().initialize();
 }
 
 /**

@@ -70,6 +70,15 @@ public:
 	// ring) rather than just a pressed bit.
 	GpioMask readValues(GpioMask pins, uint32_t* out);
 
+	// Idle baseline (raw discharge count with nothing touching) for a pad, or
+	// 0 if the pin isn't a configured/active touch pad. Lets a caller measure
+	// only the capacitance a finger adds (raw - baseline).
+	uint32_t getBaseline(Pin_t pin) const {
+		if (pin < 0 || pin >= (Pin_t)NUM_BANK0_GPIOS || !active[pin])
+			return 0;
+		return baseline[pin];
+	}
+
 private:
 	TouchGpio();
 	// Auto-calibrate all configured pads, then persist the thresholds to the
