@@ -33,18 +33,28 @@ function fillSelect(select, options, value) {
 }
 
 class BootKeysPanel {
-  constructor({ container, bootKeys, keyOptions, modes, onChange }) {
+  constructor({ container, bootKeys, keyOptions, modes, fixedKeys, pinLabel, onChange }) {
     this.keyOptions = keyOptions || [];
     this.modes = modes || BOOT_MODES;
     this.onChange = onChange || (() => {});
+    this.pinLabel = pinLabel || ((pin) => 'Pin ' + pin);
     this.rows = [];
+    this.fixedKeys = [];
     this.buildDom(container);
     this.setValue(bootKeys || []);
+    this.setFixedKeys(fixedKeys || []);
   }
 
   buildDom(container) {
     this.root = document.createElement('div');
     this.root.className = 'hotkeys-panel';
+
+    // Board-fixed boot pins (web config / USB boot loader) shown as greyed-out
+    // (disabled) selects for reference; not editable and hidden when a pin is
+    // undefined.
+    this.fixedEl = document.createElement('div');
+    this.fixedEl.className = 'bootkeys-fixed';
+    this.root.appendChild(this.fixedEl);
 
     this.rowsEl = document.createElement('div');
     this.rowsEl.className = 'hotkeys-rows';
@@ -59,6 +69,53 @@ class BootKeysPanel {
     container.appendChild(this.root);
   }
 
+  // Renders the board-fixed pins as disabled versions of the editable rows (pin
+  // select + mode select + remove button), greyed out to show they can't be
+  // changed. The mode select carries the fixed key's label ("Web Config" /
+  // "USB Bootloader"). Rows without a defined pin are not shown at all.
+  setFixedKeys(fixedKeys) {
+    this.fixedKeys = fixedKeys || [];
+    this.fixedEl.innerHTML = '';
+    for (const fk of this.fixedKeys) {
+      if (Number(fk.pin) < 0) continue;
+
+      const row = document.createElement('div');
+      row.className = 'hotkey-row bootkey-fixed-row';
+
+      const keysWrap = document.createElement('div');
+      keysWrap.className = 'hotkey-keys';
+      const pinSelect = document.createElement('select');
+      pinSelect.className = 'hotkey-action';
+      pinSelect.disabled = true;
+      const pinOpt = document.createElement('option');
+      pinOpt.textContent = this.pinLabel(Number(fk.pin));
+      pinSelect.appendChild(pinOpt);
+      keysWrap.appendChild(pinSelect);
+
+      const modeWrap = document.createElement('div');
+      modeWrap.className = 'hotkey-action-wrap';
+      const modeSelect = document.createElement('select');
+      modeSelect.className = 'hotkey-action';
+      modeSelect.disabled = true;
+      const modeOpt = document.createElement('option');
+      modeOpt.textContent = fk.label;
+      modeSelect.appendChild(modeOpt);
+      modeWrap.appendChild(modeSelect);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'hotkey-remove';
+      removeBtn.disabled = true;
+      removeBtn.textContent = '✕';
+      removeBtn.setAttribute('aria-label', fk.label);
+
+      row.appendChild(keysWrap);
+      row.appendChild(modeWrap);
+      row.appendChild(removeBtn);
+      this.fixedEl.appendChild(row);
+    }
+  }
+
   setValue(bootKeys) {
     this.rowsEl.innerHTML = '';
     this.rows = [];
@@ -70,6 +127,8 @@ class BootKeysPanel {
   setKeyOptions(options) {
     this.keyOptions = options;
     for (const row of this.rows) fillSelect(row.pinSelect, options, row.pinSelect.value);
+    // Fixed row labels can change with the input mode too.
+    this.setFixedKeys(this.fixedKeys);
   }
 
   // Configured boot keys only: rows with a pin assigned.

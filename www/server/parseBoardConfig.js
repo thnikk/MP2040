@@ -365,6 +365,9 @@ export function parseBoardConfig(configDir, rootDir) {
       ledPressedColors,
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
+    // Board-fixed USB boot loader pin (PIN_BOOT), shown for reference in the
+    // Boot Keys section. Not user-editable.
+    bootPin: parseNum(d.PIN_BOOT) ?? -1,
     // On-screen display (SSD1306 over I2C): enabled + wiring from the board
     // config. hasDisplay mirrors the firmware's "physical I2C pins present".
     display: {

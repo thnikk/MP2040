@@ -1003,6 +1003,13 @@ async function load() {
       container: bootKeysPanelEl,
       bootKeys: Array.isArray(options.bootKeys) ? options.bootKeys : [],
       keyOptions: buildBootPinOptions(),
+      // Board-fixed boot pins shown for reference (greyed out, not editable);
+      // rows with an undefined pin are hidden.
+      fixedKeys: [
+        { label: 'Web Config', pin: options.webConfigPin ?? -1 },
+        { label: 'USB Bootloader', pin: options.bootPin ?? -1 },
+      ],
+      pinLabel: (pin) => (pin < 0 ? '' : comboPinLabel(currentOptions, pin)),
       onChange: (bootKeys) => { currentOptions.bootKeys = bootKeys; },
     });
   }

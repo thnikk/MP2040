@@ -373,6 +373,9 @@ std::string getOptions()
         pinLedIndices.add(pin < (Pin_t)ledOptions.pinLedIndices_count ? ledOptions.pinLedIndices[pin] : -1);
 
     doc["webConfigPin"] = Storage::getInstance().getWebConfigPin();
+    // Board-fixed boot loader (USB) pin, shown for reference in the Boot Keys
+    // section. Not user-editable, like webConfigPin.
+    doc["bootPin"] = Storage::getInstance().getBootPin();
 
     // Display options (SSD1306 over I2C). The physical wiring (i2c block/pins)
     // is board-fixed; the rest is user config.

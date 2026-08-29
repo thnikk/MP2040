@@ -1001,6 +1001,27 @@ html[data-theme="light"] .ms-caret {
   line-height: 1;
 }
 
+/* Board-fixed boot pins (web config / USB boot loader) shown above the
+   editable boot keys. They mirror the editable rows exactly (same row layout,
+   pin select + mode select + remove button) but are greyed out to show they
+   can't be changed. */
+.bootkeys-fixed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bootkey-fixed-row {
+  opacity: 0.55;
+}
+
+.bootkey-fixed-row select,
+.bootkey-fixed-row .hotkey-remove {
+  cursor: default;
+  color: var(--muted);
+  border-color: var(--card-border);
+}
+
 /* Input mode + debounce row. Always keeps the debounce control on the same
    line as the input mode selector, regardless of the current mode. */
 #mode-row {
