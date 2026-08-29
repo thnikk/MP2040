@@ -80,6 +80,14 @@ private:
 	bool configured;
 	RingState state;
 	float prevAngleDeg;
+	// Unfiltered direction angle from the previous read, for the angular
+	// velocity estimate.
+	float prevRawAngle;
+	// EMA of the signed angular velocity (radians/frame). Coherent motion
+	// builds this up; the back-and-forth jitter of a held position cancels to
+	// ~zero. Drives the adaptive EMA coefficient so the filter stays heavy
+	// while holding (killing direction jitter) and opens up when sliding.
+	float vel;
 	bool hadPrev;
 	// Active-state latch for engage/release hysteresis. Unlike state.active
 	// (cleared each process()), this persists so a marginal hold that dips

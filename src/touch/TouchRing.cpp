@@ -30,10 +30,37 @@
 #define RING_ROTATION_OFFSET 0
 #endif
 
-// Smoothing factor for the EMA of the ring vector (0..1). Higher = smoother
-// but laggier.
-#ifndef RING_SMOOTHING
-#define RING_SMOOTHING 0.35f
+// EMA smoothing of the ring vector, with an adaptive coefficient driven by an
+// angular velocity estimate (EMA of the signed delta). While holding a
+// direction the alternating jitter cancels out of the velocity, so the
+// coefficient sits near RING_SMOOTH_MIN and the per-frame noise that shows up
+// as direction jitter is heavily attenuated; while sliding the velocity builds
+// up and the coefficient approaches RING_SMOOTH_MAX, keeping tracking
+// responsive (no added lag). RING_ADAPT_SPEED (degrees per frame) is where the
+// coefficient saturates to maximum.
+#ifndef RING_SMOOTH_MIN
+#define RING_SMOOTH_MIN 0.08f
+#endif
+#ifndef RING_SMOOTH_MAX
+#define RING_SMOOTH_MAX 0.90f
+#endif
+#ifndef RING_ADAPT_SPEED
+#define RING_ADAPT_SPEED 15.0f
+#endif
+
+// Decay of the signed angular velocity estimate. Lower resists alternating
+// jitter better but opens the filter a little more slowly at motion onset.
+#ifndef RING_VEL_DECAY
+#define RING_VEL_DECAY 0.5f
+#endif
+
+// Discharge measurements averaged per pad per ring read. A single count is
+// noisy, and the ring's angle interpolation amplifies that noise most at the
+// 45° midpoints between pads; averaging at the source cuts the jitter without
+// adding any temporal smoothing lag (just a bit of per-frame measurement
+// time).
+#ifndef RING_READ_SAMPLES
+#define RING_READ_SAMPLES 4
 #endif
 
 // A pad's weight in the centroid is its finger delta minus this fraction of
@@ -73,7 +100,7 @@
 static inline float f_abs(float v) { return v < 0.0f ? -v : v; }
 
 TouchRing::TouchRing()
-	: configured(false), prevAngleDeg(0.0f), hadPrev(false), emaX(0.0f), emaY(0.0f), wasActive(false)
+	: configured(false), prevAngleDeg(0.0f), prevRawAngle(0.0f), vel(0.0f), hadPrev(false), emaX(0.0f), emaY(0.0f), wasActive(false)
 {
 	memset(&state, 0, sizeof(state));
 	for (int i = 0; i < 4; i++) pins[i] = 0xFF;
@@ -109,7 +136,16 @@ void TouchRing::process(const uint32_t* touchValues)
 	{
 		GpioMask ringMask = 0;
 		for (int i = 0; i < 4; i++) ringMask |= (1u << pins[i]);
-		TouchGpio::getInstance().readValues(ringMask, raw);
+		memset(raw, 0, sizeof(raw));
+		for (uint32_t s = 0; s < RING_READ_SAMPLES; s++)
+		{
+			uint32_t sample[NUM_BANK0_GPIOS];
+			TouchGpio::getInstance().readValues(ringMask, sample);
+			for (int i = 0; i < 4; i++)
+				raw[pins[i]] += sample[pins[i]];
+		}
+		for (int i = 0; i < 4; i++)
+			raw[pins[i]] /= RING_READ_SAMPLES;
 	}
 
 	// A pad's discharge count includes its idle baseline; a finger adds
@@ -186,7 +222,26 @@ void TouchRing::process(const uint32_t* touchValues)
 	vx /= magnitude;
 	vy /= magnitude;
 
-	// EMA smoothing on the direction vector.
+	// EMA smoothing on the direction vector, with an adaptive coefficient
+	// driven by a signed velocity estimate. Holding a position makes the raw
+	// angle jitter back and forth, so the velocity averages toward ~zero and
+	// the filter stays heavy (suppressing exactly that jitter); coherent
+	// motion builds up the velocity and opens the filter, so tracking stays
+	// responsive without a fixed lag.
+	const float rawAngle = atan2f(vx, vy);
+	float a = RING_SMOOTH_MAX;
+	if (hadPrev)
+	{
+		float d = rawAngle - prevRawAngle;
+		if (d > (float)M_PI) d -= 2.0f * (float)M_PI;
+		else if (d < -(float)M_PI) d += 2.0f * (float)M_PI;
+		vel = (1.0f - RING_VEL_DECAY) * vel + RING_VEL_DECAY * d;
+		const float speed = f_abs(vel) * 180.0f / (float)M_PI;
+		const float t = speed / RING_ADAPT_SPEED;
+		a = RING_SMOOTH_MIN + (RING_SMOOTH_MAX - RING_SMOOTH_MIN) * (t < 1.0f ? t : 1.0f);
+	}
+	prevRawAngle = rawAngle;
+
 	if (!hadPrev)
 	{
 		emaX = vx;
@@ -195,7 +250,6 @@ void TouchRing::process(const uint32_t* touchValues)
 	}
 	else
 	{
-		float a = RING_SMOOTHING;
 		emaX = a * vx + (1.0f - a) * emaX;
 		emaY = a * vy + (1.0f - a) * emaY;
 	}
