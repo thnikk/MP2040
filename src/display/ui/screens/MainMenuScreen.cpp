@@ -675,8 +675,25 @@ void MainMenuScreen::selectAnimation() {
         updateAnimationIndex = valueToSave;
         if (prevAnimationIndex != valueToSave)
             changeRequiresSave = true;
-        // Always push a preview so re-selecting the saved mode (e.g. switching
-        // back to static/Custom after staging another) applies it live too.
+        // Load the newly selected mode's own brightness/speed/colors into the
+        // staged spinners and their baseline so the preview and the spinners
+        // reflect that mode's config values, not the previously selected mode's.
+        const LEDOptions& lo = Storage::getInstance().getLedOptions();
+        uint8_t brightness = (uint8_t)(lo.brightnessByMode_count > valueToSave
+            ? lo.brightnessByMode[valueToSave] : lo.brightnessMaximum);
+        uint8_t speed = (uint8_t)(lo.ledSpeeds_count > valueToSave
+            ? lo.ledSpeeds[valueToSave] : lo.ledSpeed);
+        if (speed > 100) speed = 100;
+        uint32_t normal = lo.colorNormalByMode_count > valueToSave
+            ? lo.colorNormalByMode[valueToSave] : lo.colorNormal;
+        uint32_t pressed = lo.colorPressedByMode_count > valueToSave
+            ? lo.colorPressedByMode[valueToSave] : lo.colorPressed;
+        prevBrightness = updateBrightness = brightness;
+        prevSpeed = updateSpeed = speed;
+        prevColorNormal = updateColorNormal = normal;
+        prevColorPressed = updateColorPressed = pressed;
+        // Always push a preview so the newly selected mode applies live (and
+        // switching back to the saved mode re-applies it).
         previewLedState();
     }
 }

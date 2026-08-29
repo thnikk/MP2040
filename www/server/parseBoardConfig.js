@@ -268,14 +268,16 @@ function parseInputMode(raw) {
 }
 
 // Per-mode LED defaults mirroring firmware: LED_<SETTING>_MODE_<NAME> for each
-// of the 7 modes, falling back to the single global default per entry.
+// of the 7 modes, falling back to the single global default per entry. Boards
+// may also get a per-mode fallback (keyed by mode name) before the global one,
+// matching firmware's LED_COLOR_NORMAL_MODE_RAIN / LED_SPEED_MODE_FIRE etc.
 const LED_MODE_NAMES = ['CUSTOM', 'CYCLE', 'REACTIVE', 'BPS', 'RIPPLE', 'RAIN', 'FIRE'];
 
-function perModeDefaults(defines, setting, parse, fallback) {
+function perModeDefaults(defines, setting, parse, fallback, perModeFallback = {}) {
   return LED_MODE_NAMES.map((m) => {
     const raw = defines[`${setting}_MODE_${m}`];
     const val = raw !== undefined ? parse(raw) : undefined;
-    return val ?? fallback;
+    return val ?? perModeFallback[m] ?? fallback;
   });
 }
 
@@ -347,7 +349,7 @@ export function parseBoardConfig(configDir, rootDir) {
       ledCount: parseNum(d.LED_COUNT) ?? 0,
       ledMode: parseNum(d.LED_MODE) ?? 0,
       ledSpeed: parseNum(d.LED_SPEED) ?? 50,
-      ledSpeeds: perModeDefaults(d, 'LED_SPEED', parseNum, parseNum(d.LED_SPEED) ?? 50),
+      ledSpeeds: perModeDefaults(d, 'LED_SPEED', parseNum, parseNum(d.LED_SPEED) ?? 50, { RAIN: 70, FIRE: 90 }),
       ledTimeout: parseNum(d.LED_TIMEOUT) ?? 0,
       hasStatusLed: (() => {
         const pin = parseNum(d.STATUS_LED_PIN);
@@ -358,8 +360,8 @@ export function parseBoardConfig(configDir, rootDir) {
       brightnessByMode: perModeDefaults(d, 'LED_BRIGHTNESS', parseNum, parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255),
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,
       colorPressed: parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff,
-      colorNormalByMode: perModeDefaults(d, 'LED_COLOR_NORMAL', parseColor, parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00),
-      colorPressedByMode: perModeDefaults(d, 'LED_COLOR_PRESSED', parseColor, parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff),
+      colorNormalByMode: perModeDefaults(d, 'LED_COLOR_NORMAL', parseColor, parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00, { RIPPLE: 0x000000, RAIN: 0x0044ff, FIRE: 0xff6600 }),
+      colorPressedByMode: perModeDefaults(d, 'LED_COLOR_PRESSED', parseColor, parseColor(d.LED_COLOR_PRESSED) ?? 0xffffff, { RIPPLE: 0xffffff, RAIN: 0xffffff, FIRE: 0xffaa00 }),
       // Per-key Custom-mode colors from the board config (0 = use mode colors).
       ledNormalColors,
       ledPressedColors,
