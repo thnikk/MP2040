@@ -23,9 +23,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="2.565341"
      inkscape:cx="166.2547"
-     inkscape:cy="167.03432"
-     inkscape:window-width="2560"
-     inkscape:window-height="1440"
+     inkscape:cy="166.83942"
+     inkscape:window-width="1261"
+     inkscape:window-height="1371"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -33,7 +33,7 @@
   <defs
      id="defs25" />
   <path
-     id="path1"
+     id="case"
      class="fill-stone-100 dark:fill-stone-800 stroke-stone-300 dark:stroke-stone-700 stroke-[3]"
      d="M 125,78.5 C 92.5,78.5 63.5,96 52,124 40.5,152 1,257.6 1,304 c 0,46.4 13.5,61 45.5,61 32,0 55.5,-84 100.5,-84 h 70 0.5 70 c 45,0 68.5,84 100.5,84 32,0 45.5,-14.6 45.5,-61 0,-46.4 -39.5,-152 -51,-180 C 371,96 342,78.5 309.5,78.5 h -92 -0.5 z"
      style="display:inline;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-dasharray:none;stroke-opacity:1" />

@@ -102,17 +102,26 @@ function gamepadMultiOptions(labels) {
   }));
 }
 
-// Label set for a given input mode: XInput (3) shows Xbox names; Switch Pro
-// (4) shows Nintendo names, or Xbox-style face buttons when the pad is wired
-// Xbox-layout (useNintendoLayout off), matching the firmware's button mapping.
+// Label + glyph sets for a given input mode: XInput (3) shows Xbox names;
+// Switch Pro (4) shows Nintendo names, or Xbox-style face buttons when the pad
+// is wired Xbox-layout (useNintendoLayout off), matching the firmware's button
+// mapping. Glyphs are the icon files the controller widget renders.
 function gamepadLabelSet(mode, nintendoLayout) {
-  if (mode === 3) return ControllerWidget.LABELS.xbox;
-  if (mode === 4) {
-    if (nintendoLayout) return ControllerWidget.LABELS.switch;
-    const s = ControllerWidget.LABELS.switch;
-    return { ...s, B1: s.B2, B2: s.B1, B3: s.B4, B4: s.B3 };
+  if (mode === 3) {
+    return { labels: ControllerWidget.LABELS.xbox, glyphs: ControllerWidget.GLYPHS.xbox };
   }
-  return ControllerWidget.LABELS.gp2040;
+  if (mode === 4) {
+    if (nintendoLayout) {
+      return { labels: ControllerWidget.LABELS.switch, glyphs: ControllerWidget.GLYPHS.switch };
+    }
+    const s = ControllerWidget.LABELS.switch;
+    const g = ControllerWidget.GLYPHS.switch;
+    return {
+      labels: { ...s, B1: s.B2, B2: s.B1, B3: s.B4, B4: s.B3 },
+      glyphs: { ...g, B1: g.B2, B2: g.B1, B3: g.B4, B4: g.B3 },
+    };
+  }
+  return { labels: ControllerWidget.LABELS.gp2040, glyphs: ControllerWidget.GLYPHS.gp2040 };
 }
 
 // Re-label the gamepad pickers (multi-select + controller widget) for the
@@ -120,9 +129,9 @@ function gamepadLabelSet(mode, nintendoLayout) {
 function syncGamepadLabels() {
   const mode = Number(currentOptions.defaultInputMode || 1);
   const nintendo = currentOptions.gamepad?.useNintendoLayout === true;
-  const labels = gamepadLabelSet(mode, nintendo);
+  const { labels, glyphs } = gamepadLabelSet(mode, nintendo);
   if (gamepadSelect) gamepadSelect.setOptions(gamepadMultiOptions(labels));
-  if (gamepadWidget) gamepadWidget.setLabels(labels);
+  if (gamepadWidget) gamepadWidget.setLabels(labels, glyphs);
 }
 
 // Working copy of the config from /api/getOptions, edited via the modal
@@ -1085,7 +1094,7 @@ async function load() {
   gamepadSelect = new MultiSelect({
     container: document.getElementById('key-modal-gamepad'),
     options: gamepadMultiOptions(
-      gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true)),
+      gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true).labels),
     groups: GAMEPAD_MULTISELECT_GROUPS,
     onChange: () => {
       if (gamepadWidget) gamepadWidget.setMask(gamepadSelect.getGroupMask('gamepad'));
@@ -1103,7 +1112,7 @@ async function load() {
   gamepadWidget = new ControllerWidget({
     container: gamepadWidgetContainer,
     mask: 0,
-    labels: gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true),
+    ...gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true),
     onChange: (mask) => {
       gamepadSelect.setGroupMask('gamepad', mask);
     },
