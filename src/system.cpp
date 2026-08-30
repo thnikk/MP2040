@@ -1,5 +1,7 @@
 #include "system.h"
 
+#include "FlashPROM.h"
+
 #include <hardware/flash.h>
 #include <hardware/sync.h>
 #include <hardware/watchdog.h>
@@ -57,6 +59,11 @@ uint32_t System::getUsedHeap() {
 }
 
 void System::reboot(BootMode bootMode) {
+    // Persist any pending config write before the reset so a save-then-reboot
+    // (e.g. a mini menu input mode change) isn't lost: FlashPROM::commit() is
+    // deferred, and the immediate watchdog reset would drop it.
+    EEPROM.commitNow();
+
     // Make sure that the other core is halted
     // We do not want it to be talking to devices (e.g. LEDs) while we reboot
 	multicore_lockout_start_timeout_us(1000000); // 1 second timeout

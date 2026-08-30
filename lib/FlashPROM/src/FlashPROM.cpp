@@ -46,6 +46,18 @@ void FlashPROM::commit()
 	flashWriteAlarm = add_alarm_in_ms(EEPROM_WRITE_WAIT, writeToFlash, writeCache, true);
 }
 
+// Synchronously write the cache to flash, cancelling any pending deferred
+// write first. Used before a reboot so a save-then-reboot can't drop the write
+// (the deferred alarm may never fire once the board resets). No-op when nothing
+// is pending.
+void FlashPROM::commitNow()
+{
+	if (flashWriteAlarm == 0)
+		return;
+	cancel_alarm(flashWriteAlarm);
+	writeToFlash(0, writeCache);
+}
+
 void FlashPROM::reset()
 {
 	memset(writeCache, 0, EEPROM_SIZE_BYTES);

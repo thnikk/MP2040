@@ -36,6 +36,11 @@ int main() {
 	// Create MP2040 Thread for Core1
 	multicore_launch_core1(core1);
 
+	// Core 0 is also a lockout victim so core 1 can safely write flash (e.g.
+	// flushing a config save before rebooting) and lockouts acquire immediately
+	// instead of spinning out the 1s timeout.
+	multicore_lockout_victim_init();
+
 	// Sync Core0 and Core1
 	while(mp2040Core1->ready() == false ) {
 		__asm volatile ("nop\n");
