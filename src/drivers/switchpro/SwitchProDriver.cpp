@@ -201,6 +201,11 @@ void SwitchProDriver::process() {
             last_report_timer = now;
         }
     }
+
+    // Serial command interface (opt-in via web config). Reads line-based
+    // commands on the CDC port; see serialhelper.h for the shared handler.
+    if (Storage::getInstance().getSerialConfigEnabled())
+        serialCommands.process();
 }
 
 // tud_hid_get_report_cb
@@ -452,7 +457,9 @@ const uint16_t * SwitchProDriver::get_descriptor_string_cb(uint8_t index, uint16
 }
 
 const uint8_t * SwitchProDriver::get_descriptor_device_cb() {
-    return switch_pro_device_descriptor;
+    return Storage::getInstance().getSerialConfigEnabled()
+        ? switch_pro_serial_device_descriptor
+        : switch_pro_device_descriptor;
 }
 
 const uint8_t * SwitchProDriver::get_hid_descriptor_report_cb(uint8_t itf) {
@@ -460,7 +467,9 @@ const uint8_t * SwitchProDriver::get_hid_descriptor_report_cb(uint8_t itf) {
 }
 
 const uint8_t * SwitchProDriver::get_descriptor_configuration_cb(uint8_t index) {
-    return switch_pro_configuration_descriptor;
+    return Storage::getInstance().getSerialConfigEnabled()
+        ? switch_pro_serial_configuration_descriptor
+        : switch_pro_configuration_descriptor;
 }
 
 const uint8_t * SwitchProDriver::get_descriptor_device_qualifier_cb() {

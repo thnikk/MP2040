@@ -10,6 +10,7 @@
 #include <vector>
 #include "gpdriver.h"
 #include "drivers/switchpro/SwitchProDescriptors.h"
+#include "drivers/shared/serialhelper.h"
 
 #define SWITCH_PRO_KEEPALIVE_TIMER 5
 
@@ -26,6 +27,10 @@ public:
     virtual const uint8_t * get_descriptor_configuration_cb(uint8_t index);
     virtual const uint8_t * get_descriptor_device_qualifier_cb();
 private:
+    // Serial (CDC) command interface: line-buffered commands that control the
+    // board live (e.g. switching profiles). Only active when the serial
+    // interface is enabled in config.
+    SerialCommandHandler serialCommands;
     uint8_t report[SWITCH_PRO_ENDPOINT_SIZE] = { };
     uint8_t last_report[SWITCH_PRO_ENDPOINT_SIZE] = { };
     SwitchProReport switchReport;

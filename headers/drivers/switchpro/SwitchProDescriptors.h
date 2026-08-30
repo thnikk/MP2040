@@ -6,6 +6,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "tusb.h"
 
 #define SWITCH_PRO_ENDPOINT_SIZE 64
 
@@ -405,6 +406,89 @@ static const uint8_t switch_pro_configuration_descriptor[] =
     0x03,        // bmAttributes (Interrupt)
     0x40, 0x00,  // wMaxPacketSize 64
     0x08,        // bInterval 8 (unit depends on device speed)
+};
+
+// ---- Composite Switch Pro + serial (CDC) variant ---------------------------
+// Used when Config.serialConfigEnabled is set: the same HID interface plus a
+// CDC-ACM serial port (tud_cdc_* API) for live control commands. Chosen at
+// boot because the descriptor is fixed once the device enumerates. The PID
+// stays 0x2009 so Linux's hid_nintendo driver (which matches by VID/PID)
+// still binds the HID interface, exactly like the stock descriptor.
+static const uint8_t switch_pro_serial_device_descriptor[] =
+{
+	sizeof(tusb_desc_device_t),	// bLength
+	TUSB_DESC_DEVICE,			// bDescriptorType
+	0x00, 0x02,					// bcdUSB
+	TUSB_CLASS_MISC,			// bDeviceClass (composite)
+	MISC_SUBCLASS_COMMON,		// bDeviceSubClass
+	MISC_PROTOCOL_IAD,			// bDeviceProtocol
+	0x40,						// bMaxPacketSize0 64
+	0x7E, 0x05,					// idVendor 0x057E
+	0x09, 0x20,					// idProduct 0x2009 (unchanged)
+	0x10, 0x02,					// bcdDevice 4.10
+	0x01,						// iManufacturer (String Index)
+	0x02,						// iProduct (String Index)
+	0x03,						// iSerialNumber (String Index)
+	0x01						// bNumConfigurations 1
+};
+
+enum
+{
+	ITF_NUM_SWITCH_PRO_HID,
+	ITF_NUM_CDC_SWITCH_PRO,
+	ITF_NUM_CDC_DATA_SWITCH_PRO,
+	ITF_NUM_TOTAL_SWITCH_PRO_SERIAL
+};
+
+#define  CONFIG_TOTAL_LEN_SWITCH_PRO_SERIAL  (TUD_CONFIG_DESC_LEN + (9 + 9 + 7 + 7) + TUD_CDC_DESC_LEN)
+
+// Serial endpoints. The HID interface keeps its stock endpoints (0x81 / 0x01);
+// the CDC pair gets its own. bInterval 16 on the notification endpoint (per
+// CDC spec), 0 on the bulk data endpoints.
+#define EPNUM_CDC_NOTIF_SWITCH_PRO  0x82
+#define EPNUM_CDC_OUT_SWITCH_PRO    0x02
+#define EPNUM_CDC_IN_SWITCH_PRO     0x83
+
+static const uint8_t switch_pro_serial_configuration_descriptor[] =
+{
+	// Config number, interface count, string index, total length, attribute, power in mA
+	TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL_SWITCH_PRO_SERIAL, 0, CONFIG_TOTAL_LEN_SWITCH_PRO_SERIAL, 0xA0, 500),
+
+	// HID interface (same block as the stock configuration)
+	0x09,        // bLength
+	0x04,        // bDescriptorType (Interface)
+	ITF_NUM_SWITCH_PRO_HID, // bInterfaceNumber 0
+	0x00,        // bAlternateSetting
+	0x02,        // bNumEndpoints 2
+	0x03,        // bInterfaceClass
+	0x00,        // bInterfaceSubClass
+	0x00,        // bInterfaceProtocol
+	0x00,        // iInterface (String Index)
+
+	0x09,        // bLength
+	0x21,        // bDescriptorType (HID)
+	0x11, 0x01,  // bcdHID 1.11
+	0x00,        // bCountryCode
+	0x01,        // bNumDescriptors
+	0x22,        // bDescriptorType[0] (HID)
+	0xCB, 0x00,  // wDescriptorLength[0] 203
+
+	0x07,        // bLength
+	0x05,        // bDescriptorType (Endpoint)
+	0x81,        // bEndpointAddress (IN/D2H)
+	0x03,        // bmAttributes (Interrupt)
+	0x40, 0x00,  // wMaxPacketSize 64
+	0x08,        // bInterval 8 (unit depends on device speed)
+
+	0x07,        // bLength
+	0x05,        // bDescriptorType (Endpoint)
+	0x01,        // bEndpointAddress (OUT/H2D)
+	0x03,        // bmAttributes (Interrupt)
+	0x40, 0x00,  // wMaxPacketSize 64
+	0x08,        // bInterval 8 (unit depends on device speed)
+
+	// Interface number, string index, EP notification address & size, EP data (out, in) address & size
+	TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_SWITCH_PRO, 0, EPNUM_CDC_NOTIF_SWITCH_PRO, 8, EPNUM_CDC_OUT_SWITCH_PRO, EPNUM_CDC_IN_SWITCH_PRO, CFG_TUD_CDC_EP_BUFSIZE)
 };
 
 static const uint8_t switch_pro_report_descriptor[] =
