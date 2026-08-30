@@ -72,7 +72,7 @@ static const SpeedRange speedRanges[] = {
 #define STATUS_LED_COLOR_SWITCH_PRO 0xFF0000
 #endif
 #ifndef STATUS_LED_COLOR_XBOX_ONE
-#define STATUS_LED_COLOR_XBOX_ONE 0x00FF00
+#define STATUS_LED_COLOR_XBOX_ONE 0xFF0088
 #endif
 // Brightness of the mode indicator LED (0-255), scaled on top of the
 // inactivity fade. 255 = full brightness.
