@@ -35,6 +35,13 @@ All boards require an RP2040 microcontroller. Existing boards using the SAMD21 a
 </tr>
 </table>
 
+### Controllers
+
+<table>
+<tr>
+<td> Fightboard </td> <td> Fightboard-m </td> <td> Fightboard-b </td> <td> Fightboard-b-m </td> <td> Springboard </td>
+</tr>
+</table>
 ## Flashing
 
 Download the latest `.uf2` for your board from the
