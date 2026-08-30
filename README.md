@@ -42,6 +42,7 @@ All boards require an RP2040 microcontroller. Existing boards using the SAMD21 a
 <td> Fightboard </td> <td> Fightboard-m </td> <td> Fightboard-b </td> <td> Fightboard-b-m </td> <td> Springboard </td>
 </tr>
 </table>
+
 ## Flashing
 
 Download the latest `.uf2` for your board from the
@@ -69,6 +70,7 @@ MP2040 currently supports four input modes:
 - **Keyboard**: Full NKRO HID report (default)
 - **MIDI**: Send MIDI notes on a configured channel with global and per-key velocities
 - **XInput**: Presents as an Xbox 360 controller (PC)
+- **XBOne**: Presents as an Xbox One controller (PC, supports USB CDC and capture button)
 - **Switch Pro**: Emulates a Pro Controller (Nintendo hardware)
 
 ## Key Scanning
