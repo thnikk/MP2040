@@ -20,7 +20,21 @@ permissions:
 jobs:
   prepare:
     runs-on: ubuntu-22.04
+    outputs:
+      boards: ${{ steps.boards.outputs.boards }}
     steps:
+      - name: Checkout MP2040
+        uses: actions/checkout@v7.0.1
+
+      - name: Discover boards
+        id: boards
+        shell: bash
+        run: |
+          boards=$(for d in configs/*/; do
+            if [ -f "$d/BoardConfig.h" ]; then basename "$d"; fi
+          done | sort | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "boards=$boards" >> "$GITHUB_OUTPUT"
+
       - name: Checkout pico-sdk
         uses: actions/checkout@v7.0.1
         with:
@@ -45,16 +59,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        MP2040_BOARDCONFIG:
-          [2k,
-          2kw,
-          3x3,
-          4kMegaTouch,
-          4kw,
-          BeatBoard,
-          MacroPad,
-          MegaTouch,
-          MiniTouch]
+        MP2040_BOARDCONFIG: ${{ fromJSON(needs.prepare.outputs.boards) }}
 
     steps:
     - name: Checkout MP2040
@@ -176,7 +181,7 @@ jobs:
             for f in ./artifacts/*/*.uf2; do
               basename=$(basename "$f")
               board=$(echo "$basename" | sed 's/.*_\(.*\)\.uf2/\1/')
-              display=$(echo "$board" | sed -e 's/4kMegaTouch/4K Mega Touch/' -e 's/BeatBoard/Beat Board/' -e 's/MegaTouch/Mega Touch/' -e 's/MiniTouch/Mini Touch/' -e 's/MacroPad/Macro Pad/' -e 's/\([a-z0-9]\)\([A-Z]\)/\1 \2/g' -e 's/4 K/4K/' -e 's/\([0-9]\)\([a-z]\)\b/\1\2/')
+              display=$(echo "$board" | sed -e 's/4kMegaTouch/4K Mega Touch/' -e 's/BeatBoard/Beat Board/' -e 's/MegaTouch/Mega Touch/' -e 's/MiniTouch/Mini Touch/' -e 's/MacroPad/Macro Pad/' -e 's/\([a-z0-9]\)\([A-Z]\)/\1 \2/g' -e 's/4 K/4K/' -e 's/\([0-9]\)\([a-z]\)\b/\1\2/' -e 's/Fightboard-b-m/Fightboard Basic (Mirrored)/' -e 's/Fightboard-b/Fightboard Basic/' -e 's/Fightboard-m/Fightboard (Mirrored)/')
               url="https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${basename}"
               echo "| ${display} | [\`${basename}\`](${url}) |"
             done
