@@ -71,6 +71,7 @@ void MP2040::setup() {
 		case BootAction::SET_INPUT_MODE_MIDI:
 		case BootAction::SET_INPUT_MODE_XINPUT:
 		case BootAction::SET_INPUT_MODE_SWITCH_PRO:
+		case BootAction::SET_INPUT_MODE_XBOX_ONE:
 			// A boot key was held: persist it as the new default input mode so
 			// the selection sticks until changed (matches GP2040-th), then boot
 			// that mode via the normal path below.
@@ -456,6 +457,8 @@ MP2040::BootAction MP2040::getBootAction() {
 					return BootAction::SET_INPUT_MODE_XINPUT;
 				case INPUT_MODE_SWITCH_PRO:
 					return BootAction::SET_INPUT_MODE_SWITCH_PRO;
+				case INPUT_MODE_XBOX_ONE:
+					return BootAction::SET_INPUT_MODE_XBOX_ONE;
 				case INPUT_MODE_KEYBOARD:
 				default:
 					return BootAction::SET_INPUT_MODE_KEYBOARD;
@@ -477,6 +480,8 @@ InputMode MP2040::bootActionToInputMode(BootAction action) {
 			return INPUT_MODE_XINPUT;
 		case BootAction::SET_INPUT_MODE_SWITCH_PRO:
 			return INPUT_MODE_SWITCH_PRO;
+		case BootAction::SET_INPUT_MODE_XBOX_ONE:
+			return INPUT_MODE_XBOX_ONE;
 		case BootAction::SET_INPUT_MODE_KEYBOARD:
 		default:
 			return INPUT_MODE_KEYBOARD;

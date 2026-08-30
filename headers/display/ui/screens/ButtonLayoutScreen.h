@@ -14,7 +14,7 @@
 #include "GPGFX_UI_widgets.h"
 
 #define INPUT_HISTORY_MAX_INPUTS 22
-#define INPUT_HISTORY_MAX_MODES 11
+#define INPUT_HISTORY_MAX_MODES 12
 
 class ButtonLayoutScreen : public GPScreen {
 	public:

@@ -17,6 +17,7 @@ const BOOT_MODES = [
   { value: 2, label: 'MIDI' },
   { value: 3, label: 'XInput' },
   { value: 4, label: 'Switch Pro' },
+  { value: 5, label: 'Xbox One' },
 ];
 
 const BK_MAX_BOOT_KEYS = 8;

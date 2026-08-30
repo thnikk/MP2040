@@ -156,6 +156,8 @@ src/drivers/net/NetDriver.cpp
 src/drivers/midi/MidiDriver.cpp
 src/drivers/xinput/XInputDriver.cpp
 src/drivers/switchpro/SwitchProDriver.cpp
+src/drivers/xbone/XBoneDriver.cpp
+src/drivers/shared/xgip_protocol.cpp
 src/leds/LedController.cpp
 src/display/GPGFX.cpp
 src/display/tiny_ssd1306.cpp

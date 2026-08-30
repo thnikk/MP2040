@@ -85,6 +85,13 @@ static const char * displayNames[INPUT_HISTORY_MAX_MODES][INPUT_HISTORY_MAX_INPU
 			"A", "B", "X", "Y",
 			"BL", "WH", "L", "R",
 			"BK", "ST", "LS", "RS", "", ""
+	},
+	{		// Xbox One
+			CHAR_UP, CHAR_DOWN, CHAR_LEFT, CHAR_RIGHT,
+			CHAR_UL, CHAR_UR, CHAR_DL, CHAR_DR,
+			"A", "B", "X", "Y",
+			"LB", "RB", "LT", "RT",
+			CHAR_VIEW_X, CHAR_MENU_X, "LS", "RS", CHAR_HOME_X, CHAR_CAP_S
 	}
 };
 
@@ -92,6 +99,7 @@ static const std::map<InputMode, uint16_t> displayModeLookup = {
 	{INPUT_MODE_MIDI, 0},
 	{INPUT_MODE_SWITCH_PRO, 1},
 	{INPUT_MODE_XINPUT, 2},
+	{INPUT_MODE_XBOX_ONE, 11},
 	{INPUT_MODE_KEYBOARD, 3},
 	{INPUT_MODE_CONFIG, 3},
 };
@@ -305,6 +313,7 @@ void ButtonLayoutScreen::generateHeader() {
 			case INPUT_MODE_MIDI:     statusBar += "MIDI"; break;
 			case INPUT_MODE_XINPUT:   statusBar += "XINPUT"; break;
 			case INPUT_MODE_SWITCH_PRO: statusBar += "SWPRO"; break;
+			case INPUT_MODE_XBOX_ONE: statusBar += "XBONE"; break;
 			case INPUT_MODE_CONFIG:   statusBar += "CONFIG"; break;
 			default:                  statusBar += "HID"; break;
 		}

@@ -42,6 +42,7 @@ private:
         SET_INPUT_MODE_MIDI,
         SET_INPUT_MODE_XINPUT,
         SET_INPUT_MODE_SWITCH_PRO,
+        SET_INPUT_MODE_XBOX_ONE,
     };
     BootAction getBootAction();
     // InputMode for a SET_INPUT_MODE_* boot action (CONFIG/unknown -> keyboard).

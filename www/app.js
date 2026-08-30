@@ -129,6 +129,11 @@ function gamepadLabelSet(mode, nintendoLayout) {
       maskMap,
     };
   }
+  if (mode === 5) {
+    // Xbox One shares the Xbox face-button layout; the capture button (A2)
+    // is the Share button. S1/S2 are View/Menu.
+    return { labels: ControllerWidget.LABELS.xbone, glyphs: ControllerWidget.GLYPHS.xbone };
+  }
   return { labels: ControllerWidget.LABELS.gp2040, glyphs: ControllerWidget.GLYPHS.gp2040 };
 }
 
@@ -542,7 +547,7 @@ let displayHistoryTimeoutSpinner = null;
 function comboPinLabel(options, index) {
   const mode = Number(options.defaultInputMode || 1);
   const midiMode = mode === 2;
-  const gamepadMode = mode === 3 || mode === 4;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
   const macroIndex = Number(options.macroIndices?.[index] || 0);
   const midiNote = Number(options.midiNotes?.[index] || 0);
   const gamepadMask = Number(options.gamepadMasks?.[index] || 0);
@@ -1165,7 +1170,7 @@ function loadError() {
 function updateModalMode() {
   const mode = Number(currentOptions.defaultInputMode || 1);
   const midiMode = mode === 2;
-  const gamepadMode = mode === 3 || mode === 4;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
   const keyboardMode = !midiMode && !gamepadMode;
   document.getElementById('key-modal-select').hidden = !keyboardMode;
   document.getElementById('key-modal-keyboard').hidden = !keyboardMode;
@@ -1427,7 +1432,7 @@ function saveKeyModal() {
   currentOptions.gamepadMasks = perKey('gamepadMasks');
 
   const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
 
   if (gamepadMode) {
     // A pin maps to zero or more gamepad controls, packed into one mask.
@@ -1458,7 +1463,7 @@ function openRingModal() {
   if (!currentOptions.ring) currentOptions.ring = {};
   const r = currentOptions.ring;
   const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
   const midiMode = mode === 2;
 
   document.getElementById('ring-modal-stick-wrap').hidden = !gamepadMode;
@@ -1483,7 +1488,7 @@ function closeRingModal() {
 function saveRingModal() {
   if (!currentOptions.ring) currentOptions.ring = {};
   const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
   const midiMode = mode === 2;
   // Save only the control shown for the current mode; the others are left
   // unchanged (they're configured when that mode is active).

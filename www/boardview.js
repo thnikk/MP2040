@@ -81,9 +81,9 @@ function intToCss(value) {
 
 // Mode indicator LED color for the active input mode, mirroring the firmware's
 // defaults (LedController::updateStatusLed): keyboard=yellow, MIDI=amber,
-// XInput=green, Switch Pro=red.
+// XInput=green, Switch Pro=red, Xbox One=green.
 function statusLedColor(mode) {
-  const colors = { 1: 0xFFFF00, 2: 0xFF8000, 3: 0x00FF00, 4: 0xFF0000 };
+  const colors = { 1: 0xFFFF00, 2: 0xFF8000, 3: 0x00FF00, 4: 0xFF0000, 5: 0x00FF00 };
   return intToCss(colors[Number(mode)] ?? 0xFFFF00);
 }
 
@@ -389,7 +389,7 @@ class BoardView {
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
       const macroIndex = Number(this.options?.macroIndices?.[pinNumber] || 0);
       const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
-      const gamepadMode = [3, 4].includes(Number(this.options?.defaultInputMode || 1));
+      const gamepadMode = [3, 4, 5].includes(Number(this.options?.defaultInputMode || 1));
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
       const gamepadMask = Number(this.options?.gamepadMasks?.[pinNumber] || 0);
 

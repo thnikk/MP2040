@@ -71,6 +71,9 @@ static const SpeedRange speedRanges[] = {
 #ifndef STATUS_LED_COLOR_SWITCH_PRO
 #define STATUS_LED_COLOR_SWITCH_PRO 0xFF0000
 #endif
+#ifndef STATUS_LED_COLOR_XBOX_ONE
+#define STATUS_LED_COLOR_XBOX_ONE 0x00FF00
+#endif
 // Brightness of the mode indicator LED (0-255), scaled on top of the
 // inactivity fade. 255 = full brightness.
 #ifndef STATUS_LED_BRIGHTNESS_DEFAULT
@@ -559,6 +562,8 @@ void LedController::updateStatusLed()
         color = STATUS_LED_COLOR_XINPUT;
     else if (inputMode == INPUT_MODE_SWITCH_PRO)
         color = STATUS_LED_COLOR_SWITCH_PRO;
+    else if (inputMode == INPUT_MODE_XBOX_ONE)
+        color = STATUS_LED_COLOR_XBOX_ONE;
 
     uint32_t r = ((color >> 16) & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
     uint32_t g = ((color >> 8) & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;

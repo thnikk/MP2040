@@ -5,6 +5,7 @@
 #include "drivers/midi/MidiDriver.h"
 #include "drivers/xinput/XInputDriver.h"
 #include "drivers/switchpro/SwitchProDriver.h"
+#include "drivers/xbone/XBoneDriver.h"
 
 void DriverManager::setup(InputMode mode) {
     switch (mode) {
@@ -22,6 +23,9 @@ void DriverManager::setup(InputMode mode) {
             break;
         case INPUT_MODE_SWITCH_PRO:
             driver = new SwitchProDriver();
+            break;
+        case INPUT_MODE_XBOX_ONE:
+            driver = new XBoneDriver();
             break;
         default:
             return;

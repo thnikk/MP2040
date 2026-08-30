@@ -46,6 +46,12 @@ const CTRL_LABEL_SETS = {
     S1: 'Minus', S2: 'Plus', L3: 'LS', R3: 'RS',
     A1: 'Home', A2: 'Capture',
   },
+  xbone: {
+    B1: 'A', B2: 'B', B3: 'X', B4: 'Y',
+    L1: 'LB', R1: 'RB', L2: 'LT', R2: 'RT',
+    S1: 'View', S2: 'Menu', L3: 'LS', R3: 'RS',
+    A1: 'Guide', A2: 'Share',
+  },
 };
 
 // Per-layout glyph sets. Keys are the same label keys as the label sets; the
@@ -59,6 +65,10 @@ const CTRL_GLYPH_SETS = {
   },
   switch: {
     S1: 'switch-minus', S2: 'switch-plus', A1: 'switch-home', A2: 'switch-capture',
+    Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
+  },
+  xbone: {
+    S1: 'xbox-back', S2: 'xbox-start', A1: 'xbox-guide', A2: 'xbox-share',
     Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
   },
 };

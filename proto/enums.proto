@@ -10,10 +10,13 @@ enum InputMode
     INPUT_MODE_KEYBOARD = 1;
     INPUT_MODE_MIDI = 2;
     // Gamepad modes. XInput presents as an Xbox 360 controller (PC); Switch
-    // Pro emulates a Pro Controller (Nintendo hardware). Pins mapped to
+    // Pro emulates a Pro Controller (Nintendo hardware). Xbox One emulates an
+    // Xbox One controller over GIP, which also supports the capture (share)
+    // button (A2) and a composite CDC serial interface. Pins mapped to
     // GAMEPAD_* keycodes become the corresponding buttons / dpad directions.
     INPUT_MODE_XINPUT = 3;
     INPUT_MODE_SWITCH_PRO = 4;
+    INPUT_MODE_XBOX_ONE = 5;
 }
 
 // SOCD cleaning mode for the gamepad dpad. Applied whenever two opposite
