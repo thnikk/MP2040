@@ -52,7 +52,7 @@ typedef struct
 } MouseReport;
 
 static const uint8_t keyboard_string_language[]    = { 0x09, 0x04 };
-static const uint8_t keyboard_string_manfacturer[] = "Open Stick Community";
+static const uint8_t keyboard_string_manfacturer[] = "thnikk";
 static const uint8_t keyboard_string_product[]     = "MP2040";
 static const uint8_t keyboard_string_version[]     = "1.0";
 

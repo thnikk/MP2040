@@ -19,7 +19,7 @@
 // 
 
 static const uint8_t xbone_string_language[]    = { 0x09, 0x04 };
-static const uint8_t xbone_string_manufacturer[] = "Open Stick Community";
+static const uint8_t xbone_string_manufacturer[] = "thnikk";
 static const uint8_t xbone_string_product[]      = "MP2040 (Xbox One)";
 static const uint8_t xbone_string_version[]      = "1.0";
 

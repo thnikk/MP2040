@@ -74,8 +74,8 @@ bool NetDriver::vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_contr
 static char const* string_desc_arr [] =
 {
   [STRID_LANGID]       = (const char[]) { 0x09, 0x04 }, // supported language is English (0x0409)
-  [STRID_MANUFACTURER] = "TinyUSB",                     // Manufacturer
-  [STRID_PRODUCT]      = "TinyUSB Device",              // Product
+  [STRID_MANUFACTURER] = "thnikk",                     // Manufacturer
+  [STRID_PRODUCT]      = "MP2040 Web Config",           // Product
   [STRID_SERIAL]       = "123456",                      // Serial
   [STRID_INTERFACE]    = "TinyUSB Network Interface"    // Interface Description
 
