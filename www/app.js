@@ -70,26 +70,60 @@ const GAMEPAD_MULTISELECT_GROUPS = [
   { id: 'gamepad', label: 'Gamepad' },
 ];
 
-const GAMEPAD_MULTISELECT_OPTIONS = [
-  { group: 'gamepad', label: 'Up', value: 0x0001 },
-  { group: 'gamepad', label: 'Down', value: 0x0002 },
-  { group: 'gamepad', label: 'Left', value: 0x0004 },
-  { group: 'gamepad', label: 'Right', value: 0x0008 },
-  { group: 'gamepad', label: 'B1', value: 0x0010 },
-  { group: 'gamepad', label: 'B2', value: 0x0020 },
-  { group: 'gamepad', label: 'B3', value: 0x0040 },
-  { group: 'gamepad', label: 'B4', value: 0x0080 },
-  { group: 'gamepad', label: 'L1', value: 0x0100 },
-  { group: 'gamepad', label: 'R1', value: 0x0200 },
-  { group: 'gamepad', label: 'L2', value: 0x0400 },
-  { group: 'gamepad', label: 'R2', value: 0x0800 },
-  { group: 'gamepad', label: 'S1', value: 0x1000 },
-  { group: 'gamepad', label: 'S2', value: 0x2000 },
-  { group: 'gamepad', label: 'L3', value: 0x4000 },
-  { group: 'gamepad', label: 'R3', value: 0x8000 },
-  { group: 'gamepad', label: 'A1', value: 0x10000 },
-  { group: 'gamepad', label: 'A2', value: 0x20000 },
+// Gamepad controls in bit order. Labels are swapped per input mode (XInput →
+// Xbox names, Switch Pro → Nintendo names) via ControllerWidget.LABELS.
+const GAMEPAD_CONTROLS = [
+  { label: 'Up', value: 0x0001 },
+  { label: 'Down', value: 0x0002 },
+  { label: 'Left', value: 0x0004 },
+  { label: 'Right', value: 0x0008 },
+  { label: 'B1', value: 0x0010 },
+  { label: 'B2', value: 0x0020 },
+  { label: 'B3', value: 0x0040 },
+  { label: 'B4', value: 0x0080 },
+  { label: 'L1', value: 0x0100 },
+  { label: 'R1', value: 0x0200 },
+  { label: 'L2', value: 0x0400 },
+  { label: 'R2', value: 0x0800 },
+  { label: 'S1', value: 0x1000 },
+  { label: 'S2', value: 0x2000 },
+  { label: 'L3', value: 0x4000 },
+  { label: 'R3', value: 0x8000 },
+  { label: 'A1', value: 0x10000 },
+  { label: 'A2', value: 0x20000 },
 ];
+
+// MultiSelect options for the gamepad picker, labeled per the active layout.
+function gamepadMultiOptions(labels) {
+  return GAMEPAD_CONTROLS.map(({ label, value }) => ({
+    group: 'gamepad',
+    label: labels[label] || label,
+    value,
+  }));
+}
+
+// Label set for a given input mode: XInput (3) shows Xbox names; Switch Pro
+// (4) shows Nintendo names, or Xbox-style face buttons when the pad is wired
+// Xbox-layout (useNintendoLayout off), matching the firmware's button mapping.
+function gamepadLabelSet(mode, nintendoLayout) {
+  if (mode === 3) return ControllerWidget.LABELS.xbox;
+  if (mode === 4) {
+    if (nintendoLayout) return ControllerWidget.LABELS.switch;
+    const s = ControllerWidget.LABELS.switch;
+    return { ...s, B1: s.B2, B2: s.B1, B3: s.B4, B4: s.B3 };
+  }
+  return ControllerWidget.LABELS.gp2040;
+}
+
+// Re-label the gamepad pickers (multi-select + controller widget) for the
+// current input mode and Nintendo-layout toggle.
+function syncGamepadLabels() {
+  const mode = Number(currentOptions.defaultInputMode || 1);
+  const nintendo = currentOptions.gamepad?.useNintendoLayout === true;
+  const labels = gamepadLabelSet(mode, nintendo);
+  if (gamepadSelect) gamepadSelect.setOptions(gamepadMultiOptions(labels));
+  if (gamepadWidget) gamepadWidget.setLabels(labels);
+}
 
 // Working copy of the config from /api/getOptions, edited via the modal
 let currentOptions = null;
@@ -795,6 +829,7 @@ async function load() {
   document.getElementById('default-input-mode').addEventListener('change', () => {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
+    syncGamepadLabels();
     if (boardView) boardView.refresh();
     if (hotkeysPanel) hotkeysPanel.setKeyOptions(buildComboOptions('hotkey'));
     if (bootKeysPanel) bootKeysPanel.setKeyOptions(buildBootPinOptions());
@@ -816,6 +851,7 @@ async function load() {
     nintendoEl.addEventListener('change', () => {
       if (!currentOptions.gamepad) currentOptions.gamepad = {};
       currentOptions.gamepad.useNintendoLayout = nintendoEl.checked;
+      syncGamepadLabels();
     });
   }
 
@@ -1048,7 +1084,8 @@ async function load() {
 
   gamepadSelect = new MultiSelect({
     container: document.getElementById('key-modal-gamepad'),
-    options: GAMEPAD_MULTISELECT_OPTIONS,
+    options: gamepadMultiOptions(
+      gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true)),
     groups: GAMEPAD_MULTISELECT_GROUPS,
     onChange: () => {
       if (gamepadWidget) gamepadWidget.setMask(gamepadSelect.getGroupMask('gamepad'));
@@ -1066,6 +1103,7 @@ async function load() {
   gamepadWidget = new ControllerWidget({
     container: gamepadWidgetContainer,
     mask: 0,
+    labels: gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true),
     onChange: (mask) => {
       gamepadSelect.setGroupMask('gamepad', mask);
     },

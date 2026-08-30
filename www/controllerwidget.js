@@ -4,28 +4,49 @@
 // gamepad mask. The mask layout matches GAMEPAD_PIN_MASK_* in gamepadhelper.h:
 // dpad in bits 0-3, buttons B1-A2 in bits 4-17.
 
-// Control id → label and mask bit. The ids are the ones baked into
-// controller.svg.
+// Control id → label key and mask bit. The ids are the ones baked into
+// controller.svg; labelKey is the default (GP2040-style) control name, and
+// labels are swapped per input mode via CTRL_LABEL_SETS below.
 const CTRL_ELS = [
-  { id: 'btn-l2', label: 'L2', mask: 0x0400 },
-  { id: 'btn-r2', label: 'R2', mask: 0x0800 },
-  { id: 'btn-l1', label: 'L1', mask: 0x0100 },
-  { id: 'btn-r1', label: 'R1', mask: 0x0200 },
-  { id: 'btn-a1', label: 'A1', mask: 0x10000 },
-  { id: 'btn-a2', label: 'A2', mask: 0x20000 },
-  { id: 'btn-s1', label: 'S1', mask: 0x1000 },
-  { id: 'btn-s2', label: 'S2', mask: 0x2000 },
-  { id: 'btn-b4', label: 'B4', mask: 0x0080 },
-  { id: 'btn-b3', label: 'B3', mask: 0x0040 },
-  { id: 'btn-b2', label: 'B2', mask: 0x0020 },
-  { id: 'btn-b1', label: 'B1', mask: 0x0010 },
-  { id: 'btn-up', label: 'Up', mask: 0x0001 },
-  { id: 'btn-down', label: 'Down', mask: 0x0002 },
-  { id: 'btn-left', label: 'Left', mask: 0x0004 },
-  { id: 'btn-right', label: 'Right', mask: 0x0008 },
-  { id: 'btn-l3', label: 'L3', mask: 0x4000 },
-  { id: 'btn-r3', label: 'R3', mask: 0x8000 },
+  { id: 'btn-l2', labelKey: 'L2', mask: 0x0400 },
+  { id: 'btn-r2', labelKey: 'R2', mask: 0x0800 },
+  { id: 'btn-l1', labelKey: 'L1', mask: 0x0100 },
+  { id: 'btn-r1', labelKey: 'R1', mask: 0x0200 },
+  { id: 'btn-a1', labelKey: 'A1', mask: 0x10000 },
+  { id: 'btn-a2', labelKey: 'A2', mask: 0x20000 },
+  { id: 'btn-s1', labelKey: 'S1', mask: 0x1000 },
+  { id: 'btn-s2', labelKey: 'S2', mask: 0x2000 },
+  { id: 'btn-b4', labelKey: 'B4', mask: 0x0080 },
+  { id: 'btn-b3', labelKey: 'B3', mask: 0x0040 },
+  { id: 'btn-b2', labelKey: 'B2', mask: 0x0020 },
+  { id: 'btn-b1', labelKey: 'B1', mask: 0x0010 },
+  { id: 'btn-up', labelKey: 'Up', mask: 0x0001 },
+  { id: 'btn-down', labelKey: 'Down', mask: 0x0002 },
+  { id: 'btn-left', labelKey: 'Left', mask: 0x0004 },
+  { id: 'btn-right', labelKey: 'Right', mask: 0x0008 },
+  { id: 'btn-l3', labelKey: 'L3', mask: 0x4000 },
+  { id: 'btn-r3', labelKey: 'R3', mask: 0x8000 },
 ];
+
+// Per-layout label sets. Keys are the GP2040 control names; anything not in a
+// set falls back to the key itself (the dpad directions, which are the same
+// everywhere). 'switch' labels a Nintendo-laid-out pad; when such a pad is
+// wired Xbox-layout the face buttons are swapped (done by the caller).
+const CTRL_LABEL_SETS = {
+  gp2040: {},
+  xbox: {
+    B1: 'A', B2: 'B', B3: 'X', B4: 'Y',
+    L1: 'LB', R1: 'RB', L2: 'LT', R2: 'RT',
+    S1: 'Back', S2: 'Start', L3: 'LS', R3: 'RS',
+    A1: 'Guide', A2: '-',
+  },
+  switch: {
+    B1: 'B', B2: 'A', B3: 'Y', B4: 'X',
+    L1: 'L', R1: 'R', L2: 'ZL', R2: 'ZR',
+    S1: 'Minus', S2: 'Plus', L3: 'LS', R3: 'RS',
+    A1: 'Home', A2: 'Capture',
+  },
+};
 
 // Stick wells are just visual (the L3/R3 sticks sit on top); they're not
 // clickable and get a recessed fill.
@@ -35,8 +56,9 @@ const CTRL_VIEWBOX_RE = /viewBox="([^"]+)"/;
 const SELECTED_STROKE = '#00ff00';
 
 class ControllerWidget {
-  constructor({ container, mask, onChange }) {
+  constructor({ container, mask, labels, onChange }) {
     this.mask = mask || 0;
+    this.labels = labels || CTRL_LABEL_SETS.gp2040;
     this.onChange = onChange || (() => {});
     this.markup = '';
     this.viewBox = '0 0 434.5 366';
@@ -52,6 +74,12 @@ class ControllerWidget {
 
   getMask() {
     return this.mask;
+  }
+
+  // Swap the per-layout label set (e.g. Xbox vs Nintendo names) live.
+  setLabels(labels) {
+    this.labels = labels || CTRL_LABEL_SETS.gp2040;
+    if (this.loaded) this.render();
   }
 
   buildDom(container) {
@@ -130,7 +158,7 @@ class ControllerWidget {
       text.setAttribute('dominant-baseline', 'central');
       text.setAttribute('id', 'label-' + def.id);
       text.classList.add('cgp-label');
-      text.textContent = def.label;
+      text.textContent = this.labels[def.labelKey] ?? def.labelKey;
       this.svg.appendChild(text);
     }
   }
@@ -172,3 +200,6 @@ class ControllerWidget {
     }
   }
 }
+
+// Per-layout label sets, shared with the gamepad multi-select in app.js.
+ControllerWidget.LABELS = CTRL_LABEL_SETS;
