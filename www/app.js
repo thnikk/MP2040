@@ -705,8 +705,10 @@ async function checkForUpdates(version) {
   // Mock-only: use the injected fake release instead of hitting GitHub.
   let latest = version.fakeLatestVersion ? parseVersion(version.fakeLatestVersion) : null;
   if (!latest) {
-    // Skip mock/dev servers and untagged (bare-SHA) dev builds.
-    if (version.mock || !/^v?\d+\.\d+\.\d+/.test(version.gitCommit || '')) return;
+    // Skip mock/dev servers and untagged (bare-SHA) dev builds. The firmware
+    // version string is "dev" for untagged builds and "vX.Y.Z[+N]" otherwise;
+    // gitCommit is always a bare SHA, so it can't gate this.
+    if (version.mock || !/^v?\d+\.\d+\.\d+/.test(version.firmwareVersion || '')) return;
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
