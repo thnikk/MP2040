@@ -110,14 +110,6 @@ jobs:
         path: ${{github.workspace}}/build/MP2040_*_${{ matrix.MP2040_BOARDCONFIG }}.uf2
         if-no-files-found: error
 
-    - name: Upload .elf Artifact
-      if: ${{ matrix.MP2040_BOARDCONFIG == 'MacroPad' }}
-      uses: actions/upload-artifact@v7.0.1
-      with:
-        name: elf - ${{ steps.git_hash.outputs.SHORT_SHA }}
-        path: ${{github.workspace}}/build/MP2040_*_${{ matrix.MP2040_BOARDCONFIG }}.elf
-        if-no-files-found: error
-
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -205,7 +197,6 @@ jobs:
           body_path: notes.md
           files: |
             ./artifacts/**/*.uf2
-            ./artifacts/**/*.elf
             tools/flash_nuke.uf2
           prerelease: ${{ steps.prerelease.outputs.is_prerelease }}
         env:
