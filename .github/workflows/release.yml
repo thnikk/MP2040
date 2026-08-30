@@ -173,7 +173,7 @@ jobs:
             for f in ./artifacts/*/*.uf2; do
               basename=$(basename "$f")
               board=$(echo "$basename" | sed 's/.*_\(.*\)\.uf2/\1/')
-              display=$(echo "$board" | sed -e 's/4kMegaTouch/4K Mega Touch/' -e 's/BeatBoard/Beat Board/' -e 's/MegaTouch/Mega Touch/' -e 's/MiniTouch/Mini Touch/' -e 's/MacroPad/Macro Pad/' -e 's/\([a-z0-9]\)\([A-Z]\)/\1 \2/g' -e 's/4 K/4K/' -e 's/\([0-9]\)\([a-z]\)\b/\1\2/' -e 's/Fightboard-b-m/Fightboard Basic (Mirrored)/' -e 's/Fightboard-b/Fightboard Basic/' -e 's/Fightboard-m/Fightboard (Mirrored)/')
+              display=$(echo "$board" | sed -e 's/4kMegaTouch/4K MegaTouch/' -e 's/Fightboard-b-m/Fightboard Basic (Mirrored)/' -e 's/Fightboard-b/Fightboard Basic/' -e 's/Fightboard-m/Fightboard (Mirrored)/')
               url="https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/${basename}"
               echo "| ${display} | [\`${basename}\`](${url}) |"
             done
