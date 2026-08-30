@@ -743,7 +743,8 @@ async function load() {
   document.getElementById('footer-version').textContent = version.firmwareVersion
     ? `${version.firmwareVersion}${version.gitCommit ? ` · ${version.gitCommit}` : ''}`
     : '';
-  document.getElementById('landing-year').textContent = new Date().getFullYear();
+  document.getElementById('landing-year').textContent =
+    version.buildYear || new Date().getFullYear();
   checkForUpdates(version);
 
   // Mock-server board switcher (dev only). The Development section is injected

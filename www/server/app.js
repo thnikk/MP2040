@@ -390,6 +390,8 @@ export function createMockApp() {
       firmwareVersion: fakeUpdate ? 'v0.1.0' : 'dev',
       gitCommit: fakeUpdate ? 'v0.1.0' : 'mock',
       boardLabel: board?.boardConfigLabel ?? boardId,
+      // Mock firmware's build year: mimic a freshly compiled firmware.
+      buildYear: String(new Date().getFullYear()),
       // Lets the configurator show the mock-only board switcher. The real
       // board never returns this field.
       mock: true,

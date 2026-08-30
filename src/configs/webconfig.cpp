@@ -873,6 +873,9 @@ std::string getFirmwareVersion()
     doc["firmwareVersion"] = MP2040VERSION;
     doc["gitCommit"] = MP2040BUILD;
     doc["boardLabel"] = BOARD_CONFIG_LABEL;
+    // Compile year from __DATE__ ("Mmm dd yyyy"): lets the web config show when
+    // the firmware was built rather than the board's current date.
+    doc["buildYear"] = __DATE__ + 7;
     return serialize_json(doc);
 }
 
