@@ -108,10 +108,11 @@ const CTRL_VIEWBOX_RE = /viewBox="([^"]+)"/;
 const SELECTED_STROKE = '#00ff00';
 
 class ControllerWidget {
-  constructor({ container, mask, labels, glyphs, onChange }) {
+  constructor({ container, mask, labels, glyphs, maskMap, onChange }) {
     this.mask = mask || 0;
     this.labels = labels || CTRL_LABEL_SETS.gp2040;
     this.glyphs = glyphs || CTRL_GLYPH_SETS.gp2040;
+    this.maskMap = maskMap || null;
     this.onChange = onChange || (() => {});
     this.markup = '';
     this.viewBox = '0 0 434.5 366';
@@ -131,11 +132,19 @@ class ControllerWidget {
   }
 
   // Swap the per-layout label set (e.g. Xbox vs Nintendo names) live.
-  setLabels(labels, glyphs) {
+  setLabels(labels, glyphs, maskMap) {
     this.labels = labels || CTRL_LABEL_SETS.gp2040;
     this.glyphs = glyphs || CTRL_GLYPH_SETS.gp2040;
+    this.maskMap = maskMap || null;
     this.preloadGlyphs();
     if (this.loaded) this.render();
+  }
+
+  // The raw mask bit for a control. maskMap lets a layout remap a control to a
+  // different stored bit (Switch face buttons follow the Nintendo-layout
+  // toggle, while the widget keeps showing the real Switch Pro arrangement).
+  bitFor(def) {
+    return (this.maskMap && this.maskMap[def.labelKey]) || def.mask;
   }
 
   // Kick off fetches for the active layout's glyphs so they're ready before
@@ -264,7 +273,7 @@ class ControllerWidget {
     for (const def of CTRL_ELS) {
       const node = this.svg.getElementById(def.id);
       if (!node) continue;
-      const selected = (this.mask & def.mask) !== 0;
+      const selected = (this.mask & this.bitFor(def)) !== 0;
       node.style.stroke = selected ? SELECTED_STROKE : 'var(--bg-4)';
       if (selected) {
         // Re-append to the end so a selected control draws on top of its
@@ -288,7 +297,7 @@ class ControllerWidget {
       const id = el.getAttribute && el.getAttribute('id');
       const def = id && CTRL_ELS.find((d) => d.id === id);
       if (def) {
-        this.setMask(this.mask ^ def.mask);
+        this.setMask(this.mask ^ this.bitFor(def));
         this.onChange(this.mask);
         return;
       }

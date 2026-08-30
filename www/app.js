@@ -94,31 +94,39 @@ const GAMEPAD_CONTROLS = [
 ];
 
 // MultiSelect options for the gamepad picker, labeled per the active layout.
-function gamepadMultiOptions(labels) {
+// `maskMap` (optional) remaps a control to a different stored bit so the
+// displayed label still maps to the right function (see gamepadLabelSet).
+function gamepadMultiOptions(labels, maskMap) {
   return GAMEPAD_CONTROLS.map(({ label, value }) => ({
     group: 'gamepad',
     label: labels[label] || label,
-    value,
+    value: (maskMap && maskMap[label]) || value,
   }));
 }
 
-// Label + glyph sets for a given input mode: XInput (3) shows Xbox names;
-// Switch Pro (4) shows Nintendo names, or Xbox-style face buttons when the pad
-// is wired Xbox-layout (useNintendoLayout off), matching the firmware's button
-// mapping. Glyphs are the icon files the controller widget renders.
+// Label + glyph + bit-mask sets for a given input mode: XInput (3) shows Xbox
+// names; Switch Pro (4) shows Nintendo names, always laid out like a real
+// Switch Pro controller (A right, B bottom, Y left, X top). The Nintendo-layout
+// toggle only swaps which stored position-bit each letter maps to (maskMap),
+// so clicking a letter always maps the pin to that Switch button. Glyphs are
+// the icon files the controller widget renders.
 function gamepadLabelSet(mode, nintendoLayout) {
   if (mode === 3) {
     return { labels: ControllerWidget.LABELS.xbox, glyphs: ControllerWidget.GLYPHS.xbox };
   }
   if (mode === 4) {
-    if (nintendoLayout) {
-      return { labels: ControllerWidget.LABELS.switch, glyphs: ControllerWidget.GLYPHS.switch };
-    }
-    const s = ControllerWidget.LABELS.switch;
-    const g = ControllerWidget.GLYPHS.switch;
+    // The letters sit at real Switch Pro positions (B1 bottom, B2 right, B3
+    // left, B4 top). The toggle swaps which stored bit produces each letter:
+    // ON → bottom=B, right=A, left=Y, top=X; OFF → bottom=A, right=B, left=X,
+    // top=Y. maskMap gives each position the bit that sends its displayed
+    // letter under the current toggle.
+    const maskMap = nintendoLayout
+      ? { B1: 0x0010, B2: 0x0020, B3: 0x0040, B4: 0x0080 }
+      : { B1: 0x0020, B2: 0x0010, B3: 0x0080, B4: 0x0040 };
     return {
-      labels: { ...s, B1: s.B2, B2: s.B1, B3: s.B4, B4: s.B3 },
-      glyphs: { ...g, B1: g.B2, B2: g.B1, B3: g.B4, B4: g.B3 },
+      labels: ControllerWidget.LABELS.switch,
+      glyphs: ControllerWidget.GLYPHS.switch,
+      maskMap,
     };
   }
   return { labels: ControllerWidget.LABELS.gp2040, glyphs: ControllerWidget.GLYPHS.gp2040 };
@@ -129,9 +137,9 @@ function gamepadLabelSet(mode, nintendoLayout) {
 function syncGamepadLabels() {
   const mode = Number(currentOptions.defaultInputMode || 1);
   const nintendo = currentOptions.gamepad?.useNintendoLayout === true;
-  const { labels, glyphs } = gamepadLabelSet(mode, nintendo);
-  if (gamepadSelect) gamepadSelect.setOptions(gamepadMultiOptions(labels));
-  if (gamepadWidget) gamepadWidget.setLabels(labels, glyphs);
+  const { labels, glyphs, maskMap } = gamepadLabelSet(mode, nintendo);
+  if (gamepadSelect) gamepadSelect.setOptions(gamepadMultiOptions(labels, maskMap));
+  if (gamepadWidget) gamepadWidget.setLabels(labels, glyphs, maskMap);
 }
 
 // Working copy of the config from /api/getOptions, edited via the modal
@@ -1091,10 +1099,12 @@ async function load() {
     onChange: () => {},
   });
 
+  const { labels: gamepadLabels, glyphs: gamepadGlyphs, maskMap: gamepadMaskMap } =
+    gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true);
+
   gamepadSelect = new MultiSelect({
     container: document.getElementById('key-modal-gamepad'),
-    options: gamepadMultiOptions(
-      gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true).labels),
+    options: gamepadMultiOptions(gamepadLabels, gamepadMaskMap),
     groups: GAMEPAD_MULTISELECT_GROUPS,
     onChange: () => {
       if (gamepadWidget) gamepadWidget.setMask(gamepadSelect.getGroupMask('gamepad'));
@@ -1112,7 +1122,9 @@ async function load() {
   gamepadWidget = new ControllerWidget({
     container: gamepadWidgetContainer,
     mask: 0,
-    ...gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true),
+    labels: gamepadLabels,
+    glyphs: gamepadGlyphs,
+    maskMap: gamepadMaskMap,
     onChange: (mask) => {
       gamepadSelect.setGroupMask('gamepad', mask);
     },
