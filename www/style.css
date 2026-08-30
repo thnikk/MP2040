@@ -1916,6 +1916,30 @@ button:disabled {
   border-color: transparent;
 }
 
+/* Controller widget (port of GP2040-th's ControllerWidget): the clickable
+   SVG gamepad in the key modal's gamepad mode. */
+.controller-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 16px;
+  user-select: none;
+}
+
+.controller-widget .cgp-svg {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+}
+
+.controller-widget .cgp-label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: currentColor;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Held modifier highlight (macro builder keyboard) */
 .kb-key.mod.active {
   background: var(--nord12);

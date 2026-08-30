@@ -119,6 +119,10 @@ let midiKeyboard = null;
 // gamepad modes
 let gamepadSelect = null;
 
+// Visual gamepad picker (controllerwidget.js) used in the key modal in
+// gamepad modes
+let gamepadWidget = null;
+
 // Visual macro editor (macrobuilder.js) used on the Settings page
 let macroBuilder = null;
 
@@ -1046,7 +1050,25 @@ async function load() {
     container: document.getElementById('key-modal-gamepad'),
     options: GAMEPAD_MULTISELECT_OPTIONS,
     groups: GAMEPAD_MULTISELECT_GROUPS,
-    onChange: () => {},
+    onChange: () => {
+      if (gamepadWidget) gamepadWidget.setMask(gamepadSelect.getGroupMask('gamepad'));
+    },
+  });
+
+  // The controller widget's container is created and appended after the
+  // multi-select above, so the select renders on top and the widget below it.
+  const gamepadWidgetContainer = document.createElement('div');
+  gamepadWidgetContainer.id = 'key-modal-gamepad-widget';
+  document.getElementById('key-modal-gamepad').appendChild(gamepadWidgetContainer);
+
+  // The controller widget is the visual twin of the multi-select above; each
+  // reflects the other (their set* methods don't fire onChange, so no loop).
+  gamepadWidget = new ControllerWidget({
+    container: gamepadWidgetContainer,
+    mask: 0,
+    onChange: (mask) => {
+      gamepadSelect.setGroupMask('gamepad', mask);
+    },
   });
 
   initBoard(options);
@@ -1308,12 +1330,18 @@ function openKeyModal(pin) {
   midiKeyboard.setValue(midiNote);
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
   gamepadSelect.setGroupMask('gamepad', gamepadMask);
+  if (gamepadWidget) gamepadWidget.setMask(gamepadMask);
   closeLedColorPopover();
   updateModalMode();
   document.getElementById('key-modal').hidden = false;
-  // The widget may have been built while the modal was hidden, so re-fit the
-  // octave window now that it has a real width.
-  requestAnimationFrame(() => midiKeyboard.refresh());
+  // The widgets may have been built while the modal was hidden, so re-fit them
+  // now that it has a real width: the MIDI octave window, and the gamepad
+  // controller widget whose labels are placed from getBBox() (all zeros while
+  // the modal is hidden).
+  requestAnimationFrame(() => {
+    midiKeyboard.refresh();
+    if (gamepadWidget) gamepadWidget.setMask(gamepadWidget.getMask());
+  });
 }
 
 function closeKeyModal() {
@@ -1344,7 +1372,9 @@ function saveKeyModal() {
 
   if (gamepadMode) {
     // A pin maps to zero or more gamepad controls, packed into one mask.
-    currentOptions.gamepadMasks[editingPin] = gamepadSelect.getGroupMask('gamepad');
+    currentOptions.gamepadMasks[editingPin] = gamepadWidget
+      ? gamepadWidget.getMask()
+      : gamepadSelect.getGroupMask('gamepad');
   } else {
     const { keycode, mask, macroIndex } = keyboardWidget.getValue();
     // A pin is either a plain key or a macro trigger, never both.
