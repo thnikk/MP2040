@@ -327,12 +327,22 @@ void ButtonLayoutScreen::generateHeader() {
 	if (showMacroMode && macroEnabled) statusBarRight += " M";
 
 	if (showSocdMode) {
+		// d-pad mode indicator (D/L/R) sits to the left of the SOCD flag.
+		char dpadMode;
+		switch (Storage::getInstance().getDpadMode()) {
+			case DPAD_MODE_LEFT_STICK:  dpadMode = 'L'; break;
+			case DPAD_MODE_RIGHT_STICK: dpadMode = 'R'; break;
+			default:                    dpadMode = 'D'; break;
+		}
+		statusBarRight += " ";
+		statusBarRight += dpadMode;
+		statusBarRight += " SOCD-";
 		switch (Storage::getInstance().getSocdMode()) {
-			case SOCD_MODE_NEUTRAL:               statusBarRight += " SOCD-N"; break;
-			case SOCD_MODE_UP_PRIORITY:           statusBarRight += " SOCD-U"; break;
-			case SOCD_MODE_SECOND_INPUT_PRIORITY: statusBarRight += " SOCD-L"; break;
-			case SOCD_MODE_FIRST_INPUT_PRIORITY:  statusBarRight += " SOCD-F"; break;
-			case SOCD_MODE_BYPASS:                statusBarRight += " SOCD-X"; break;
+			case SOCD_MODE_NEUTRAL:               statusBarRight += "N"; break;
+			case SOCD_MODE_UP_PRIORITY:           statusBarRight += "U"; break;
+			case SOCD_MODE_SECOND_INPUT_PRIORITY: statusBarRight += "L"; break;
+			case SOCD_MODE_FIRST_INPUT_PRIORITY:  statusBarRight += "F"; break;
+			case SOCD_MODE_BYPASS:                statusBarRight += "X"; break;
 			default: break;
 		}
 	}
