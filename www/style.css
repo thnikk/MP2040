@@ -947,6 +947,71 @@ html[data-theme="light"] .ms-caret {
   flex-basis: 100%;
 }
 
+/* Input History + History Timeout row inside the Display settings. Keeps the
+   toggle and the timeout spinner on the same line; the timeout group is pushed
+   to the right edge while the toggle stays left. */
+#input-history-row {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+/* PillToggle (port of GP2040-th's PillToggle): a pill-shaped on/off button
+   with its label inside. Off is a dimmed outline; active fills with the accent
+   color. */
+.pill-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 5px 10px;
+  border: 1px solid var(--bg-4);
+  border-radius: 999px;
+  background: var(--bg-3);
+  color: var(--text);
+  font-family: 'Nunito', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.pill-toggle:hover {
+  opacity: 0.85;
+}
+
+.pill-toggle.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg-2);
+  opacity: 1;
+}
+
+/* The info icon paints in currentColor; make it follow the pill's text color
+   (muted when off, the active text color when on) instead of .field-info's
+   fixed muted color. */
+.pill-toggle .field-info {
+  color: inherit;
+}
+
+.pill-toggle.active:hover {
+  opacity: 0.85;
+}
+
+.pill-toggle:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+/* display:inline-flex above would override the hidden attribute's UA default */
+.pill-toggle[hidden] {
+  display: none;
+}
+
 /* Configurable hotkeys editor (Settings page). One row per hotkey: a key
    multi-select (flexible), an action dropdown and a remove button. */
 .hotkeys-panel {
@@ -1095,8 +1160,7 @@ html[data-theme="light"] .ms-caret {
   flex-wrap: nowrap;
 }
 
-#socd-row .checkbox-label {
-  flex-basis: auto;
+#socd-row .pill-toggle {
   margin-left: auto;
 }
 

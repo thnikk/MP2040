@@ -175,6 +175,13 @@ let brightnessSlider = null;
 let speedSlider = null;
 let timeoutSpinner = null;
 
+// Pill toggles (see pilltoggle.js): Serial control, Status LED, Input History
+// and the Nintendo layout toggle.
+let serialPill = null;
+let statusLedPill = null;
+let displayHistoryPill = null;
+let nintendoPill = null;
+
 // LED color pickers (see createColorPicker below)
 let colorNormalPicker = null;
 let colorPressedPicker = null;
@@ -477,8 +484,7 @@ async function previewLed() {
   brightness[led.ledMode] = brightnessSlider ? brightnessSlider.getValue() : 255;
   led.brightnessByMode = brightness;
   led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
-  const statusLedEl = document.getElementById('status-led');
-  led.statusLedEnabled = statusLedEl ? statusLedEl.checked : true;
+  led.statusLedEnabled = statusLedPill ? statusLedPill.checked : true;
   const colors = getModeLedColors();
   colors.normal[led.ledMode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
   colors.pressed[led.ledMode] = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
@@ -602,7 +608,7 @@ function buildOptionsBody() {
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
     touchMargin: touchMarginSpinner ? touchMarginSpinner.getValue() : 15,
     touchRelease: touchReleaseSpinner ? touchReleaseSpinner.getValue() : 10,
-    serialConfigEnabled: document.getElementById('serial-config').checked,
+    serialConfigEnabled: serialPill ? serialPill.checked : false,
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
       velocity: midiVelocitySpinner ? midiVelocitySpinner.getValue() : 127,
@@ -614,9 +620,7 @@ function buildOptionsBody() {
       dpadMode: document.getElementById('dpad-mode')
         ? parseInt(document.getElementById('dpad-mode').value, 10)
         : 0,
-      useNintendoLayout: document.getElementById('nintendo-layout')
-        ? document.getElementById('nintendo-layout').checked
-        : false,
+      useNintendoLayout: nintendoPill ? nintendoPill.checked : false,
     },
     ring: {
       ringStickTarget: currentOptions.ring?.ringStickTarget ?? 1,
@@ -629,7 +633,7 @@ function buildOptionsBody() {
       ledSpeeds: getModeLedSpeeds(),
       brightnessByMode: brightness,
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
-      statusLedEnabled: document.getElementById('status-led').checked,
+      statusLedEnabled: statusLedPill ? statusLedPill.checked : false,
       colorNormalByMode: colors.normal,
       colorPressedByMode: colors.pressed,
       ledNormalColors: currentOptions.led?.ledNormalColors || [],
@@ -642,7 +646,7 @@ function buildOptionsBody() {
       splashDuration: displaySplashDurationSpinner ? displaySplashDurationSpinner.getValue() : 3,
       displaySaverTimeout: displaySaverTimeoutSpinner ? displaySaverTimeoutSpinner.getValue() : 0,
       displaySaverMode: parseInt(document.getElementById('display-saver-mode').value, 10),
-      inputHistoryEnabled: document.getElementById('display-input-history').checked,
+      inputHistoryEnabled: displayHistoryPill ? displayHistoryPill.checked : false,
       inputHistoryTimeout: displayHistoryTimeoutSpinner ? displayHistoryTimeoutSpinner.getValue() : 3,
     },
     profileIndex: currentProfileIndex,
@@ -861,30 +865,39 @@ async function load() {
       currentOptions.gamepad.dpadMode = parseInt(dpadModeEl.value, 10);
     });
   }
-  const nintendoEl = document.getElementById('nintendo-layout');
+  const nintendoEl = document.getElementById('nintendo-layout-wrap');
   if (nintendoEl) {
-    nintendoEl.checked = gamepad.useNintendoLayout === true;
-    nintendoEl.addEventListener('change', () => {
-      if (!currentOptions.gamepad) currentOptions.gamepad = {};
-      currentOptions.gamepad.useNintendoLayout = nintendoEl.checked;
-      syncGamepadLabels();
+    nintendoPill = new PillToggle(nintendoEl, {
+      checked: gamepad.useNintendoLayout === true,
+      onChange: (checked) => {
+        if (!currentOptions.gamepad) currentOptions.gamepad = {};
+        currentOptions.gamepad.useNintendoLayout = checked;
+        syncGamepadLabels();
+      },
     });
   }
 
-  document.getElementById('serial-config').checked = options.serialConfigEnabled === true;
-  document.getElementById('serial-config').addEventListener('change', () => {
-    currentOptions.serialConfigEnabled = document.getElementById('serial-config').checked;
-  });
+  const serialEl = document.getElementById('serial-config');
+  if (serialEl) {
+    serialPill = new PillToggle(serialEl, {
+      checked: options.serialConfigEnabled === true,
+      onChange: (checked) => {
+        currentOptions.serialConfigEnabled = checked;
+      },
+    });
+  }
 
   const statusLedEl = document.getElementById('status-led');
   if (statusLedEl) {
     // Boards without a status LED don't show the toggle at all.
-    statusLedEl.closest('label').hidden = options.led?.hasStatusLed === false;
-    statusLedEl.checked = Boolean(options.led?.statusLedEnabled);
-    statusLedEl.addEventListener('change', () => {
-      if (!currentOptions.led) currentOptions.led = {};
-      currentOptions.led.statusLedEnabled = statusLedEl.checked;
-      previewLed();
+    statusLedEl.hidden = options.led?.hasStatusLed === false;
+    statusLedPill = new PillToggle(statusLedEl, {
+      checked: Boolean(options.led?.statusLedEnabled),
+      onChange: (checked) => {
+        if (!currentOptions.led) currentOptions.led = {};
+        currentOptions.led.statusLedEnabled = checked;
+        previewLed();
+      },
     });
   }
 
@@ -908,10 +921,12 @@ async function load() {
   bindSelect('display-saver-mode', 'displaySaverMode');
   const displayHistoryEl = document.getElementById('display-input-history');
   if (displayHistoryEl) {
-    displayHistoryEl.checked = display.inputHistoryEnabled !== false;
-    displayHistoryEl.addEventListener('change', () => {
-      if (!currentOptions.display) currentOptions.display = {};
-      currentOptions.display.inputHistoryEnabled = displayHistoryEl.checked;
+    displayHistoryPill = new PillToggle(displayHistoryEl, {
+      checked: display.inputHistoryEnabled !== false,
+      onChange: (checked) => {
+        if (!currentOptions.display) currentOptions.display = {};
+        currentOptions.display.inputHistoryEnabled = checked;
+      },
     });
   }
   displaySplashDurationSpinner = new Spinner({
