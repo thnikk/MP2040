@@ -102,6 +102,7 @@ void SwitchProDriver::process() {
     GamepadState gamepad;
     buildGamepadState(gamepad);
     gamepad.dpad = runSOCDCleaner(Storage::getInstance().getSocdMode(), gamepad.dpad);
+    applyDpadMode(gamepad);
 
     switchReport.inputs.dpadUp =    (gamepad.dpad & GAMEPAD_MASK_UP)    != 0;
     switchReport.inputs.dpadDown =  (gamepad.dpad & GAMEPAD_MASK_DOWN)  != 0;
@@ -147,7 +148,7 @@ void SwitchProDriver::process() {
     }
     // Map the 16-bit centered stick values to the Switch Pro 12-bit range
     // (neutral 0x7FF), then encode into the packed stick fields.
-    if (gamepad.ringActive) {
+    if (gamepad.analogActive) {
         uint16_t lx12 = scale16To12(gamepad.lx);
         uint16_t ly12 = scale16To12(gamepad.ly);
         uint16_t rx12 = scale16To12(gamepad.rx);

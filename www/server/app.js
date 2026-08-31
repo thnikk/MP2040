@@ -155,6 +155,7 @@ function defaultOptions() {
     },
     gamepad: {
       socdMode: 0,
+      dpadMode: 0,
       useNintendoLayout: false,
     },
     ring: {
@@ -324,6 +325,7 @@ export function createMockApp() {
     if (typeof body.serialConfigEnabled === 'boolean') current.serialConfigEnabled = body.serialConfigEnabled;
     if (body.gamepad !== undefined) {
       if (Number.isInteger(body.gamepad.socdMode)) current.gamepad.socdMode = Math.max(0, Math.min(4, body.gamepad.socdMode));
+      if (Number.isInteger(body.gamepad.dpadMode)) current.gamepad.dpadMode = Math.max(0, Math.min(2, body.gamepad.dpadMode));
       if (typeof body.gamepad.useNintendoLayout === 'boolean') current.gamepad.useNintendoLayout = body.gamepad.useNintendoLayout;
     }
     if (body.ring !== undefined) {

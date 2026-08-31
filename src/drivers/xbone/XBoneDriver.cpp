@@ -394,6 +394,7 @@ void XBoneDriver::process() {
     GamepadState gamepad;
     buildGamepadState(gamepad);
     gamepad.dpad = runSOCDCleaner(Storage::getInstance().getSocdMode(), gamepad.dpad);
+    applyDpadMode(gamepad);
 
     // Analog sticks. A configured touch ring drives the selected stick (left
     // or right); otherwise both stay centered.

@@ -44,6 +44,9 @@ void MainMenuScreen::init() {
     prevSocdMode = Storage::getInstance().getSocdMode();
     updateSocdMode = prevSocdMode;
 
+    prevDpadMode = Storage::getInstance().getDpadMode();
+    updateDpadMode = prevDpadMode;
+
     prevProfile = (uint8_t)Storage::getInstance().getActiveProfile();
     updateProfile = prevProfile;
 
@@ -226,6 +229,7 @@ void MainMenuScreen::init() {
     mainMenu.clear();
     mainMenu.push_back({"Input Mode", NULL, &inputModeMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
     mainMenu.push_back({"SOCD Mode", NULL, &socdModeMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
+    mainMenu.push_back({"D-Pad Mode", NULL, &dpadModeMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
     mainMenu.push_back({"Profile", NULL, &profilesMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
     mainMenu.push_back({"Display", NULL, &displayMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
     mainMenu.push_back({"LED Config", NULL, &ledMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
@@ -505,11 +509,26 @@ int32_t MainMenuScreen::currentSOCDMode() {
     return updateSocdMode;
 }
 
+void MainMenuScreen::selectDpadMode() {
+    if (currentMenu->at(menuIndex).optionValue != -1) {
+        DpadMode valueToSave = (DpadMode)currentMenu->at(menuIndex).optionValue;
+        prevDpadMode = Storage::getInstance().getDpadMode();
+        updateDpadMode = valueToSave;
+
+        if (prevDpadMode != valueToSave) changeRequiresSave = true;
+    }
+}
+
+int32_t MainMenuScreen::currentDpadMode() {
+    return updateDpadMode;
+}
+
 void MainMenuScreen::resetOptions() {
     Storage& s = Storage::getInstance();
     if (changeRequiresSave) {
         if (prevInputMode != updateInputMode) updateInputMode = prevInputMode;
         if (prevSocdMode != updateSocdMode) updateSocdMode = prevSocdMode;
+        if (prevDpadMode != updateDpadMode) updateDpadMode = prevDpadMode;
         if (prevProfile != updateProfile) updateProfile = prevProfile;
         if (prevDisplaySaverTimeout != updateDisplaySaverTimeout) updateDisplaySaverTimeout = prevDisplaySaverTimeout;
         if (prevDisplaySaverMode != updateDisplaySaverMode) updateDisplaySaverMode = prevDisplaySaverMode;
@@ -543,6 +562,10 @@ void MainMenuScreen::saveOptions() {
         }
         if (prevSocdMode != updateSocdMode) {
             s.setSocdMode(updateSocdMode);
+            saveHasChanged = true;
+        }
+        if (prevDpadMode != updateDpadMode) {
+            s.setDpadMode(updateDpadMode);
             saveHasChanged = true;
         }
         if (prevProfile != updateProfile) {

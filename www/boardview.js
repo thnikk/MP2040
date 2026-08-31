@@ -43,7 +43,11 @@ function isShape(el) {
 }
 
 function shapesOf(el) {
-  return isShape(el) ? [el] : Array.from(el.querySelectorAll(SHAPE_SEL));
+  if (isShape(el)) return [el];
+  // Skip the pin's own label group: its glyph icons are shapes too (path,
+  // circle, ...) and must not be styled/measured as button geometry.
+  return Array.from(el.querySelectorAll(SHAPE_SEL))
+    .filter((s) => !s.closest('.pin-action-label'));
 }
 
 // Find an element by its id OR inkscape:label (Inkscape exports often put the
@@ -361,14 +365,15 @@ class BoardView {
       let labelEl = el.querySelector('.pin-action-label');
       if (!labelEl) {
         const ns = 'http://www.w3.org/2000/svg';
-        labelEl = document.createElementNS(ns, 'text');
+        // A group so a pin's label can mix glyph icons and text under one
+        // rotation/scale; font/fill presentation attrs inherit to the text.
+        labelEl = document.createElementNS(ns, 'g');
         labelEl.setAttribute('class', 'pin-action-label');
-        labelEl.setAttribute('text-anchor', 'middle');
-        labelEl.setAttribute('dominant-baseline', 'central');
         labelEl.setAttribute('font-family', 'Nunito');
         labelEl.setAttribute('font-size', '24');
         labelEl.setAttribute('font-weight', 'bold');
         labelEl.setAttribute('fill', 'currentColor');
+        labelEl.setAttribute('pointer-events', 'none');
 
         if (isShape(el)) {
           const g = document.createElementNS(ns, 'g');
@@ -393,20 +398,28 @@ class BoardView {
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
       const gamepadMask = Number(this.options?.gamepadMasks?.[pinNumber] || 0);
 
-      let lines = [];
+      // Label content: text lines for keyboard/MIDI/macro assignments; gamepad
+      // mode uses the active layout's control labels + glyphs, matching the
+      // controller widget (and the Nintendo-layout toggle).
+      const items = [];
       if (midiMode) {
-        if (midiNote > 0) lines.push(midiNoteName(midiNote));
+        if (midiNote > 0) items.push({ text: midiNoteName(midiNote) });
       } else if (gamepadMode) {
         // Gamepad mode: only gamepad control assignments are shown. A pin with
         // no controls assigned is unassigned in this mode (not its keyboard key).
-        if (gamepadMask > 0) lines.push(...gamepadMaskLabels(gamepadMask));
+        if (gamepadMask > 0) {
+          const set = labelSet(
+            Number(this.options?.defaultInputMode || 1),
+            this.options?.gamepad?.useNintendoLayout === true);
+          items.push(...controlsForMask(gamepadMask, set));
+        }
       } else if (macroIndex > 0) {
-        lines.push('M' + macroIndex);
+        items.push({ text: 'M' + macroIndex });
       } else if (keycode > 0) {
         for (let i = 0; i < 8; i++) {
-          if (mask & (1 << i)) lines.push(MODIFIER_SHORT[0xe0 + i] || '');
+          if (mask & (1 << i)) items.push({ text: MODIFIER_SHORT[0xe0 + i] || '' });
         }
-        lines.push(keycode < 0xe0 ? keyLabel(keycode) : (MODIFIER_SHORT[keycode] || keyLabel(keycode)));
+        items.push({ text: keycode < 0xe0 ? keyLabel(keycode) : (MODIFIER_SHORT[keycode] || keyLabel(keycode)) });
       }
 
       // Position the label. Prefer the <name>-label guide path (id or
@@ -497,22 +510,27 @@ class BoardView {
 
       const ns = 'http://www.w3.org/2000/svg';
       while (labelEl.firstChild) labelEl.removeChild(labelEl.firstChild);
-      labelEl.removeAttribute('x');
-      labelEl.removeAttribute('y');
-      if (lines.length > 0) {
-        // 26px on screen per line, counter-scaled like the font.
+      if (items.length > 0) {
+        // 26px on screen per line, counter-scaled like the font. Controls with
+        // a loaded glyph render as the icon; text is the fallback while a glyph
+        // loads or for controls that have none.
         const lineHeight = 26 / labelScale;
-        lines.forEach((line, idx) => {
-          const tspan = document.createElementNS(ns, 'tspan');
-          tspan.textContent = line;
-          tspan.setAttribute('x', String(cx));
-          tspan.setAttribute('y', String(cy + (idx - (lines.length - 1) / 2) * lineHeight));
-          tspan.setAttribute('text-anchor', 'middle');
-          labelEl.appendChild(tspan);
+        items.forEach((item, idx) => {
+          const itemY = cy + (idx - (items.length - 1) / 2) * lineHeight;
+          const glyph = item.glyphId ? loadedGlyph(item.glyphId) : null;
+          if (glyph) {
+            this.appendPinGlyph(labelEl, glyph, cx, itemY, labelScale);
+          } else {
+            if (item.glyphId) ensureGlyph(item.glyphId, () => this.updateLabels());
+            const text = document.createElementNS(ns, 'text');
+            text.textContent = item.text;
+            text.setAttribute('x', String(cx));
+            text.setAttribute('y', String(itemY));
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'central');
+            labelEl.appendChild(text);
+          }
         });
-      } else {
-        labelEl.setAttribute('x', String(cx));
-        labelEl.setAttribute('y', String(cy));
       }
 
       if (rotation !== null) {
@@ -521,6 +539,26 @@ class BoardView {
         labelEl.removeAttribute('transform');
       }
     }
+  }
+
+  // Render a control glyph (from gamepadlabels.js's shared cache) centered
+  // on the label slot, counter-scaled so it stays a constant pixel size on
+  // screen regardless of the board's CSS scale.
+  appendPinGlyph(container, glyph, cx, cy, labelScale) {
+    const [vx, vy, vw, vh] = glyph.viewBox;
+    const target = 20; // glyph height on screen, px
+    const scale = vh > 0 ? target / labelScale / vh : 1;
+    const ns = 'http://www.w3.org/2000/svg';
+    const g = document.createElementNS(ns, 'g');
+    g.classList.add('pin-glyph');
+    g.setAttribute('transform',
+      `translate(${cx} ${cy}) scale(${scale}) translate(${-vx - vw / 2} ${-vy - vh / 2})`);
+    for (const n of glyph.nodes) {
+      const el = document.createElementNS(ns, n.tag);
+      for (const [name, value] of n.attrs) el.setAttribute(name, value);
+      g.appendChild(el);
+    }
+    container.appendChild(g);
   }
 
   // ---- LED slots --------------------------------------------------------

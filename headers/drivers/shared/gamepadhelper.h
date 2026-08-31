@@ -38,8 +38,9 @@ struct GamepadState
 	uint16_t ly {GAMEPAD_JOYSTICK_MID};
 	uint16_t rx {GAMEPAD_JOYSTICK_MID};
 	uint16_t ry {GAMEPAD_JOYSTICK_MID};
-	// True when a touch ring is driving the analog stick this frame.
-	bool ringActive {false};
+	// True when an analog source (touch ring or dpad-in-stick mode) is driving
+	// an analog stick this frame.
+	bool analogActive {false};
 };
 
 // DPAD direction history for the SOCD cleaner. Values index dpadMasks.
@@ -93,7 +94,7 @@ static inline void buildGamepadState(GamepadState& state)
 	state.ly = GAMEPAD_JOYSTICK_MID;
 	state.rx = GAMEPAD_JOYSTICK_MID;
 	state.ry = GAMEPAD_JOYSTICK_MID;
-	state.ringActive = false;
+	state.analogActive = false;
 }
 
 // Apply a touch-ring stick vector (lx/ly in -1..1, axis-aligned so +x = right,
@@ -104,7 +105,7 @@ static inline void applyRingToStick(GamepadState& state, float lx, float ly, boo
 {
 	uint16_t& x = rightStick ? state.rx : state.lx;
 	uint16_t& y = rightStick ? state.ry : state.ly;
-	state.ringActive = active;
+	state.analogActive = active;
 
 	if (!active) {
 		x = GAMEPAD_JOYSTICK_MID;
@@ -119,6 +120,28 @@ static inline void applyRingToStick(GamepadState& state, float lx, float ly, boo
 	float cy = ly < -1.0f ? -1.0f : (ly > 1.0f ? 1.0f : ly);
 	x = (uint16_t)(mid + cx * half);
 	y = (uint16_t)(mid + cy * half);   // ring +Y is up; stick Y positive = up
+}
+
+// Present the (SOCD-cleaned) dpad per the configured DpadMode. In LEFT_STICK /
+// RIGHT_STICK mode the held directions drive the matching analog stick and the
+// dpad hat is consumed (stays neutral). Reuses applyRingToStick's scaling so
+// the output is byte-identical to the touch ring on every driver. DIGITAL mode
+// is a no-op. Call after runSOCDCleaner so U+D / L+R conflicts resolve first.
+static inline void applyDpadMode(GamepadState& state)
+{
+	DpadMode mode = Storage::getInstance().getDpadMode();
+	if (mode == DPAD_MODE_DIGITAL)
+		return;
+
+	float dx = 0.0f;
+	float dy = 0.0f;
+	if (state.dpad & GAMEPAD_MASK_UP)    dy += 1.0f;
+	if (state.dpad & GAMEPAD_MASK_DOWN)  dy -= 1.0f;
+	if (state.dpad & GAMEPAD_MASK_LEFT)  dx -= 1.0f;
+	if (state.dpad & GAMEPAD_MASK_RIGHT) dx += 1.0f;
+
+	applyRingToStick(state, dx, dy, true, mode == DPAD_MODE_RIGHT_STICK);
+	state.dpad = 0;
 }
 
 /**

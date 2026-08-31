@@ -1100,6 +1100,15 @@ html[data-theme="light"] .ms-caret {
   margin-left: auto;
 }
 
+/* D-Pad Mode row inside the gamepad settings. Own line above the SOCD row. */
+#dpad-mode-row {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
 /* Touch pad controls (Margin / Hysteresis). Full-width so they sit on their
    own row, below Debounce. Labels are inline-flex so the text and info icon
    are vertically centered together within the row. */

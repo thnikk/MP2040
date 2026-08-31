@@ -71,7 +71,7 @@ const GAMEPAD_MULTISELECT_GROUPS = [
 ];
 
 // Gamepad controls in bit order. Labels are swapped per input mode (XInput →
-// Xbox names, Switch Pro → Nintendo names) via ControllerWidget.LABELS.
+// Xbox names, Switch Pro → Nintendo names) via labelSet in gamepadlabels.js.
 const GAMEPAD_CONTROLS = [
   { label: 'Up', value: 0x0001 },
   { label: 'Down', value: 0x0002 },
@@ -109,32 +109,10 @@ function gamepadMultiOptions(labels, maskMap) {
 // Switch Pro controller (A right, B bottom, Y left, X top). The Nintendo-layout
 // toggle only swaps which stored position-bit each letter maps to (maskMap),
 // so clicking a letter always maps the pin to that Switch button. Glyphs are
-// the icon files the controller widget renders.
+// the icon files the controller widget renders. Shared with the board view
+// (see labelSet in gamepadlabels.js).
 function gamepadLabelSet(mode, nintendoLayout) {
-  if (mode === 3) {
-    return { labels: ControllerWidget.LABELS.xbox, glyphs: ControllerWidget.GLYPHS.xbox };
-  }
-  if (mode === 4) {
-    // The letters sit at real Switch Pro positions (B1 bottom, B2 right, B3
-    // left, B4 top). The toggle swaps which stored bit produces each letter:
-    // ON → bottom=B, right=A, left=Y, top=X; OFF → bottom=A, right=B, left=X,
-    // top=Y. maskMap gives each position the bit that sends its displayed
-    // letter under the current toggle.
-    const maskMap = nintendoLayout
-      ? { B1: 0x0010, B2: 0x0020, B3: 0x0040, B4: 0x0080 }
-      : { B1: 0x0020, B2: 0x0010, B3: 0x0080, B4: 0x0040 };
-    return {
-      labels: ControllerWidget.LABELS.switch,
-      glyphs: ControllerWidget.GLYPHS.switch,
-      maskMap,
-    };
-  }
-  if (mode === 5) {
-    // Xbox One shares the Xbox face-button layout; the capture button (A2)
-    // is the Share button. S1/S2 are View/Menu.
-    return { labels: ControllerWidget.LABELS.xbone, glyphs: ControllerWidget.GLYPHS.xbone };
-  }
-  return { labels: ControllerWidget.LABELS.gp2040, glyphs: ControllerWidget.GLYPHS.gp2040 };
+  return labelSet(mode, nintendoLayout);
 }
 
 // Re-label the gamepad pickers (multi-select + controller widget) for the
@@ -556,7 +534,12 @@ function comboPinLabel(options, index) {
   if (midiMode) {
     if (midiNote > 0) base = midiNoteName(midiNote);
   } else if (gamepadMode) {
-    if (gamepadMask > 0) base = gamepadMaskLabels(gamepadMask).join('+');
+    // Label the controls per the active layout (Xbox / Switch names, honoring
+    // the Nintendo-layout toggle), matching the board view and controller widget.
+    if (gamepadMask > 0) {
+      const set = labelSet(mode, options.gamepad?.useNintendoLayout === true);
+      base = controlsForMask(gamepadMask, set).map((c) => c.text).join('+');
+    }
   } else if (macroIndex > 0) {
     base = 'M' + macroIndex;
   } else {
@@ -627,6 +610,9 @@ function buildOptionsBody() {
     gamepad: {
       socdMode: document.getElementById('socd-mode')
         ? parseInt(document.getElementById('socd-mode').value, 10)
+        : 0,
+      dpadMode: document.getElementById('dpad-mode')
+        ? parseInt(document.getElementById('dpad-mode').value, 10)
         : 0,
       useNintendoLayout: document.getElementById('nintendo-layout')
         ? document.getElementById('nintendo-layout').checked
@@ -865,6 +851,14 @@ async function load() {
     socdEl.addEventListener('change', () => {
       if (!currentOptions.gamepad) currentOptions.gamepad = {};
       currentOptions.gamepad.socdMode = parseInt(socdEl.value, 10);
+    });
+  }
+  const dpadModeEl = document.getElementById('dpad-mode');
+  if (dpadModeEl) {
+    dpadModeEl.value = gamepad.dpadMode ?? 0;
+    dpadModeEl.addEventListener('change', () => {
+      if (!currentOptions.gamepad) currentOptions.gamepad = {};
+      currentOptions.gamepad.dpadMode = parseInt(dpadModeEl.value, 10);
     });
   }
   const nintendoEl = document.getElementById('nintendo-layout');
@@ -1583,6 +1577,7 @@ function exportSettings() {
     macros: currentOptions.macros || [],
     gamepad: {
       socdMode: currentOptions.gamepad?.socdMode ?? 0,
+      dpadMode: currentOptions.gamepad?.dpadMode ?? 0,
       useNintendoLayout: currentOptions.gamepad?.useNintendoLayout === true,
     },
     ring: {
@@ -1639,6 +1634,7 @@ async function importSettings(file) {
     activeProfile: Number.isInteger(data.activeProfile) ? data.activeProfile : 0,
     gamepad: {
       socdMode: Number.isInteger(data.gamepad?.socdMode) ? data.gamepad.socdMode : 0,
+      dpadMode: Number.isInteger(data.gamepad?.dpadMode) ? data.gamepad.dpadMode : 0,
       useNintendoLayout: data.gamepad?.useNintendoLayout === true,
     },
     ring: {

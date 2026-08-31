@@ -33,6 +33,19 @@ enum SOCDMode
     SOCD_MODE_BYPASS = 4;                   // U+D=UD, L+R=LR (no cleaning)
 }
 
+// How the gamepad d-pad directions are presented. DIGITAL (default) reports
+// them on the dpad hat. LEFT_STICK / RIGHT_STICK consume the directions into
+// the matching analog stick instead (the dpad hat then stays neutral). Values
+// match GP2040-th (DIGITAL / LEFT_ANALOG / RIGHT_ANALOG).
+enum DpadMode
+{
+    option (nanopb_enumopt).long_names = false;
+
+    DPAD_MODE_DIGITAL = 0;
+    DPAD_MODE_LEFT_STICK = 1;
+    DPAD_MODE_RIGHT_STICK = 2;
+}
+
 enum LEDFormat_Proto
 {
     option (nanopb_enumopt).long_names = false;

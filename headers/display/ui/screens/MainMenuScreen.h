@@ -36,6 +36,10 @@
 #define SOCD_MODE_FIRST_INPUT_PRIORITY_NAME "First Win"
 #define SOCD_MODE_BYPASS_NAME "Off"
 
+#define DPAD_MODE_DIGITAL_NAME "D-Pad"
+#define DPAD_MODE_LEFT_STICK_NAME "Left Stick"
+#define DPAD_MODE_RIGHT_STICK_NAME "Right Stick"
+
 #define ANIMATION_CUSTOM_NAME "Custom"
 #define ANIMATION_CYCLE_NAME "Cycle"
 #define ANIMATION_REACTIVE_NAME "Reactive"
@@ -70,6 +74,9 @@ class MainMenuScreen : public GPScreen {
 
 		void selectSOCDMode();
 		int32_t currentSOCDMode();
+
+		void selectDpadMode();
+		int32_t currentDpadMode();
 
 		void selectProfile();
 		int32_t currentProfile();
@@ -153,6 +160,7 @@ class MainMenuScreen : public GPScreen {
 
 		#define INPUT_MODE_ENTRIES(name, value) {name##_NAME, NULL, nullptr, std::bind(&MainMenuScreen::currentInputMode, this), std::bind(&MainMenuScreen::selectInputMode, this), value},
 		#define SOCD_MODE_ENTRIES(name, value)  {name##_NAME, NULL, nullptr, std::bind(&MainMenuScreen::currentSOCDMode, this), std::bind(&MainMenuScreen::selectSOCDMode, this), value},
+		#define DPAD_MODE_ENTRIES(name, value)  {name##_NAME, NULL, nullptr, std::bind(&MainMenuScreen::currentDpadMode, this), std::bind(&MainMenuScreen::selectDpadMode, this), value},
 
 		std::vector<MenuEntry> inputModeMenu = {
 			INPUT_MODE_ENTRIES(INPUT_MODE_KEYBOARD, INPUT_MODE_KEYBOARD)
@@ -173,6 +181,14 @@ class MainMenuScreen : public GPScreen {
 		};
 		SOCDMode prevSocdMode;
 		SOCDMode updateSocdMode;
+
+		std::vector<MenuEntry> dpadModeMenu = {
+			DPAD_MODE_ENTRIES(DPAD_MODE_DIGITAL, DPAD_MODE_DIGITAL)
+			DPAD_MODE_ENTRIES(DPAD_MODE_LEFT_STICK, DPAD_MODE_LEFT_STICK)
+			DPAD_MODE_ENTRIES(DPAD_MODE_RIGHT_STICK, DPAD_MODE_RIGHT_STICK)
+		};
+		DpadMode prevDpadMode;
+		DpadMode updateDpadMode;
 
 		std::vector<MenuEntry> profilesMenu = {};
 		uint8_t prevProfile;

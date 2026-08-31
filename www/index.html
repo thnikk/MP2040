@@ -178,6 +178,14 @@
             </div>
           </div>
           <div id="gamepad-settings" hidden>
+            <div id="dpad-mode-row">
+              <label for="dpad-mode">D-Pad Mode</label>
+              <select id="dpad-mode">
+                <option value="0">D-Pad</option>
+                <option value="1">Left Stick</option>
+                <option value="2">Right Stick</option>
+              </select>
+            </div>
             <div id="socd-row">
               <label for="socd-mode">SOCD Mode</label>
               <select id="socd-mode">
@@ -407,6 +415,7 @@
   <script src="/multiselect.js"></script>
   <script src="/spinner.js"></script>
   <script src="/kblayout.js"></script>
+  <script src="/gamepadlabels.js"></script>
   <script src="/keyboardwidget.js"></script>
   <script src="/controllerwidget.js"></script>
   <script src="/midikeyboard.js"></script>

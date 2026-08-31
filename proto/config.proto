@@ -234,6 +234,9 @@ message Config
     // Configurable boot keys (see BootKey): hold a key at power-on to boot
     // directly into an input mode. Global, up to 8, matched in order.
     repeated BootKey bootKeys = 21 [(nanopb).max_count = 8];
+    // D-pad presentation mode (see DpadMode in enums.proto): directions on the
+    // dpad hat, or consumed into the left/right analog stick. Global.
+    optional DpadMode dpadMode = 22;
 }
 
 // On-screen display configuration. See DisplayController for how it's used.

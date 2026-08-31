@@ -1,118 +1,12 @@
 // ControllerWidget — vanilla port of GP2040-th's gamepad picker
 // (www/src/components/widgets/ControllerWidget.tsx). Renders an SVG gamepad;
 // clicking a button or dpad direction toggles that control's bit in the pin's
-// gamepad mask. The mask layout matches GAMEPAD_PIN_MASK_* in gamepadhelper.h:
-// dpad in bits 0-3, buttons B1-A2 in bits 4-17.
-
-// Control id → label key and mask bit. The ids are the ones baked into
-// controller.svg; labelKey is the default (GP2040-style) control name, and
-// labels are swapped per input mode via CTRL_LABEL_SETS below.
-const CTRL_ELS = [
-  { id: 'btn-l2', labelKey: 'L2', mask: 0x0400 },
-  { id: 'btn-r2', labelKey: 'R2', mask: 0x0800 },
-  { id: 'btn-l1', labelKey: 'L1', mask: 0x0100 },
-  { id: 'btn-r1', labelKey: 'R1', mask: 0x0200 },
-  { id: 'btn-a1', labelKey: 'A1', mask: 0x10000 },
-  { id: 'btn-a2', labelKey: 'A2', mask: 0x20000 },
-  { id: 'btn-s1', labelKey: 'S1', mask: 0x1000 },
-  { id: 'btn-s2', labelKey: 'S2', mask: 0x2000 },
-  { id: 'btn-b4', labelKey: 'B4', mask: 0x0080 },
-  { id: 'btn-b3', labelKey: 'B3', mask: 0x0040 },
-  { id: 'btn-b2', labelKey: 'B2', mask: 0x0020 },
-  { id: 'btn-b1', labelKey: 'B1', mask: 0x0010 },
-  { id: 'btn-up', labelKey: 'Up', mask: 0x0001 },
-  { id: 'btn-down', labelKey: 'Down', mask: 0x0002 },
-  { id: 'btn-left', labelKey: 'Left', mask: 0x0004 },
-  { id: 'btn-right', labelKey: 'Right', mask: 0x0008 },
-  { id: 'btn-l3', labelKey: 'L3', mask: 0x4000 },
-  { id: 'btn-r3', labelKey: 'R3', mask: 0x8000 },
-];
-
-// Per-layout label sets. Keys are the GP2040 control names; anything not in a
-// set falls back to the key itself (the dpad directions, which are the same
-// everywhere). 'switch' labels a Nintendo-laid-out pad; when such a pad is
-// wired Xbox-layout the face buttons are swapped (done by the caller).
-const CTRL_LABEL_SETS = {
-  gp2040: {},
-  xbox: {
-    B1: 'A', B2: 'B', B3: 'X', B4: 'Y',
-    L1: 'LB', R1: 'RB', L2: 'LT', R2: 'RT',
-    S1: 'Back', S2: 'Start', L3: 'LS', R3: 'RS',
-    A1: 'Guide', A2: '-',
-  },
-  switch: {
-    B1: 'B', B2: 'A', B3: 'Y', B4: 'X',
-    L1: 'L', R1: 'R', L2: 'ZL', R2: 'ZR',
-    S1: 'Minus', S2: 'Plus', L3: 'LS', R3: 'RS',
-    A1: 'Home', A2: 'Capture',
-  },
-  xbone: {
-    B1: 'A', B2: 'B', B3: 'X', B4: 'Y',
-    L1: 'LB', R1: 'RB', L2: 'LT', R2: 'RT',
-    S1: 'View', S2: 'Menu', L3: 'LS', R3: 'RS',
-    A1: 'Guide', A2: 'Share',
-  },
-};
-
-// Per-layout glyph sets. Keys are the same label keys as the label sets; the
-// value is the id of an icon file in www/icons/gamepad/<id>.svg. Controls
-// without a glyph (or whose icon hasn't loaded) fall back to the text label.
-const CTRL_GLYPH_SETS = {
-  gp2040: {},
-  xbox: {
-    S1: 'xbox-back', S2: 'xbox-start', A1: 'xbox-guide', A2: 'xbox-share',
-    Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
-  },
-  switch: {
-    S1: 'switch-minus', S2: 'switch-plus', A1: 'switch-home', A2: 'switch-capture',
-    Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
-  },
-  xbone: {
-    S1: 'xbox-back', S2: 'xbox-start', A1: 'xbox-guide', A2: 'xbox-share',
-    Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
-  },
-};
+// gamepad mask. The control definitions, per-layout label/glyph sets, mode→set
+// lookup and glyph icon cache all live in gamepadlabels.js.
 
 // Stick wells are just visual (the L3/R3 sticks sit on top); they're not
 // clickable and get a recessed fill.
 const STICK_WELLS = ['circle5', 'circle6', 'circle13'];
-
-// Loaded glyphs, keyed by id: { viewBox: [x, y, w, h], nodes: [{ tag, attrs }] }.
-// A null entry means the icon is missing or still loading.
-const glyphCache = new Map();
-
-// Fetch and parse a glyph icon from /icons/gamepad/<id>.svg. Only the drawable
-// shapes are kept, and their fill/stroke are dropped so the glyph renders in
-// the theme's currentColor (same convention as the other /icons files).
-async function loadGlyph(id) {
-  try {
-    const res = await fetch(`/icons/gamepad/${id}.svg`);
-    const doc = new DOMParser().parseFromString(await res.text(), 'image/svg+xml');
-    const root = doc.documentElement;
-    if (!root || root.tagName.toLowerCase() !== 'svg') return null;
-    const viewBox = (root.getAttribute('viewBox') || '0 0 24 24').split(/\s+/).map(Number);
-    const nodes = [...root.querySelectorAll('path, circle, rect, ellipse, line, polygon, polyline')]
-      .map((n) => ({
-        tag: n.tagName,
-        attrs: [...n.attributes]
-          .filter((a) => a.name !== 'fill' && a.name !== 'stroke' && a.name !== 'style')
-          .map((a) => [a.name, a.value]),
-      }));
-    if (!nodes.length) return null;
-    return { viewBox, nodes };
-  } catch (e) {
-    return null;
-  }
-}
-
-// Ensure a glyph is loaded (cached); re-renders `widget` when it arrives.
-async function ensureGlyph(widget, id) {
-  if (glyphCache.has(id)) return;
-  glyphCache.set(id, null); // mark in-flight / missing
-  const glyph = await loadGlyph(id);
-  glyphCache.set(id, glyph);
-  if (widget) widget.render();
-}
 
 const CTRL_VIEWBOX_RE = /viewBox="([^"]+)"/;
 const SELECTED_STROKE = '#00ff00';
@@ -161,7 +55,7 @@ class ControllerWidget {
   // the modal opens (avoids a text→icon flash).
   preloadGlyphs() {
     for (const id of new Set(Object.values(this.glyphs))) {
-      if (!glyphCache.has(id)) ensureGlyph(this, id);
+      if (!glyphCache.has(id)) ensureGlyph(id, () => this.render());
     }
   }
 
@@ -240,11 +134,11 @@ class ControllerWidget {
       const cx = bbox.x + bbox.width / 2;
       const cy = bbox.y + bbox.height / 2;
       const glyphId = this.glyphs[def.labelKey];
-      const glyph = glyphId && glyphCache.get(glyphId);
+      const glyph = glyphId ? loadedGlyph(glyphId) : null;
       if (glyph) {
         this.appendGlyph(def.id, cx, cy, bbox, glyph);
       } else {
-        if (glyphId) ensureGlyph(this, glyphId);
+        if (glyphId) ensureGlyph(glyphId, () => this.render());
         const text = document.createElementNS(ns, 'text');
         text.setAttribute('x', String(cx));
         text.setAttribute('y', String(cy + 1));
@@ -315,9 +209,3 @@ class ControllerWidget {
     }
   }
 }
-
-// Per-layout label sets, shared with the gamepad multi-select in app.js.
-ControllerWidget.LABELS = CTRL_LABEL_SETS;
-// Per-layout glyph sets, used by the widget (and swapped by app.js for the
-// Nintendo-layout toggle).
-ControllerWidget.GLYPHS = CTRL_GLYPH_SETS;

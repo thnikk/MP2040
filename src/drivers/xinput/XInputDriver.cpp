@@ -125,6 +125,7 @@ void XInputDriver::process() {
     GamepadState gamepad;
     buildGamepadState(gamepad);
     gamepad.dpad = runSOCDCleaner(Storage::getInstance().getSocdMode(), gamepad.dpad);
+    applyDpadMode(gamepad);
 
     xinputReport.buttons1 = 0
         | ((gamepad.dpad & GAMEPAD_MASK_UP)    ? XBOX_MASK_UP    : 0)

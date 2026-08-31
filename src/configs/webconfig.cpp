@@ -325,6 +325,7 @@ std::string getOptions()
     doc["midi"]["channel"] = Storage::getInstance().getMidiChannel();
     doc["midi"]["velocity"] = Storage::getInstance().getMidiVelocity();
     doc["gamepad"]["socdMode"] = (uint8_t)Storage::getInstance().getSocdMode();
+    doc["gamepad"]["dpadMode"] = (uint8_t)Storage::getInstance().getDpadMode();
     doc["gamepad"]["useNintendoLayout"] = Storage::getInstance().getUseNintendoLayout();
     doc["ring"]["ringStickTarget"] = Storage::getInstance().getRingStickTarget();
     doc["ring"]["ringKeyboardMode"] = Storage::getInstance().getRingKeyboardMode();
@@ -489,6 +490,13 @@ std::string setOptions()
     {
         if (gamepad["socdMode"].is<int>())
             Storage::getInstance().setSocdMode((SOCDMode)gamepad["socdMode"].as<int>());
+        if (gamepad["dpadMode"].is<int>())
+        {
+            int dpadMode = gamepad["dpadMode"].as<int>();
+            if (dpadMode < 0) dpadMode = 0;
+            if (dpadMode > 2) dpadMode = 2;
+            Storage::getInstance().setDpadMode((DpadMode)dpadMode);
+        }
         if (gamepad["useNintendoLayout"].is<bool>())
             Storage::getInstance().setUseNintendoLayout(gamepad["useNintendoLayout"].as<bool>());
     }

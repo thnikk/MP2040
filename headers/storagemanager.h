@@ -127,6 +127,15 @@ public:
 		config.socdMode = mode;
 		config.has_socdMode = true;
 	}
+	// D-pad presentation mode; defaults to digital (d-pad hat) for configs
+	// without the field.
+	DpadMode getDpadMode() {
+		return config.has_dpadMode ? config.dpadMode : DPAD_MODE_DIGITAL;
+	}
+	void setDpadMode(DpadMode mode) {
+		config.dpadMode = mode;
+		config.has_dpadMode = true;
+	}
 	// Nintendo face-button layout on Switch Pro. Off (Xbox layout) by default.
 	bool getUseNintendoLayout() {
 		return config.has_useNintendoLayout ? config.useNintendoLayout : false;
