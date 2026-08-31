@@ -5,10 +5,11 @@
 // second key replaces the first).
 
 class MultiSelect {
-  constructor({ container, options, groups, onChange }) {
+  constructor({ container, options, groups, onChange, disabled = false }) {
     this.options = options;
     this.groups = groups;
     this.onChange = onChange || (() => {});
+    this.disabled = disabled;
     this.selected = [];
     this.query = '';
     this.open = false;
@@ -19,7 +20,7 @@ class MultiSelect {
 
   buildDom(container) {
     this.root = document.createElement('div');
-    this.root.className = 'ms';
+    this.root.className = 'ms' + (this.disabled ? ' disabled' : '');
 
     this.control = document.createElement('div');
     this.control.className = 'ms-control';
@@ -170,6 +171,7 @@ class MultiSelect {
   }
 
   toggleOption(value, group) {
+    if (this.disabled) return;
     const existing = this.selected.findIndex((o) => o.group === group && o.value === value);
     if (existing >= 0) {
       this.selected.splice(existing, 1);
@@ -177,9 +179,12 @@ class MultiSelect {
       const opt = this.options.find((o) => o.group === group && o.value === value);
       if (!opt) return;
       // A key and a macro are mutually exclusive single selects (modifiers
-      // stay additive): picking either clears the other.
-      if (group === 'keys' || group === 'macros') {
-        this.selected = this.selected.filter((o) => o.group !== 'keys' && o.group !== 'macros');
+      // stay additive): picking either clears the other. Groups marked
+      // `single` in the group list behave the same way within themselves.
+      const groupDef = this.groups.find((g) => g.id === group);
+      if (group === 'keys' || group === 'macros' || (groupDef && groupDef.single)) {
+        this.selected = this.selected.filter(
+          (o) => o.group !== 'keys' && o.group !== 'macros' && o.group !== group);
       }
       this.selected.push(opt);
     }
@@ -188,6 +193,20 @@ class MultiSelect {
   }
 
   // ---- Rendering --------------------------------------------------------
+
+  // Render an option's label into `el`: the pin label followed by the action
+  // in a small pill (when the option carries one), else the plain label text.
+  appendOptionLabel(el, opt) {
+    if (opt.action) {
+      el.appendChild(document.createTextNode(opt.pin));
+      const pill = document.createElement('span');
+      pill.className = 'ms-pill';
+      pill.textContent = opt.action;
+      el.appendChild(pill);
+    } else {
+      el.textContent = opt.label;
+    }
+  }
 
   render() {
     this.renderTags();
@@ -199,7 +218,7 @@ class MultiSelect {
     for (const opt of this.selected) {
       const tag = document.createElement('span');
       tag.className = 'ms-tag';
-      tag.textContent = opt.label;
+      this.appendOptionLabel(tag, opt);
 
       const x = document.createElement('button');
       x.className = 'ms-tag-x';
@@ -246,7 +265,7 @@ class MultiSelect {
         row.className = 'ms-option' + (this.isSelected(opt) ? ' selected' : '');
         row.dataset.value = opt.value;
         row.dataset.group = opt.group;
-        row.textContent = opt.label;
+        this.appendOptionLabel(row, opt);
         groupEl.appendChild(row);
         this.visibleRows.push({ el: row, value: opt.value, group: opt.group });
       }
@@ -265,10 +284,12 @@ class MultiSelect {
   // ---- Open / close -----------------------------------------------------
 
   toggleOpen() {
+    if (this.disabled) return;
     this.open ? this.close() : this.openMenu();
   }
 
   openMenu() {
+    if (this.disabled) return;
     this.open = true;
     this.root.classList.add('open');
     this.query = '';
@@ -287,6 +308,7 @@ class MultiSelect {
   // ---- Keyboard ---------------------------------------------------------
 
   onControlKey(e) {
+    if (this.disabled) return;
     if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       this.openMenu();

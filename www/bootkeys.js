@@ -1,8 +1,9 @@
 // BootKeysPanel — configurable boot keys editor for the Settings page.
 //
 // Each boot key maps a key (pin / linear index) held at power-on to an input
-// mode to boot into. Rows list the configured keys: a key dropdown, a mode
-// dropdown, and a remove button. Rows with no key (pin -1) are ignored by
+// mode to boot into. Rows list the configured keys: a pin MultiSelect (single
+// pick, so the action pill renders like the hotkey picker), a mode dropdown,
+// and a remove button. Rows with no key (empty selection) are ignored by
 // getValue(). The selected mode also becomes the persisted default (matches
 // GP2040-th).
 //
@@ -22,23 +23,13 @@ const BOOT_MODES = [
 
 const BK_MAX_BOOT_KEYS = 8;
 
-function fillSelect(select, options, value) {
-  select.innerHTML = '';
-  for (const opt of options) {
-    const o = document.createElement('option');
-    o.value = opt.value;
-    o.textContent = opt.label;
-    select.appendChild(o);
-  }
-  select.value = String(value);
-}
+const BK_GROUP = { id: 'bootkey', label: 'Boot Key', single: true };
 
 class BootKeysPanel {
-  constructor({ container, bootKeys, keyOptions, modes, fixedKeys, pinLabel, onChange }) {
+  constructor({ container, bootKeys, keyOptions, modes, fixedKeys, onChange }) {
     this.keyOptions = keyOptions || [];
     this.modes = modes || BOOT_MODES;
     this.onChange = onChange || (() => {});
-    this.pinLabel = pinLabel || ((pin) => 'Pin ' + pin);
     this.rows = [];
     this.fixedKeys = [];
     this.buildDom(container);
@@ -71,8 +62,8 @@ class BootKeysPanel {
   }
 
   // Renders the board-fixed pins as disabled versions of the editable rows (pin
-  // select + mode select + remove button), greyed out to show they can't be
-  // changed. The mode select carries the fixed key's label ("Web Config" /
+  // multi-select + mode select + remove button), greyed out to show they can't
+  // be changed. The mode select carries the fixed key's label ("Web Config" /
   // "USB Bootloader"). Rows without a defined pin are not shown at all.
   setFixedKeys(fixedKeys) {
     this.fixedKeys = fixedKeys || [];
@@ -85,13 +76,13 @@ class BootKeysPanel {
 
       const keysWrap = document.createElement('div');
       keysWrap.className = 'hotkey-keys';
-      const pinSelect = document.createElement('select');
-      pinSelect.className = 'hotkey-action';
-      pinSelect.disabled = true;
-      const pinOpt = document.createElement('option');
-      pinOpt.textContent = this.pinLabel(Number(fk.pin));
-      pinSelect.appendChild(pinOpt);
-      keysWrap.appendChild(pinSelect);
+      const pinSelect = new MultiSelect({
+        container: keysWrap,
+        groups: [BK_GROUP],
+        options: this.keyOptions,
+        disabled: true,
+      });
+      pinSelect.setGroupValues('bootkey', [Number(fk.pin)]);
 
       const modeWrap = document.createElement('div');
       modeWrap.className = 'hotkey-action-wrap';
@@ -127,7 +118,7 @@ class BootKeysPanel {
 
   setKeyOptions(options) {
     this.keyOptions = options;
-    for (const row of this.rows) fillSelect(row.pinSelect, options, row.pinSelect.value);
+    for (const row of this.rows) row.select.setOptions(options);
     // Fixed row labels can change with the input mode too.
     this.setFixedKeys(this.fixedKeys);
   }
@@ -136,7 +127,8 @@ class BootKeysPanel {
   getValue() {
     const out = [];
     for (const row of this.rows) {
-      const pin = Number(row.pinSelect.value);
+      const pins = row.select.getGroupValues('bootkey');
+      const pin = pins.length ? Number(pins[0]) : -1;
       if (pin < 0) continue;
       out.push({ pin, mode: Number(row.modeSelect.value) });
     }
@@ -155,11 +147,13 @@ class BootKeysPanel {
 
     const pinWrap = document.createElement('div');
     pinWrap.className = 'hotkey-keys';
-    row.pinSelect = document.createElement('select');
-    row.pinSelect.className = 'hotkey-action';
-    fillSelect(row.pinSelect, this.keyOptions, value ? value.pin : -1);
-    row.pinSelect.addEventListener('change', () => this.notify());
-    pinWrap.appendChild(row.pinSelect);
+    row.select = new MultiSelect({
+      container: pinWrap,
+      groups: [BK_GROUP],
+      options: this.keyOptions,
+      onChange: () => this.notify(),
+    });
+    if (value && value.pin >= 0) row.select.setGroupValues('bootkey', [value.pin]);
 
     const modeWrap = document.createElement('div');
     modeWrap.className = 'hotkey-action-wrap';

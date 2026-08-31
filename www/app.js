@@ -525,10 +525,12 @@ let displaySplashDurationSpinner = null;
 let displaySaverTimeoutSpinner = null;
 let displayHistoryTimeoutSpinner = null;
 
-// Human label for a menu-combo option, mirroring the board view: the pin's
-// mapping in the current input mode (key assignment, macro, MIDI note or
-// gamepad controls) when set, otherwise the bare pin index.
-function comboPinLabel(options, index) {
+// Per-pin mapping for a menu-combo / boot-key option, mirroring the board
+// view: the pin's action in the current input mode (key assignment, macro,
+// MIDI note or gamepad controls) when set, otherwise no action. Returns the
+// pin label and the action separately so the UI can render the action in a
+// pill next to the pin.
+function pinAction(options, index) {
   const mode = Number(options.defaultInputMode || 1);
   const midiMode = mode === 2;
   const gamepadMode = mode === 3 || mode === 4 || mode === 5;
@@ -536,18 +538,18 @@ function comboPinLabel(options, index) {
   const midiNote = Number(options.midiNotes?.[index] || 0);
   const gamepadMask = Number(options.gamepadMasks?.[index] || 0);
 
-  let base = '';
+  let action = '';
   if (midiMode) {
-    if (midiNote > 0) base = midiNoteName(midiNote);
+    if (midiNote > 0) action = midiNoteName(midiNote);
   } else if (gamepadMode) {
     // Label the controls per the active layout (Xbox / Switch names, honoring
     // the Nintendo-layout toggle), matching the board view and controller widget.
     if (gamepadMask > 0) {
       const set = labelSet(mode, options.gamepad?.useNintendoLayout === true);
-      base = controlsForMask(gamepadMask, set).map((c) => c.text).join('+');
+      action = controlsForMask(gamepadMask, set).map((c) => c.text).join('+');
     }
   } else if (macroIndex > 0) {
-    base = 'M' + macroIndex;
+    action = 'M' + macroIndex;
   } else {
     const mods = [];
     const mask = Number(options.modifierMasks?.[index] || 0);
@@ -556,33 +558,30 @@ function comboPinLabel(options, index) {
     }
     const code = Number(options.keycodes?.[index] || 0);
     const key = code ? keyLabel(code) : '';
-    base = mods.length ? mods.join('+') + '+' + key : key;
+    action = mods.length ? mods.join('+') + '+' + key : key;
   }
-  return base ? `${base} (Pin ${index})` : `Pin ${index}`;
+  return { pin: `Pin ${index}`, action };
 }
 
-// Options for the menu-combo / hotkey multi-selects: one entry per key,
-// labeled with the pin's mapping in the current input mode. group is the
-// MultiSelect group id to attach them to.
+// Plain-text label for a pin ("Pin 5" or "Pin 5 (A)"), used for search / a11y
+// text and any place that can't render the action pill.
+function comboPinLabel(options, index) {
+  const { pin, action } = pinAction(options, index);
+  return action ? `${pin} (${action})` : pin;
+}
+
+// Options for the menu-combo / hotkey / boot-key multi-selects: one entry per
+// key, labeled with the pin's mapping in the current input mode. group is the
+// MultiSelect group id to attach them to. Each option carries the pin label
+// and action separately so the widget can render the action in a pill.
 function buildComboOptions(group = 'combo') {
   const count = (currentOptions.keycodes || []).length;
   return Array.from({ length: count }, (_, i) => ({
     group,
-    label: comboPinLabel(currentOptions, i),
     value: i,
+    ...pinAction(currentOptions, i),
+    label: comboPinLabel(currentOptions, i),
   }));
-}
-
-// Options for the boot-key dropdowns: "None" (disabled) plus one entry per key,
-// labeled with the pin's mapping in the current input mode.
-function buildBootPinOptions() {
-  const count = (currentOptions.keycodes || []).length;
-  return [{ value: -1, label: 'None' }].concat(
-    Array.from({ length: count }, (_, i) => ({
-      value: i,
-      label: comboPinLabel(currentOptions, i),
-    }))
-  );
 }
 
 // Gather the current controls into a full config payload for /api/setOptions.
@@ -844,7 +843,7 @@ async function load() {
     syncGamepadLabels();
     if (boardView) boardView.refresh();
     if (hotkeysPanel) hotkeysPanel.setKeyOptions(buildComboOptions('hotkey'));
-    if (bootKeysPanel) bootKeysPanel.setKeyOptions(buildBootPinOptions());
+    if (bootKeysPanel) bootKeysPanel.setKeyOptions(buildComboOptions('bootkey'));
   });
 
   // Gamepad settings (XInput / Switch Pro modes)
@@ -1076,14 +1075,13 @@ async function load() {
     bootKeysPanel = new BootKeysPanel({
       container: bootKeysPanelEl,
       bootKeys: Array.isArray(options.bootKeys) ? options.bootKeys : [],
-      keyOptions: buildBootPinOptions(),
+      keyOptions: buildComboOptions('bootkey'),
       // Board-fixed boot pins shown for reference (greyed out, not editable);
       // rows with an undefined pin are hidden.
       fixedKeys: [
         { label: 'Web Config', pin: options.webConfigPin ?? -1 },
         { label: 'USB Bootloader', pin: options.bootPin ?? -1 },
       ],
-      pinLabel: (pin) => (pin < 0 ? '' : comboPinLabel(currentOptions, pin)),
       onChange: (bootKeys) => { currentOptions.bootKeys = bootKeys; },
     });
   }
