@@ -100,6 +100,7 @@ class ControllerWidget {
       el.style.setProperty('stroke-width', '2', 'important');
       const isBtn = this.isBtnId(el.id);
       if (isBtn) {
+        el.classList.add('cgp-btn');
         el.style.setProperty('cursor', 'pointer', 'important');
         el.style.setProperty('pointer-events', 'all', 'important');
         el.style.fill = 'var(--bg-3)';

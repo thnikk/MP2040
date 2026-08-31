@@ -1941,6 +1941,12 @@ button:disabled {
   height: auto;
 }
 
+/* Button controls brighten on hover. The base fill is an inline style, so the
+   hover rule needs !important to override it. */
+.controller-widget .cgp-btn:hover {
+  fill: var(--bg-4) !important;
+}
+
 .controller-widget .cgp-label {
   font-size: 12px;
   font-weight: 700;
