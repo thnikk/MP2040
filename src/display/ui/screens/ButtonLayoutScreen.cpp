@@ -212,7 +212,6 @@ void ButtonLayoutScreen::init() {
 	inputHistoryLength = 21;
 	inputHistoryTimeout = getDisplayOptions().inputHistoryTimeout;
 	lastInputTime = getMillis();
-	bannerDelayStart = getMillis();
 	inputMode = DriverManager::getInstance().getInputMode();
 
 	footer = "";
@@ -233,10 +232,6 @@ void ButtonLayoutScreen::init() {
 		pushElement(*it);
 	}
 
-	// start with profile mode displayed
-	bannerDisplay = true;
-	prevProfileNumber = -1;
-
 	prevLayout = getDisplayOptions().has_buttonLayout ? getDisplayOptions().buttonLayout : BUTTON_LAYOUT_BOARD_DEFINED;
 	prevOrientation = getDisplayOptions().orientation;
 
@@ -249,7 +244,7 @@ void ButtonLayoutScreen::init() {
 	showInputMode = true;
 	showSocdMode = true;
 	showMacroMode = true;
-	showProfileMode = false;
+	showProfileMode = true;
 
 	getRenderer()->clearScreen();
 }
@@ -259,8 +254,6 @@ void ButtonLayoutScreen::shutdown() {
 }
 
 int8_t ButtonLayoutScreen::update() {
-	uint8_t profileNumber = Storage::getInstance().getActiveProfile();
-
 	// reload if the layout changed in config mode
 	bool configMode = Storage::getInstance().GetConfigMode();
 	if (configMode) {
@@ -271,13 +264,6 @@ int8_t ButtonLayoutScreen::update() {
 			shutdown();
 			init();
 		}
-	}
-
-	// profile change banner
-	if (prevProfileNumber != profileNumber) {
-		bannerDelayStart = getMillis();
-		prevProfileNumber = profileNumber;
-		bannerDisplay = true;
 	}
 
 	generateHeader();
@@ -291,21 +277,6 @@ void ButtonLayoutScreen::generateHeader() {
 	// Limit to 21 chars with 6x8 font for now
 	statusBar.clear();
 	statusBarRight.clear();
-
-	// Display Profile # banner
-	if (bannerDisplay) {
-		if (((getMillis() - bannerDelayStart) / 1000) < bannerDelay) {
-			if (bannerMessage.empty()) {
-				statusBar = "PROFILE " + std::to_string(Storage::getInstance().getActiveProfile() + 1);
-			} else {
-				statusBar = bannerMessage;
-			}
-			return;
-		} else {
-			bannerDisplay = false;
-			bannerMessage.clear();
-		}
-	}
 
 	if (showInputMode) {
 		switch (inputMode) {
@@ -352,15 +323,10 @@ void ButtonLayoutScreen::generateHeader() {
 }
 
 void ButtonLayoutScreen::drawScreen() {
-	if (bannerDisplay) {
-		getRenderer()->drawRectangle(0, 0, 128, 7, false, true);
-		getRenderer()->drawText(0, 0, statusBar, false);
-	} else {
-		uint8_t rightX = 21 - statusBarRight.length();
-		getRenderer()->drawText(0, 0, statusBar);
-		if (!statusBarRight.empty())
-			getRenderer()->drawText(rightX, 0, statusBarRight);
-	}
+	uint8_t rightX = 21 - statusBarRight.length();
+	getRenderer()->drawText(0, 0, statusBar);
+	if (!statusBarRight.empty())
+		getRenderer()->drawText(rightX, 0, statusBarRight);
 	if (isInputHistoryEnabled)
 		getRenderer()->drawText(0, 7, footer);
 }
