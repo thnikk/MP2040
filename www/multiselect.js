@@ -220,18 +220,23 @@ class MultiSelect {
       tag.className = 'ms-tag';
       this.appendOptionLabel(tag, opt);
 
-      const x = document.createElement('button');
-      x.className = 'ms-tag-x';
-      x.type = 'button';
-      x.textContent = '\u00d7';
-      x.setAttribute('aria-label', `Remove ${opt.label}`);
-      x.addEventListener('mousedown', (e) => e.preventDefault());
-      x.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleOption(opt.value, opt.group);
-      });
+      // Single-select groups render a bare tag: the × is pointless since a
+      // second pick replaces the selection anyway.
+      const single = this.groups.some((g) => g.id === opt.group && g.single);
+      if (!single) {
+        const x = document.createElement('button');
+        x.className = 'ms-tag-x';
+        x.type = 'button';
+        x.textContent = '\u00d7';
+        x.setAttribute('aria-label', `Remove ${opt.label}`);
+        x.addEventListener('mousedown', (e) => e.preventDefault());
+        x.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleOption(opt.value, opt.group);
+        });
 
-      tag.appendChild(x);
+        tag.appendChild(x);
+      }
       this.tagsWrap.appendChild(tag);
     }
     if (this.selected.length === 0) {
