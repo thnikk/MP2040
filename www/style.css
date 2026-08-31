@@ -237,8 +237,10 @@ html[data-theme="light"] .logo-link:hover {
 
 .theme-toggle {
   display: flex;
-  border: 1px solid var(--bg-4);
-	background: var(--bg-3);
+  border: none;
+	background: var(--bg-1);
+	gap: 2px;
+	padding: 2px;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -251,11 +253,11 @@ html[data-theme="light"] .logo-link:hover {
   cursor: pointer;
   font-size: 15px;
   transition: background 0.15s;
-	border-radius: 0px;
+	border-radius: 999px;
 }
 
 .theme-btn.active {
-  background: var(--toggle-active-bg);
+  background: var(--bg-3);
 }
 
 main {
