@@ -189,11 +189,11 @@
             <div id="socd-row">
               <label for="socd-mode">SOCD Mode</label>
               <select id="socd-mode">
-                <option value="0">Up Priority (U+D=Up)</option>
-                <option value="1">Neutral (U+D=Neutral)</option>
+                <option value="0">Up Priority</option>
+                <option value="1">Neutral</option>
                 <option value="2">Last Input Priority</option>
                 <option value="3">First Input Priority</option>
-                <option value="4">Bypass (no cleaning)</option>
+                <option value="4">Bypass</option>
               </select>
               <button id="nintendo-layout-wrap" type="button" class="pill-toggle">
                 Nintendo face-button layout
@@ -216,7 +216,7 @@
             </div>
           </div>
           <button id="serial-config" type="button" class="pill-toggle">
-            Serial control (CDC)
+            Serial Control
             <span class="icon icon-info field-info" data-tooltip='Adds a USB serial port for live commands (switch profiles, LEDs). Sends newline-delimited JSON, use {"cmd":"help"} to list commands. Not compatible with XInput.'></span>
           </button>
         </div>
@@ -276,13 +276,13 @@
 
       <section>
         <h2><span class="heading-icon icon icon-fire" aria-hidden="true"></span>Hotkeys</h2>
-        <p class="hint">Hold the selected keys together to trigger an action. First matching hotkey wins.</p>
+        <p class="hint">Hold the selected keys together to trigger an action.</p>
         <div id="hotkeys-panel"></div>
       </section>
 
       <section>
         <h2><span class="heading-icon icon icon-reboot" aria-hidden="true"></span>Boot Keys</h2>
-        <p class="hint">Hold a key while powering on to boot directly into an input mode. Applies on the next power-on.</p>
+        <p class="hint">Hold a key while powering on to boot directly into an input mode.</p>
         <div id="boot-keys-panel"></div>
       </section>
 
