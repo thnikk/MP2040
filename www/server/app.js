@@ -60,15 +60,46 @@ function keyCount() {
   return Math.max(board?.keyCount ?? 0, 1);
 }
 
-// Mock favicon: the same logo.svg as the real board but in a dev color (Nord
-// 15) so a mock/dev browser tab is clearly distinguishable from the firmware's
-// red (Nord 11) icon. Inlined as a data URI so no extra request / file is
-// needed, and the shared index.html (and firmware) keeps the original color.
+// Mock favicon: the same mp2040.svg as the real board but in a dev color
+// (Nord 15) so a mock/dev browser tab is clearly distinguishable from the
+// firmware's red (Nord 11) icon. Inlined as a data URI so no extra request /
+// file is needed, and the shared index.html (and firmware) keeps the original
+// color.
 const MOCK_FAVICON_COLOR = '#B48EAD';
 const mockFaviconSvg = readFileSync(
-  path.join(rootDir, 'www', 'icons', 'logo.svg'), 'utf8'
-).replace('#bf616a', MOCK_FAVICON_COLOR);
+  path.join(rootDir, 'www', 'icons', 'mp2040.svg'), 'utf8'
+).replaceAll('#bf616a', MOCK_FAVICON_COLOR);
 const mockFaviconHref = `data:image/svg+xml;base64,${Buffer.from(mockFaviconSvg).toString('base64')}`;
+
+// Dev-only HTML customizations (mock server): the Development section (board
+// switcher) and the dev-colored favicon. Applied by the vite.config.js
+// transformIndexHtml plugin so the page still goes through Vite's transform
+// (which injects the HMR client), instead of the old approach of serving
+// index.html raw from the Express mock. Never ships in the firmware: the
+// firmware's index.html is embedded by makefsdata.py, which excludes the Vite
+// tooling.
+const devSection = `
+      <section id="mock-board-section">
+        <h2><span class="heading-icon icon icon-code" aria-hidden="true"></span>Development</h2>
+        <div class="general-form">
+          <label for="mock-board">Board</label>
+          <span class="icon icon-info field-info" data-tooltip='Switch which board config the mock API serves. Only available in dev mode.'></span>
+          <select id="mock-board"></select>
+        </div>
+      </section>
+`;
+
+export function transformDevHtml(html) {
+  return html
+    .replace(
+      '<div id="page-settings" class="page" hidden>',
+      '<div id="page-settings" class="page" hidden>\n' + devSection
+    )
+    .replace(
+      '<link rel="icon" type="image/svg+xml" href="/icons/mp2040.svg">',
+      `<link rel="icon" type="image/svg+xml" href="${mockFaviconHref}">`
+    );
+}
 
 // Build a profile object. `src` provides the starting arrays/scalars (e.g. the
 // base options) so alternates default to a copy of the base.
@@ -412,36 +443,6 @@ export function createMockApp() {
     } else {
       res.status(404).send('not found');
     }
-  });
-
-  // The web UI is one HTML file routed client-side (/, /layout, /settings);
-  // mirror the firmware's route mapping so those paths work in dev too. The
-  // mock-only Development section (board switcher) is injected here so it never
-  // ships in the firmware's embedded index.html.
-  const devSection = `
-      <section id="mock-board-section">
-        <h2><span class="heading-icon icon icon-code" aria-hidden="true"></span>Development</h2>
-        <div class="general-form">
-          <label for="mock-board">Board</label>
-          <span class="icon icon-info field-info" data-tooltip='Switch which board config the mock API serves. Only available in dev mode.'></span>
-          <select id="mock-board"></select>
-        </div>
-      </section>
-`;
-  app.get(['/', '/layout', '/settings'], (req, res) => {
-    let html = readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-    // Mock-only Development section (board switcher): injected here so it never
-    // ships in the firmware's embedded index.html.
-    html = html.replace(
-      '<div id="page-settings" class="page" hidden>',
-      '<div id="page-settings" class="page" hidden>\n' + devSection
-    );
-    // Dev-colored favicon (data URI) instead of the firmware's red logo.svg.
-    html = html.replace(
-      '<link rel="icon" type="image/svg+xml" href="/icons/logo.svg">',
-      `<link rel="icon" type="image/svg+xml" href="${mockFaviconHref}">`
-    );
-    res.type('html').send(html);
   });
 
   return app;

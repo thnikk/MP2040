@@ -8,8 +8,34 @@
 //
 // Board selection for the mock: VITE_MP2040_BOARD or MP2040_BOARDCONFIG.
 
+import { readFileSync } from 'fs';
+import path from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
-import { createMockApp } from './server/app.js';
+import { createMockApp, transformDevHtml } from './server/app.js';
+
+// The configurator loads its JS via classic <script src> tags (each file
+// defines globals the next one uses), which Vite serves as plain files. Those
+// aren't in Vite's module graph, so edits never trigger a reload. Watch the
+// exact scripts referenced from index.html and send a full-reload ourselves;
+// CSS files are left alone (Vite hot-swaps those in place).
+function classicScriptReload() {
+  const htmlPath = path.join(process.cwd(), 'index.html');
+  const scripts = new Set(
+    [...readFileSync(htmlPath, 'utf8').matchAll(/<script\s+src="([^"]+)"/g)]
+      .map((m) => m[1])
+      .filter((src) => !src.startsWith('/@vite'))
+  );
+  return {
+    name: 'classic-script-reload',
+    configureServer(server) {
+      server.watcher.on('change', (file) => {
+        if (!file.endsWith('.js')) return;
+        const url = '/' + path.relative(server.config.root, file);
+        if (scripts.has(url)) server.ws.send({ type: 'full-reload', path: url });
+      });
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -33,17 +59,30 @@ export default defineConfig(({ mode }) => {
           }
         : {}),
     },
-    plugins: proxyToBoard
-      ? []
-      : [
-          {
-            name: 'mock-api',
-            configureServer(server) {
-              // Mount the Express mock at the root; it only handles /api and
-              // /board.svg and lets everything else fall through to Vite.
-              server.middlewares.use(createMockApp());
+    plugins: [
+      classicScriptReload(),
+      ...(proxyToBoard
+        ? []
+        : [
+            {
+              name: 'mock-api',
+              configureServer(server) {
+                // Mount the Express mock at the root; it only handles /api and
+                // /board.svg and lets everything else fall through to Vite.
+                server.middlewares.use(createMockApp());
+              },
             },
-          },
-        ],
+            {
+              // Mock-only HTML customizations (Development section + dev-colored
+              // favicon). Applied as a Vite transform so index.html still goes
+              // through Vite's pipeline (which injects the HMR client), giving
+              // live CSS updates in the browser while editing.
+              name: 'mock-dev-html',
+              transformIndexHtml(html) {
+                return transformDevHtml(html);
+              },
+            },
+          ]),
+    ],
   };
 });
