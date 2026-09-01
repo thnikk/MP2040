@@ -1284,6 +1284,70 @@ html[data-theme="light"] .ms-caret {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* The MIDI tab fills the modal's constant-height region so the piano can use
+   the leftover space: the group is full height, the inner container grows,
+   and the piano (flex:1) takes everything below the controls + status rows. */
+#key-modal-group-midi {
+  height: 100%;
+}
+
+#key-modal-group-midi > #key-modal-midi {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The gamepad tab also fills the constant-height region: the controller
+   widget expands to fill the space below the control multi-select. */
+#key-modal-group-gamepad {
+  height: 100%;
+}
+
+#key-modal-gamepad-widget {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The keyboard tab fills the constant-height region too: the widget grows and
+   the main keyboard's rows share the extra height (keys get taller). Scoped
+   to the key modal so the macro builder's picker is unaffected. */
+#key-modal-group-keyboard {
+  height: 100%;
+}
+
+#key-modal-group-keyboard > #key-modal-keyboard {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#key-modal-keyboard .keyboard-widget {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+#key-modal-keyboard .kb-main-centered {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+#key-modal-keyboard .kb-main-centered .keyboard-row {
+  height: auto;
+  flex: 1 1 0;
+  min-height: 40px;
+}
+
+#key-modal-keyboard .kb-main-centered .kb-key,
+#key-modal-keyboard .kb-main-centered .kb-flex-spacer {
+  height: 100%;
 }
 
 .midi-kb-controls {
@@ -1372,10 +1436,14 @@ html[data-theme="light"] .ms-caret {
   color: var(--nord11);
 }
 
-/* Piano */
+/* Piano: stretches across the modal width and fills the remaining height
+   below the controls + status rows. */
 .midi-kb-piano {
   position: relative;
-  height: 172px;
+  width: 100%;
+  height: auto;
+  flex: 1 1 0;
+  min-height: 0;
   overflow: hidden; /* keys always fill the width; never scroll */
   border: 1px solid var(--card-border);
   border-radius: 8px;
@@ -1397,12 +1465,12 @@ html[data-theme="light"] .ms-caret {
   /* Reset the generic pill-button padding/radius/font so keys can shrink
      to fit any number of octaves instead of being forced to a minimum
      ~50px width by that rule's 24px horizontal padding. */
-  padding: 0 0 4px;
+  padding: 6px 0 6px;
   border: 1px solid var(--nord3);
   border-radius: 4px;
   background: var(--nord4);
   color: var(--nord0);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   display: flex;
   flex-direction: column;
@@ -2133,18 +2201,23 @@ button:disabled {
 }
 
 /* Controller widget (port of GP2040-th's ControllerWidget): the clickable
-   SVG gamepad in the key modal's gamepad mode. */
+   SVG gamepad in the key modal's gamepad mode. Fills the modal region's
+   remaining height below the control multi-select. */
 .controller-widget {
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
   user-select: none;
 }
 
 .controller-widget .cgp-svg {
+  flex: 1 1 0;
+  min-height: 0;
   width: 100%;
-  max-width: 600px;
-  height: auto;
+  max-width: none;
 }
 
 /* Button controls brighten on hover. The base fill is an inline style, so the

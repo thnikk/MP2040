@@ -1,30 +1,22 @@
-// MidiKeyboard — visual piano picker for MIDI notes. Renders a window of
-// octaves around the selected octave; every key is clickable. Mirrors
-// KeyboardWidget's API (setValue / getValue / onChange).
+// MidiKeyboard — visual piano picker for MIDI notes. Renders the selected
+// octave (C..B) with large keys on a narrow piano that fits the modal well;
+// every key is clickable. Mirrors KeyboardWidget's API (setValue / getValue /
+// onChange).
 
 const MK_NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-// Full octave range shown (C-1..B8 = notes 0..119), so the piano always
-// renders complete C..B rows. The top five notes of the MIDI range (C9..G9)
-// are skipped.
+// Full octave range the spinner can select (C-1..B8 = notes 0..119). The top
+// five notes of the MIDI range (C9..G9) are skipped.
 const MIDI_OCTAVE_MIN = -1;
 const MIDI_OCTAVE_MAX = 8;
 
-const MIDI_WHITE_PC = [0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
-// Black keys: pitch class + the white-key index each one follows (C# after C,
-// D# after D, F# after F, G# after G, A# after A).
-const MIDI_BLACK = [
-  { pc: 1, after: 0 },
-  { pc: 3, after: 1 },
-  { pc: 6, after: 3 },
-  { pc: 8, after: 4 },
-  { pc: 10, after: 5 },
-];
+// Black-key pitch classes (not laid out as white keys).
+const BLACK_PC = new Set([1, 3, 6, 8, 10]);
 
-// Number of octaves shown (window centered on the selected octave). White keys
-// are laid out with flex so they always fill the piano width — no measurement
-// needed, no scrolling. Black keys are a narrow fraction of a white key.
-const MK_OCTAVE_WINDOW = 3;
+// White-key pitch classes that have a black key following them (C D F G A).
+const BLACK_AFTER = new Set([0, 2, 5, 7, 9]);
+
+// Black keys are a narrow fraction of a white key.
 const MK_BLACK_RATIO = 0.5;
 
 function mkNoteName(note) {
@@ -165,19 +157,19 @@ class MidiKeyboard {
   }
 
   render() {
-    const n = MK_OCTAVE_WINDOW;
-    let start = this.octave - Math.floor((n - 1) / 2);
-    let end = start + n - 1;
-    if (start < -1) { start = -1; end = start + n - 1; }
-    if (end > 8) { end = 8; start = end - n + 1; }
-    if (start < -1) start = -1;
-
-    const octaves = [];
-    for (let o = start; o <= end; o++) octaves.push(o);
+    // A single octave: C..B of the selected octave. Bigger keys than the
+    // wider two-octave window, and the piano is narrower overall.
+    const base = (this.octave + 1) * 12; // C of the selected octave
+    const endNote = base + 11;           // B of the selected octave
 
     // White keys share the width equally; black keys are a fraction of one.
-    const totalKeys = octaves.length * 7;
-    const keyPct = 100 / totalKeys;
+    const pc = (note) => ((note % 12) + 12) % 12;
+    const whites = [];
+    for (let note = base; note <= endNote; note++) {
+      if (BLACK_PC.has(pc(note))) continue;
+      whites.push(note);
+    }
+    const keyPct = 100 / whites.length;
     const blackPct = keyPct * MK_BLACK_RATIO;
     const blackHalf = blackPct / 2;
 
@@ -185,25 +177,23 @@ class MidiKeyboard {
     this.blacks.innerHTML = '';
     this.labels.innerHTML = '';
 
-    octaves.forEach((oo, oi) => {
-      const base = (oo + 1) * 12;
-
-      MIDI_WHITE_PC.forEach((pc, wi) => {
-        const gi = oi * 7 + wi;
-        this.whites.appendChild(this.makeKey(base + pc, false, gi * keyPct, keyPct));
-      });
-      MIDI_BLACK.forEach(({ pc, after }) => {
-        const gi = oi * 7 + after;
-        this.blacks.appendChild(this.makeKey(base + pc, true, (gi + 1) * keyPct - blackHalf, blackPct));
-      });
-
-      const label = document.createElement('div');
-      label.className = 'midi-kb-octave' + (oo === this.octave ? ' current' : '');
-      label.textContent = `Octave ${oo}`;
-      label.style.left = `${oi * 7 * keyPct}%`;
-      label.style.width = `${7 * keyPct}%`;
-      this.labels.appendChild(label);
+    whites.forEach((note, gi) => {
+      this.whites.appendChild(this.makeKey(note, false, gi * keyPct, keyPct));
+      // A black key sits on the boundary after a C, D, F, G or A white key.
+      if (gi + 1 < whites.length && BLACK_AFTER.has(pc(note))) {
+        this.blacks.appendChild(
+          this.makeKey(note + 1, true, (gi + 1) * keyPct - blackHalf, blackPct));
+      }
     });
+
+    // Single centered label for the selected octave; the per-key note names
+    // already identify the surrounding notes.
+    const label = document.createElement('div');
+    label.className = 'midi-kb-octave current';
+    label.textContent = `Octave ${this.octave}`;
+    label.style.left = '0';
+    label.style.width = '100%';
+    this.labels.appendChild(label);
 
     this.statusLabel.textContent = this.value > 0 ? `Selected: ${mkNoteName(this.value)}` : 'Selected: None';
   }
