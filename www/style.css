@@ -1272,7 +1272,9 @@ html[data-theme="light"] .ms-caret {
 /* MIDI keyboard picker in the key modal */
 #key-modal-midi[hidden],
 #key-modal-select[hidden],
-#key-modal-keyboard[hidden] {
+#key-modal-keyboard[hidden],
+#key-modal-gamepad-select[hidden],
+#key-modal-gamepad-widget[hidden] {
   display: none;
 }
 
@@ -1280,7 +1282,6 @@ html[data-theme="light"] .ms-caret {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-top: 16px;
 }
 
 .midi-kb-controls {
@@ -1295,8 +1296,6 @@ html[data-theme="light"] .ms-caret {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  font-size: 0.9rem;
-  color: var(--muted);
 }
 
 /* Spinner (numerical stepper): - [input] + */
@@ -1350,8 +1349,6 @@ html[data-theme="light"] .ms-caret {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.9rem;
-  color: var(--muted);
 }
 
 .midi-kb-selected {
@@ -1413,6 +1410,11 @@ html[data-theme="light"] .ms-caret {
   overflow: hidden;
 }
 
+.midi-key-white:hover {
+	background: var(--nord4);
+	opacity: 0.8;
+}
+
 /* Black keys: absolutely positioned (in %) over the white-key row. */
 .midi-kb-blacks {
   position: absolute;
@@ -1465,7 +1467,7 @@ html[data-theme="light"] .ms-caret {
   top: 0;
   height: 16px;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 1rem;
   color: var(--muted);
 }
 
@@ -1482,7 +1484,7 @@ html[data-theme="light"] .ms-caret {
 
 .midi-key-note {
   opacity: 0.7;
-  font-size: 0.65rem;
+  font-size: 1rem;
 }
 
 /* Color picker pill buttons */
@@ -2076,7 +2078,6 @@ button:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 16px;
   user-select: none;
 }
 

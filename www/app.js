@@ -1125,7 +1125,7 @@ async function load() {
     gamepadLabelSet(currentOptions.defaultInputMode ?? 1, currentOptions.gamepad?.useNintendoLayout === true);
 
   gamepadSelect = new MultiSelect({
-    container: document.getElementById('key-modal-gamepad'),
+    container: document.getElementById('key-modal-gamepad-select'),
     options: gamepadMultiOptions(gamepadLabels, gamepadMaskMap),
     groups: GAMEPAD_MULTISELECT_GROUPS,
     onChange: () => {
@@ -1133,16 +1133,10 @@ async function load() {
     },
   });
 
-  // The controller widget's container is created and appended after the
-  // multi-select above, so the select renders on top and the widget below it.
-  const gamepadWidgetContainer = document.createElement('div');
-  gamepadWidgetContainer.id = 'key-modal-gamepad-widget';
-  document.getElementById('key-modal-gamepad').appendChild(gamepadWidgetContainer);
-
   // The controller widget is the visual twin of the multi-select above; each
   // reflects the other (their set* methods don't fire onChange, so no loop).
   gamepadWidget = new ControllerWidget({
-    container: gamepadWidgetContainer,
+    container: document.getElementById('key-modal-gamepad-widget'),
     mask: 0,
     labels: gamepadLabels,
     glyphs: gamepadGlyphs,
@@ -1192,7 +1186,8 @@ function updateModalMode() {
   document.getElementById('key-modal-select').hidden = !keyboardMode;
   document.getElementById('key-modal-keyboard').hidden = !keyboardMode;
   document.getElementById('key-modal-midi').hidden = !midiMode;
-  document.getElementById('key-modal-gamepad').hidden = !gamepadMode;
+  document.getElementById('key-modal-gamepad-select').hidden = !gamepadMode;
+  document.getElementById('key-modal-gamepad-widget').hidden = !gamepadMode;
   document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('gamepad-settings').hidden = !gamepadMode;
   // The Nintendo layout toggle only applies to Switch Pro.
