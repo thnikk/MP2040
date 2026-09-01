@@ -349,6 +349,74 @@ function updateProfileTabs() {
   });
 }
 
+// List the other profiles in the "Copy from" select, excluding the one being
+// edited (copying into itself is a no-op). The disabled placeholder is what
+// the select shows between copies.
+function refreshCopyProfileSelect() {
+  const el = document.getElementById('copy-profile-src');
+  if (!el) return;
+  el.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Copy from…';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  el.appendChild(placeholder);
+  for (let i = 0; i < PROFILE_COUNT; i++) {
+    if (i === currentProfileIndex) continue;
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `Profile ${i + 1}`;
+    el.appendChild(opt);
+  }
+}
+
+// Whether the current profile has edits that haven't been saved yet, compared
+// against its profile slot (the last state synced to it). Field-by-field so
+// array length differences between the options and profile shapes don't count.
+function profileEdited() {
+  if (!currentOptions) return false;
+  const a = cloneProfile(currentOptions);
+  const b = profiles[currentProfileIndex] || cloneProfile();
+  const len = Math.max(
+    a.keycodes.length, b.keycodes.length,
+    a.modifierMasks.length, b.modifierMasks.length,
+    a.midiNotes.length, b.midiNotes.length,
+    a.midiVelocities.length, b.midiVelocities.length,
+    a.led.ledNormalColors.length, b.led.ledNormalColors.length,
+    a.led.ledPressedColors.length, b.led.ledPressedColors.length,
+  );
+  const pad = (arr) => {
+    const out = new Array(len).fill(0);
+    for (let i = 0; i < arr.length; i++) out[i] = arr[i] || 0;
+    return out;
+  };
+  const same = (x, y) => JSON.stringify(pad(x)) === JSON.stringify(pad(y));
+  return !(
+    same(a.keycodes, b.keycodes) &&
+    same(a.modifierMasks, b.modifierMasks) &&
+    same(a.midiNotes, b.midiNotes) &&
+    same(a.midiVelocities, b.midiVelocities) &&
+    a.midi.channel === b.midi.channel &&
+    a.midi.velocity === b.midi.velocity &&
+    a.led.ledMode === b.led.ledMode &&
+    same(a.led.ledNormalColors, b.led.ledNormalColors) &&
+    same(a.led.ledPressedColors, b.led.ledPressedColors)
+  );
+}
+
+// Seed the current profile with another profile's mappings and per-key colors.
+function copyProfileFrom(src) {
+  src = Number(src);
+  if (src === currentProfileIndex) return;
+  if (profileEdited() &&
+      !confirm('This profile has unsaved changes. Copying will replace them. Continue?')) return;
+  profiles[currentProfileIndex] = cloneProfile(profiles[src]);
+  loadProfileIntoUi();
+  updateProfileTabs();
+  refreshCopyProfileSelect();
+}
+
 function buildProfileTabs() {
   const tabs = document.getElementById('profile-tabs');
   if (!tabs) return;
@@ -362,6 +430,7 @@ function buildProfileTabs() {
     tabs.appendChild(btn);
   }
   updateProfileTabs();
+  refreshCopyProfileSelect();
 }
 
 function switchProfile(i) {
@@ -370,6 +439,7 @@ function switchProfile(i) {
   currentProfileIndex = i;
   loadProfileIntoUi();
   updateProfileTabs();
+  refreshCopyProfileSelect();
 }
 
 function loadProfileIntoUi() {
@@ -1412,8 +1482,6 @@ function positionLedColorPopover() {
 
 function openKeyModal(pin) {
   editingPin = pin;
-  document.getElementById('key-modal-title').textContent =
-    `GP${pin.toString().padStart(2, '0')}`;
   const keycode = Number(currentOptions.keycodes[pin] || 0);
   const mask = Number(currentOptions.modifierMasks[pin] || 0);
   const macroIndex = Number(currentOptions.macroIndices?.[pin] || 0);
@@ -1734,8 +1802,16 @@ document.getElementById('set-boot-profile').addEventListener('click', () => {
   activeProfile = currentProfileIndex;
   updateProfileTabs();
 });
+// The header select is an action menu: picking a source profile copies it into
+// the current one, then the select snaps back to its placeholder.
+document.getElementById('copy-profile-src').addEventListener('change', (e) => {
+  const src = e.target.value;
+  if (src === '') return;
+  copyProfileFrom(Number(src));
+  e.target.value = '';
+});
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
-document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
+document.getElementById('key-modal-cancel').addEventListener('click', closeKeyModal);
 document.querySelectorAll('#key-modal-tabs .modal-tab').forEach((btn) => {
   btn.addEventListener('click', () => setModalTab(Number(btn.dataset.mode)));
 });

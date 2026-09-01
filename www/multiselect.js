@@ -15,6 +15,9 @@ class MultiSelect {
     this.open = false;
     this.visibleRows = [];
     this.highlight = -1;
+    // Pure single-select widgets (every group marked `single`) get no clear
+    // button: a second pick replaces the selection anyway.
+    this.singleMode = this.groups.every((g) => g.single);
     this.buildDom(container);
   }
 
@@ -33,12 +36,28 @@ class MultiSelect {
     this.placeholder.textContent = 'Select…';
     this.tagsWrap.appendChild(this.placeholder);
 
+    this.clearBtn = document.createElement('button');
+    this.clearBtn.type = 'button';
+    this.clearBtn.className = 'ms-clear';
+    this.clearBtn.setAttribute('aria-label', 'Clear selection');
+    this.clearBtn.title = 'Clear';
+    this.clearBtn.addEventListener('mousedown', (e) => e.preventDefault());
+    this.clearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.clear();
+    });
+
     this.caret = document.createElement('span');
     this.caret.className = 'ms-caret';
     this.caret.textContent = '\u25be';
 
+    this.actions = document.createElement('div');
+    this.actions.className = 'ms-actions';
+    this.actions.appendChild(this.clearBtn);
+    this.actions.appendChild(this.caret);
+
     this.control.appendChild(this.tagsWrap);
-    this.control.appendChild(this.caret);
+    this.control.appendChild(this.actions);
 
     this.menu = document.createElement('div');
     this.menu.className = 'ms-menu';
@@ -192,6 +211,15 @@ class MultiSelect {
     this.onChange();
   }
 
+  // Clear the whole selection. Fires onChange (same as removing each tag), so
+  // paired widgets and panels stay in sync.
+  clear() {
+    if (this.disabled || this.selected.length === 0) return;
+    this.selected = [];
+    this.render();
+    this.onChange();
+  }
+
   // ---- Rendering --------------------------------------------------------
 
   // Render an option's label into `el`: the pin label followed by the action
@@ -211,6 +239,13 @@ class MultiSelect {
   render() {
     this.renderTags();
     this.renderList();
+    this.renderClear();
+  }
+
+  renderClear() {
+    if (!this.clearBtn) return;
+    this.clearBtn.style.display =
+      this.selected.length > 0 && !this.singleMode && !this.disabled ? 'flex' : 'none';
   }
 
   renderTags() {

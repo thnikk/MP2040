@@ -450,13 +450,34 @@ section h2 {
   flex: none;
 }
 
-/* Action button in a card header, aligned to the right */
-.section-header-btn {
+/* Header action buttons, pushed to the right edge of the section heading. */
+.section-header-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-header-btn {
   padding: 4px 16px;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* The "Copy from…" select shares the button look (the chevron comes from the
+   global select rule), sized so its label clears the chevron. */
+.section-header-actions select.section-header-btn {
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border-color: var(--btn-border);
+  padding: 4px 2rem 4px 16px;
+  cursor: pointer;
+}
+
+.section-header-actions select.section-header-btn:hover {
+  border-color: var(--btn-hover-border);
 }
 
 .hint {
@@ -798,6 +819,44 @@ html[data-theme="light"] select {
   color: var(--nord6);
 }
 
+/* Whole-selection clear in the control bar (hidden until something is
+   selected). Uses the trash icon, sized for its standalone spot next to the
+   caret. */
+.ms-clear {
+  position: relative;
+  flex: 0 0 auto;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0;
+  display: none;
+}
+
+.ms-clear::before {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  background-color: currentColor;
+  -webkit-mask-image: url("/icons/trash.svg");
+  mask-image: url("/icons/trash.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.ms-clear:hover {
+  background: var(--nord11);
+  color: var(--nord6);
+}
+
 /* Fixed rows are non-interactive: keep the × bg clear even on hover. */
 .ms.disabled .ms-tag-x:hover {
   background: transparent;
@@ -807,6 +866,14 @@ html[data-theme="light"] select {
   color: var(--muted);
   font-size: 1rem;
   margin: 0px 10px;
+}
+
+/* Right-side controls (clear + caret) spaced with a flex gap. */
+.ms-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
 }
 
 .ms-caret {
@@ -1988,6 +2055,12 @@ button:disabled {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* The key modal's footer splits its actions: Cancel (left) and Save (right).
+   Other modals keep the single right-aligned action. */
+#key-modal .modal-actions {
+  justify-content: space-between;
 }
 
 /* Select form layout inside a modal (e.g. the touch ring modal). Each control
