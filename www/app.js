@@ -1182,12 +1182,6 @@ function updateModalMode() {
   const mode = Number(currentOptions.defaultInputMode || 1);
   const midiMode = mode === 2;
   const gamepadMode = mode === 3 || mode === 4 || mode === 5;
-  const keyboardMode = !midiMode && !gamepadMode;
-  document.getElementById('key-modal-select').hidden = !keyboardMode;
-  document.getElementById('key-modal-keyboard').hidden = !keyboardMode;
-  document.getElementById('key-modal-midi').hidden = !midiMode;
-  document.getElementById('key-modal-gamepad-select').hidden = !gamepadMode;
-  document.getElementById('key-modal-gamepad-widget').hidden = !gamepadMode;
   document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('gamepad-settings').hidden = !gamepadMode;
   // The Nintendo layout toggle only applies to Switch Pro.
@@ -1197,6 +1191,30 @@ function updateModalMode() {
     : gamepadMode
       ? 'Click a button on the board to set its gamepad button or direction.'
       : 'Click a button on the board to set its key and modifiers.';
+}
+
+// Show the picker group for a modal tab (Keyboard / MIDI / Gamepad). Tabs are
+// modal-local: they pick which per-pin mapping is edited without changing the
+// board's active input mode. Defaults to the active input mode on open.
+function setModalTab(mode) {
+  const m = Number(mode || 1);
+  const gamepadMode = m === 3 || m === 4 || m === 5;
+  const midiMode = m === 2;
+  const keyboardMode = !midiMode && !gamepadMode;
+  document.getElementById('key-modal-group-keyboard').hidden = !keyboardMode;
+  document.getElementById('key-modal-group-midi').hidden = !midiMode;
+  document.getElementById('key-modal-group-gamepad').hidden = !gamepadMode;
+  // Tabs map the three picker groups; the active tab gets the highlight.
+  const tab = gamepadMode ? 3 : (midiMode ? 2 : 1);
+  document.querySelectorAll('#key-modal-tabs .modal-tab').forEach((btn) => {
+    btn.classList.toggle('active', Number(btn.dataset.mode) === tab);
+  });
+  // Widgets skip rendering while hidden (labels need layout), so re-fit the
+  // one revealed by this tab on the next frame.
+  if (midiMode) midiKeyboard.refresh();
+  if (gamepadMode && gamepadWidget) {
+    requestAnimationFrame(() => gamepadWidget.setMask(gamepadWidget.getMask()));
+  }
 }
 
 function initBoard(options) {
@@ -1408,7 +1426,7 @@ function openKeyModal(pin) {
   gamepadSelect.setGroupMask('gamepad', gamepadMask);
   if (gamepadWidget) gamepadWidget.setMask(gamepadMask);
   closeLedColorPopover();
-  updateModalMode();
+  setModalTab(currentOptions.defaultInputMode ?? 1);
   document.getElementById('key-modal').hidden = false;
   // The widgets may have been built while the modal was hidden, so re-fit them
   // now that it has a real width: the MIDI octave window, and the gamepad
@@ -1428,10 +1446,10 @@ function closeKeyModal() {
 function saveKeyModal() {
   if (editingPin < 0) return;
 
-  // Gamepad mapping is separate from the keyboard / MIDI mapping (each lives
-  // in its own per-pin array, and they coexist the way a pin can hold both a
-  // key and a MIDI note). Which picker saves what is decided by the active
-  // mode; neither branch clears the other's data.
+  // Keyboard, MIDI and gamepad mappings are independent per-pin arrays that
+  // coexist (a pin can hold a key, a MIDI note and a gamepad mask at once).
+  // The modal's tabs let the user edit any of them; persist each from its
+  // picker so edits stick regardless of which tab is active on Save.
   const perKey = (key) => {
     if (!currentOptions[key]) currentOptions[key] = new Array(128).fill(0);
     return currentOptions[key];
@@ -1443,24 +1461,18 @@ function saveKeyModal() {
   currentOptions.midiVelocities = perKey('midiVelocities');
   currentOptions.gamepadMasks = perKey('gamepadMasks');
 
-  const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
-
-  if (gamepadMode) {
-    // A pin maps to zero or more gamepad controls, packed into one mask.
-    currentOptions.gamepadMasks[editingPin] = gamepadWidget
-      ? gamepadWidget.getMask()
-      : gamepadSelect.getGroupMask('gamepad');
-  } else {
-    const { keycode, mask, macroIndex } = keyboardWidget.getValue();
-    // A pin is either a plain key or a macro trigger, never both.
-    currentOptions.keycodes[editingPin] = macroIndex ? 0 : keycode;
-    currentOptions.modifierMasks[editingPin] = macroIndex ? 0 : mask;
-    if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
-    currentOptions.macroIndices[editingPin] = macroIndex;
-    currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
-    currentOptions.midiVelocities[editingPin] = midiKeyboard.getVelocity();
-  }
+  const { keycode, mask, macroIndex } = keyboardWidget.getValue();
+  // A pin is either a plain key or a macro trigger, never both.
+  currentOptions.keycodes[editingPin] = macroIndex ? 0 : keycode;
+  currentOptions.modifierMasks[editingPin] = macroIndex ? 0 : mask;
+  if (!currentOptions.macroIndices) currentOptions.macroIndices = new Array(128).fill(0);
+  currentOptions.macroIndices[editingPin] = macroIndex;
+  currentOptions.midiNotes[editingPin] = midiKeyboard.getValue();
+  currentOptions.midiVelocities[editingPin] = midiKeyboard.getVelocity();
+  // A pin maps to zero or more gamepad controls, packed into one mask.
+  currentOptions.gamepadMasks[editingPin] = gamepadWidget
+    ? gamepadWidget.getMask()
+    : gamepadSelect.getGroupMask('gamepad');
 
   if (boardView) boardView.setOptions(currentOptions);
   closeKeyModal();
@@ -1724,6 +1736,9 @@ document.getElementById('set-boot-profile').addEventListener('click', () => {
 });
 document.getElementById('key-modal-save').addEventListener('click', saveKeyModal);
 document.getElementById('key-modal-close').addEventListener('click', closeKeyModal);
+document.querySelectorAll('#key-modal-tabs .modal-tab').forEach((btn) => {
+  btn.addEventListener('click', () => setModalTab(Number(btn.dataset.mode)));
+});
 document.getElementById('ring-modal-save').addEventListener('click', saveRingModal);
 document.getElementById('ring-modal-close').addEventListener('click', closeRingModal);
 

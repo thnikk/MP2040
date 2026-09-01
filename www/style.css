@@ -118,7 +118,7 @@ html[data-theme="light"] .logo-link:hover {
   mask-size: contain;
 }
 
-.icon-layout { -webkit-mask-image: url("/icons/layout.svg"); mask-image: url("/icons/layout.svg"); }
+.icon-keyboard { -webkit-mask-image: url("/icons/keyboard.svg"); mask-image: url("/icons/keyboard.svg"); }
 .icon-layer-group { -webkit-mask-image: url("/icons/layer-group.svg"); mask-image: url("/icons/layer-group.svg"); }
 .icon-fire { -webkit-mask-image: url("/icons/fire.svg"); mask-image: url("/icons/fire.svg"); }
 .icon-microchip { -webkit-mask-image: url("/icons/microchip.svg"); mask-image: url("/icons/microchip.svg"); }
@@ -140,6 +140,8 @@ html[data-theme="light"] .logo-link:hover {
 .icon-floppy-disk { -webkit-mask-image: url("/icons/floppy-disk.svg"); mask-image: url("/icons/floppy-disk.svg"); }
 .icon-github { -webkit-mask-image: url("/icons/github.svg"); mask-image: url("/icons/github.svg"); }
 .icon-info { -webkit-mask-image: url("/icons/info.svg"); mask-image: url("/icons/info.svg"); }
+.icon-gamepad { -webkit-mask-image: url("/icons/gamepad.svg"); mask-image: url("/icons/gamepad.svg"); }
+.icon-music { -webkit-mask-image: url("/icons/music.svg"); mask-image: url("/icons/music.svg"); }
 
 /* Brand logo: .logo defines the colors (the SVG's alpha channel painted in
    the theme's foreground color); sizing lives in .nav-logo / .hero-logo. */
@@ -1269,12 +1271,12 @@ html[data-theme="light"] .ms-caret {
   display: none;
 }
 
-/* MIDI keyboard picker in the key modal */
-#key-modal-midi[hidden],
-#key-modal-select[hidden],
-#key-modal-keyboard[hidden],
-#key-modal-gamepad-select[hidden],
-#key-modal-gamepad-widget[hidden] {
+/* Key modal picker groups: the active tab's group is shown. The groups are
+   display:flex (see .key-modal-group below), which would override the hidden
+   attribute, so keep an explicit display:none override. */
+#key-modal-group-keyboard[hidden],
+#key-modal-group-midi[hidden],
+#key-modal-group-gamepad[hidden] {
   display: none;
 }
 
@@ -1854,6 +1856,64 @@ button:disabled {
 .modal h3 {
   margin: 0 0 0.25rem;
   color: var(--accent);
+}
+
+/* Key modal mode tabs (Keyboard / MIDI / Gamepad). Same visual language as
+   the profile tabs: a pill bar with the active tab filled. */
+.modal-tabs {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-1);
+  padding: 5px;
+  border-radius: 999px;
+}
+
+.modal-tab {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  background: var(--bg-2);
+  border: none;
+}
+
+.modal-tab .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.modal-tab.active {
+  background: var(--bg-4);
+}
+
+/* Constant-height content region for the key modal: sized to fit the tallest
+   picker group (keyboard) so switching tabs never resizes the modal. Shrinks
+   and scrolls when the modal's 90vh cap leaves less room. */
+#key-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+/* Vertically center the active picker group (shorter modes like MIDI get
+   centered instead of leaving a gap). Auto margins degrade to 0 when the
+   content is taller than the region, so it scrolls from the top. */
+#key-modal-content > .key-modal-group:not([hidden]) {
+  margin: auto 0;
+}
+
+.key-modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
 }
 
 .modal-actions {

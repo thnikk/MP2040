@@ -29,7 +29,7 @@
         <span class="mp2040-logo nav-logo" role="img" aria-label="MP2040"></span>
       </a>
       <nav class="nav-links">
-        <a class="nav-link" href="/layout" data-route="/layout"><span class="icon icon-layout" aria-hidden="true"></span>Layout</a>
+        <a class="nav-link" href="/layout" data-route="/layout"><span class="icon icon-keyboard" aria-hidden="true"></span>Layout</a>
         <a class="nav-link" href="/settings" data-route="/settings"><span class="icon icon-auto" aria-hidden="true"></span>Settings</a>
       </nav>
       <button id="reboot" class="nav-reboot" title="Reboot">
@@ -60,7 +60,7 @@
 
       <div class="landing-cards">
         <a class="landing-card" href="/layout" data-route="/layout">
-          <span class="landing-card-icon icon icon-layout" aria-hidden="true"></span>
+          <span class="landing-card-icon icon icon-keyboard" aria-hidden="true"></span>
           <div>
             <h3>Layout</h3>
             <p>Change mappings and LEDs</p>
@@ -137,7 +137,7 @@
       </section>
 
       <section>
-        <h2><span class="heading-icon icon icon-layout" aria-hidden="true"></span>Board</h2>
+        <h2><span class="heading-icon icon icon-keyboard" aria-hidden="true"></span>Board</h2>
         <p class="hint" id="board-hint">Click a button on the board to set its key and modifiers.</p>
         <div id="board-panel"></div>
       </section>
@@ -346,11 +346,24 @@
         <h3 id="key-modal-title">GP00</h3>
         <button id="key-modal-close" class="modal-close" type="button" aria-label="Close">×</button>
       </div>
-      <div id="key-modal-select"></div>
-      <div id="key-modal-keyboard"></div>
-      <div id="key-modal-midi"></div>
-      <div id="key-modal-gamepad-select"></div>
-      <div id="key-modal-gamepad-widget"></div>
+      <div class="modal-tabs" id="key-modal-tabs">
+        <button type="button" class="modal-tab" data-mode="1"><span class="icon icon-keyboard" aria-hidden="true"></span>Keyboard</button>
+        <button type="button" class="modal-tab" data-mode="2"><span class="icon icon-music" aria-hidden="true"></span>MIDI</button>
+        <button type="button" class="modal-tab" data-mode="3"><span class="icon icon-gamepad" aria-hidden="true"></span>Gamepad</button>
+      </div>
+      <div id="key-modal-content">
+        <div class="key-modal-group" id="key-modal-group-keyboard">
+          <div id="key-modal-select"></div>
+          <div id="key-modal-keyboard"></div>
+        </div>
+        <div class="key-modal-group" id="key-modal-group-midi">
+          <div id="key-modal-midi"></div>
+        </div>
+        <div class="key-modal-group" id="key-modal-group-gamepad">
+          <div id="key-modal-gamepad-select"></div>
+          <div id="key-modal-gamepad-widget"></div>
+        </div>
+      </div>
       <div class="modal-actions">
         <button id="key-modal-save" type="button">Save</button>
       </div>
