@@ -136,6 +136,8 @@ html[data-theme="light"] .logo-link:hover {
 .icon-docs { -webkit-mask-image: url("/icons/docs.svg"); mask-image: url("/icons/docs.svg"); }
 .icon-etsy { -webkit-mask-image: url("/icons/etsy.svg"); mask-image: url("/icons/etsy.svg"); }
 .icon-trash { -webkit-mask-image: url("/icons/trash.svg"); mask-image: url("/icons/trash.svg"); }
+.icon-circle-plus { -webkit-mask-image: url("/icons/circle-plus.svg"); mask-image: url("/icons/circle-plus.svg"); }
+.icon-floppy-disk { -webkit-mask-image: url("/icons/floppy-disk.svg"); mask-image: url("/icons/floppy-disk.svg"); }
 .icon-github { -webkit-mask-image: url("/icons/github.svg"); mask-image: url("/icons/github.svg"); }
 .icon-info { -webkit-mask-image: url("/icons/info.svg"); mask-image: url("/icons/info.svg"); }
 
@@ -1093,6 +1095,20 @@ html[data-theme="light"] .ms-caret {
   flex: 0 0 200px;
 }
 
+/* "Add Hotkey" / "Add Boot Key" buttons (direct children of the panel):
+   icon aligned inline before the label. */
+.hotkeys-panel > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.hotkeys-panel > button .icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* Match the multi-select pill (`.ms-control` is min-height 43px): same
    border-box height, with the text vertically centered in the remaining
    space (padding keeps the chevron area on the right). */
@@ -1727,6 +1743,19 @@ html[data-theme="light"] .ms-caret {
   gap: 12px;
 }
 
+/* Save buttons (Layout + Settings pages): icon aligned inline before label. */
+.actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.actions button .icon {
+  width: 16px;
+  height: 16px;
+}
+
 button {
   background: var(--btn-bg);
   color: var(--btn-text);
@@ -2114,11 +2143,20 @@ button:disabled {
 
 .macro-add-btn,
 .macro-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   border: 1px solid var(--card-border);
   border-radius: 999px;
   padding: 4px 14px;
   font-size: 1rem;
   cursor: pointer;
+}
+
+.macro-add-btn .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .macro-add-btn:hover {

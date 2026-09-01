@@ -54,7 +54,8 @@ class BootKeysPanel {
 
     this.addBtn = document.createElement('button');
     this.addBtn.type = 'button';
-    this.addBtn.textContent = 'Add Boot Key';
+    this.addBtn.appendChild(iconSpan('circle-plus'));
+    this.addBtn.appendChild(document.createTextNode('Add Boot Key'));
     this.addBtn.addEventListener('click', () => this.addRow());
     this.root.appendChild(this.addBtn);
 

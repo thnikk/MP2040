@@ -196,6 +196,16 @@ let ledPopoverNormalInput = null;
 let ledPopoverPressedInput = null;
 let ledPopoverUnsetBtn = null;
 
+// Icon span (see the icon conventions in AGENTS.md): paints an icon from
+// www/icons/ via mask-image in the current text color. Needs an explicit
+// width/height from a per-context CSS rule to be visible.
+function iconSpan(name) {
+  const span = document.createElement('span');
+  span.className = 'icon icon-' + name;
+  span.setAttribute('aria-hidden', 'true');
+  return span;
+}
+
 // Color picker pill button: a pill with a colored dot inside, with a hidden
 // native <input type="color"> overlaid so clicking opens the OS picker
 // (port of GP2040-th's LedColorPopover .led-color-btn).

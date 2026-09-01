@@ -63,7 +63,8 @@ class HotkeysPanel {
 
     this.addBtn = document.createElement('button');
     this.addBtn.type = 'button';
-    this.addBtn.textContent = 'Add Hotkey';
+    this.addBtn.appendChild(iconSpan('circle-plus'));
+    this.addBtn.appendChild(document.createTextNode('Add Hotkey'));
     this.addBtn.addEventListener('click', () => this.addRow());
     this.root.appendChild(this.addBtn);
 

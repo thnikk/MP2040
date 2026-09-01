@@ -226,7 +226,8 @@ class MacroBuilder {
     const add = document.createElement('button');
     add.type = 'button';
     add.className = 'macro-add-btn';
-    add.textContent = 'Add keys…';
+    add.appendChild(iconSpan('circle-plus'));
+    add.appendChild(document.createTextNode('Add keys…'));
     add.addEventListener('click', () => this.openKeyboardModal());
     headerBtns.appendChild(add);
     if (steps.length > 0) {
