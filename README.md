@@ -80,6 +80,7 @@ How the board reads the keys:
 - **Direct GPIO**: Each key is wired directly to a GPIO pin
 - **Matrix**: Keys are wired to grids of rows and columns
 - **Capacitive Touch**: Each key is a capacitive touch pad
+- **Touch Ring**: 4 pad touch ring
 
 ## Development
 
@@ -91,7 +92,7 @@ python3 docker-build.py -b 2k
 
 Output: `build/MP2040_<version>_<sha>_<Board>.uf2`. `docker-build.py` flags:
 `-b <Board>`, `-c` clean, `-v` verbose, `-f` flash to board, `-n` nuke first,
-`-p <path>` flash mount.
+`-p <path>` flash mount, `-w` auto-boot to web config after flashing.
 
 Run the web config mock server:
 
