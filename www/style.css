@@ -458,25 +458,28 @@ section h2 {
   gap: 8px;
 }
 
-.section-header-btn {
+/* Small variant of the default button: less padding for tight spots like
+   section headers. The button keeps its stock `button` base + hover rules. */
+.btn-small {
   padding: 4px 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 999px;
   white-space: nowrap;
 }
 
-/* The "Copy from…" select shares the button look (the chevron comes from the
-   global select rule), sized so its label clears the chevron. */
-.section-header-actions select.section-header-btn {
+/* A select styled as a small button (e.g. the "Copy from…" header control).
+   background-color (not the shorthand) so the chevron background-image from
+   the global select rule survives base and hover. */
+select.btn-small {
   background-color: var(--btn-bg);
   color: var(--btn-text);
   border-color: var(--btn-border);
   padding: 4px 2rem 4px 16px;
   cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-.section-header-actions select.section-header-btn:hover {
+select.btn-small:hover {
+  background-color: var(--bg-4);
   border-color: var(--btn-hover-border);
 }
 
