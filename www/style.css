@@ -116,31 +116,34 @@ html[data-theme="light"] .logo-link:hover {
   mask-repeat: no-repeat;
   -webkit-mask-size: contain;
   mask-size: contain;
+  /* Default 1:1; the glyph's real ratio lives on each .icon-<name> rule so an
+     icon sized by height alone fills the full row height. */
+  aspect-ratio: 1 / 1;
 }
 
-.icon-keyboard { -webkit-mask-image: url("/icons/keyboard.svg"); mask-image: url("/icons/keyboard.svg"); }
+.icon-keyboard { -webkit-mask-image: url("/icons/keyboard.svg"); mask-image: url("/icons/keyboard.svg"); aspect-ratio: 576 / 512; }
 .icon-layer-group { -webkit-mask-image: url("/icons/layer-group.svg"); mask-image: url("/icons/layer-group.svg"); }
-.icon-fire { -webkit-mask-image: url("/icons/fire.svg"); mask-image: url("/icons/fire.svg"); }
+.icon-fire { -webkit-mask-image: url("/icons/fire.svg"); mask-image: url("/icons/fire.svg"); aspect-ratio: 448 / 512; }
 .icon-microchip { -webkit-mask-image: url("/icons/microchip.svg"); mask-image: url("/icons/microchip.svg"); }
 .icon-auto { -webkit-mask-image: url("/icons/auto.svg"); mask-image: url("/icons/auto.svg"); }
 .icon-reboot { -webkit-mask-image: url("/icons/reboot.svg"); mask-image: url("/icons/reboot.svg"); }
 .icon-profile { -webkit-mask-image: url("/icons/profile.svg"); mask-image: url("/icons/profile.svg"); }
-.icon-bulb { -webkit-mask-image: url("/icons/bulb.svg"); mask-image: url("/icons/bulb.svg"); }
-.icon-display { -webkit-mask-image: url("/icons/display.svg"); mask-image: url("/icons/display.svg"); }
-.icon-code { -webkit-mask-image: url("/icons/code.svg"); mask-image: url("/icons/code.svg"); }
+.icon-bulb { -webkit-mask-image: url("/icons/bulb.svg"); mask-image: url("/icons/bulb.svg"); aspect-ratio: 384 / 512; }
+.icon-display { -webkit-mask-image: url("/icons/display.svg"); mask-image: url("/icons/display.svg"); aspect-ratio: 576 / 512; }
+.icon-code { -webkit-mask-image: url("/icons/code.svg"); mask-image: url("/icons/code.svg"); aspect-ratio: 640 / 512; }
 .icon-download { -webkit-mask-image: url("/icons/download.svg"); mask-image: url("/icons/download.svg"); }
-.icon-upload { -webkit-mask-image: url("/icons/upload.svg"); mask-image: url("/icons/upload.svg"); }
-.icon-light { -webkit-mask-image: url("/icons/light.svg"); mask-image: url("/icons/light.svg"); }
+.icon-upload { -webkit-mask-image: url("/icons/upload.svg"); mask-image: url("/icons/upload.svg"); aspect-ratio: 448 / 512; }
+.icon-light { -webkit-mask-image: url("/icons/light.svg"); mask-image: url("/icons/light.svg"); aspect-ratio: 576 / 512; }
 .icon-dark { -webkit-mask-image: url("/icons/dark.svg"); mask-image: url("/icons/dark.svg"); }
 .icon-web { -webkit-mask-image: url("/icons/web.svg"); mask-image: url("/icons/web.svg"); }
-.icon-docs { -webkit-mask-image: url("/icons/docs.svg"); mask-image: url("/icons/docs.svg"); }
-.icon-etsy { -webkit-mask-image: url("/icons/etsy.svg"); mask-image: url("/icons/etsy.svg"); }
-.icon-trash { -webkit-mask-image: url("/icons/trash.svg"); mask-image: url("/icons/trash.svg"); }
+.icon-docs { -webkit-mask-image: url("/icons/docs.svg"); mask-image: url("/icons/docs.svg"); aspect-ratio: 384 / 512; }
+.icon-etsy { -webkit-mask-image: url("/icons/etsy.svg"); mask-image: url("/icons/etsy.svg"); aspect-ratio: 576 / 512; }
+.icon-trash { -webkit-mask-image: url("/icons/trash.svg"); mask-image: url("/icons/trash.svg"); aspect-ratio: 448 / 512; }
 .icon-circle-plus { -webkit-mask-image: url("/icons/circle-plus.svg"); mask-image: url("/icons/circle-plus.svg"); }
-.icon-floppy-disk { -webkit-mask-image: url("/icons/floppy-disk.svg"); mask-image: url("/icons/floppy-disk.svg"); }
+.icon-floppy-disk { -webkit-mask-image: url("/icons/floppy-disk.svg"); mask-image: url("/icons/floppy-disk.svg"); aspect-ratio: 448 / 512; }
 .icon-github { -webkit-mask-image: url("/icons/github.svg"); mask-image: url("/icons/github.svg"); }
 .icon-info { -webkit-mask-image: url("/icons/info.svg"); mask-image: url("/icons/info.svg"); }
-.icon-gamepad { -webkit-mask-image: url("/icons/gamepad.svg"); mask-image: url("/icons/gamepad.svg"); }
+.icon-gamepad { -webkit-mask-image: url("/icons/gamepad.svg"); mask-image: url("/icons/gamepad.svg"); aspect-ratio: 640 / 512; }
 .icon-music { -webkit-mask-image: url("/icons/music.svg"); mask-image: url("/icons/music.svg"); }
 
 /* Brand logo: .logo defines the colors (the SVG's alpha channel painted in
@@ -190,7 +193,6 @@ html[data-theme="light"] .logo-link:hover {
 }
 
 .nav-reboot .icon {
-  width: 16px;
   height: 16px;
   display: block;
 }
@@ -218,7 +220,6 @@ html[data-theme="light"] .logo-link:hover {
 }
 
 .nav-link .icon {
-  width: 16px;
   height: 16px;
   display: block;
 }
@@ -234,7 +235,6 @@ html[data-theme="light"] .logo-link:hover {
 }
 
 .theme-btn .icon {
-  width: 15px;
   height: 15px;
   display: block;
 }
@@ -371,7 +371,6 @@ main {
 }
 
 .footer-link .icon {
-  width: 20px;
   height: 20px;
   display: block;
 }
@@ -444,7 +443,6 @@ section h2 {
 }
 
 .heading-icon {
-  width: 22px;
   height: 22px;
   display: block;
   flex: none;
@@ -548,7 +546,6 @@ select.btn-small:hover {
 }
 
 .landing-card-icon {
-  width: 40px;
   height: 40px;
   flex: none;
 }
@@ -594,7 +591,6 @@ select.btn-small:hover {
 }
 
 .update-card-icon {
-  width: 60px;
   height: 60px;
   flex: none;
   color: var(--text);
@@ -648,7 +644,6 @@ select.btn-small:hover {
 }
 
 .landing-link-icon {
-  width: 18px;
   height: 18px;
   display: block;
   flex: none;
@@ -1177,7 +1172,6 @@ html[data-theme="light"] .ms-caret {
 }
 
 .hotkeys-panel > button .icon {
-  width: 16px;
   height: 16px;
 }
 
@@ -1256,7 +1250,6 @@ html[data-theme="light"] .ms-caret {
 }
 
 .general-import-export button .icon {
-  width: 14px;
   height: 14px;
 }
 
@@ -1774,7 +1767,6 @@ html[data-theme="light"] .ms-caret {
 }
 
 .led-popover-unset .icon {
-  width: 14px;
   height: 14px;
 }
 
@@ -1894,7 +1886,6 @@ html[data-theme="light"] .ms-caret {
 }
 
 .actions button .icon {
-  width: 16px;
   height: 16px;
 }
 
@@ -2020,7 +2011,6 @@ button:disabled {
 }
 
 .modal-tab .icon {
-  width: 16px;
   height: 16px;
 }
 
@@ -2365,7 +2355,6 @@ button:disabled {
 }
 
 .macro-add-btn .icon {
-  width: 14px;
   height: 14px;
 }
 

@@ -1244,6 +1244,22 @@ function loadError() {
   if (loading) loading.hidden = true;
 }
 
+// Swap the Layout/Board icons between keyboard and gamepad, and the landing
+// hero text, based on the current input mode. Gamepad modes (XInput / Switch
+// Pro / Xbox One) get the controller icon and wording; keyboard and MIDI keep
+// the keyboard icon and keypad wording.
+function syncModeIcons(gamepadMode) {
+  document.querySelectorAll('#layout-nav-icon, #layout-card-icon, #board-heading-icon')
+    .forEach((el) => {
+      el.classList.toggle('icon-keyboard', !gamepadMode);
+      el.classList.toggle('icon-gamepad', gamepadMode);
+    });
+  const hero = document.getElementById('hero-hint');
+  if (hero) hero.textContent = gamepadMode
+    ? 'Configure your controller over USB'
+    : 'Configure your keypad over USB';
+}
+
 // Show either the key/modifier pickers (keyboard mode), the MIDI note picker
 // (MIDI mode) or the gamepad control multi-select (gamepad modes) in the modal,
 // based on the current default input mode. Also reveals the MIDI / gamepad
@@ -1261,6 +1277,7 @@ function updateModalMode() {
     : gamepadMode
       ? 'Click a button on the board to set its gamepad button or direction.'
       : 'Click a button on the board to set its key and modifiers.';
+  syncModeIcons(gamepadMode);
 }
 
 // Show the picker group for a modal tab (Keyboard / MIDI / Gamepad). Tabs are

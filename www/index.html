@@ -29,7 +29,7 @@
         <span class="mp2040-logo nav-logo" role="img" aria-label="MP2040"></span>
       </a>
       <nav class="nav-links">
-        <a class="nav-link" href="/layout" data-route="/layout"><span class="icon icon-keyboard" aria-hidden="true"></span>Layout</a>
+        <a class="nav-link" href="/layout" data-route="/layout"><span class="icon icon-keyboard" id="layout-nav-icon" aria-hidden="true"></span>Layout</a>
         <a class="nav-link" href="/settings" data-route="/settings"><span class="icon icon-auto" aria-hidden="true"></span>Settings</a>
       </nav>
       <button id="reboot" class="nav-reboot" title="Reboot">
@@ -48,7 +48,7 @@
         <section class="hero">
           <span class="logo hero-logo" role="img" aria-label="MP2040"></span>
           <h2>MP2040 <span id="board-label-hero"></span></h2>
-          <p class="hint">Configure your keypad over USB</p>
+          <p class="hint" id="hero-hint">Configure your keypad over USB</p>
         </section>
 
         <a id="update-card" class="update-card hero" href="https://github.com/thnikk/MP2040/releases" target="_blank" rel="noopener noreferrer" hidden>
@@ -60,7 +60,7 @@
 
       <div class="landing-cards">
         <a class="landing-card" href="/layout" data-route="/layout">
-          <span class="landing-card-icon icon icon-keyboard" aria-hidden="true"></span>
+          <span class="landing-card-icon icon icon-keyboard" id="layout-card-icon" aria-hidden="true"></span>
           <div>
             <h3>Layout</h3>
             <p>Change mappings and LEDs</p>
@@ -140,7 +140,7 @@
       </section>
 
       <section>
-        <h2><span class="heading-icon icon icon-keyboard" aria-hidden="true"></span>Board</h2>
+        <h2><span class="heading-icon icon icon-keyboard" id="board-heading-icon" aria-hidden="true"></span>Board</h2>
         <p class="hint" id="board-hint">Click a button on the board to set its key and modifiers.</p>
         <div id="board-panel"></div>
       </section>
