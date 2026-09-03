@@ -1889,6 +1889,19 @@ html[data-theme="light"] .ms-caret {
   height: 16px;
 }
 
+/* Unsaved-changes indicator: the Save button fills with the accent color
+   while there are edits not yet written to the board. */
+.actions button.dirty {
+  background: var(--accent);
+  color: var(--nord0);
+  border-color: var(--accent);
+}
+
+.actions button.dirty:hover {
+  background: color-mix(in srgb, var(--accent) 75%, var(--nord0));
+  border-color: transparent;
+}
+
 button {
   background: var(--btn-bg);
   color: var(--btn-text);

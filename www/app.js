@@ -128,6 +128,15 @@ function syncGamepadLabels() {
 // Working copy of the config from /api/getOptions, edited via the modal
 let currentOptions = null;
 
+// Dirty-state tracking: a config has unsaved changes when the working copy,
+// an in-memory profile slot or a global setting differs from what the board
+// last loaded/saved. `savedProfiles` and `savedGlobals` are snapshots taken
+// on load and refreshed on save; see isDirty() below.
+let savedProfiles = null;
+let savedGlobals = null;
+let saving = false;
+let allowUnload = false;
+
 // Profile support (see proto/config.proto): all four profiles live in
 // `profiles`; `currentOptions` is the working copy of the profile currently
 // being edited (its per-profile fields are mirrored into the full options
@@ -733,6 +742,85 @@ function buildOptionsBody() {
   };
 }
 
+// ---- dirty-state tracking -------------------------------------------------
+// A config has unsaved changes when (a) the active working copy differs from
+// its in-memory profile slot (profileEdited, e.g. an edit not yet synced by a
+// tab switch), (b) any in-memory slot has drifted from the board snapshot
+// (profilesDirty, e.g. edits synced when switching away), or (c) a global
+// setting differs from the board snapshot (globalsDirty). profileIndex is
+// selection state, not a setting, so it's excluded; activeProfile ("Set as
+// Default") is a real global setting and is included.
+
+// Global-only view of the save payload: everything except per-profile fields
+// (key mappings, MIDI channel/velocity, per-key LED colors) and profileIndex.
+// Deep-copied so the snapshot is independent of the live arrays: saveKeyModal
+// and the macro editor mutate currentOptions' arrays in place, which would
+// otherwise change the snapshot too and hide the edit.
+function buildGlobalState() {
+  const body = buildOptionsBody();
+  const { ledMode: _ledMode, ledNormalColors: _ln, ledPressedColors: _lp, ...led } = body.led || {};
+  return JSON.parse(JSON.stringify({
+    macros: body.macros,
+    macroIndices: body.macroIndices,
+    gamepadMasks: body.gamepadMasks,
+    defaultInputMode: body.defaultInputMode,
+    debounceInterval: body.debounceInterval,
+    touchMargin: body.touchMargin,
+    touchRelease: body.touchRelease,
+    serialConfigEnabled: body.serialConfigEnabled,
+    gamepad: body.gamepad,
+    ring: body.ring,
+    display: body.display,
+    hotkeys: body.hotkeys,
+    bootKeys: body.bootKeys,
+    activeProfile: body.activeProfile,
+    led,
+  }));
+}
+
+function profilesDirty() {
+  if (!savedProfiles) return false;
+  return JSON.stringify(profiles.map(cloneProfile)) !== JSON.stringify(savedProfiles);
+}
+
+function globalsDirty() {
+  if (!savedGlobals) return false;
+  return JSON.stringify(buildGlobalState()) !== JSON.stringify(savedGlobals);
+}
+
+// Any unsaved changes to the config (working copy, profile slots or globals).
+function isDirty() {
+  if (!currentOptions) return false;
+  return profileEdited() || profilesDirty() || globalsDirty();
+}
+
+// Toggle the unsaved-changes indicator on the Save buttons (both pages).
+function updateDirtyUi() {
+  if (saving) return;
+  const dirty = isDirty();
+  document.querySelectorAll('#save, #save-settings').forEach((btn) => {
+    btn.classList.toggle('dirty', dirty);
+    btn.title = dirty ? 'Unsaved changes' : '';
+  });
+}
+
+const refreshDirtyUi = debounce(updateDirtyUi, 80);
+// Covers every edit path: native selects/inputs fire `change`/`input`, and the
+// custom pill/slider widgets and modal Save buttons fire `click` but no DOM
+// event, so all three are needed.
+document.addEventListener('change', refreshDirtyUi);
+document.addEventListener('input', refreshDirtyUi);
+document.addEventListener('click', refreshDirtyUi);
+
+// Warn before losing unsaved changes: browser back/forward (popstate), SPA
+// route changes (navigate) and tab close/refresh. Intentional reloads (import,
+// mock board switch) set `allowUnload` so they don't trigger the prompt.
+window.addEventListener('beforeunload', (e) => {
+  if (allowUnload || !isDirty()) return;
+  e.preventDefault();
+  e.returnValue = '';
+});
+
 // ---- routing ----------------------------------------------------------
 // Single HTML file, three routes: the landing page (/), the layout editor
 // (/layout) and the settings page (/settings). The firmware httpd serves
@@ -771,12 +859,27 @@ function renderRoute() {
 function navigate(path, event) {
   if (event) event.preventDefault();
   if (location.pathname === path) return;
+  if (isDirty() && !confirm('You have unsaved changes. Discard them and leave?')) return;
+  lastRoute = path;
   history.pushState({}, '', path);
   renderRoute();
   window.scrollTo(0, 0);
 }
 
-window.addEventListener('popstate', renderRoute);
+// Back/forward buttons fire popstate after the URL has already changed; on
+// cancel, push the previous route back so the confirm isn't a one-way trip.
+let lastRoute = currentRoute();
+window.addEventListener('popstate', () => {
+  const prev = lastRoute;
+  const next = currentRoute();
+  if (isDirty() && !confirm('You have unsaved changes. Discard them and leave?')) {
+    history.pushState({}, '', prev);
+    renderRoute();
+    return;
+  }
+  lastRoute = next;
+  renderRoute();
+});
 
 // Live pin state: highlight buttons yellow while their physical switch is
 // held. The board answers /api/getPinState only when a button actually
@@ -908,6 +1011,7 @@ async function load() {
           Toast.show('Failed to switch board: ' + res.error, 'error');
           return;
         }
+        allowUnload = true;
         window.location.reload();
       });
     }
@@ -1038,14 +1142,20 @@ async function load() {
     min: 0,
     max: 15,
     value: midi.channel ?? 0,
-    onChange: () => {},
+    onChange: (v) => {
+      if (!currentOptions.midi) currentOptions.midi = {};
+      currentOptions.midi.channel = v;
+    },
   });
   midiVelocitySpinner = new Spinner({
     container: document.getElementById('midi-velocity-spinner'),
     min: 1,
     max: 127,
     value: midi.velocity ?? 127,
-    onChange: () => {},
+    onChange: (v) => {
+      if (!currentOptions.midi) currentOptions.midi = {};
+      currentOptions.midi.velocity = v;
+    },
   });
 
   debounceSpinner = new Spinner({
@@ -1232,6 +1342,11 @@ async function load() {
   buildProfileTabs();
 
   loadProfileIntoUi();
+
+  // Baseline for dirty tracking: the state exactly as loaded from the board.
+  savedProfiles = profiles.map(cloneProfile);
+  savedGlobals = buildGlobalState();
+  updateDirtyUi();
 
   renderRoute();
 
@@ -1615,6 +1730,7 @@ function saveRingModal() {
 async function save() {
   const saveBtn = document.getElementById('save');
   saveBtn.disabled = true;
+  saving = true;
   try {
     syncCurrentToProfile();
     const res = await api('/api/setOptions', {
@@ -1634,11 +1750,17 @@ async function save() {
       refreshPerProfileControls();
       updateProfileTabs();
     }
+    // The board now holds what we sent; the working copy, slots and globals
+    // are the new baseline for dirty tracking.
+    savedProfiles = profiles.map(cloneProfile);
+    savedGlobals = buildGlobalState();
     Toast.show('Saved.', 'success');
   } catch (e) {
     Toast.show('Save failed: ' + e, 'error');
   }
+  saving = false;
   saveBtn.disabled = false;
+  updateDirtyUi();
 }
 
 async function reboot(bootMode) {
@@ -1788,6 +1910,7 @@ async function importSettings(file) {
       });
     }
     Toast.show('Settings imported.', 'success');
+    allowUnload = true;
     location.reload();
   } catch (e) {
     Toast.show('Import failed: ' + e, 'error');
