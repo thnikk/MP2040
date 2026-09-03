@@ -3640,7 +3640,8 @@ struct ConfigFooter
 static const uint32_t FOOTER_MAGIC = 0xd2f1e365;
 
 #if defined(Config_size)
-    static_assert(Config_size + sizeof(ConfigFooter) <= EEPROM_SIZE_BYTES, "Maximum size of Config exceeds the maximum size allocated for FlashPROM");
+    static_assert(Config_size + sizeof(ConfigFooter) <= EEPROM_CACHE_BYTES, "Maximum size of Config exceeds the maximum size allocated for FlashPROM");
+    static_assert(EEPROM_CACHE_BYTES <= EEPROM_SIZE_BYTES, "FlashPROM write cache must fit within the EEPROM flash region");
 #else
     #error "Maximum size of Config cannot be determined statically, make sure that you do not use any dynamically sized arrays or strings"
 #endif
@@ -4070,12 +4071,12 @@ void Storage::init() {
     applyDefaults(config);
 
     const ConfigFooter& footer = *reinterpret_cast<const ConfigFooter*>(
-        EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+        EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
 
     if (footer.magic == FOOTER_MAGIC &&
-        footer.dataSize + sizeof(ConfigFooter) <= EEPROM_SIZE_BYTES)
+        footer.dataSize + sizeof(ConfigFooter) <= EEPROM_CACHE_BYTES)
     {
-        const uint8_t* dataPtr = EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - footer.dataSize;
+        const uint8_t* dataPtr = EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter) - footer.dataSize;
         if (CRC32::calculate(dataPtr, footer.dataSize) == footer.dataCrc)
         {
             pb_istream_t inputStream = pb_istream_from_buffer(dataPtr, footer.dataSize);
@@ -4278,7 +4279,7 @@ bool Storage::save(const bool force) {
     setHasFlags(Config_fields, &config);
 
     // Encode the data directly into the cache of FlashPROM
-    pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    pb_ostream_t outputStream = pb_ostream_from_buffer(EEPROM.writeCache, EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
     if (!pb_encode(&outputStream, Config_fields, &config))
     {
         return false;
@@ -4291,7 +4292,7 @@ bool Storage::save(const bool force) {
     newFooter.magic = FOOTER_MAGIC;
 
     // The data has changed when the footer content has changed. Only then do we actually need to save.
-    const ConfigFooter& oldFooter = *reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    const ConfigFooter& oldFooter = *reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
     if (newFooter == oldFooter)
     {
         // The data has not changed, no saving necessary.
@@ -4299,16 +4300,26 @@ bool Storage::save(const bool force) {
     }
 
     // Write the footer
-    ConfigFooter* cacheFooter = reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter));
+    ConfigFooter* cacheFooter = reinterpret_cast<ConfigFooter*>(EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
     memcpy(cacheFooter, &newFooter, sizeof(ConfigFooter));
 
     // Move the encoded data in memory down to the footer
-    memmove(EEPROM.writeCache + EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
-    memset(EEPROM.writeCache, 0, EEPROM_SIZE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize);
+    memmove(EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize, EEPROM.writeCache, newFooter.dataSize);
+    memset(EEPROM.writeCache, 0, EEPROM_CACHE_BYTES - sizeof(ConfigFooter) - newFooter.dataSize);
 
     EEPROM.commit();
 
     return true;
+}
+
+// Bytes of the emulated EEPROM (flash region) currently holding the saved
+// config, including the footer. Reads from the RAM cache, which EEPROM.start()
+// populates from the flash region tail. Returns 0 when no config is stored.
+uint32_t Storage::getEepromUsedBytes() {
+    const ConfigFooter& footer = *reinterpret_cast<const ConfigFooter*>(
+        EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
+    if (footer.magic != FOOTER_MAGIC) return 0;
+    return footer.dataSize + sizeof(ConfigFooter);
 }
 
 void Storage::ResetSettings()

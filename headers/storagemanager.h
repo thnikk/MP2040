@@ -222,6 +222,9 @@ public:
 		return (index < config.profiles_count) ? &config.profiles[index] : nullptr;
 	}
 	pb_size_t getProfileCount() { return config.profiles_count; }
+	// Bytes of the emulated EEPROM (flash region) holding the saved config,
+	// including the footer. 0 when nothing has been saved yet.
+	uint32_t getEepromUsedBytes();
 	// Global macros (M1-M8). Per-key triggers reference these by 1-based
 	// index via config.macroIndices.
 	Macro* getMacros() { return config.macros; }

@@ -218,7 +218,7 @@ def fetch_tags(args):
 
 # One-time boot flag baked into the flashed UF2 to boot once into web config
 # mode. Must match BOOT_FLAG_ADDR / BOOT_FLAG_MAGIC in src/system.cpp.
-BOOT_FLAG_ADDR = 0x101F6000
+BOOT_FLAG_ADDR = 0x101EF000
 BOOT_FLAG_MAGIC = 0x57424743
 UF2_MAGIC0 = 0x0A324655
 UF2_MAGIC1 = 0x9E5D5157

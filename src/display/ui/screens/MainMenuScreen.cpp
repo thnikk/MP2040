@@ -278,6 +278,7 @@ void MainMenuScreen::drawScreen() {
         getRenderer()->drawText(2, 4, "Flash " + formatBytes(System::getUsedFlash()) + "/" + formatBytes(System::getTotalFlash()));
         getRenderer()->drawText(2, 5, "RAM " + formatBytes(System::getUsedHeap()) + "/" + formatBytes(System::getTotalHeap()));
         getRenderer()->drawText(2, 6, std::string(__DATE__) + " " + MP2040CONFIG);
+        getRenderer()->drawText(2, 7, "EEPROM " + formatBytes(Storage::getInstance().getEepromUsedBytes()) + "/" + formatBytes(EEPROM_SIZE_BYTES));
         return;
     }
     bool isSpinnerView = currentMenu->size() > 0 && currentMenu->at(menuIndex).isSpinner;
