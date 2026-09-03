@@ -234,6 +234,7 @@ class MainMenuScreen : public GPScreen {
 		std::vector<MenuEntry> ledMenu;
 
 		std::vector<MenuEntry> rebootMenu;
+		std::vector<MenuEntry> infoMenu;
 
 		std::vector<MenuEntry> saveMenu = {
 			{"Yes", NULL, nullptr, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::saveAndExit, this), 1},

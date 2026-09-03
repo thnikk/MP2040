@@ -1,6 +1,7 @@
 #include "MainMenuScreen.h"
 #include "system.h"
 #include "drivermanager.h"
+#include "version.h"
 
 #include <cctype>
 
@@ -12,6 +13,12 @@ static const char* ledModeNames[] = {
     ANIMATION_FIRE_NAME,
 };
 static const int ledModeCount = sizeof(ledModeNames) / sizeof(ledModeNames[0]);
+
+static std::string formatBytes(uint32_t bytes) {
+    if (bytes >= 1024 * 1024)
+        return std::to_string(bytes / (1024 * 1024)) + "MB";
+    return std::to_string(bytes / 1024) + "K";
+}
 
 void MainMenuScreen::init() {
     getRenderer()->clearScreen();
@@ -235,6 +242,7 @@ void MainMenuScreen::init() {
     mainMenu.push_back({"LED Config", NULL, &ledMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
     mainMenu.push_back({"Remap", NULL, nullptr, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::selectRemap, this)});
     mainMenu.push_back({"Reboot", NULL, &rebootMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
+    mainMenu.push_back({"Info", NULL, &infoMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
     mainMenu.push_back({"Save & Exit", NULL, &saveMenu, std::bind(&MainMenuScreen::modeValue, this), std::bind(&MainMenuScreen::testMenu, this)});
 
     gpMenu->setMenuData(currentMenu);
@@ -251,6 +259,27 @@ void MainMenuScreen::shutdown() {
 }
 
 void MainMenuScreen::drawScreen() {
+	if (currentMenu == &infoMenu) {
+        gpMenu->setVisibility(false);
+        getRenderer()->drawText((21 - 4) / 2, 0, "Info");
+        std::string versionLine = MP2040VERSION;
+        if (versionLine == "dev") {
+            versionLine = MP2040BUILD;
+        } else {
+            const std::string prerelease = "-prerelease";
+            size_t pos = versionLine.find(prerelease);
+            if (pos != std::string::npos)
+                versionLine.replace(pos, prerelease.length(), "-p");
+            versionLine += " ";
+            versionLine += MP2040BUILD;
+        }
+        getRenderer()->drawText(2, 2, BOARD_CONFIG_LABEL);
+        getRenderer()->drawText(2, 3, versionLine);
+        getRenderer()->drawText(2, 4, "Flash " + formatBytes(System::getUsedFlash()) + "/" + formatBytes(System::getTotalFlash()));
+        getRenderer()->drawText(2, 5, "RAM " + formatBytes(System::getUsedHeap()) + "/" + formatBytes(System::getTotalHeap()));
+        getRenderer()->drawText(2, 6, std::string(__DATE__) + " " + MP2040CONFIG);
+        return;
+    }
     bool isSpinnerView = currentMenu->size() > 0 && currentMenu->at(menuIndex).isSpinner;
     gpMenu->setVisibility(!screenIsPrompting && !isSpinnerView);
 
@@ -321,6 +350,23 @@ int8_t MainMenuScreen::handleNavigation(uint8_t action) {
 }
 
 void MainMenuScreen::updateMenuNavigation(uint8_t action) {
+    if (currentMenu == &infoMenu) {
+        // Info page is read-only: B1 (select) or B2 (back) returns to the main
+        // menu; direction inputs are ignored.
+        if (action == MENU_ACTION_SELECT || action == MENU_ACTION_BACK) {
+            if (!menuBackStack.empty()) {
+                MenuBackEntry back = menuBackStack.back();
+                menuBackStack.pop_back();
+                currentMenu = back.menu;
+                menuIndex = back.index;
+                gpMenu->setMenuData(currentMenu);
+                gpMenu->setMenuTitle(back.title);
+                gpMenu->setIndex(menuIndex);
+            }
+        }
+        isPressed = true;
+        return;
+    }
     bool changeIndex = false;
     uint16_t menuSize = gpMenu->getDataSize();
     bool isSpinnerItem = false;
