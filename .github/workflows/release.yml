@@ -1,5 +1,5 @@
 name: Release
-run-name: Release ${{ github.ref_name || inputs.tag_name }}
+run-name: Release ${{ inputs.tag_name || github.ref_name }}
 
 on:
   push:
