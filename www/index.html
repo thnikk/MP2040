@@ -181,15 +181,13 @@
             </div>
           </div>
           <div id="gamepad-settings" hidden>
-            <div id="dpad-mode-row">
+            <div id="dpad-socd-row">
               <label for="dpad-mode">D-Pad Mode</label>
               <select id="dpad-mode">
                 <option value="0">D-Pad</option>
                 <option value="1">Left Stick</option>
                 <option value="2">Right Stick</option>
               </select>
-            </div>
-            <div id="socd-row">
               <label for="socd-mode">SOCD Mode</label>
               <select id="socd-mode">
                 <option value="0">Up Priority</option>
@@ -242,14 +240,6 @@
       <section id="display-settings" hidden>
         <h2><span class="heading-icon icon icon-display" aria-hidden="true"></span>Display</h2>
         <div class="general-form">
-          <label for="display-splash-duration">Splash Duration</label>
-          <div id="display-splash-duration-spinner" class="midi-spinner">
-            <input type="text" id="display-splash-duration" class="spinner-input">
-          </div>
-          <label for="display-saver-timeout">Saver Timeout</label>
-          <div id="display-saver-timeout-spinner" class="midi-spinner">
-            <input type="text" id="display-saver-timeout" class="spinner-input">
-          </div>
           <label for="display-saver-mode">Saver Scene</label>
           <select id="display-saver-mode">
             <option value="0">Display Off</option>
@@ -259,6 +249,14 @@
             <option value="4">Toast</option>
             <option value="5">Stars</option>
           </select>
+          <label for="display-splash-duration">Splash Duration</label>
+          <div id="display-splash-duration-spinner" class="midi-spinner">
+            <input type="text" id="display-splash-duration" class="spinner-input">
+          </div>
+          <label for="display-saver-timeout">Saver Timeout</label>
+          <div id="display-saver-timeout-spinner" class="midi-spinner">
+            <input type="text" id="display-saver-timeout" class="spinner-input">
+          </div>
           <div id="input-history-row">
             <button id="display-input-history" type="button" class="pill-toggle">
               Input History

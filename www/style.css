@@ -1285,7 +1285,7 @@ html[data-theme="light"] .ms-caret {
 
 /* SOCD + Nintendo layout row inside the gamepad settings. Keeps both controls
    on the same line; the Nintendo toggle is pushed to the right edge. */
-#socd-row {
+#dpad-socd-row {
   flex-basis: 100%;
   display: flex;
   align-items: center;
@@ -1293,17 +1293,13 @@ html[data-theme="light"] .ms-caret {
   flex-wrap: nowrap;
 }
 
-#socd-row .pill-toggle {
+#dpad-socd-row select {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+#dpad-socd-row .pill-toggle {
   margin-left: auto;
-}
-
-/* D-Pad Mode row inside the gamepad settings. Own line above the SOCD row. */
-#dpad-mode-row {
-  flex-basis: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: nowrap;
 }
 
 /* Touch pad controls (Margin / Hysteresis). Full-width so they sit on their
