@@ -10,6 +10,7 @@ Examples:
     python3 docker-build.py -b 2k
     python3 docker-build.py -b MacroPad --nuke --flash
     python3 docker-build.py -b 2k --clean --verbose --output build.log
+    python3 docker-build.py -b 2k --skip --flash
 """
 import argparse
 import glob
@@ -267,6 +268,13 @@ def mark_webconfig_uf2(uf2_path):
     return patched
 
 
+def find_existing_uf2(board):
+    """Return the most recently built UF2 for `board`, or None."""
+    matches = sorted(glob.glob(
+        str(REPO_ROOT / "build" / f"MP2040_*_{board}.uf2")))
+    return Path(matches[-1]) if matches else None
+
+
 def build_firmware(args):
     """Configure and build the firmware in the container. Returns the built
     UF2 path, or None if the build failed / produced no UF2."""
@@ -297,7 +305,29 @@ def build_firmware(args):
         log_msg(f"Build complete! → {uf2.name}", args.output)
     else:
         log_msg("Build complete!", args.output)
+    if uf2:
+        remove_stale_artifacts(args.board, uf2, args.output)
     return uf2
+
+
+def remove_stale_artifacts(board, uf2, log_file=None):
+    """Delete older build artifacts for `board`, keeping only the current
+    build's outputs (the UF2 plus its bin/hex/elf/dis/elf.map siblings)."""
+    patterns = [f"MP2040_*_{board}.*", f"MP2040_*_{board}_webconfig.uf2"]
+    removed = []
+    for pattern in patterns:
+        for path in glob.glob(str(REPO_ROOT / "build" / pattern)):
+            if path == str(uf2):
+                continue
+            if Path(path).name.startswith(uf2.stem + "."):
+                continue
+            Path(path).unlink()
+            removed.append(Path(path).name)
+    if removed:
+        log_msg(f"Removed {len(removed)} stale artifact(s) for {board}:",
+                log_file)
+        for name in sorted(removed):
+            log_msg(f"  {name}", log_file)
 
 
 def flash_firmware(uf2, args, flash_dir):
@@ -345,6 +375,9 @@ def parse_args(valid_boards):
                         help=f"Docker image tag (default: {DEFAULT_IMAGE})")
     parser.add_argument("-r", "--rebuild", action="store_true",
                         help="Force rebuilding the Docker image")
+    parser.add_argument("-s", "--skip", action="store_true",
+                        help="Skip Docker build; use existing UF2 for the "
+                             "board (builds only if none exists)")
     parser.add_argument("-c", "--clean", action="store_true",
                         help="Force cleanup step")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -385,15 +418,27 @@ def main():
 
     # 1. Wipe flash (optional)
     flash_dir = nuke_flash(args, flash_dir)
-    # 2. Build the builder image (once)
-    ensure_builder_image(args)
-    # 3. Fix ownership / clean build dir
-    clean_build_dir(args)
-    # 4. Fetch tags so git describe can version the build
-    fetch_tags(args)
-    # 5. Configure + build firmware
-    uf2 = build_firmware(args)
-    # 6. Optionally bake a one-time web config boot flag into the UF2
+
+    # 2. Use an existing UF2 instead of building (optional)
+    skip_build = False
+    if args.skip:
+        uf2 = find_existing_uf2(args.board)
+        if uf2:
+            log_msg(f"Using existing UF2 → {uf2.name}", args.output)
+            skip_build = True
+        else:
+            log_msg("No existing UF2 found, building anyway", args.output)
+
+    # 3. Build the builder image (once)
+    if not skip_build:
+        ensure_builder_image(args)
+        # 4. Fix ownership / clean build dir
+        clean_build_dir(args)
+        # 5. Fetch tags so git describe can version the build
+        fetch_tags(args)
+        # 6. Configure + build firmware
+        uf2 = build_firmware(args)
+    # 7. Optionally bake a one-time web config boot flag into the UF2
     if args.webconfig:
         if uf2 is None:
             log_msg("Warning: --webconfig skipped (no UF2 produced)",
@@ -401,7 +446,7 @@ def main():
         else:
             uf2 = mark_webconfig_uf2(uf2)
             log_msg(f"Web config boot flag added → {uf2.name}", args.output)
-    # 7. Copy the UF2 to the board (optional)
+    # 8. Copy the UF2 to the board (optional)
     flash_firmware(uf2, args, flash_dir)
 
 
