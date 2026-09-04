@@ -6,8 +6,8 @@
 // full-page PNGs of the Layout page in every LED mode, in light and dark.
 //
 // Usage:
-//   node tools/screenshots.mjs                  # MacroPad → screenshots/
-//   node tools/screenshots.mjs --board 2k       # another board config
+//   node tools/screenshots.mjs                      # MacroPad, default LED mode
+//   node tools/screenshots.mjs --board 2k --led-mode cycle
 //   node tools/screenshots.mjs --dir out --theme light
 //   node tools/screenshots.mjs --port 1357 --cdp 9223   # override base ports
 //
@@ -39,6 +39,7 @@ const OUT = path.resolve(ROOT, arg('--dir', 'screenshots'));
 const BASE_PORT = parseInt(arg('--port', '1357'), 10);
 const BASE_CDP = parseInt(arg('--cdp', '9223'), 10);
 const THEME = arg('--theme', null); // null = keep 'auto' default
+const LED_MODE = arg('--led-mode', null); // e.g. 'cycle', 'rain'; default = board's default
 mkdirSync(OUT, { recursive: true });
 
 // ---- helpers ------------------------------------------------------------
@@ -146,15 +147,15 @@ async function screenshot(cdp, name) {
 
 // ---- targets ------------------------------------------------------------
 
-const LED_MODES = [
-  ['custom', '0'],
-  ['cycle', '1'],
-  ['reactive', '2'],
-  ['bps', '3'],
-  ['ripple', '4'],
-  ['rain', '5'],
-  ['fire', '6'],
-];
+const LED_MODES = {
+  custom: '0',
+  cycle: '1',
+  reactive: '2',
+  bps: '3',
+  ripple: '4',
+  rain: '5',
+  fire: '6',
+};
 
 const READY_LAYOUT = `
   (() => {
@@ -235,20 +236,17 @@ async function main() {
     }
     await sleep(300);
 
-    console.log('layout (default):');
-    await screenshot(cdp, `layout-${BOARD}.png`);
-
-    for (const [name, value] of LED_MODES) {
-      console.log(`layout LED mode ${name}:`);
+    if (LED_MODE) {
+      const value = LED_MODES[LED_MODE];
+      if (value === undefined) throw new Error(`unknown --led-mode '${LED_MODE}' (expected one of: ${Object.keys(LED_MODES).join(', ')})`);
+      console.log(`layout (LED mode ${LED_MODE}):`);
       await cdp.evalJs(SET_LED_MODE(value));
       await sleep(900); // let the LedSim animate a frame or two
-      await screenshot(cdp, `layout-${name}-${BOARD}.png`);
+      await screenshot(cdp, `layout-${LED_MODE}-${BOARD}.png`);
+    } else {
+      console.log('layout (default):');
+      await screenshot(cdp, `layout-${BOARD}.png`);
     }
-
-    console.log('layout light theme:');
-    await cdp.evalJs(SET_THEME('light'));
-    await sleep(300);
-    await screenshot(cdp, `layout-light-${BOARD}.png`);
 
     cdp.ws.close();
     console.log(`done → ${path.relative(ROOT, OUT)}/`);
