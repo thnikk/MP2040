@@ -35,6 +35,10 @@ class ButtonLayoutScreen : public GPScreen {
 		GPWidget* pushElement(GPButtonLayout element);
 		void generateHeader();
 		void trim(std::string &s);
+		// In web config mode the driver reports INPUT_MODE_CONFIG; this returns
+		// the board's configured default input mode so the status bar and input
+		// history match a normal boot.
+		InputMode effectiveInputMode();
 
 		InputMode inputMode;
 		std::string statusBar;
@@ -55,7 +59,7 @@ class ButtonLayoutScreen : public GPScreen {
 		// the gamepad drivers' cleaner state on core 0.
 		SocdHistory socdHistory;
 
-		bool prevLayout = 0;
+		uint8_t prevLayout = 0;
 		ButtonLayoutOrientation prevOrientation;
 
 		bool macroEnabled;

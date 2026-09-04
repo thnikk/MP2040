@@ -273,6 +273,12 @@ int8_t ButtonLayoutScreen::update() {
 	return -1;
 }
 
+InputMode ButtonLayoutScreen::effectiveInputMode() {
+	if (inputMode == INPUT_MODE_CONFIG)
+		return Storage::getInstance().getDefaultInputMode();
+	return inputMode;
+}
+
 void ButtonLayoutScreen::generateHeader() {
 	// Limit to 21 chars with 6x8 font for now
 	statusBar.clear();
@@ -280,15 +286,18 @@ void ButtonLayoutScreen::generateHeader() {
 	statusBarRight.clear();
 
 	if (showInputMode) {
-		switch (inputMode) {
+		switch (effectiveInputMode()) {
 			case INPUT_MODE_KEYBOARD: statusBar += "HID-KB"; break;
 			case INPUT_MODE_MIDI:     statusBar += "MIDI"; break;
 			case INPUT_MODE_XINPUT:   statusBar += "XINPUT"; break;
 			case INPUT_MODE_SWITCH_PRO: statusBar += "SWPRO"; break;
 			case INPUT_MODE_XBOX_ONE: statusBar += "XBONE"; break;
-			case INPUT_MODE_CONFIG:   statusBar += "CONFIG"; break;
 			default:                  statusBar += "HID"; break;
 		}
+		// Web config is active: flag it with a "-C" suffix so the board's
+		// normal-mode readout also shows the config session is running.
+		if (inputMode == INPUT_MODE_CONFIG)
+			statusBar += "-C";
 	}
 
 	if (showProfileMode) {
@@ -412,8 +421,10 @@ void ButtonLayoutScreen::processInputHistory() {
 
 	// Current input snapshot. Gamepad modes resolve the 22 controls through the
 	// assembled gamepad state (dpad exact-match + buttons); keyboard mode shows
-	// the actual pressed keycodes instead.
-	const bool keyboardMode = (inputMode == INPUT_MODE_KEYBOARD);
+	// the actual pressed keycodes instead. Web config resolves to the board's
+	// default input mode so the history matches a normal boot.
+	const InputMode displayMode = effectiveInputMode();
+	const bool keyboardMode = (displayMode == INPUT_MODE_KEYBOARD);
 	GamepadState state;
 	if (!keyboardMode) {
 		buildGamepadState(state);
@@ -453,8 +464,8 @@ void ButtonLayoutScreen::processInputHistory() {
 		if (b) { lastInputTime = getMillis(); break; }
 	}
 
-	uint8_t mode = (displayModeLookup.count(inputMode) > 0) ? displayModeLookup.at(inputMode) : 0;
-	if (inputMode == INPUT_MODE_SWITCH_PRO && !Storage::getInstance().getUseNintendoLayout())
+	uint8_t mode = (displayModeLookup.count(displayMode) > 0) ? displayModeLookup.at(displayMode) : 0;
+	if (displayMode == INPUT_MODE_SWITCH_PRO && !Storage::getInstance().getUseNintendoLayout())
 		mode = 2;
 
 	// Check if any new keys have been pressed
