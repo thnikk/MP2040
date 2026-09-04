@@ -12,6 +12,7 @@
 #include <locale>
 #include "layoutmanager.h"
 #include "GPGFX_UI_widgets.h"
+#include "drivers/shared/gamepadhelper.h"
 
 #define INPUT_HISTORY_MAX_INPUTS 22
 #define INPUT_HISTORY_MAX_MODES 12
@@ -50,6 +51,9 @@ class ButtonLayoutScreen : public GPScreen {
 		std::string historyString;
 		std::deque<std::string> inputHistory;
 		std::array<bool, INPUT_HISTORY_MAX_INPUTS> lastInput;
+		// SOCD cleaner history owned by the display (core 1) so it never races
+		// the gamepad drivers' cleaner state on core 0.
+		SocdHistory socdHistory;
 
 		bool prevLayout = 0;
 		ButtonLayoutOrientation prevOrientation;

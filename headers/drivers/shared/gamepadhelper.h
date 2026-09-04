@@ -66,6 +66,16 @@ static inline uint8_t getMaskFromDirection(DpadDirection direction)
 	return dpadMasks[direction - 1];
 }
 
+// Per-caller last-pressed history for the SOCD cleaner. The gamepad drivers
+// keep a private instance (see the runSOCDCleaner(mode, dpad) overload below)
+// while the display input-history uses its own so the two cores never race on
+// the same history state.
+struct SocdHistory
+{
+	DpadDirection lastUD = DIRECTION_NONE;
+	DpadDirection lastLR = DIRECTION_NONE;
+};
+
 // Assemble the raw (un-cleaned) gamepad state from the current key state.
 // Each pressed pin contributes the controls in its gamepad mapping entry: the
 // low nibble becomes dpad directions, the button bits (>> 4) become buttons.
@@ -152,72 +162,84 @@ static inline void applyDpadMode(GamepadState& state)
  *
  * @param mode The SOCD cleaning mode.
  * @param dpad The GamepadState.dpad value.
+ * @param history The caller-owned last-pressed direction history.
  * @return uint8_t The clean D-pad value.
  */
-static inline uint8_t runSOCDCleaner(SOCDMode mode, uint8_t dpad)
+static inline uint8_t runSOCDCleaner(SOCDMode mode, uint8_t dpad, SocdHistory& history)
 {
 	if (mode == SOCD_MODE_BYPASS) {
 		return dpad;
 	}
 
-	static DpadDirection lastUD = DIRECTION_NONE;
-	static DpadDirection lastLR = DIRECTION_NONE;
 	uint8_t newDpad = 0;
 
 	switch (dpad & (GAMEPAD_MASK_UP | GAMEPAD_MASK_DOWN)) {
 		case (GAMEPAD_MASK_UP | GAMEPAD_MASK_DOWN):
 			if (mode == SOCD_MODE_UP_PRIORITY) {
 				newDpad |= GAMEPAD_MASK_UP;
-				lastUD = DIRECTION_UP;
-			} else if (mode == SOCD_MODE_SECOND_INPUT_PRIORITY && lastUD != DIRECTION_NONE)
-				newDpad |= (lastUD == DIRECTION_UP) ? GAMEPAD_MASK_DOWN : GAMEPAD_MASK_UP;
-			else if (mode == SOCD_MODE_FIRST_INPUT_PRIORITY && lastUD != DIRECTION_NONE)
-				newDpad |= (lastUD == DIRECTION_UP) ? GAMEPAD_MASK_UP : GAMEPAD_MASK_DOWN;
+				history.lastUD = DIRECTION_UP;
+			} else if (mode == SOCD_MODE_SECOND_INPUT_PRIORITY && history.lastUD != DIRECTION_NONE)
+				newDpad |= (history.lastUD == DIRECTION_UP) ? GAMEPAD_MASK_DOWN : GAMEPAD_MASK_UP;
+			else if (mode == SOCD_MODE_FIRST_INPUT_PRIORITY && history.lastUD != DIRECTION_NONE)
+				newDpad |= (history.lastUD == DIRECTION_UP) ? GAMEPAD_MASK_UP : GAMEPAD_MASK_DOWN;
 			else
-				lastUD = DIRECTION_NONE;
+				history.lastUD = DIRECTION_NONE;
 			break;
 
 		case GAMEPAD_MASK_UP:
 			newDpad |= GAMEPAD_MASK_UP;
-			lastUD = DIRECTION_UP;
+			history.lastUD = DIRECTION_UP;
 			break;
 
 		case GAMEPAD_MASK_DOWN:
 			newDpad |= GAMEPAD_MASK_DOWN;
-			lastUD = DIRECTION_DOWN;
+			history.lastUD = DIRECTION_DOWN;
 			break;
 
 		default:
-			lastUD = DIRECTION_NONE;
+			history.lastUD = DIRECTION_NONE;
 			break;
 	}
 
 	switch (dpad & (GAMEPAD_MASK_LEFT | GAMEPAD_MASK_RIGHT)) {
 		case (GAMEPAD_MASK_LEFT | GAMEPAD_MASK_RIGHT):
-			if (mode == SOCD_MODE_SECOND_INPUT_PRIORITY && lastLR != DIRECTION_NONE)
-				newDpad |= (lastLR == DIRECTION_LEFT) ? GAMEPAD_MASK_RIGHT : GAMEPAD_MASK_LEFT;
-			else if (mode == SOCD_MODE_FIRST_INPUT_PRIORITY && lastLR != DIRECTION_NONE)
-				newDpad |= (lastLR == DIRECTION_LEFT) ? GAMEPAD_MASK_LEFT : GAMEPAD_MASK_RIGHT;
+			if (mode == SOCD_MODE_SECOND_INPUT_PRIORITY && history.lastLR != DIRECTION_NONE)
+				newDpad |= (history.lastLR == DIRECTION_LEFT) ? GAMEPAD_MASK_RIGHT : GAMEPAD_MASK_LEFT;
+			else if (mode == SOCD_MODE_FIRST_INPUT_PRIORITY && history.lastLR != DIRECTION_NONE)
+				newDpad |= (history.lastLR == DIRECTION_LEFT) ? GAMEPAD_MASK_LEFT : GAMEPAD_MASK_RIGHT;
 			else
-				lastLR = DIRECTION_NONE;
+				history.lastLR = DIRECTION_NONE;
 			break;
 
 		case GAMEPAD_MASK_LEFT:
 			newDpad |= GAMEPAD_MASK_LEFT;
-			lastLR = DIRECTION_LEFT;
+			history.lastLR = DIRECTION_LEFT;
 			break;
 
 		case GAMEPAD_MASK_RIGHT:
 			newDpad |= GAMEPAD_MASK_RIGHT;
-			lastLR = DIRECTION_RIGHT;
+			history.lastLR = DIRECTION_RIGHT;
 			break;
 
 		default:
-			lastLR = DIRECTION_NONE;
+			history.lastLR = DIRECTION_NONE;
 			break;
 	}
 
 	return newDpad;
+}
+
+/**
+ * @brief Run SOCD cleaning against a D-pad value (driver convenience overload).
+ *
+ * Keeps the cleaner's last-pressed history in an internal static so the gamepad
+ * drivers keep their existing call signature. The display input-history uses the
+ * history-taking overload above with its own instance to avoid racing this state.
+ */
+static inline uint8_t runSOCDCleaner(SOCDMode mode, uint8_t dpad)
+{
+	static SocdHistory history;
+	return runSOCDCleaner(mode, dpad, history);
 }
 
 #endif // _GAMEPAD_HELPER_H_

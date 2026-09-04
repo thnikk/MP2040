@@ -415,8 +415,13 @@ void ButtonLayoutScreen::processInputHistory() {
 	// the actual pressed keycodes instead.
 	const bool keyboardMode = (inputMode == INPUT_MODE_KEYBOARD);
 	GamepadState state;
-	if (!keyboardMode)
+	if (!keyboardMode) {
 		buildGamepadState(state);
+		// Resolve the dpad through the configured SOCD cleaner so the history
+		// reflects what the console receives (L+R collapses to neutral, etc.).
+		// The cleaner always yields one of the 8 cardinal/diagonal combos.
+		state.dpad = runSOCDCleaner(Storage::getInstance().getSocdMode(), state.dpad, socdHistory);
+	}
 
 	std::array<bool, INPUT_HISTORY_MAX_INPUTS> currentInput = {
 		!keyboardMode && (state.dpad == GAMEPAD_MASK_UP),
