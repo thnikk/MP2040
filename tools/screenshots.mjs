@@ -8,6 +8,8 @@
 // Usage:
 //   node tools/screenshots.mjs                      # MacroPad, default LED mode
 //   node tools/screenshots.mjs --board 2k --led-mode cycle
+//   node tools/screenshots.mjs --modal key          # the 3 key-modal tabs
+//   node tools/screenshots.mjs --scale 2            # 2x output (default 1)
 //   node tools/screenshots.mjs --dir out --theme light
 //   node tools/screenshots.mjs --port 1357 --cdp 9223   # override base ports
 //
@@ -40,6 +42,8 @@ const BASE_PORT = parseInt(arg('--port', '1357'), 10);
 const BASE_CDP = parseInt(arg('--cdp', '9223'), 10);
 const THEME = arg('--theme', null); // null = keep 'auto' default
 const LED_MODE = arg('--led-mode', null); // e.g. 'cycle', 'rain'; default = board's default
+const MODAL = arg('--modal', null); // e.g. 'key'
+const SCALE = Math.max(1, parseInt(arg('--scale', '1'), 10) || 1);
 mkdirSync(OUT, { recursive: true });
 
 // ---- helpers ------------------------------------------------------------
@@ -189,6 +193,82 @@ const SET_LED_MODE = (value) => `
   })()
 `;
 
+// ---- key-modal ----------------------------------------------------------
+
+// (name, data-mode, ready selector). The ready selector returns truthy once
+// the tab's widget has actually rendered (not just the group being unhidden).
+const KEY_MODAL_TABS = [
+  ['keyboard', '1', `(() => {
+    const g = document.getElementById('key-modal-group-keyboard');
+    return !g.hidden && document.querySelectorAll('#key-modal-keyboard .kb-key').length > 0;
+  })()`],
+  ['midi', '2', `(() => {
+    const g = document.getElementById('key-modal-group-midi');
+    return !g.hidden && document.querySelectorAll('#key-modal-midi .midi-key-white').length > 0;
+  })()`],
+  ['gamepad', '3', `(() => {
+    const g = document.getElementById('key-modal-group-gamepad');
+    return !g.hidden && document.querySelector('#key-modal-gamepad-widget .cgp-svg')?.children.length > 0;
+  })()`],
+];
+
+const OPEN_KEY_MODAL = `
+  (() => { openKeyModal(0); return true; })()
+`;
+
+const CLICK_MODAL_TAB = (mode) => `
+  (() => {
+    document.querySelector('#key-modal-tabs .modal-tab[data-mode="${mode}"]').click();
+    return true;
+  })()
+`;
+
+// Bounding rect of the rounded .modal element (viewport coords, CSS px).
+const MODAL_RECT = `
+  (() => {
+    const r = document.querySelector('#key-modal .modal').getBoundingClientRect();
+    return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
+  })()
+`;
+
+// Capture just the .modal element (clip = its bounding box) and round the
+// corners with an ImageMagick alpha mask matching the CSS border-radius
+// (20px * scale). Writes <name>.png with transparent corners.
+async function screenshotModal(cdp, rect, name) {
+  const shot = await cdp.send('Page.captureScreenshot', {
+    format: 'png',
+    // deviceScaleFactor (set via Emulation.setDeviceMetricsOverride) already
+    // scales the output; clip.scale would double-multiply it.
+    clip: { x: rect.x, y: rect.y, width: rect.w, height: rect.h, scale: 1 },
+  });
+  const raw = path.join(OUT, `.${name}.raw.png`);
+  writeFileSync(raw, Buffer.from(shot.data, 'base64'));
+  const W = rect.w * SCALE;
+  const H = rect.h * SCALE;
+  const R = 20 * SCALE;
+  execSync(
+    `magick "${raw}" \\( -size ${W}x${H} xc:none -fill white ` +
+    `-draw "roundrectangle 0,0,${W - 1},${H - 1},${R},${R}" \\) ` +
+    `-alpha set -compose DstIn -composite "${path.join(OUT, name)}"`,
+  );
+  try { execSync(`rm -f "${raw}"`); } catch {}
+  const file = path.join(OUT, name);
+  console.log(`  saved ${path.relative(ROOT, file)} (${(Buffer.byteLength(shot.data, 'base64') / 1024).toFixed(0)} KB @ ${SCALE}x)`);
+}
+
+async function captureKeyModal(cdp) {
+  await cdp.evalJs(OPEN_KEY_MODAL);
+  await cdp.poll(`!document.getElementById('key-modal').hidden`);
+  for (const [name, mode, ready] of KEY_MODAL_TABS) {
+    await cdp.evalJs(CLICK_MODAL_TAB(mode));
+    await cdp.poll(ready);
+    await sleep(250);
+    const rect = await cdp.evalJs(MODAL_RECT);
+    console.log(`key modal (${name}):`);
+    await screenshotModal(cdp, rect, `keymodal-${name}-${BOARD}.png`);
+  }
+}
+
 // ---- main ---------------------------------------------------------------
 
 async function main() {
@@ -224,7 +304,7 @@ async function main() {
     await cdp.send('Page.enable');
     await cdp.send('Runtime.enable');
     await cdp.send('Emulation.setDeviceMetricsOverride', {
-      width: 1100, height: 900, deviceScaleFactor: 1, mobile: false,
+      width: 1100, height: 900, deviceScaleFactor: SCALE, mobile: false,
     });
 
     await cdp.send('Page.navigate', { url: `http://localhost:${port}/layout` });
@@ -236,7 +316,12 @@ async function main() {
     }
     await sleep(300);
 
-    if (LED_MODE) {
+    if (MODAL && MODAL !== 'key') {
+      throw new Error(`unknown --modal '${MODAL}' (expected: key)`);
+    }
+    if (MODAL === 'key') {
+      await captureKeyModal(cdp);
+    } else if (LED_MODE) {
       const value = LED_MODES[LED_MODE];
       if (value === undefined) throw new Error(`unknown --led-mode '${LED_MODE}' (expected one of: ${Object.keys(LED_MODES).join(', ')})`);
       console.log(`layout (LED mode ${LED_MODE}):`);

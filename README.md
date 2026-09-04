@@ -9,6 +9,8 @@
 	</a>
 </p><br>
 
+![Web Config](assets/web-config.png)
+
 Firmware for RP2040-based keypads. This is a replacement for the old
 [Unified 2022](https://github.com/thnikk/unified-2022) firmware, utilizing
 the advantages of [GP2040-th](https://github.com/thnikk/GP2040-th) like
@@ -61,11 +63,9 @@ key to enter the bootloader. The device appears as a network adapter and
 serves the configurator at `http://192.168.7.1`, where you can remap keys, set
 up macros, and adjust LED colors.
 
-![Web Config](assets/web-config.png)
-
 ## Input Modes
 
-MP2040 currently supports four input modes:
+MP2040 currently supports the following input modes:
 
 - **Keyboard**: Full NKRO HID report (default)
 - **MIDI**: Send MIDI notes on a configured channel with global and per-key velocities
