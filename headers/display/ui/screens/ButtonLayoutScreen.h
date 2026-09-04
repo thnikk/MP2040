@@ -37,6 +37,7 @@ class ButtonLayoutScreen : public GPScreen {
 
 		InputMode inputMode;
 		std::string statusBar;
+		std::string statusBarCenter;
 		std::string statusBarRight;
 		std::string footer;
 

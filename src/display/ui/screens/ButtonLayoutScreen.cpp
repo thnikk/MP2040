@@ -276,6 +276,7 @@ int8_t ButtonLayoutScreen::update() {
 void ButtonLayoutScreen::generateHeader() {
 	// Limit to 21 chars with 6x8 font for now
 	statusBar.clear();
+	statusBarCenter.clear();
 	statusBarRight.clear();
 
 	if (showInputMode) {
@@ -291,8 +292,8 @@ void ButtonLayoutScreen::generateHeader() {
 	}
 
 	if (showProfileMode) {
-		statusBarRight += " P:";
-		statusBarRight += std::to_string(Storage::getInstance().getActiveProfile() + 1);
+		statusBarCenter += "P";
+		statusBarCenter += std::to_string(Storage::getInstance().getActiveProfile() + 1);
 	}
 
 	if (showMacroMode && macroEnabled) statusBarRight += " M";
@@ -319,12 +320,15 @@ void ButtonLayoutScreen::generateHeader() {
 	}
 
 	trim(statusBar);
+	trim(statusBarCenter);
 	trim(statusBarRight);
 }
 
 void ButtonLayoutScreen::drawScreen() {
 	uint8_t rightX = 21 - statusBarRight.length();
 	getRenderer()->drawText(0, 0, statusBar);
+	if (!statusBarCenter.empty())
+		getRenderer()->drawText((21 - statusBarCenter.length()) / 2, 0, statusBarCenter);
 	if (!statusBarRight.empty())
 		getRenderer()->drawText(rightX, 0, statusBarRight);
 	if (isInputHistoryEnabled)
