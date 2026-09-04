@@ -368,6 +368,9 @@ export function parseBoardConfig(configDir, rootDir) {
       ledPressedColors,
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
+    // Default input mode seeded into a fresh config (DEFAULT_INPUT_MODE),
+    // mirroring the firmware's config.defaultInputMode = DEFAULT_INPUT_MODE.
+    defaultInputMode: parseInputMode(d.DEFAULT_INPUT_MODE),
     // Board-fixed USB boot loader pin (PIN_BOOT), shown for reference in the
     // Boot Keys section. Not user-editable.
     bootPin: parseNum(d.PIN_BOOT) ?? -1,

@@ -172,7 +172,7 @@ function defaultOptions() {
     // the firmware's fresh-config seed.
     bootKeys: board?.bootKeys ?? [],
     gamepadMasks,
-    defaultInputMode: 1,
+    defaultInputMode: board?.defaultInputMode ?? 1,
     debounceInterval: 5,
     touchMargin: 15,
     touchRelease: 10,
