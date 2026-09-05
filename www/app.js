@@ -183,6 +183,8 @@ let editingPin = -1;
 let brightnessSlider = null;
 let speedSlider = null;
 let timeoutSpinner = null;
+let statusLedMinSlider = null;
+let statusLedMaxSlider = null;
 
 // Pill toggles (see pilltoggle.js): Serial control, Status LED, Input History
 // and the Nintendo layout toggle.
@@ -348,6 +350,8 @@ function refreshPerProfileControls() {
   syncSpeedSliderToMode();
   syncColorPickersToMode();
   if (timeoutSpinner) timeoutSpinner.setValue(led.ledTimeout ?? 0);
+  if (statusLedMinSlider) statusLedMinSlider.setValue(led.statusLedBrightnessMinimum ?? 0);
+  if (statusLedMaxSlider) statusLedMaxSlider.setValue(led.statusLedBrightnessMaximum ?? 255);
 }
 
 function updateProfileTabs() {
@@ -574,6 +578,8 @@ async function previewLed() {
   led.brightnessByMode = brightness;
   led.ledTimeout = timeoutSpinner ? timeoutSpinner.getValue() : 0;
   led.statusLedEnabled = statusLedPill ? statusLedPill.checked : true;
+  led.statusLedBrightnessMinimum = statusLedMinSlider ? statusLedMinSlider.getValue() : 0;
+  led.statusLedBrightnessMaximum = statusLedMaxSlider ? statusLedMaxSlider.getValue() : 255;
   const colors = getModeLedColors();
   colors.normal[led.ledMode] = colorToInt(colorNormalPicker ? colorNormalPicker.getValue() : '#00ff00');
   colors.pressed[led.ledMode] = colorToInt(colorPressedPicker ? colorPressedPicker.getValue() : '#ffffff');
@@ -585,6 +591,8 @@ async function previewLed() {
     brightnessByMode: led.brightnessByMode,
     ledTimeout: led.ledTimeout,
     statusLedEnabled: led.statusLedEnabled,
+    statusLedBrightnessMinimum: led.statusLedBrightnessMinimum,
+    statusLedBrightnessMaximum: led.statusLedBrightnessMaximum,
     colorNormalByMode: led.colorNormalByMode,
     colorPressedByMode: led.colorPressedByMode,
     ledNormalColors: led.ledNormalColors || [],
@@ -722,6 +730,8 @@ function buildOptionsBody() {
       brightnessByMode: brightness,
       ledTimeout: timeoutSpinner ? timeoutSpinner.getValue() : 0,
       statusLedEnabled: statusLedPill ? statusLedPill.checked : false,
+      statusLedBrightnessMinimum: statusLedMinSlider ? statusLedMinSlider.getValue() : 0,
+      statusLedBrightnessMaximum: statusLedMaxSlider ? statusLedMaxSlider.getValue() : 255,
       colorNormalByMode: colors.normal,
       colorPressedByMode: colors.pressed,
       ledNormalColors: currentOptions.led?.ledNormalColors || [],
@@ -1070,10 +1080,13 @@ async function load() {
     });
   }
 
+  const statusLedRowEl = document.getElementById('status-led-row');
+  if (statusLedRowEl) {
+    // Boards without a status LED don't show the toggle / min / max row.
+    statusLedRowEl.hidden = options.led?.hasStatusLed === false;
+  }
   const statusLedEl = document.getElementById('status-led');
   if (statusLedEl) {
-    // Boards without a status LED don't show the toggle at all.
-    statusLedEl.hidden = options.led?.hasStatusLed === false;
     statusLedPill = new PillToggle(statusLedEl, {
       checked: Boolean(options.led?.statusLedEnabled),
       onChange: (checked) => {
@@ -1081,6 +1094,33 @@ async function load() {
         currentOptions.led.statusLedEnabled = checked;
         previewLed();
       },
+    });
+  }
+
+  // Status LED min/max brightness (the "device is powered" floor and the
+  // runtime cap). The label lives inside each pill slider.
+  const statusLedMinEl = document.getElementById('status-led-min');
+  if (statusLedMinEl) {
+    statusLedMinSlider = new PillSlider({
+      container: statusLedMinEl,
+      min: 0,
+      max: 255,
+      label: 'Minimum',
+      value: options.led?.statusLedBrightnessMinimum ?? 0,
+      padLength: 3,
+      onChange: previewLed,
+    });
+  }
+  const statusLedMaxEl = document.getElementById('status-led-max');
+  if (statusLedMaxEl) {
+    statusLedMaxSlider = new PillSlider({
+      container: statusLedMaxEl,
+      min: 0,
+      max: 255,
+      label: 'Maximum',
+      value: options.led?.statusLedBrightnessMaximum ?? 255,
+      padLength: 3,
+      onChange: previewLed,
     });
   }
 

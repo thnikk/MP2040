@@ -356,6 +356,8 @@ std::string getOptions()
             ? ledOptions.brightnessByMode[i] : ledOptions.brightnessMaximum);
     doc["led"]["ledTimeout"] = ledOptions.ledTimeout;
     doc["led"]["statusLedEnabled"] = ledOptions.statusLedEnabled != 0;
+    doc["led"]["statusLedBrightnessMinimum"] = ledOptions.statusLedBrightnessMinimum;
+    doc["led"]["statusLedBrightnessMaximum"] = ledOptions.statusLedBrightnessMaximum;
     // Board property: whether this board has a mode indicator LED (the UI
     // hides the status LED toggle when it's false).
     doc["led"]["hasStatusLed"] = isValidPin(STATUS_LED_PIN);
@@ -693,6 +695,18 @@ std::string setOptions()
         // The status LED toggle is a global (non-profile) LED option.
         if (led["statusLedEnabled"].is<bool>())
             config.ledOptions.statusLedEnabled = led["statusLedEnabled"].as<bool>() ? 1 : 0;
+        // Status LED minimum brightness (0-255): the "device is powered" floor.
+        if (led["statusLedBrightnessMinimum"].is<int>())
+        {
+            uint32_t min = led["statusLedBrightnessMinimum"].as<uint32_t>();
+            config.ledOptions.statusLedBrightnessMinimum = min > 255 ? 255 : min;
+        }
+        // Status LED brightness cap (0-255): runtime override of the board define.
+        if (led["statusLedBrightnessMaximum"].is<int>())
+        {
+            uint32_t max = led["statusLedBrightnessMaximum"].as<uint32_t>();
+            config.ledOptions.statusLedBrightnessMaximum = max > 255 ? 255 : max;
+        }
     }
 
     // Display options (SSD1306 over I2C). The I2C block/pins, the enable flag and
@@ -776,6 +790,8 @@ std::string setLedPreview()
     static LedPreview preview;
     std::memset(&preview, 0, sizeof(preview));
     preview.statusLedEnabled = LED_PREVIEW_STATUS_UNSET;
+    preview.statusLedBrightnessMinimum = LED_PREVIEW_MIN_UNSET;
+    preview.statusLedBrightnessMaximum = LED_PREVIEW_MAX_UNSET;
     JsonObject led = doc["led"];
     if (!led.isNull())
     {
@@ -810,6 +826,16 @@ std::string setLedPreview()
         }
         if (led["statusLedEnabled"].is<bool>())
             preview.statusLedEnabled = led["statusLedEnabled"].as<bool>() ? 1 : 0;
+        if (led["statusLedBrightnessMinimum"].is<int>())
+        {
+            uint32_t min = led["statusLedBrightnessMinimum"].as<uint32_t>();
+            preview.statusLedBrightnessMinimum = min > 255 ? 255 : min;
+        }
+        if (led["statusLedBrightnessMaximum"].is<int>())
+        {
+            uint32_t max = led["statusLedBrightnessMaximum"].as<uint32_t>();
+            preview.statusLedBrightnessMaximum = max > 255 ? 255 : max;
+        }
         // Per-key colors for custom mode (0 or an empty array uses the global
         // fallback).
         JsonArray normalColors = led["ledNormalColors"];

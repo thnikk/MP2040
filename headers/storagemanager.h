@@ -25,6 +25,12 @@
 // Used by previews that don't carry the toggle (e.g. the boot-window cue) so
 // applying them doesn't turn the mode indicator off.
 #define LED_PREVIEW_STATUS_UNSET 0xFFFFFFFF
+// Sentinel for LedPreview.statusLedBrightnessMinimum: "leave the minimum
+// untouched". Used by previews that don't carry the value.
+#define LED_PREVIEW_MIN_UNSET 0xFFFFFFFF
+// Sentinel for LedPreview.statusLedBrightnessMaximum: "leave the maximum
+// untouched". Used by previews that don't carry the value.
+#define LED_PREVIEW_MAX_UNSET 0xFFFFFFFF
 
 // Live LED options pushed from the web config (core 0) to the running LED
 // controller (core 1). Only user-tunable scalars; board properties are
@@ -47,6 +53,12 @@ struct LedPreview
     // Mode indicator LED toggle. LED_PREVIEW_STATUS_UNSET = leave untouched;
     // otherwise 1 = on, 0 = off.
     uint32_t statusLedEnabled;
+    // Mode indicator LED minimum brightness (0-255). LED_PREVIEW_MIN_UNSET =
+    // leave untouched.
+    uint32_t statusLedBrightnessMinimum;
+    // Mode indicator LED brightness cap (0-255). LED_PREVIEW_MAX_UNSET =
+    // leave untouched.
+    uint32_t statusLedBrightnessMaximum;
     // Per-key colors for custom mode. A value of 0 (or no entry) uses Custom
     // mode's colorNormalByMode[0] / colorPressedByMode[0].
     uint32_t ledNormalColorCount;

@@ -357,6 +357,8 @@ export function parseBoardConfig(configDir, rootDir) {
         return pin !== undefined && pin >= 0;
       })(),
       statusLedEnabled: parseNum(d.STATUS_LED_ENABLED_DEFAULT) ?? 1,
+      statusLedBrightnessMinimum: parseNum(d.STATUS_LED_BRIGHTNESS_MINIMUM_DEFAULT) ?? 10,
+      statusLedBrightnessMaximum: parseNum(d.STATUS_LED_BRIGHTNESS_DEFAULT) ?? 255,
       brightnessMaximum: parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255,
       brightnessByMode: perModeDefaults(d, 'LED_BRIGHTNESS', parseNum, parseNum(d.LED_BRIGHTNESS_DEFAULT) ?? 255),
       colorNormal: parseColor(d.LED_COLOR_NORMAL) ?? 0x00ff00,

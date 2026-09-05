@@ -208,6 +208,8 @@ function defaultOptions() {
       ledTimeout: board?.led?.ledTimeout ?? 0,
       hasStatusLed: board?.led?.hasStatusLed ?? false,
       statusLedEnabled: board?.led?.statusLedEnabled ?? 1,
+      statusLedBrightnessMinimum: board?.led?.statusLedBrightnessMinimum ?? 10,
+      statusLedBrightnessMaximum: board?.led?.statusLedBrightnessMaximum ?? 255,
       brightnessMaximum: board?.led?.brightnessMaximum ?? 255,
       brightnessByMode: Array.isArray(board?.led?.brightnessByMode) && board.led.brightnessByMode.length >= 7
         ? board.led.brightnessByMode.slice()
@@ -341,15 +343,22 @@ export function createMockApp() {
     if (Array.isArray(body.bootKeys)) current.bootKeys = body.bootKeys;
     if (body.midi) profile.midi = { ...profile.midi, ...body.midi };
     if (body.led) {
-      // ledTimeout / statusLedEnabled are global (non-profile) LED options,
-      // like the firmware.
-      const { ledTimeout, statusLedEnabled, ...profileLed } = body.led;
+      // ledTimeout / statusLedEnabled / statusLedBrightnessMinimum /
+      // statusLedBrightnessMaximum are global (non-profile) LED options, like
+      // the firmware.
+      const { ledTimeout, statusLedEnabled, statusLedBrightnessMinimum, statusLedBrightnessMaximum, ...profileLed } = body.led;
       profile.led = { ...profile.led, ...profileLed };
       if (ledTimeout !== undefined) {
         current.led.ledTimeout = Math.max(0, Math.min(600, Number(ledTimeout) || 0));
       }
       if (statusLedEnabled !== undefined) {
         current.led.statusLedEnabled = statusLedEnabled ? 1 : 0;
+      }
+      if (statusLedBrightnessMinimum !== undefined) {
+        current.led.statusLedBrightnessMinimum = Math.max(0, Math.min(255, Number(statusLedBrightnessMinimum) || 0));
+      }
+      if (statusLedBrightnessMaximum !== undefined) {
+        current.led.statusLedBrightnessMaximum = Math.max(0, Math.min(255, Number(statusLedBrightnessMaximum) || 0));
       }
     }
     if (body.defaultInputMode !== undefined) current.defaultInputMode = body.defaultInputMode;

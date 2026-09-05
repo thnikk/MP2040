@@ -106,6 +106,13 @@ private:
     Neopixel* statusLed;
     uint32_t lastStatusColor; // last color shown on the status LED
     bool statusLedEnabled;    // user toggle: false = mode indicator off
+    // Mode indicator LED never dims below this (0-255) while enabled, so it
+    // stays lit as a "device is powered" indicator during the strip's
+    // inactivity fade.
+    uint32_t statusLedBrightnessMinimum;
+    // Mode indicator LED brightness cap (0-255) when awake. Runtime override
+    // of the board's STATUS_LED_BRIGHTNESS_DEFAULT.
+    uint32_t statusLedBrightnessMaximum;
     int32_t dataPin;
     LEDFormat_Proto ledFormat;
     uint32_t ledsPerKey;

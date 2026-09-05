@@ -1787,6 +1787,25 @@ html[data-theme="light"] .ms-caret {
 	display: flex;
 }
 
+/* Status LED controls (toggle + min/max sliders) on one row. The sliders fill
+   the remaining width evenly beside the toggle; the label lives inside each
+   pill slider ("Minimum: 10" / "Maximum: 255"). */
+.status-led-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.status-led-row .led-slider {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.status-led-row[hidden] {
+  display: none;
+}
+
 .pill-slider {
   position: relative;
   display: flex;

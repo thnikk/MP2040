@@ -7,7 +7,7 @@
 	<a href="https://github.com/thnikk/GP2040-th">
 		<img alt="Fork Badge" src="assets/fork-label.svg" height="24px">
 	</a>
-</p><br>
+</p>
 
 ![Web Config](assets/web-config.png)
 

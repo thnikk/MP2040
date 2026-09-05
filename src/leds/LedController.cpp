@@ -123,6 +123,8 @@ LedController::LedController() :
     statusLed(nullptr),
     lastStatusColor(0xFFFFFFFF),
     statusLedEnabled(true),
+    statusLedBrightnessMinimum(0),
+    statusLedBrightnessMaximum(STATUS_LED_BRIGHTNESS_DEFAULT),
     dataPin(-1),
     ledFormat(LED_FORMAT_GRB),
     ledsPerKey(1),
@@ -216,6 +218,10 @@ void LedController::configure()
     // until the first release.
     ledTimeoutMs = (ledOptions.ledTimeout > 600 ? 600 : ledOptions.ledTimeout) * 1000u;
     statusLedEnabled = ledOptions.statusLedEnabled != 0;
+    statusLedBrightnessMinimum = ledOptions.statusLedBrightnessMinimum > 255
+        ? 255 : ledOptions.statusLedBrightnessMinimum;
+    statusLedBrightnessMaximum = ledOptions.statusLedBrightnessMaximum > 255
+        ? 255 : ledOptions.statusLedBrightnessMaximum;
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;
     ledDim = 255;
@@ -534,9 +540,10 @@ void LedController::update()
 // Light the mode indicator LED in the board-fixed color for the active input
 // mode: web config (cyan), MIDI (amber), keyboard (green), XInput (green),
 // Switch Pro (red). The main strip's inactivity fade (ledDim) is applied so
-// the status LED sleeps and wakes with it. The LED is re-shown only when the
-// scaled output changes, so the 80us WS2812 latch wait doesn't run every 20ms
-// frame while idle.
+// the status LED sleeps and wakes with it, between statusLedBrightnessMinimum
+// and statusLedBrightnessMaximum (a "device is powered" floor and a runtime
+// cap). The LED is re-shown only when the scaled output changes, so the 80us
+// WS2812 latch wait doesn't run every 20ms frame while idle.
 void LedController::updateStatusLed()
 {
     if (statusLed == nullptr) return;
@@ -565,9 +572,14 @@ void LedController::updateStatusLed()
     else if (inputMode == INPUT_MODE_XBOX_ONE)
         color = STATUS_LED_COLOR_XBOX_ONE;
 
-    uint32_t r = ((color >> 16) & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
-    uint32_t g = ((color >> 8) & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
-    uint32_t b = (color & 0xFF) * ledDim / 255 * STATUS_LED_BRIGHTNESS_DEFAULT / 255;
+    uint32_t minDim = statusLedBrightnessMinimum;
+    uint32_t maxDim = statusLedBrightnessMaximum;
+    if (minDim > maxDim) minDim = maxDim; // a floor above the cap is nonsense
+    uint32_t dim = ledDim * maxDim / 255;
+    if (dim < minDim) dim = minDim;
+    uint32_t r = ((color >> 16) & 0xFF) * dim / 255;
+    uint32_t g = ((color >> 8) & 0xFF) * dim / 255;
+    uint32_t b = (color & 0xFF) * dim / 255;
     uint32_t out = (r << 16) | (g << 8) | b;
 
     if (out == lastStatusColor) return;
@@ -616,6 +628,20 @@ void LedController::applyLedPreview(const LedPreview& preview)
     // Status LED toggle; LED_PREVIEW_STATUS_UNSET leaves it untouched.
     if (preview.statusLedEnabled != LED_PREVIEW_STATUS_UNSET)
         statusLedEnabled = preview.statusLedEnabled != 0;
+    // Status LED minimum brightness; LED_PREVIEW_MIN_UNSET leaves it untouched.
+    if (preview.statusLedBrightnessMinimum != LED_PREVIEW_MIN_UNSET)
+    {
+        statusLedBrightnessMinimum = preview.statusLedBrightnessMinimum > 255
+            ? 255 : preview.statusLedBrightnessMinimum;
+        lastStatusColor = 0xFFFFFFFF; // force a re-show so the floor applies now
+    }
+    // Status LED brightness cap; LED_PREVIEW_MAX_UNSET leaves it untouched.
+    if (preview.statusLedBrightnessMaximum != LED_PREVIEW_MAX_UNSET)
+    {
+        statusLedBrightnessMaximum = preview.statusLedBrightnessMaximum > 255
+            ? 255 : preview.statusLedBrightnessMaximum;
+        lastStatusColor = 0xFFFFFFFF; // force a re-show so the cap applies now
+    }
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;
     ledDim = 255;

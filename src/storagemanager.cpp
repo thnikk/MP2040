@@ -8,6 +8,23 @@
 #define STATUS_LED_ENABLED_DEFAULT 1
 #endif
 
+// Mode indicator LED minimum brightness (0-255) on fresh/reset configs. It
+// never dims below this, so the LED doubles as a "device is powered" indicator
+// while the strip sleeps. 0 = fades fully off with the strip.
+#ifndef STATUS_LED_BRIGHTNESS_MINIMUM_DEFAULT
+#define STATUS_LED_BRIGHTNESS_MINIMUM_DEFAULT 10
+#endif
+
+// Mode indicator LED brightness cap (0-255) on fresh/reset configs. Defaults
+// to the board's compile-time brightness so behavior is unchanged until the
+// user edits the max slider.
+#ifndef STATUS_LED_BRIGHTNESS_DEFAULT
+#define STATUS_LED_BRIGHTNESS_DEFAULT 255
+#endif
+#ifndef STATUS_LED_BRIGHTNESS_MAXIMUM_DEFAULT
+#define STATUS_LED_BRIGHTNESS_MAXIMUM_DEFAULT STATUS_LED_BRIGHTNESS_DEFAULT
+#endif
+
 #include "touch/TouchGpio.h"
 #include "FlashPROM.h"
 #include "config.pb.h"
@@ -3804,6 +3821,8 @@ static void applyDefaults(Config& config)
         config.ledOptions.ledSpeeds[i] = defaultLedSpeedsByMode[i];
     config.ledOptions.ledTimeout = LED_TIMEOUT;
     config.ledOptions.statusLedEnabled = STATUS_LED_ENABLED_DEFAULT;
+    config.ledOptions.statusLedBrightnessMinimum = STATUS_LED_BRIGHTNESS_MINIMUM_DEFAULT;
+    config.ledOptions.statusLedBrightnessMaximum = STATUS_LED_BRIGHTNESS_MAXIMUM_DEFAULT;
     config.ledOptions.pinLedIndices_count = MAX_KEYS;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS; pin++)
         config.ledOptions.pinLedIndices[pin] = defaultPinLedIndices[pin];
@@ -4179,6 +4198,21 @@ void Storage::init() {
         config.ledOptions.has_statusLedEnabled = true;
         config.ledOptions.statusLedEnabled = STATUS_LED_ENABLED_DEFAULT;
     }
+    // Status LED minimum brightness: configs that predate the field get the
+    // board default (so the "powered" floor applies out of the box).
+    if (!config.ledOptions.has_statusLedBrightnessMinimum)
+    {
+        config.ledOptions.has_statusLedBrightnessMinimum = true;
+        config.ledOptions.statusLedBrightnessMinimum = STATUS_LED_BRIGHTNESS_MINIMUM_DEFAULT;
+    }
+    // Status LED brightness cap: configs that predate the field keep the
+    // board's compile-time brightness (so the max slider starts at the same
+    // value the LED rendered at before).
+    if (!config.ledOptions.has_statusLedBrightnessMaximum)
+    {
+        config.ledOptions.has_statusLedBrightnessMaximum = true;
+        config.ledOptions.statusLedBrightnessMaximum = STATUS_LED_BRIGHTNESS_MAXIMUM_DEFAULT;
+    }
 
     // Seed the profiles (0-3) once from the current base mapping so configs
     // that predate profiles start with usable, editable profiles.
@@ -4407,6 +4441,8 @@ void Storage::buildLedPreviewFromConfig(LedPreview& preview)
     }
     preview.ledTimeout = lo.ledTimeout;
     preview.statusLedEnabled = lo.statusLedEnabled != 0 ? 1 : 0;
+    preview.statusLedBrightnessMinimum = lo.statusLedBrightnessMinimum;
+    preview.statusLedBrightnessMaximum = lo.statusLedBrightnessMaximum;
     preview.ledNormalColorCount = km.ledNormalColors_count;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
         preview.ledNormalColors[pin] = km.ledNormalColors[pin];

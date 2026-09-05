@@ -165,6 +165,18 @@ private:
 			led.ledTimeout = (uint32_t)t;
 			changed = true;
 		}
+		if (doc["statusLedMin"].is<int>()) {
+			int b = doc["statusLedMin"].as<int>();
+			if (b < 0 || b > 255) { sendError("led statusLedMin must be 0-255"); return; }
+			led.statusLedBrightnessMinimum = (uint32_t)b;
+			changed = true;
+		}
+		if (doc["statusLedMax"].is<int>()) {
+			int b = doc["statusLedMax"].as<int>();
+			if (b < 0 || b > 255) { sendError("led statusLedMax must be 0-255"); return; }
+			led.statusLedBrightnessMaximum = (uint32_t)b;
+			changed = true;
+		}
 
 		if (changed)
 		{
@@ -187,6 +199,8 @@ private:
 		l["brightness"] = mode < led.brightnessByMode_count
 			? led.brightnessByMode[mode] : led.brightnessMaximum;
 		l["timeout"] = led.ledTimeout;
+		l["statusLedMin"] = led.statusLedBrightnessMinimum;
+		l["statusLedMax"] = led.statusLedBrightnessMaximum;
 		sendDoc(out);
 	}
 

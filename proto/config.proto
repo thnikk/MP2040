@@ -148,6 +148,14 @@ message LEDOptions
     // Mode indicator LED (board-fixed pin showing the active input mode):
     // 0 = off, 1 = on. Defaults to on when absent.
     optional uint32 statusLedEnabled = 17;
+    // Mode indicator LED never dims below this (0-255) when statusLedEnabled,
+    // so it doubles as a "device is powered" indicator while the strip sleeps.
+    // 0 = current behavior (fades fully off with the strip).
+    optional uint32 statusLedBrightnessMinimum = 18;
+    // Mode indicator LED brightness cap (0-255) when awake. Defaults to the
+    // board's STATUS_LED_BRIGHTNESS_DEFAULT; a runtime override of the
+    // compile-time constant.
+    optional uint32 statusLedBrightnessMaximum = 19;
 }
 
 // A profile: a full key mapping plus the per-profile MIDI options and LED
