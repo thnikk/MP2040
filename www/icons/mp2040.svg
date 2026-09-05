@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   viewBox="0 0 121.94489 121.94489"
-   width="121.94489"
-   height="121.94489"
+   viewBox="0 0 121.94531 121.94531"
+   width="121.94531"
+   height="121.94531"
    version="1.1"
    id="svg56"
-   sodipodi:docname="mp2040.svg"
+   sodipodi:docname="logo.svg"
    inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -20,19 +20,65 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="7.98997"
-     inkscape:cx="61.514624"
-     inkscape:cy="49.749874"
+     inkscape:zoom="3.4859801"
+     inkscape:cx="21.514753"
+     inkscape:cy="87.349896"
      inkscape:window-width="2560"
      inkscape:window-height="1440"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg56" />
+     inkscape:current-layer="layer2" />
   <desc
      id="desc1">logo-thnikk.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc>
   <defs
      id="defs4">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect11"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,60.972654,0,1 @ F,0,0,1,0,29.999997,0,1 @ F,0,0,1,0,60.972666,0,1 @ F,0,0,1,0,29.999997,0,1"
+       radius="29.999999"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect2"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,29.999997,0,1 @ F,0,0,1,0,60.972656,0,1 @ F,0,0,1,0,29.999997,0,1 @ F,0,0,1,0,60.972656,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <rect
+       x="-458.85474"
+       y="-287.4837"
+       width="1192.6027"
+       height="716.26111"
+       id="rect8" />
+    <rect
+       x="-167.87369"
+       y="161.57843"
+       width="727.01776"
+       height="220.33421"
+       id="rect7" />
     <rect
        x="-11"
        y="-169.5"
@@ -80,20 +126,6 @@
        id="*MODEL_SPACE" />
     <symbol
        id="*PAPER_SPACE" />
-    <mask
-       maskUnits="userSpaceOnUse"
-       id="mask-powermask-path-effect7">
-      <path
-         id="mask-powermask-path-effect7_box"
-         style="fill:#ffffff;fill-opacity:1"
-         d="M -1,-1 H 229.84601 V 122.94489 H -1 Z" />
-      <path
-         fill="none"
-         stroke="#000000"
-         d="m 141.1483,87.697756 a 37.795276,37.795276 0 1 0 0,-53.4506 l -53.4506,53.45 a 37.7953,37.7953 0 1 1 0,-53.4506"
-         id="path7"
-         style="stroke:#1c1f26;stroke-width:10;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1" />
-    </mask>
     <filter
        id="mask-powermask-path-effect7_inverse"
        style="color-interpolation-filters:sRGB"
@@ -112,8 +144,47 @@
          in="fbSourceGraphic" />
     </filter>
   </defs>
-  <path
-     id="path12"
-     style="fill:#bf616a;fill-opacity:1;stroke:none;stroke-width:8.17453;stroke-linecap:round;stroke-dasharray:none"
-     d="M 20.324219 0 C 9.0646389 0 0 9.0646389 0 20.324219 L 0 101.62109 C 0 112.88067 9.0646389 121.94531 20.324219 121.94531 L 101.62109 121.94531 C 112.88067 121.94531 121.94531 112.88067 121.94531 101.62109 L 121.94531 20.324219 C 121.94531 9.0646389 112.88067 2.3684758e-15 101.62109 0 L 20.324219 0 z M 24.175781 10.162109 L 46.957031 10.162109 C 54.654112 10.162109 60.972656 16.478691 60.972656 24.175781 L 60.972656 46.957031 C 60.972656 54.654115 54.654112 60.972656 46.957031 60.972656 L 24.175781 60.972656 C 16.478703 60.972656 10.162109 54.654115 10.162109 46.957031 L 10.162109 24.175781 C 10.162109 16.478691 16.478703 10.162109 24.175781 10.162109 z M 74.986328 60.972656 L 97.767578 60.972656 C 105.46467 60.972656 111.7832 67.289247 111.7832 74.986328 L 111.7832 97.767578 C 111.7832 105.46465 105.46467 111.7832 97.767578 111.7832 L 74.986328 111.7832 C 67.289237 111.7832 60.972656 105.46465 60.972656 97.767578 L 60.972656 74.986328 C 60.972656 67.289247 67.289237 60.972656 74.986328 60.972656 z " />
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 1"
+     transform="translate(-143.10938)">
+    <path
+       id="rect11"
+       style="display:inline;fill:#bf616a;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       d="m 204.08203,0 a 60.972654,60.972654 0 0 0 -60.97265,60.972656 v 30.972656 a 29.999997,29.999997 0 0 0 30,29.999998 h 30.97265 A 60.972666,60.972666 0 0 0 265.05469,60.972656 V 30 a 29.999997,29.999997 0 0 0 -30,-30 z m 25,10.972656 a 25,25 0 0 1 25,25 25,25 0 0 1 -25,25 25,25 0 0 1 -25,-25 25,25 0 0 1 25,-25 z m -50,50.404297 a 25,25 0 0 1 25,25 25,25 0 0 1 -25,24.999997 25,25 0 0 1 -25,-24.999997 25,25 0 0 1 25,-25 z" />
+    <circle
+       style="display:none;fill:#ff0000;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       id="path12"
+       cx="179.08203"
+       cy="86.376953"
+       r="25" />
+    <circle
+       style="display:none;fill:#ff0000;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       id="path12-5"
+       cx="229.08203"
+       cy="35.972656"
+       r="25" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:800;font-stretch:normal;font-size:40px;font-family:Nunito;-inkscape-font-specification:'Nunito Ultra-Bold';writing-mode:lr-tb;direction:ltr;display:none;fill:#bf616a;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       x="164.16202"
+       y="98.955627"
+       id="text11"><tspan
+         sodipodi:role="line"
+         id="tspan11"
+         x="164.16202"
+         y="98.955627">A</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:40px;font-family:Nunito;-inkscape-font-specification:'Nunito Bold';writing-mode:lr-tb;direction:ltr;display:none;fill:#bf616a;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       x="216.15234"
+       y="50.072655"
+       id="text12"><tspan
+         sodipodi:role="line"
+         id="tspan12"
+         x="216.15234"
+         y="50.072655"
+         style="font-style:normal;font-variant:normal;font-weight:800;font-stretch:normal;font-family:Nunito;-inkscape-font-specification:'Nunito Ultra-Bold';fill:#bf616a;fill-opacity:1">B</tspan></text>
+  </g>
 </svg>

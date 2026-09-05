@@ -5,7 +5,7 @@
 
 <p align="center">
 	<a href="https://github.com/thnikk/GP2040-th">
-		<img alt="Fork Badge" src="assets/fork-label.svg" height="24px">
+		<img alt="Fork Badge" src="assets/fork-label.svg" width="150px">
 	</a>
 </p>
 

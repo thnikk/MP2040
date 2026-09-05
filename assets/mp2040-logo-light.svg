@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   viewBox="0 0 639.31894 298.58492"
-   width="639.31897"
-   height="298.58493"
+   viewBox="0 0 646.11313 121.9453"
+   width="646.11316"
+   height="121.94531"
    version="1.1"
    id="svg56"
    sodipodi:docname="mp2040-logo-light.svg"
@@ -20,9 +20,9 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="1.4124405"
-     inkscape:cx="233.63816"
-     inkscape:cy="134.87294"
+     inkscape:zoom="0.61624005"
+     inkscape:cx="420.29076"
+     inkscape:cy="229.61831"
      inkscape:window-width="2560"
      inkscape:window-height="1440"
      inkscape:window-x="0"
@@ -33,6 +33,52 @@
      id="desc1">logo-thnikk.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc>
   <defs
      id="defs4">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect11"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,60.972654,0,1 @ F,0,0,1,0,29.999997,0,1 @ F,0,0,1,0,60.972666,0,1 @ F,0,0,1,0,29.999997,0,1"
+       radius="29.999999"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect2"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,29.999997,0,1 @ F,0,0,1,0,60.972656,0,1 @ F,0,0,1,0,29.999997,0,1 @ F,0,0,1,0,60.972656,0,1"
+       radius="0"
+       unit="px"
+       method="auto"
+       mode="F"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <rect
+       x="-458.85474"
+       y="-287.4837"
+       width="1192.6027"
+       height="716.26111"
+       id="rect8" />
+    <rect
+       x="-167.87369"
+       y="161.57843"
+       width="727.01776"
+       height="220.33421"
+       id="rect7" />
     <rect
        x="-11"
        y="-169.5"
@@ -80,20 +126,6 @@
        id="*MODEL_SPACE" />
     <symbol
        id="*PAPER_SPACE" />
-    <mask
-       maskUnits="userSpaceOnUse"
-       id="mask-powermask-path-effect7">
-      <path
-         id="mask-powermask-path-effect7_box"
-         style="fill:#ffffff;fill-opacity:1"
-         d="M -1,-1 H 229.84601 V 122.94489 H -1 Z" />
-      <path
-         fill="none"
-         stroke="#000000"
-         d="m 141.1483,87.697756 a 37.795276,37.795276 0 1 0 0,-53.4506 l -53.4506,53.45 a 37.7953,37.7953 0 1 1 0,-53.4506"
-         id="path7"
-         style="stroke:#1c1f26;stroke-width:10;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1" />
-    </mask>
     <filter
        id="mask-powermask-path-effect7_inverse"
        style="color-interpolation-filters:sRGB"
@@ -114,34 +146,61 @@
   </defs>
   <g
      id="g6"
-     transform="translate(279.23649)"
-     style="fill:#1c1f26;fill-opacity:1">
-    <path
-       style="fill:#1c1f26;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;paint-order:markers stroke fill"
-       id="rect6"
-       width="228.84601"
-       height="121.94489"
-       x="0"
-       y="0"
-       ry="60.972446"
-       mask="url(#mask-powermask-path-effect7)"
-       d="M 60.972446,0 H 167.87356 c 33.77874,0 60.97245,27.193711 60.97245,60.972446 0,33.778736 -27.19371,60.972444 -60.97245,60.972444 H 60.972446 C 27.193711,121.94489 0,94.751182 0,60.972446 0,27.193711 27.193711,0 60.972446,0 Z" />
-    <path
-       id="path9"
-       style="fill:#1c1f26;fill-opacity:1;stroke:none;stroke-width:8.17453;stroke-linecap:round;stroke-dasharray:none"
-       d="M -127.67594 0 C -138.93552 0 -148.00016 9.0646379 -148.00016 20.324219 L -148.00016 101.62109 C -148.00016 112.88067 -138.93552 121.94531 -127.67594 121.94531 L -46.379068 121.94531 C -35.119491 121.94531 -26.054849 112.88067 -26.054849 101.62109 L -26.054849 20.324219 C -26.054849 9.0646379 -35.119491 0 -46.379068 0 L -127.67594 0 z M -73.013834 10.162109 L -50.232584 10.162109 C -42.535504 10.162109 -36.216959 16.478692 -36.216959 24.175781 L -36.216959 46.957031 C -36.216959 54.654122 -42.535504 60.972656 -50.232584 60.972656 L -73.013834 60.972656 C -80.710915 60.972656 -87.027506 54.654122 -87.027506 46.957031 L -87.027506 24.175781 C -87.027506 16.478692 -80.710915 10.162109 -73.013834 10.162109 z M -123.82243 60.972656 L -101.04118 60.972656 C -93.344091 60.972656 -87.027506 67.289247 -87.027506 74.986328 L -87.027506 97.767578 C -87.027506 105.46466 -93.34409 111.7832 -101.04118 111.7832 L -123.82243 111.7832 C -131.51952 111.7832 -137.83805 105.46466 -137.83805 97.767578 L -137.83805 74.986328 C -137.83805 67.289247 -131.51952 60.972656 -123.82243 60.972656 z " />
-    <g
-       id="layer1"
-       style="fill:#1c1f26;fill-opacity:1" />
+     transform="translate(431.87285,-156.73777)"
+     style="display:inline;fill:#2b303b;fill-opacity:1">
     <text
        xml:space="preserve"
        transform="translate(-283.42565,318.71695)"
        id="text5"
-       style="font-weight:200;font-size:170.667px;font-family:Nunito;-inkscape-font-specification:'Nunito Ultra-Light';writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#1c1f26;fill-opacity:1;stroke:none;stroke-width:7.55906;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"><tspan
+       style="font-weight:200;font-size:133.333px;font-family:Nunito;-inkscape-font-specification:'Nunito Ultra-Light';writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#2b303b;fill-opacity:1;stroke:none;stroke-width:7.55906;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"><tspan
          x="-11"
-         y="-21.667838"
-         id="tspan4"><tspan
-           style="font-weight:normal;-inkscape-font-specification:Nunito"
-           id="tspan3">MP2040</tspan></tspan></text>
+         y="-54.006649"
+         id="tspan3"><tspan
+           style="font-weight:300;-inkscape-font-specification:'Nunito Light'"
+           id="tspan1">MP2040</tspan></tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 1"
+     style="display:inline"
+     transform="translate(144.90144,-175.91634)">
+    <path
+       id="rect11"
+       style="display:inline;fill:#2b303b;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       d="M -83.928788,175.91634 A 60.972654,60.972654 0 0 0 -144.90144,236.889 v 30.97266 a 29.999997,29.999997 0 0 0 30,29.99999 h 30.972652 A 60.972666,60.972666 0 0 0 -22.95613,236.889 v -30.97266 a 29.999997,29.999997 0 0 0 -30,-30 z M -58.92879,186.889 a 25,25 0 0 1 25,25 25,25 0 0 1 -25,25 25,25 0 0 1 -24.999998,-25 25,25 0 0 1 24.999998,-25 z m -50,50.4043 a 25,25 0 0 1 25.000002,25 25,25 0 0 1 -25.000002,24.99999 25,25 0 0 1 -25,-24.99999 25,25 0 0 1 25,-25 z" />
+    <circle
+       style="display:none;fill:#ff0000;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       id="path12"
+       cx="179.08203"
+       cy="86.376953"
+       r="25" />
+    <circle
+       style="display:none;fill:#ff0000;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       id="path12-5"
+       cx="229.08203"
+       cy="35.972656"
+       r="25" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:800;font-stretch:normal;font-size:40px;font-family:Nunito;-inkscape-font-specification:'Nunito Ultra-Bold';writing-mode:lr-tb;direction:ltr;display:none;fill:#dbdee9;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       x="164.16202"
+       y="98.955627"
+       id="text11"><tspan
+         sodipodi:role="line"
+         id="tspan11"
+         x="0"
+         y="0">A</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:40px;font-family:Nunito;-inkscape-font-specification:'Nunito Bold';writing-mode:lr-tb;direction:ltr;display:none;fill:#dbdee9;fill-opacity:1;stroke-width:7.55906;stroke-linecap:round"
+       x="216.15234"
+       y="50.072655"
+       id="text12"><tspan
+         sodipodi:role="line"
+         id="tspan12"
+         x="0"
+         y="0"
+         style="font-style:normal;font-variant:normal;font-weight:800;font-stretch:normal;font-family:Nunito;-inkscape-font-specification:'Nunito Ultra-Bold'">B</tspan></text>
   </g>
 </svg>
