@@ -1,6 +1,9 @@
 <p align="center">
-	<img alt="Logo" src="assets/mp2040-logo.svg#gh-dark-mode-only" width="300px" />
-	<img alt="Logo" src="assets/mp2040-logo-light.svg#gh-light-mode-only" width="300px" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/mp2040-logo.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/mp2040-logo-light.svg">
+    <img alt="Logo" src="assets/mp2040-logo-light.svg" width="300px">
+  </picture>
 </p>
 
 <p align="center">
