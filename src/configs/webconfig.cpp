@@ -314,6 +314,13 @@ std::string getOptions()
         bootKeyJson["mode"] = (uint8_t)config.bootKeys[k].mode;
     }
 
+    JsonArray mappablePins = doc.createNestedArray("mappablePins");
+    for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++)
+    {
+        if (Storage::getInstance().isPinMappable(pin))
+            mappablePins.add(pin);
+    }
+
     doc["defaultInputMode"] = (uint8_t)Storage::getInstance().getDefaultInputMode();
     doc["debounceInterval"] = Storage::getInstance().getConfig().debounceInterval;
     doc["touchMargin"] = Storage::getInstance().getConfig().touchMargin;

@@ -667,13 +667,36 @@ function comboPinLabel(options, index) {
   return action ? `${pin} (${action})` : pin;
 }
 
+function getMappablePins(options) {
+  if (Array.isArray(options?.mappablePins) && options.mappablePins.length > 0) {
+    return options.mappablePins;
+  }
+  const count = (options?.keycodes || []).length;
+  if (options?.matrix?.enabled) {
+    return Array.from({ length: count }, (_, i) => i);
+  }
+  const mappable = [];
+  for (let i = 0; i < count; i++) {
+    if (
+      (options?.keycodes && options.keycodes[i] !== 0) ||
+      (options?.modifierMasks && options.modifierMasks[i] !== 0) ||
+      (options?.gamepadMasks && options.gamepadMasks[i] !== 0) ||
+      (options?.midiNotes && options.midiNotes[i] !== 0) ||
+      (options?.macroIndices && options.macroIndices[i] !== 0)
+    ) {
+      mappable.push(i);
+    }
+  }
+  return mappable.length > 0 ? mappable : Array.from({ length: count }, (_, i) => i);
+}
+
 // Options for the menu-combo / hotkey / boot-key multi-selects: one entry per
-// key, labeled with the pin's mapping in the current input mode. group is the
+// mappable key, labeled with the pin's mapping in the current input mode. group is the
 // MultiSelect group id to attach them to. Each option carries the pin label
 // and action separately so the widget can render the action in a pill.
 function buildComboOptions(group = 'combo') {
-  const count = (currentOptions.keycodes || []).length;
-  return Array.from({ length: count }, (_, i) => ({
+  const pins = getMappablePins(currentOptions);
+  return pins.map((i) => ({
     group,
     value: i,
     ...pinAction(currentOptions, i),

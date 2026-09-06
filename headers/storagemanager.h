@@ -295,6 +295,8 @@ public:
 			: (uint32_t)NUM_BANK0_GPIOS;
 	}
 
+	bool isPinMappable(Pin_t pin);
+
 	void init();
 	bool save();
 	bool save(const bool force);

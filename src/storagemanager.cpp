@@ -4079,6 +4079,39 @@ static void copyProfileToTopLevel(const Profile& profile, Config& config)
         config.ledOptions.ledMode = profile.ledMode;
 }
 
+bool Storage::isPinMappable(Pin_t pin)
+{
+    if (isMatrixMode())
+    {
+        return pin >= 0 && pin < (Pin_t)getKeyCount();
+    }
+    if (pin < 0 || pin >= (Pin_t)NUM_BANK0_GPIOS)
+        return false;
+
+    if (defaultKeycodes[pin] != 0)
+        return true;
+    if (defaultGamepadMasks[pin] >= 0)
+        return true;
+    if ((touchPinMask & (1u << pin)) != 0)
+        return true;
+    if (pin == config.webConfigPin || pin == bootPin)
+        return true;
+
+    const KeyMapping& km = getKeyMapping();
+    if (pin < (Pin_t)km.keycodes_count && km.keycodes[pin] != 0)
+        return true;
+    if (pin < (Pin_t)km.modifierMasks_count && km.modifierMasks[pin] != 0)
+        return true;
+    if (pin < (Pin_t)km.midiNotes_count && km.midiNotes[pin] != 0)
+        return true;
+    if (getGamepadMask(pin) != 0)
+        return true;
+    if (pin < (Pin_t)config.macroIndices_count && config.macroIndices[pin] != 0)
+        return true;
+
+    return false;
+}
+
 // -----------------------------------------------------
 // Load / save
 // -----------------------------------------------------

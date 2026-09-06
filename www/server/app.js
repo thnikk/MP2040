@@ -171,6 +171,7 @@ function defaultOptions() {
     // Configurable boot keys: board-defined defaults (BOOT_KEY_0X_*), mirroring
     // the firmware's fresh-config seed.
     bootKeys: board?.bootKeys ?? [],
+    mappablePins: board?.mappablePins ?? [],
     gamepadMasks,
     defaultInputMode: board?.defaultInputMode ?? 1,
     debounceInterval: 5,

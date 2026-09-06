@@ -428,5 +428,25 @@ export function parseBoardConfig(configDir, rootDir) {
     // Number of keys the board can report, mirroring firmware getKeyCount():
     // matrix boards report rows*cols, direct boards report all bank-0 GPIOs.
     keyCount: matrixRows > 0 && matrixCols > 0 ? matrixRows * matrixCols : 30,
+    // Mappable key/pin indices for hotkeys and boot keys dropdowns.
+    mappablePins: (() => {
+      if (matrixRows > 0 && matrixCols > 0) {
+        return Array.from({ length: matrixRows * matrixCols }, (_, i) => i);
+      }
+      const mappable = [];
+      for (let i = 0; i < 30; i++) {
+        const pad2 = String(i).padStart(2, '0');
+        const hasKey = (keycodes[i] ?? 0) !== 0;
+        const hasGamepad = (gamepadMasks[i] ?? 0) !== 0 || d[`GAMEPAD_GP${pad2}`] !== undefined || d[`GAMEPAD_GP${i}`] !== undefined;
+        const isTouch = (parseNum(d[`TOUCH_GP${pad2}`]) ?? parseNum(d[`TOUCH_GP${i}`])) === 1;
+        const isWebConfig = (parseNum(d.PIN_WEBCONFIG) ?? -1) === i;
+        const isBoot = (parseNum(d.PIN_BOOT) ?? -1) === i;
+        const isDefineKey = d[`KEYCODE_GP${pad2}`] !== undefined || d[`KEYCODE_GP${i}`] !== undefined;
+        if (hasKey || hasGamepad || isTouch || isWebConfig || isBoot || isDefineKey) {
+          mappable.push(i);
+        }
+      }
+      return mappable.length > 0 ? mappable : Array.from({ length: 30 }, (_, i) => i);
+    })(),
   };
 }
