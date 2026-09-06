@@ -25,28 +25,13 @@ to work with and focus on usability over runtime board configuration.
 
 All boards require an RP2040 microcontroller. Existing boards using the SAMD21 are __NOT__ compatible.
 
-### Mechanical Keypads
-<table>
-<tr>
-<td> 2k </td> <td> 2kw </td> <td> 4kw </td> <td> 3x3 </td> <td> MacroPad </td>
-</tr>
-</table>
-
-### Touch Keypads
-
-<table>
-<tr>
-<td> MiniTouch </td> <td> MegaTouch </td> <td> 4kMegaTouch </td> <td> BeatBoard </td>
-</tr>
-</table>
-
-### Controllers
-
-<table>
-<tr>
-<td> Fightboard </td> <td> Fightboard-m </td> <td> Fightboard-b </td> <td> Fightboard-b-m </td> <td> Springboard </td>
-</tr>
-</table>
+<!-- SUPPORTED-BOARDS:START -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/supported-boards.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/supported-boards-light.svg">
+  <img alt="Supported boards" src="assets/supported-boards-light.svg">
+</picture>
+<!-- SUPPORTED-BOARDS:END -->
 
 ## Flashing
 
