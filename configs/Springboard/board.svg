@@ -21,14 +21,14 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:zoom="2"
-     inkscape:cx="260.5"
-     inkscape:cy="144.75"
-     inkscape:window-width="2560"
-     inkscape:window-height="1440"
+     inkscape:cx="260.75"
+     inkscape:cy="145"
+     inkscape:window-width="1261"
+     inkscape:window-height="1371"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
-     inkscape:current-layer="svg178"
+     inkscape:current-layer="layer4"
      showguides="false" /><desc
      id="desc1">springboard.dxf - scale = 1.000000, origin = (0.000000, 0.000000), method = manual</desc><defs
      id="defs4"><marker
@@ -232,13 +232,13 @@
        rx="9.302"
        ry="9.3024864" /><circle
        style="display:inline;fill:#1c1f26;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="pin08-2"
+       id="boot"
        cx="284.36105"
        cy="67.308212"
        inkscape:label="boot"
        r="8" /><circle
        style="display:inline;fill:#1c1f26;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="pin08-2-9"
+       id="reset"
        cx="317.75818"
        cy="67.308212"
        inkscape:label="reset"
