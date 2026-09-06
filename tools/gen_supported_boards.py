@@ -29,6 +29,7 @@ SHAPE_TAGS = {"rect", "circle", "ellipse", "path", "polygon", "polyline",
 GEOM_ATTRS = ("x", "y", "x1", "y1", "x2", "y2", "width", "height",
               "rx", "ry", "cx", "cy", "r", "d", "points", "transform")
 PIN_RE = re.compile(r"^(pin|key)\d")
+LED_RE = re.compile(r"^led-?\d+")
 
 # Category order and display headings.
 CATEGORIES = [
@@ -47,6 +48,9 @@ COLOR_SCHEMES = {
 
 # The OLED screen is always rendered black, regardless of color mode.
 OLED_COLOR = "#000000"
+
+# Per-key LEDs are rendered solid red regardless of color mode.
+LED_COLOR = "#bf616a"
 
 # Layout constants (SVG units).
 ICON_SIZE = 160
@@ -75,8 +79,8 @@ def is_hidden(elem):
     return "display:none" in style or elem.get("display") == "none"
 
 
-def classify(elem, has_oled):
-    """Return 'case', 'pin', 'oled', or None for a shape element."""
+def classify(elem, has_oled, has_leds):
+    """Return 'case', 'pin', 'oled', 'led', or None for a shape element."""
     elem_id = elem.get("id", "")
     label = elem.get(INKSCAPE_LABEL, "")
     if elem_id == "case" or label == "case":
@@ -87,32 +91,39 @@ def classify(elem, has_oled):
         return "pin"
     if PIN_RE.match(elem_id) and not elem_id.endswith("-label"):
         return "pin"
+    if has_leds and (LED_RE.match(elem_id) or LED_RE.match(label)):
+        return "led"
     return None
 
 
-def filter_tree(elem, colors, has_oled):
-    """Recursively rebuild elem keeping only case/pin/oled shapes, colored.
+def filter_tree(elem, colors, has_oled, has_leds):
+    """Recursively rebuild elem keeping only case/pin/oled/led shapes, colored.
 
     Groups are kept only to preserve their transform when they contain a
-    kept descendant. Everything else (LEDs, logo, alignment guides, hidden
+    kept descendant. Everything else (logo, alignment guides, hidden
     layers) is dropped.
     """
     if is_hidden(elem):
         return None
     tag = local_tag(elem.tag)
     if tag in SHAPE_TAGS:
-        role = classify(elem, has_oled)
+        role = classify(elem, has_oled, has_leds)
         if role is None:
             return None
         new = ET.Element(tag)
         for key in GEOM_ATTRS:
             if key in elem.attrib:
                 new.set(key, elem.attrib[key])
-        fill = OLED_COLOR if role == "oled" else colors[role]
+        if role == "oled":
+            fill = OLED_COLOR
+        elif role == "led":
+            fill = LED_COLOR
+        else:
+            fill = colors[role]
         new.set("style", "fill:%s;stroke:none" % fill)
         return new
     if tag == "g":
-        kept = [c for c in (filter_tree(child, colors, has_oled)
+        kept = [c for c in (filter_tree(child, colors, has_oled, has_leds)
                             for child in elem) if c is not None]
         if not kept:
             return None
@@ -131,12 +142,12 @@ def parse_view_box(root):
     return tuple(float(p) for p in parts)
 
 
-def load_board_icon(svg_path, colors, has_oled):
+def load_board_icon(svg_path, colors, has_oled, has_leds):
     """Return (icon_g_xml, width, height) for one board's board.svg."""
     tree = ET.parse(svg_path)
     root = tree.getroot()
     min_x, min_y, width, height = parse_view_box(root)
-    kept = [c for c in (filter_tree(child, colors, has_oled)
+    kept = [c for c in (filter_tree(child, colors, has_oled, has_leds)
                         for child in root) if c is not None]
     inner = "".join(ET.tostring(c, encoding="unicode") for c in kept)
     group = '<g transform="translate(%g,%g)">%s</g>' % (
@@ -171,8 +182,13 @@ def board_has_oled(config_text):
     return bool(re.search(r"#define\s+HAS_I2C_DISPLAY\s+1", config_text))
 
 
+def board_has_leds(config_text):
+    """Return True if the board defines per-key LEDs (LED_PIN)."""
+    return bool(re.search(r"#define\s+LED_PIN\b", config_text))
+
+
 def find_boards():
-    """Return {category: [(label, svg_path, has_oled), ...]}, sorted."""
+    """Return {category: [(label, svg_path, has_oled, has_leds), ...]}, sorted."""
     boards = {key: [] for key, _ in CATEGORIES}
     for name in sorted(os.listdir(CONFIGS)):
         config_path = os.path.join(CONFIGS, name, "BoardConfig.h")
@@ -183,7 +199,8 @@ def find_boards():
         category = board_category(text)
         label = board_label(text, name)
         has_oled = board_has_oled(text)
-        boards[category].append((label, svg_path, has_oled))
+        has_leds = board_has_leds(text)
+        boards[category].append((label, svg_path, has_oled, has_leds))
     for boards_list in boards.values():
         boards_list.sort(key=lambda item: item[0].casefold())
     return boards
@@ -213,9 +230,9 @@ def render_variant(boards, mode):
         row_width = len(row) * CELL_WIDTH
         x_start = (canvas_width - row_width) / 2
         icons = []
-        for i, (label, svg_path, has_oled) in enumerate(row):
+        for i, (label, svg_path, has_oled, has_leds) in enumerate(row):
             cx = x_start + i * CELL_WIDTH + CELL_WIDTH / 2
-            icon, vb_w, vb_h = load_board_icon(svg_path, colors, has_oled)
+            icon, vb_w, vb_h = load_board_icon(svg_path, colors, has_oled, has_leds)
             scale = ICON_SIZE / max(vb_w, vb_h)
             icons.append((cx, icon, scale, vb_w * scale, vb_h * scale,
                           label))
