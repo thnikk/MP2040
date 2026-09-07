@@ -17,6 +17,13 @@ enum InputMode
     INPUT_MODE_XINPUT = 3;
     INPUT_MODE_SWITCH_PRO = 4;
     INPUT_MODE_XBOX_ONE = 5;
+    // Sony console modes, ported from GP2040-th. PS4 and PS5 both use
+    // PS4Driver (PS5 = the driver's PS4_ARCADESTICK personality) and support
+    // an optional auth-dongle passthrough over the USB host port; boards
+    // without a host port simply run unauthenticated.
+    INPUT_MODE_PS3 = 6;
+    INPUT_MODE_PS4 = 7;
+    INPUT_MODE_PS5 = 8;
 }
 
 // SOCD cleaning mode for the gamepad dpad. Applied whenever two opposite

@@ -6,6 +6,9 @@
 #include "drivers/xinput/XInputDriver.h"
 #include "drivers/switchpro/SwitchProDriver.h"
 #include "drivers/xbone/XBoneDriver.h"
+#include "drivers/ps3/PS3Driver.h"
+
+#include "usbhostmanager.h"
 
 void DriverManager::setup(InputMode mode) {
     switch (mode) {
@@ -27,6 +30,9 @@ void DriverManager::setup(InputMode mode) {
         case INPUT_MODE_XBOX_ONE:
             driver = new XBoneDriver();
             break;
+        case INPUT_MODE_PS3:
+            driver = new PS3Driver();
+            break;
         default:
             return;
     }
@@ -34,4 +40,13 @@ void DriverManager::setup(InputMode mode) {
     // Initialize our chosen driver
     driver->initialize();
     inputMode = mode;
+
+    // If the driver wants the USB host port (PS4/PS5 auth-dongle
+    // passthrough), register it and bring the host controller up. A no-op
+    // on boards that don't define a host port (see usbhostmanager.cpp).
+    USBListener* authListener = driver->get_usb_auth_listener();
+    if (authListener != nullptr) {
+        USBHostManager::getInstance().pushListener(authListener);
+        USBHostManager::getInstance().start();
+    }
 }

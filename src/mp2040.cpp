@@ -7,6 +7,7 @@
 #include "configmanager.h"
 #include "storagemanager.h"
 #include "drivermanager.h"
+#include "usbhostmanager.h"
 #include "hotkeys.h"
 #include "touch/TouchGpio.h"
 #include "touch/TouchRing.h"
@@ -391,6 +392,7 @@ void MP2040::run() {
 		// output (the display controller consumes key presses for navigation).
 		if (Storage::getInstance().GetMenuActive()) {
 			tud_task();
+			USBHostManager::getInstance().process();
 			continue;
 		}
 
@@ -398,6 +400,7 @@ void MP2040::run() {
 		inputDriver->process();
 
 		tud_task(); // TinyUSB Task update
+		USBHostManager::getInstance().process(); // PIO-USB host (auth dongle)
 	}
 }
 

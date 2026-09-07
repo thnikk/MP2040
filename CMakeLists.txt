@@ -73,6 +73,16 @@ FetchContent_Declare(ArduinoJson
 )
 FetchContent_MakeAvailable(ArduinoJson)
 
+# Pico-PIO-USB provides the software USB host controller used for the PS4/PS5
+# auth-dongle passthrough. Must be set before pico_sdk_init(): TinyUSB's own
+# hw/bsp/rp2040/family.cmake detects this variable and defines the
+# tinyusb_pico_pio_usb target during SDK init.
+if(DEFINED ENV{PICO_PIO_USB_PATH})
+  set(PICO_PIO_USB_PATH $ENV{PICO_PIO_USB_PATH})
+elseif(NOT DEFINED PICO_PIO_USB_PATH)
+  set(PICO_PIO_USB_PATH ${CMAKE_SOURCE_DIR}/lib/pico_pio_usb)
+endif()
+
 add_compile_options(-Wall
         -Wtype-limits
         -Wno-format          # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
@@ -151,6 +161,7 @@ src/configmanager.cpp
 src/drivermanager.cpp
 src/hotkeys.cpp
 src/usbdriver.cpp
+src/usbhostmanager.cpp
 src/system.cpp
 src/configs/webconfig.cpp
 src/drivers/keyboard/KeyboardDriver.cpp
@@ -159,6 +170,7 @@ src/drivers/midi/MidiDriver.cpp
 src/drivers/xinput/XInputDriver.cpp
 src/drivers/switchpro/SwitchProDriver.cpp
 src/drivers/xbone/XBoneDriver.cpp
+src/drivers/ps3/PS3Driver.cpp
 src/drivers/shared/xgip_protocol.cpp
 src/leds/LedController.cpp
 src/display/GPGFX.cpp
@@ -199,6 +211,8 @@ pico_bootsel_via_double_reset
 pico_unique_id
 pico_rand
 tinyusb_device
+tinyusb_host
+tinyusb_pico_pio_usb
 FlashPROM
 CRC32
 ArduinoJson

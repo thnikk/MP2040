@@ -41,6 +41,14 @@
 #ifndef BOARD_TUD_MAX_SPEED
 #define BOARD_TUD_MAX_SPEED   OPT_MODE_DEFAULT_SPEED
 #endif
+// RHPort number used for host (PIO-USB), default to port 1
+#ifndef BOARD_TUH_RHPORT
+#define BOARD_TUH_RHPORT      1
+#endif
+// RHPort max operational speed for host
+#ifndef BOARD_TUH_MAX_SPEED
+#define BOARD_TUH_MAX_SPEED   OPT_MODE_DEFAULT_SPEED
+#endif
 
 //--------------------------------------------------------------------
 // COMMON CONFIGURATION
@@ -77,8 +85,11 @@
 // Enable device stack
 #define CFG_TUD_ENABLED     1
 
-// Disable host stack (no USB host support)
-#define CFG_TUH_ENABLED     0
+// Enable host stack over PIO-USB. Boards without a USB host port simply
+// never call USBHostManager::start(), so the host controller stays idle.
+#define CFG_TUH_ENABLED     1
+#define CFG_TUH_RPI_PIO_USB 1
+#define TUH_OPT_RHPORT      1
 
 // CFG_TUSB_DEBUG is defined by compiler in DEBUG build
 // #define CFG_TUSB_DEBUG           0
@@ -111,8 +122,8 @@
 // Enable Device stack, Default is max speed that hardware controller could support with on-chip PHY
 #define CFG_TUD_ENABLED       1
 #define CFG_TUD_MAX_SPEED     BOARD_TUD_MAX_SPEED
-// Enable Host stack, Default is max speed that hardware controller could support with on-chip PHY
-#define CFG_TUH_ENABLED       0
+// Enable Host stack over PIO-USB
+#define CFG_TUH_ENABLED       1
 #define CFG_TUH_MAX_SPEED     BOARD_TUH_MAX_SPEED
 
 //--------------------------------------------------------------------
@@ -132,6 +143,22 @@
 #define CFG_TUD_MIDI             1
 #define CFG_TUD_MIDI_RX_BUFSIZE  64
 #define CFG_TUD_MIDI_TX_BUFSIZE  64
+
+//--------------------------------------------------------------------
+// HOST CONFIGURATION
+//--------------------------------------------------------------------
+
+// Size of buffer to hold descriptors and other data used for enumeration
+#define CFG_TUH_ENUMERATION_BUFSIZE 256
+
+#define CFG_TUH_HUB                 0
+// max device support (excluding hub device)
+#define CFG_TUH_DEVICE_MAX          1
+
+// HID host support (used by PS4/PS5 auth dongle passthrough)
+#define CFG_TUH_HID                  1
+#define CFG_TUH_HID_EPIN_BUFSIZE    64
+#define CFG_TUH_HID_EPOUT_BUFSIZE   64
 
 #ifdef __cplusplus
  }

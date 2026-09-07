@@ -8,6 +8,8 @@
 #include "class/hid/hid.h"
 #include "device/usbd_pvt.h"
 
+#include "usblistener.h"
+
 //
 // MP2040 USB Device Class Driver
 //
@@ -15,6 +17,10 @@ class GPDriver {
 public:
     virtual void initialize() = 0;
     virtual void process() = 0;
+    // A driver that needs the USB host port (e.g. PS4/PS5 auth-dongle
+    // passthrough) returns its listener here; DriverManager registers it
+    // with USBHostManager. Most drivers don't need the host port at all.
+    virtual USBListener* get_usb_auth_listener() { return nullptr; }
     virtual uint16_t get_report(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen) = 0;
     virtual void set_report(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize) = 0;
     virtual bool vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request) = 0;
