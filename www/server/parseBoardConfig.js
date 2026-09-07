@@ -125,6 +125,9 @@ const INPUT_MODE = {
   INPUT_MODE_XINPUT: 3,
   INPUT_MODE_SWITCH_PRO: 4,
   INPUT_MODE_XBOX_ONE: 5,
+  INPUT_MODE_PS3: 6,
+  INPUT_MODE_PS4: 7,
+  INPUT_MODE_PS5: 8,
 };
 
 // MP2040's enums.proto LEDFormat values

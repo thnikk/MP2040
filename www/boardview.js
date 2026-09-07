@@ -394,7 +394,7 @@ class BoardView {
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
       const macroIndex = Number(this.options?.macroIndices?.[pinNumber] || 0);
       const midiMode = Number(this.options?.defaultInputMode || 1) === 2;
-      const gamepadMode = [3, 4, 5].includes(Number(this.options?.defaultInputMode || 1));
+      const gamepadMode = [3, 4, 5, 6, 7, 8].includes(Number(this.options?.defaultInputMode || 1));
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
       const gamepadMask = Number(this.options?.gamepadMasks?.[pinNumber] || 0);
 

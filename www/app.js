@@ -1471,7 +1471,7 @@ function updateModalMode() {
 // board's active input mode. Defaults to the active input mode on open.
 function setModalTab(mode) {
   const m = Number(mode || 1);
-  const gamepadMode = m === 3 || m === 4 || m === 5;
+  const gamepadMode = m === 3 || m === 4 || m === 5 || m === 6 || m === 7 || m === 8;
   const midiMode = m === 2;
   const keyboardMode = !midiMode && !gamepadMode;
   document.getElementById('key-modal-group-keyboard').hidden = !keyboardMode;
@@ -1783,7 +1783,7 @@ function closeRingModal() {
 function saveRingModal() {
   if (!currentOptions.ring) currentOptions.ring = {};
   const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5 || mode === 6 || mode === 7 || mode === 8;
   const midiMode = mode === 2;
   // Save only the control shown for the current mode; the others are left
   // unchanged (they're configured when that mode is active).
