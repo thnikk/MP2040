@@ -79,12 +79,31 @@ void PS4AuthUSBListener::resetHostData() {
 
 bool PS4AuthUSBListener::host_get_report(uint8_t report_id, void* report, uint16_t len) {
     awaiting_cb = true;
+#ifdef USB_HOST_PIN_DP
     return tuh_hid_get_report(ps_dev_addr, ps_instance, report_id, HID_REPORT_TYPE_FEATURE, report, len);
+#else
+    // No host port on this board (see usbhostmanager.h): auth-dongle
+    // passthrough is unavailable, so report success without touching the
+    // TinyUSB host stack (which isn't compiled in -- keeps the link clean).
+    (void)report_id;
+    (void)report;
+    (void)len;
+    awaiting_cb = false;
+    return false;
+#endif
 }
 
 bool PS4AuthUSBListener::host_set_report(uint8_t report_id, void* report, uint16_t len) {
     awaiting_cb = true;
+#ifdef USB_HOST_PIN_DP
     return tuh_hid_set_report(ps_dev_addr, ps_instance, report_id, HID_REPORT_TYPE_FEATURE, report, len);
+#else
+    (void)report_id;
+    (void)report;
+    (void)len;
+    awaiting_cb = false;
+    return false;
+#endif
 }
 
 void PS4AuthUSBListener::mount(uint8_t dev_addr, uint8_t instance, uint8_t const* desc_report, uint16_t desc_len) {
@@ -93,6 +112,7 @@ void PS4AuthUSBListener::mount(uint8_t dev_addr, uint8_t instance, uint8_t const
         return;
     }
 
+#ifdef USB_HOST_PIN_DP
     // Only a PS4 interface has vendor IDs F0, F1, F2, and F3
     tuh_hid_report_info_t report_info[4];
     uint8_t report_count = tuh_hid_parse_report_descriptor(report_info, 4, desc_report, desc_len);
@@ -106,6 +126,16 @@ void PS4AuthUSBListener::mount(uint8_t dev_addr, uint8_t instance, uint8_t const
     }
     if (isPS4Dongle == false )
         return;
+#else
+    // No host stack on this board: never claim a dongle. PS4Auth::available()
+    // is already false here, so DriverManager never registers this listener;
+    // this just keeps the object linkable.
+    (void)dev_addr;
+    (void)instance;
+    (void)desc_report;
+    (void)desc_len;
+    return;
+#endif
 
     ps_dev_addr = dev_addr;
     ps_instance = instance;

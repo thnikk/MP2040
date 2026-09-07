@@ -1,18 +1,15 @@
 #include "usbhostmanager.h"
 
+// Everything below only applies to boards that define a USB host port; see
+// the header for the no-op stub used otherwise.
+#ifdef USB_HOST_PIN_DP
+
 #include "tusb.h"
 #include "host/usbh.h"
 #include "host/usbh_pvt.h"
 #include "hardware/gpio.h"
 #include "pico/time.h"
 
-// Board-config USB host port pins (see BoardConfig.h). A board that leaves
-// USB_HOST_PIN_DP undefined never starts the host controller: PS4/PS5 modes
-// still work without auth, and the web config hides them entirely (see
-// getUsbHostPortDefined() in storagemanager).
-#ifndef USB_HOST_PIN_DP
-#define USB_HOST_PIN_DP -1
-#endif
 #ifndef USB_HOST_PIN_5V
 #define USB_HOST_PIN_5V -1
 #endif
@@ -21,9 +18,9 @@
 #endif
 
 void USBHostManager::start() {
-    // Nothing to host: no port wired up, or nobody registered a listener
-    // (e.g. no driver requested auth-dongle passthrough).
-    if (USB_HOST_PIN_DP < 0 || listeners.size() == 0) {
+    // Nothing to host: nobody registered a listener (e.g. no driver
+    // requested auth-dongle passthrough).
+    if (listeners.size() == 0) {
         tuhReady = false;
         return;
     }
@@ -121,3 +118,5 @@ extern "C" usbh_class_driver_t const* usbh_app_driver_get_cb(uint8_t* driver_cou
     *driver_count = 0;
     return NULL;
 }
+
+#endif // USB_HOST_PIN_DP

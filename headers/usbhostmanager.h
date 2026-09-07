@@ -4,9 +4,6 @@
 #include <vector>
 
 #include "usblistener.h"
-#include "pio_usb.h"
-#include "host/usbh.h"
-#include "host/usbh_pvt.h"
 
 // Owns the PIO-USB host controller (RHPort 1) and dispatches TinyUSB's HID
 // host callbacks to any registered USBListener. Ported from GP2040-th, but
@@ -15,9 +12,17 @@
 // class driver is registered here.
 //
 // Configured directly from the board's USB_HOST_PIN_* macros (see
-// BoardConfig.h), matching MP2040's existing no-abstraction-layer style.
-// A board that doesn't define USB_HOST_PIN_DP simply never starts the host
-// controller; start() becomes a no-op.
+// BoardConfig.h). Only boards that define USB_HOST_PIN_DP get the real
+// implementation (in usbhostmanager.cpp) with TinyUSB's host stack and
+// pio_usb compiled in at all; every other board gets the header-only stub
+// below, so USB_HOST_PIN_DP being undefined leaves the build byte-for-byte
+// unaffected by host mode -- no TinyUSB host headers even get touched.
+#ifdef USB_HOST_PIN_DP
+
+#include "pio_usb.h"
+#include "host/usbh.h"
+#include "host/usbh_pvt.h"
+
 class USBHostManager {
 public:
     USBHostManager(USBHostManager const&) = delete;
@@ -47,5 +52,30 @@ private:
     pio_usb_configuration_t pioConfig = PIO_USB_DEFAULT_CONFIG;
     bool tuhReady;
 };
+
+#else // !USB_HOST_PIN_DP
+
+// No host port on this board: every call is a no-op. Callers (DriverManager,
+// mp2040.cpp) don't need to know the difference.
+class USBHostManager {
+public:
+    USBHostManager(USBHostManager const&) = delete;
+    void operator=(USBHostManager const&) = delete;
+
+    static USBHostManager& getInstance() {
+        static USBHostManager instance;
+        return instance;
+    }
+
+    void start() {}
+    void shutdown() {}
+    void process() {}
+    void pushListener(USBListener*) {}
+
+private:
+    USBHostManager() {}
+};
+
+#endif // USB_HOST_PIN_DP
 
 #endif
