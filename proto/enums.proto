@@ -26,6 +26,19 @@ enum InputMode
     INPUT_MODE_PS5 = 8;
 }
 
+// Controller "definition" byte PS4Driver reports to the console. PS5 mode
+// reuses PS4Driver with PS4_ARCADESTICK: it's the same protocol, just a
+// different self-reported personality (byte 4 of the PS4_DEFINITION feature
+// report), matching how licensed PS4 arcade sticks work on PS5 via backward
+// compatibility.
+enum PS4ControllerType
+{
+    option (nanopb_enumopt).long_names = false;
+
+    PS4_CONTROLLER = 0;
+    PS4_ARCADESTICK = 7;
+}
+
 // SOCD cleaning mode for the gamepad dpad. Applied whenever two opposite
 // directions are held at once. Values match GP2040-CE so the cleaner ports
 // directly. SOCD_MODE_UP_PRIORITY (0) is the default: U+D=U, L+R=neutral.

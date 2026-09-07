@@ -630,7 +630,7 @@ let displayHistoryTimeoutSpinner = null;
 function pinAction(options, index) {
   const mode = Number(options.defaultInputMode || 1);
   const midiMode = mode === 2;
-  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5 || mode === 6 || mode === 7 || mode === 8;
   const macroIndex = Number(options.macroIndices?.[index] || 0);
   const midiNote = Number(options.midiNotes?.[index] || 0);
   const gamepadMask = Number(options.gamepadMasks?.[index] || 0);
@@ -1054,6 +1054,14 @@ async function load() {
   const midi = options.midi || {};
 
   document.getElementById('default-input-mode').value = options.defaultInputMode ?? 1;
+  // PS4/PS5 need the USB host port for auth-dongle passthrough; hide them on
+  // boards that don't define one (see hasUsbHostPort in webconfig.cpp). PS3
+  // needs no host port and stays available on every board.
+  const ps4Option = document.getElementById('mode-option-ps4');
+  const ps5Option = document.getElementById('mode-option-ps5');
+  const hasUsbHostPort = options.hasUsbHostPort === true;
+  if (ps4Option) ps4Option.hidden = !hasUsbHostPort;
+  if (ps5Option) ps5Option.hidden = !hasUsbHostPort;
   document.getElementById('default-input-mode').addEventListener('change', () => {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
     updateModalMode();
@@ -1445,7 +1453,7 @@ function syncModeIcons(gamepadMode) {
 function updateModalMode() {
   const mode = Number(currentOptions.defaultInputMode || 1);
   const midiMode = mode === 2;
-  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5 || mode === 6 || mode === 7 || mode === 8;
   document.getElementById('midi-settings').hidden = !midiMode;
   document.getElementById('gamepad-settings').hidden = !gamepadMode;
   // The Nintendo layout toggle only applies to Switch Pro.
@@ -1750,7 +1758,7 @@ function openRingModal() {
   if (!currentOptions.ring) currentOptions.ring = {};
   const r = currentOptions.ring;
   const mode = Number(currentOptions.defaultInputMode || 1);
-  const gamepadMode = mode === 3 || mode === 4 || mode === 5;
+  const gamepadMode = mode === 3 || mode === 4 || mode === 5 || mode === 6 || mode === 7 || mode === 8;
   const midiMode = mode === 2;
 
   document.getElementById('ring-modal-stick-wrap').hidden = !gamepadMode;

@@ -387,6 +387,15 @@ std::string getOptions()
     // section. Not user-editable, like webConfigPin.
     doc["bootPin"] = Storage::getInstance().getBootPin();
 
+    // Board-fixed USB host port presence (see BoardConfig.h USB_HOST_PIN_DP).
+    // PS4/PS5 modes need a host port for auth-dongle passthrough, so the
+    // frontend hides them on boards without one.
+#ifdef USB_HOST_PIN_DP
+    doc["hasUsbHostPort"] = true;
+#else
+    doc["hasUsbHostPort"] = false;
+#endif
+
     // Display options (SSD1306 over I2C). The physical wiring (i2c block/pins)
     // is board-fixed; the rest is user config.
     const DisplayOptions& display = Storage::getInstance().getDisplayOptions();

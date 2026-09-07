@@ -56,6 +56,12 @@ const CTRL_LABEL_SETS = {
     S1: 'View', S2: 'Menu', L3: 'LS', R3: 'RS',
     A1: 'Guide', A2: 'Share',
   },
+  playstation: {
+    B1: 'Cross', B2: 'Circle', B3: 'Square', B4: 'Triangle',
+    L1: 'L1', R1: 'R1', L2: 'L2', R2: 'R2',
+    S1: 'Share', S2: 'Options', L3: 'L3', R3: 'R3',
+    A1: 'PS', A2: 'Touchpad',
+  },
 };
 
 // Per-layout glyph sets. Keys are the same label keys as the label sets; the
@@ -106,6 +112,11 @@ function labelSet(mode, nintendoLayout) {
     // Xbox One shares the Xbox face-button layout; the capture button (A2)
     // is the Share button. S1/S2 are View/Menu.
     return { labels: CTRL_LABEL_SETS.xbone, glyphs: CTRL_GLYPH_SETS.xbone };
+  }
+  if (mode === 6 || mode === 7 || mode === 8) {
+    // PS3 / PS4 / PS5 (PS5 is PS4Driver's arcade-stick personality) share the
+    // same PlayStation face-button naming and no Nintendo-layout toggle.
+    return { labels: CTRL_LABEL_SETS.playstation, glyphs: CTRL_GLYPH_SETS.playstation || {} };
   }
   return { labels: CTRL_LABEL_SETS.gp2040, glyphs: CTRL_GLYPH_SETS.gp2040 };
 }

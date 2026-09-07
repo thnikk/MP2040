@@ -7,6 +7,7 @@
 #include "drivers/switchpro/SwitchProDriver.h"
 #include "drivers/xbone/XBoneDriver.h"
 #include "drivers/ps3/PS3Driver.h"
+#include "drivers/ps4/PS4Driver.h"
 
 #include "usbhostmanager.h"
 
@@ -32,6 +33,14 @@ void DriverManager::setup(InputMode mode) {
             break;
         case INPUT_MODE_PS3:
             driver = new PS3Driver();
+            break;
+        case INPUT_MODE_PS4:
+            driver = new PS4Driver(PS4_CONTROLLER);
+            break;
+        case INPUT_MODE_PS5:
+            // PS5 mode reuses PS4Driver's PS4_ARCADESTICK personality --
+            // see PS4Driver.h.
+            driver = new PS4Driver(PS4_ARCADESTICK);
             break;
         default:
             return;

@@ -171,6 +171,9 @@ src/drivers/xinput/XInputDriver.cpp
 src/drivers/switchpro/SwitchProDriver.cpp
 src/drivers/xbone/XBoneDriver.cpp
 src/drivers/ps3/PS3Driver.cpp
+src/drivers/ps4/PS4Driver.cpp
+src/drivers/ps4/PS4Auth.cpp
+src/drivers/ps4/PS4AuthUSBListener.cpp
 src/drivers/shared/xgip_protocol.cpp
 src/leds/LedController.cpp
 src/display/GPGFX.cpp
