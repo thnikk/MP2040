@@ -100,6 +100,9 @@ static const std::map<InputMode, uint16_t> displayModeLookup = {
 	{INPUT_MODE_SWITCH_PRO, 1},
 	{INPUT_MODE_XINPUT, 2},
 	{INPUT_MODE_XBOX_ONE, 11},
+	{INPUT_MODE_PS3, 4},
+	{INPUT_MODE_PS4, 4},
+	{INPUT_MODE_PS5, 4},
 	{INPUT_MODE_KEYBOARD, 3},
 	{INPUT_MODE_CONFIG, 3},
 };
@@ -292,6 +295,9 @@ void ButtonLayoutScreen::generateHeader() {
 			case INPUT_MODE_XINPUT:   statusBar += "XINPUT"; break;
 			case INPUT_MODE_SWITCH_PRO: statusBar += "SWPRO"; break;
 			case INPUT_MODE_XBOX_ONE: statusBar += "XBONE"; break;
+			case INPUT_MODE_PS3:      statusBar += "PS3"; break;
+			case INPUT_MODE_PS4:      statusBar += "PS4"; break;
+			case INPUT_MODE_PS5:      statusBar += "PS5"; break;
 			default:                  statusBar += "HID"; break;
 		}
 		// Web config is active: flag it with a "-C" suffix so the board's

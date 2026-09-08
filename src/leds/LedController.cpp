@@ -74,6 +74,15 @@ static const SpeedRange speedRanges[] = {
 #ifndef STATUS_LED_COLOR_XBOX_ONE
 #define STATUS_LED_COLOR_XBOX_ONE 0xFF0088
 #endif
+#ifndef STATUS_LED_COLOR_PS3
+#define STATUS_LED_COLOR_PS3 0x0000FF
+#endif
+#ifndef STATUS_LED_COLOR_PS4
+#define STATUS_LED_COLOR_PS4 0x00C0FF
+#endif
+#ifndef STATUS_LED_COLOR_PS5
+#define STATUS_LED_COLOR_PS5 0x8000FF
+#endif
 // Brightness of the mode indicator LED (0-255), scaled on top of the
 // inactivity fade. 255 = full brightness.
 #ifndef STATUS_LED_BRIGHTNESS_DEFAULT
@@ -571,6 +580,12 @@ void LedController::updateStatusLed()
         color = STATUS_LED_COLOR_SWITCH_PRO;
     else if (inputMode == INPUT_MODE_XBOX_ONE)
         color = STATUS_LED_COLOR_XBOX_ONE;
+    else if (inputMode == INPUT_MODE_PS3)
+        color = STATUS_LED_COLOR_PS3;
+    else if (inputMode == INPUT_MODE_PS4)
+        color = STATUS_LED_COLOR_PS4;
+    else if (inputMode == INPUT_MODE_PS5)
+        color = STATUS_LED_COLOR_PS5;
 
     uint32_t minDim = statusLedBrightnessMinimum;
     uint32_t maxDim = statusLedBrightnessMaximum;
