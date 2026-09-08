@@ -64,6 +64,8 @@ const CTRL_LABEL_SETS = {
   },
 };
 
+
+
 // Per-layout glyph sets. Keys are the same label keys as the label sets; the
 // value is the id of an icon file in www/icons/gamepad/<id>.svg. Controls
 // without a glyph (or whose icon hasn't loaded) fall back to the text label.
@@ -81,11 +83,22 @@ const CTRL_GLYPH_SETS = {
     S1: 'xbox-back', S2: 'xbox-start', A1: 'xbox-guide', A2: 'xbox-share',
     Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
   },
+  // PlayStation face buttons and system controls. Circle/Square/Triangle are
+  // stroke-only outlines (fill="none" stroke="currentColor" in the SVG,
+  // all on 512x512 canvases with the same width) matching the real symbols;
+  // Cross/Share/Options/PS-logo/Touchpad are filled like the other sets.
+  playstation: {
+    B1: 'ps-cross', B2: 'ps-circle', B3: 'ps-square', B4: 'ps-triangle',
+    S1: 'ps-share', S2: 'ps-options',
+    A1: 'ps-logo', A2: 'ps-touchpad',
+    Up: 'dpad-up', Down: 'dpad-down', Left: 'dpad-left', Right: 'dpad-right',
+  },
 };
 
 // Label + glyph + bit-mask sets for a given input mode: XInput (3) shows Xbox
 // names; Switch Pro (4) shows Nintendo names, always laid out like a real
-// Switch Pro controller (A right, B bottom, Y left, X top). The Nintendo-layout
+// Switch Pro controller (A right, B bottom, Y left, X top); PS3/PS4/PS5
+// (6/7/8) show PlayStation names and icons. The Nintendo-layout
 // toggle only swaps which stored position-bit each letter maps to (maskMap),
 // so clicking a letter always maps the pin to that Switch button. Shared by the
 // widget, the gamepad multi-select (app.js) and the board view.
@@ -115,8 +128,8 @@ function labelSet(mode, nintendoLayout) {
   }
   if (mode === 6 || mode === 7 || mode === 8) {
     // PS3 / PS4 / PS5 (PS5 is PS4Driver's arcade-stick personality) share the
-    // same PlayStation face-button naming and no Nintendo-layout toggle.
-    return { labels: CTRL_LABEL_SETS.playstation, glyphs: CTRL_GLYPH_SETS.playstation || {} };
+    // same PlayStation face-button naming, icons and no Nintendo-layout toggle.
+    return { labels: CTRL_LABEL_SETS.playstation, glyphs: CTRL_GLYPH_SETS.playstation };
   }
   return { labels: CTRL_LABEL_SETS.gp2040, glyphs: CTRL_GLYPH_SETS.gp2040 };
 }
@@ -161,8 +174,10 @@ function loadedGlyph(id) {
 }
 
 // Fetch and parse a glyph icon from /icons/gamepad/<id>.svg. Only the drawable
-// shapes are kept, and their fill/stroke are dropped so the glyph renders in
-// the theme's currentColor (same convention as the other /icons files).
+// shapes are kept. Explicit fill/stroke attributes are honored as authored
+// (e.g. the PlayStation outlines use fill="none" stroke="currentColor" with
+// their own width); shapes without them inherit the label's currentColor fill
+// like before. Inline style is still dropped so themes can't be overridden.
 async function loadGlyph(id) {
   try {
     const res = await fetch(`/icons/gamepad/${id}.svg`);
@@ -174,7 +189,7 @@ async function loadGlyph(id) {
       .map((n) => ({
         tag: n.tagName,
         attrs: [...n.attributes]
-          .filter((a) => a.name !== 'fill' && a.name !== 'stroke' && a.name !== 'style')
+          .filter((a) => a.name !== 'style')
           .map((a) => [a.name, a.value]),
       }));
     if (!nodes.length) return null;
