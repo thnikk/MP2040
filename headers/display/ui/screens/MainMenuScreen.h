@@ -172,10 +172,10 @@ class MainMenuScreen : public GPScreen {
 			INPUT_MODE_ENTRIES(INPUT_MODE_SWITCH_PRO, INPUT_MODE_SWITCH_PRO)
 			INPUT_MODE_ENTRIES(INPUT_MODE_XBOX_ONE, INPUT_MODE_XBOX_ONE)
 			INPUT_MODE_ENTRIES(INPUT_MODE_PS3, INPUT_MODE_PS3)
-#ifdef USB_HOST_PIN_DP
+			// PS4/PS5 are always listed: without a USB host port they run
+			// unauthenticated (8-minute console timeout, fine on PC).
 			INPUT_MODE_ENTRIES(INPUT_MODE_PS4, INPUT_MODE_PS4)
 			INPUT_MODE_ENTRIES(INPUT_MODE_PS5, INPUT_MODE_PS5)
-#endif
 		};
 		InputMode prevInputMode;
 		InputMode updateInputMode;

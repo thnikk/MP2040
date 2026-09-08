@@ -1054,16 +1054,13 @@ async function load() {
   const midi = options.midi || {};
 
   document.getElementById('default-input-mode').value = options.defaultInputMode ?? 1;
-  // PS4/PS5 need the USB host port for auth-dongle passthrough; hide them on
-  // boards that don't define one (see hasUsbHostPort in webconfig.cpp). PS3
-  // needs no host port and stays available on every board.
-  const ps4Option = document.getElementById('mode-option-ps4');
-  const ps5Option = document.getElementById('mode-option-ps5');
-  const hasUsbHostPort = options.hasUsbHostPort === true;
-  if (ps4Option) ps4Option.hidden = !hasUsbHostPort;
-  if (ps5Option) ps5Option.hidden = !hasUsbHostPort;
+  // PS4/PS5 are always listed: without a USB host port (see hasUsbHostPort
+  // in webconfig.cpp) they run unauthenticated — fine on PC, ~8-minute
+  // timeout on console. PS3 needs no host port.
+  updatePsAuthHint();
   document.getElementById('default-input-mode').addEventListener('change', () => {
     currentOptions.defaultInputMode = parseInt(document.getElementById('default-input-mode').value, 10);
+    updatePsAuthHint();
     updateModalMode();
     syncGamepadLabels();
     if (boardView) boardView.refresh();
@@ -1444,6 +1441,24 @@ function syncModeIcons(gamepadMode) {
   if (hero) hero.textContent = gamepadMode
     ? 'Configure your controller over USB'
     : 'Configure your keypad over USB';
+}
+
+// PS4/PS5 auth hint: shown when the board has no USB host port and a Sony
+// auth mode is selected. Unauthenticated play works on PC with no timeout;
+// consoles drop the controller after ~8 minutes until replugged.
+function updatePsAuthHint() {
+  const hint = document.getElementById('ps-auth-hint');
+  if (!hint) return;
+  const mode = Number(
+    (currentOptions && currentOptions.defaultInputMode)
+    ?? document.getElementById('default-input-mode').value ?? 1,
+  );
+  const show = currentOptions.hasUsbHostPort !== true && (mode === 7 || mode === 8);
+  hint.hidden = !show;
+  if (show) {
+    hint.textContent = 'This board has no USB host port, so PS4/PS5 run unauthenticated: '
+      + 'no timeout on PC, ~8-minute timeout on console. Use a host-port board with an auth dongle to stay connected.';
+  }
 }
 
 // Show either the key/modifier pickers (keyboard mode), the MIDI note picker

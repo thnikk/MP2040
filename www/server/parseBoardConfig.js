@@ -373,6 +373,9 @@ export function parseBoardConfig(configDir, rootDir) {
       ledPressedColors,
     },
     webConfigPin: parseNum(d.PIN_WEBCONFIG) ?? -1,
+    // USB host port presence (USB_HOST_PIN_DP), mirroring the firmware's
+    // hasUsbHostPort in getOptions. No board defines one yet.
+    hasUsbHostPort: d.USB_HOST_PIN_DP !== undefined,
     // Default input mode seeded into a fresh config (DEFAULT_INPUT_MODE),
     // mirroring the firmware's config.defaultInputMode = DEFAULT_INPUT_MODE.
     defaultInputMode: parseInputMode(d.DEFAULT_INPUT_MODE),

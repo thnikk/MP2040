@@ -388,8 +388,8 @@ std::string getOptions()
     doc["bootPin"] = Storage::getInstance().getBootPin();
 
     // Board-fixed USB host port presence (see BoardConfig.h USB_HOST_PIN_DP).
-    // PS4/PS5 modes need a host port for auth-dongle passthrough, so the
-    // frontend hides them on boards without one.
+    // Without one, PS4/PS5 modes run unauthenticated (8-minute console
+    // timeout); the frontend shows a hint instead of hiding them.
 #ifdef USB_HOST_PIN_DP
     doc["hasUsbHostPort"] = true;
 #else

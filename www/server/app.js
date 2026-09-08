@@ -259,6 +259,8 @@ function defaultOptions() {
       menuBackPin: board?.display?.menuBackPin ?? -1,
     },
     webConfigPin: board?.webConfigPin ?? -1,
+    // USB host port presence, mirroring the firmware's hasUsbHostPort.
+    hasUsbHostPort: !!board?.hasUsbHostPort,
     // Board-fixed USB boot loader pin, shown for reference in the Boot Keys
     // section. Not user-editable.
     bootPin: board?.bootPin ?? -1,
