@@ -34,7 +34,9 @@ private:
 
     // Identification byte from the H2D 0xEF feature report that must be
     // echoed back in multiple D2H reports for the controller to function.
-    uint8_t efByte;
+    // Defaults to byte 6 of the reference 0xEF capture so reads before the
+    // host's first SET_REPORT return the captured table verbatim.
+    uint8_t efByte = 0xA0;
 };
 
 #endif // _PS3_DRIVER_H_

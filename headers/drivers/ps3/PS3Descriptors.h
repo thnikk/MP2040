@@ -200,10 +200,12 @@ typedef struct __attribute((packed, aligned(1)))
     uint16_t accelerometer_z;
     // 46
     uint16_t gyroscope_z;
+} PS3Report; // 49 bytes total (report ID + 48): matches the HID report
+             // descriptor above and what Linux hid-sony requires
+             // (sony_raw_event only parses rd[0] == 0x01 && size == 49).
 
-    // 48
-    uint16_t reserved4;
-} PS3Report; // 49 length
+// The input report must stay exactly 49 bytes or hosts drop it.
+static_assert(sizeof(PS3Report) == 49, "PS3Report must be 49 bytes (report ID + 48)");
 
 typedef struct __attribute((packed, aligned(1)))
 {
@@ -238,6 +240,9 @@ typedef struct __attribute((packed, aligned(1)))
     uint8_t hostAddress[7]; // leading zero followed by address
     uint8_t reserved1;
 } PS3BTInfo;
+
+static_assert(sizeof(PS3Features) == PS3_FEATURES_SIZE, "PS3Features size mismatch");
+static_assert(sizeof(PS3BTInfo) == 17, "PS3BTInfo size mismatch");
 
 static const uint8_t ps3_string_language[]     = { 0x09, 0x04 };
 static const uint8_t ps3_string_manufacturer[] = "MP2040";

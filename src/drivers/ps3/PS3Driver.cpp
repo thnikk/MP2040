@@ -38,8 +38,7 @@ void PS3Driver::initialize() {
         .reserved3 = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
         // No IMU on MP2040 boards: motion data reports a fixed center value.
         .accelerometer_x = PS3_CENTER_SIXAXIS, .accelerometer_y = PS3_CENTER_SIXAXIS, .accelerometer_z = PS3_CENTER_SIXAXIS,
-        .gyroscope_z = PS3_CENTER_SIXAXIS,
-        .reserved4 = PS3_CENTER_SIXAXIS
+        .gyroscope_z = PS3_CENTER_SIXAXIS
     };
 
     // Generate a plausible Bluetooth pairing address (unused over USB, but
@@ -134,7 +133,6 @@ void PS3Driver::process() {
     ps3Report.accelerometer_y = PS3_CENTER_SIXAXIS;
     ps3Report.accelerometer_z = PS3_CENTER_SIXAXIS;
     ps3Report.gyroscope_z = PS3_CENTER_SIXAXIS;
-    ps3Report.reserved4 = PS3_CENTER_SIXAXIS;
 
     // Wake up TinyUSB device
     if (tud_suspended())
@@ -214,53 +212,71 @@ static constexpr uint8_t output_ps3_0xf8[] = {
 };
 
 // tud_hid_get_report_cb
+// NOTE: TinyUSB's hidd_control_xfer_cb already prepends report_id to its
+// control buffer and shrinks reqlen by one before calling us, so `buffer`
+// must receive the report payload WITHOUT the leading report-ID byte. The
+// reference tables below are wire captures that still carry their ID at
+// [0], hence the +1 skips (PS3BTInfo carries no ID byte and is copied whole).
 uint16_t PS3Driver::get_report(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen) {
     if ( report_type == HID_REPORT_TYPE_INPUT ) {
-        memcpy(buffer, &ps3Report, sizeof(PS3Report));
-        return sizeof(PS3Report);
+        if (report_id != 1) return 0;
+        uint16_t len = sizeof(PS3Report) - 1;
+        if (len > reqlen) len = reqlen;
+        memcpy(buffer, ((const uint8_t*)&ps3Report) + 1, len);
+        return len;
     } else if ( report_type == HID_REPORT_TYPE_FEATURE ) {
-        uint16_t responseLen = 0;
-        uint8_t ctr = 0;
+        const uint8_t *table = nullptr;
+        uint16_t tableLen = 0;
         switch(report_id) {
             case PS3ReportTypes::PS3_FEATURE_01:
-                responseLen = reqlen;
-                memcpy(buffer, output_ps3_0x01, responseLen);
-                return responseLen;
+                table = output_ps3_0x01; tableLen = sizeof(output_ps3_0x01);
+                break;
             case PS3ReportTypes::PS3_FEATURE_EF:
-                responseLen = reqlen;
-                memcpy(buffer, output_ps3_0xef, responseLen);
-                buffer[6] = efByte;
-                return responseLen;
+                table = output_ps3_0xef; tableLen = sizeof(output_ps3_0xef);
+                break;
             case PS3ReportTypes::PS3_GET_PAIRING_INFO:
-                responseLen = reqlen;
-                memcpy(buffer, &ps3BTInfo, responseLen);
-                return responseLen;
-            case PS3ReportTypes::PS3_FEATURE_F5:
-                responseLen = reqlen;
-                memcpy(buffer, output_ps3_0xf5, responseLen);
-                for (ctr = 0; ctr < 6; ctr++) {
-                    buffer[1+ctr] = ps3BTInfo.hostAddress[ctr];
+                {
+                    uint16_t len = sizeof(ps3BTInfo);
+                    if (len > reqlen) len = reqlen;
+                    memcpy(buffer, &ps3BTInfo, len);
+                    return len;
                 }
-                return responseLen;
+            case PS3ReportTypes::PS3_FEATURE_F5:
+                table = output_ps3_0xf5; tableLen = sizeof(output_ps3_0xf5);
+                break;
             case PS3ReportTypes::PS3_FEATURE_F7:
-                responseLen = reqlen;
-                memcpy(buffer, output_ps3_0xf7, responseLen);
-                return responseLen;
+                table = output_ps3_0xf7; tableLen = sizeof(output_ps3_0xf7);
+                break;
             case PS3ReportTypes::PS3_FEATURE_F8:
-                responseLen = reqlen;
-                memcpy(buffer, output_ps3_0xf8, responseLen);
-                buffer[6] = efByte;
-                return responseLen;
+                table = output_ps3_0xf8; tableLen = sizeof(output_ps3_0xf8);
+                break;
+            default:
+                return 0;
         }
+        uint16_t len = tableLen - 1; // skip the ID byte TinyUSB already sent
+        if (len > reqlen) len = reqlen;
+        memcpy(buffer, table + 1, len);
+        // Payload index 5 == wire index 6: efByte echo (EF/F8) and the host
+        // MAC address (F5, 6 bytes starting at wire index 1).
+        if (report_id == PS3ReportTypes::PS3_FEATURE_EF || report_id == PS3ReportTypes::PS3_FEATURE_F8) {
+            if (len > 5) buffer[5] = efByte;
+        } else if (report_id == PS3ReportTypes::PS3_FEATURE_F5) {
+            for (uint8_t ctr = 0; ctr < 6 && ctr < len; ctr++) {
+                buffer[ctr] = ps3BTInfo.hostAddress[ctr];
+            }
+        }
+        return len;
     }
-    return -1;
+    return 0;
 }
 
 void PS3Driver::set_report(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize) {
     if ( report_type == HID_REPORT_TYPE_FEATURE ) {
         switch(report_id) {
             case PS3ReportTypes::PS3_FEATURE_EF:
-                efByte = buffer[6];
+                // TinyUSB strips the report ID before calling us, so payload
+                // index 5 is wire index 6 (the identification byte).
+                if (bufsize > 5) efByte = buffer[5];
                 break;
         }
     } else if (report_type == HID_REPORT_TYPE_OUTPUT ) {
@@ -275,7 +291,11 @@ void PS3Driver::set_report(uint8_t report_id, hid_report_type_t report_type, uin
         }
         switch(report_id) {
             case PS3ReportTypes::PS3_FEATURE_01:
-                memcpy(&ps3Features, buf, bufsize);
+                {
+                    uint16_t len = bufsize;
+                    if (len > sizeof(ps3Features)) len = sizeof(ps3Features);
+                    memcpy(&ps3Features, buf, len);
+                }
                 break;
         }
     }
