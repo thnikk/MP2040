@@ -112,7 +112,12 @@ endif()
 
 # Generate the embedded web assets (lib/httpd/fsdata.c) from www/
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-file(GLOB WEB_SOURCES ${CMAKE_SOURCE_DIR}/www/*)
+# www/ now has subdirectories (js/core, js/widgets, icons), so glob recursively:
+# otherwise edits under them would not retrigger fsdata regeneration. Dev-only
+# trees are excluded from the firmware by makefsdata.py and must not trigger
+# rebuilds either.
+file(GLOB_RECURSE WEB_SOURCES ${CMAKE_SOURCE_DIR}/www/*)
+list(FILTER WEB_SOURCES EXCLUDE REGEX "/(node_modules|server)/")
 set(BOARD_SVG ${CMAKE_SOURCE_DIR}/configs/${MP2040_BOARDCONFIG}/board.svg)
 if(NOT EXISTS ${BOARD_SVG})
   set(BOARD_SVG "")
