@@ -20,6 +20,7 @@ class GPGFX_UI {
 	public:
 		GPGFX_UI();
 		GPGFX_UI(GPGFX* renderer) { setRenderer(renderer); }
+		virtual ~GPGFX_UI() = default;
 		void setRenderer(GPGFX* renderer) { _renderer = renderer; }
 		GPGFX* getRenderer() { return _renderer; }
 

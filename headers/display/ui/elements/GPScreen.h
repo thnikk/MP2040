@@ -8,6 +8,7 @@
 
 class GPScreen : public GPWidget {
 	public:
+		virtual ~GPScreen() = default;
 		void draw();
 		virtual int8_t update() = 0;
 		void clear();

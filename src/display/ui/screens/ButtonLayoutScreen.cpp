@@ -544,5 +544,5 @@ void ButtonLayoutScreen::processInputHistory() {
 
 void ButtonLayoutScreen::trim(std::string &s) {
 	s.erase(s.begin(), std::find_if(s.begin(), s.end(),
-			std::not1(std::ptr_fun<int, int>(std::isspace))));
+			[](unsigned char c) { return !std::isspace(c); }));
 }

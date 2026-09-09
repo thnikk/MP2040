@@ -8,6 +8,7 @@ class GPWidget : public GPGFX_UI {
 	public:
 		GPWidget() {}
 		GPWidget(GPGFX* renderer) { setRenderer(renderer); }
+		virtual ~GPWidget() = default;
 		virtual void draw() {}
 		virtual int8_t update() { return 0; }
 		// Optional navigation hook for menu/remap screens, fed by the

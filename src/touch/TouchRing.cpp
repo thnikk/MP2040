@@ -100,7 +100,7 @@
 static inline float f_abs(float v) { return v < 0.0f ? -v : v; }
 
 TouchRing::TouchRing()
-	: configured(false), prevAngleDeg(0.0f), prevRawAngle(0.0f), vel(0.0f), hadPrev(false), emaX(0.0f), emaY(0.0f), wasActive(false)
+	: configured(false), prevAngleDeg(0.0f), prevRawAngle(0.0f), vel(0.0f), hadPrev(false), wasActive(false), emaX(0.0f), emaY(0.0f)
 {
 	memset(&state, 0, sizeof(state));
 	for (int i = 0; i < 4; i++) pins[i] = 0xFF;
@@ -113,7 +113,7 @@ bool TouchRing::initialize()
 	for (int i = 0; i < 4; i++)
 	{
 		pins[i] = boardPins[i];
-		if (pins[i] >= NUM_BANK0_GPIOS) ok = false;
+		if (pins[i] >= (Pin_t)NUM_BANK0_GPIOS) ok = false;
 	}
 	configured = ok;
 	return configured;
