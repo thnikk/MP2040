@@ -70,6 +70,22 @@ function matchesRef(el, refs) {
   return false;
 }
 
+// Show or hide the OLED screen and its splash logo. Boards without a physical
+// display don't author these elements at all; this is future-proofing plus a
+// shared helper for one-shot graphics (e.g. the reboot overlay). Toggles
+// display instead of removing so late-arriving options can re-show without a
+// re-fetch. Matches by id or inkscape:label, case-insensitively.
+function setDisplayElementsVisible(root, visible) {
+  if (!root || !root.querySelectorAll) return;
+  root.querySelectorAll('[id]').forEach((el) => {
+    const names = [el.id, el.getAttribute('inkscape:label')].filter(Boolean);
+    if (names.some((n) => n.toLowerCase() === 'oled' || n.toLowerCase() === 'logo')) {
+      if (visible) el.style.removeProperty('display');
+      else el.style.setProperty('display', 'none', 'important');
+    }
+  });
+}
+
 // All per-key LED elements: ids like "led-0" (GP2040) or "led0" (Inkscape).
 function ledElements(root) {
   const leds = [];
@@ -212,6 +228,14 @@ class BoardView {
     }
   }
 
+  // Hide the OLED screen and splash logo on boards without a physical
+  // display (same hasDisplay condition as the Settings display section).
+  // Unknown options default to visible.
+  applyDisplayVisibility() {
+    const visible = !this.options || this.options.display?.hasDisplay !== false;
+    setDisplayElementsVisible(this.container, visible);
+  }
+
   setOptions(options) {
     this.options = options;
     if (this.svgRoot) {
@@ -221,6 +245,7 @@ class BoardView {
       this.applyRing();
       this.applyLedCursors();
       this.applyStatusLed();
+      this.applyDisplayVisibility();
     }
     this.updateLedSim();
   }
@@ -307,6 +332,7 @@ class BoardView {
     this.applyRing();
     this.applyLedCursors();
     this.applyStatusLed();
+    this.applyDisplayVisibility();
     this.wireEvents();
     this.buildLedSim();
 

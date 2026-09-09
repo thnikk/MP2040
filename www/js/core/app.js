@@ -928,13 +928,18 @@ async function renderRebootBoard() {
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
   if (!doc.querySelector('svg')) return false;
   // Strip LEDs, the status LED, and label-positioning guides: this graphic
-  // carries no labels or live state.
+  // carries no labels or live state. The OLED screen and splash logo follow
+  // the board view: hidden unless the board physically has a display
+  // (setDisplayElementsVisible lives in boardview.js, loaded before this
+  // script).
+  const hasDisplay = currentOptions?.display?.hasDisplay === true;
   doc.querySelectorAll('[id]').forEach((el) => {
     const names = [el.id, el.getAttribute('inkscape:label')].filter(Boolean);
     if (names.some((n) => /^led-?\d+$/i.test(n) || /-label$/i.test(n) || n === 'board-led' || n === 'led-alignment')) {
       el.remove();
     }
   });
+  setDisplayElementsVisible(doc, hasDisplay);
   const isMatrix = !!currentOptions?.matrix?.enabled;
   // Compare numerically: board graphics mix padded (pin08) and unpadded
   // (pin8) ids, so an exact string match misses most boards.
