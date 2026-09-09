@@ -319,9 +319,12 @@ window.addEventListener('popstate', () => {
 // gap before each reconnect keeps the mock server (which answers instantly)
 // from being hammered, and the whole loop pauses while the tab is hidden or
 // the layout page isn't shown.
+// True once a reboot has been accepted: the board is going away, so the
+// pin-state long-poll must stay stopped and api errors must not surface.
+let rebooting = false;
 let pinStateTimer = null;
 function pollPinState() {
-  if (document.hidden) return;
+  if (document.hidden || rebooting) return;
   pinStateTimer = setTimeout(async () => {
     try {
       const res = await api('/api/getPinState');
@@ -337,7 +340,7 @@ function stopPinState() {
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopPinState();
-  else if (currentRoute() === '/layout') pollPinState();
+  else if (!rebooting && currentRoute() === '/layout') pollPinState();
 });
 
 // Parse "v1.2.3"-style versions; returns [major, minor, patch] or null.
@@ -405,6 +408,9 @@ async function load() {
     ? options.macroIndices.slice()
     : new Array(128).fill(0);
   currentOptions.macros = Array.isArray(options.macros) ? options.macros : [];
+  // Cache the board graphic now, while the board is definitely up. The
+  // post-reboot overlay renders from this cache after the board disconnects.
+  prefetchRebootBoard();
   document.getElementById('board-label-hero').textContent = version.boardLabel || '';
   document.getElementById('footer-version').textContent = version.firmwareVersion
     ? `${version.firmwareVersion}${version.gitCommit ? ` · ${version.gitCommit}` : ''}`
@@ -862,8 +868,163 @@ async function save() {
   updateDirtyUi();
 }
 
+// Cached /board.svg text for the reboot overlay. Fetched while the board is
+// still up (when the reboot picker opens): after /api/reboot is accepted the
+// firmware reboots ~500ms later, so fetching the graphic after the reboot
+// races the disconnect and usually loses.
+let rebootBoardSvg = null;
+
+async function prefetchRebootBoard() {
+  if (rebootBoardSvg !== null) return;
+  try {
+    const resp = await fetch('/board.svg');
+    if (!resp.ok) return;
+    rebootBoardSvg = await resp.text();
+  } catch (e) {
+    // Board graphic unavailable; the overlay falls back to generic wording.
+  }
+}
+
+// Show the full-page post-reboot overlay. The board is gone, so there is
+// nothing to interact with: no buttons, no dismiss. `showBoard` renders the
+// board graphic with the web config button highlighted (when the board has a
+// web config pin and a board graphic is available).
+async function showRebootedOverlay({ title, message, hint, spinning, showBoard }) {
+  document.getElementById('rebooted-title').textContent = title;
+  document.getElementById('rebooted-message').textContent = message || '';
+  document.getElementById('rebooted-hint').textContent = hint || '';
+  document.getElementById('rebooted-spinner').hidden = !spinning;
+  document.getElementById('rebooted-board').hidden = true;
+  document.getElementById('rebooted-overlay').hidden = false;
+  if (showBoard && !(await renderRebootBoard())) {
+    document.getElementById('rebooted-hint').textContent =
+      'To open the configurator again, hold the web config button while plugging the board in.';
+  }
+}
+
+// Simplified board graphic for the reboot overlay: the served /board.svg with
+// LEDs and label guides stripped out, all buttons dimmed except the web
+// config button, which gets the same highlight as a held pin on the layout
+// page. On matrix boards the web config pin is a linear key index (keyNN),
+// on direct-pin boards a GPIO (pinNN), mirroring matchButtonIndex.
+async function renderRebootBoard() {
+  const pin = Number(currentOptions?.webConfigPin);
+  const container = document.getElementById('rebooted-board');
+  if (!Number.isInteger(pin) || pin < 0) return false;
+  // Prefer the prefetched graphic; a live fetch is only a best-effort
+  // fallback (the board is usually already gone by now).
+  let text = rebootBoardSvg;
+  if (text === null) {
+    try {
+      const resp = await fetch('/board.svg');
+      if (!resp.ok) return false;
+      text = await resp.text();
+    } catch (e) {
+      return false;
+    }
+  }
+  const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+  if (!doc.querySelector('svg')) return false;
+  // Strip LEDs, the status LED, and label-positioning guides: this graphic
+  // carries no labels or live state.
+  doc.querySelectorAll('[id]').forEach((el) => {
+    const names = [el.id, el.getAttribute('inkscape:label')].filter(Boolean);
+    if (names.some((n) => /^led-?\d+$/i.test(n) || /-label$/i.test(n) || n === 'board-led' || n === 'led-alignment')) {
+      el.remove();
+    }
+  });
+  const isMatrix = !!currentOptions?.matrix?.enabled;
+  // Compare numerically: board graphics mix padded (pin08) and unpadded
+  // (pin8) ids, so an exact string match misses most boards.
+  const numOf = (name, matrix) => {
+    const m = (name || '').match(matrix ? /^key(\d+)$/i : /^pin(\d+)$/i);
+    return m ? parseInt(m[1], 10) : null;
+  };
+  let target = null;
+  const buttons = [];
+  doc.querySelectorAll('[id]').forEach((el) => {
+    for (const name of [el.id, el.getAttribute('inkscape:label')]) {
+      if (!name || /-label$/i.test(name)) continue;
+      if (numOf(name, isMatrix) === null) continue;
+      buttons.push(el);
+      if (numOf(name, isMatrix) === pin) target = el;
+      break;
+    }
+  });
+  // Fall back to the other naming scheme if the preferred one finds nothing
+  // (some board graphics mix conventions).
+  if (!target) {
+    buttons.forEach((el) => {
+      const names = [el.id, el.getAttribute('inkscape:label')];
+      if (names.some((n) => numOf(n, !isMatrix) === pin)) target = el;
+    });
+  }
+  if (!target) return false;
+  const SHAPES = 'path, rect, circle, ellipse, polygon, polyline, line';
+  const shapesOf = (el) => {
+    if (/^(path|rect|circle|ellipse|polygon|polyline|line)$/i.test(el.tagName)) return [el];
+    return Array.from(el.querySelectorAll(SHAPES));
+  };
+  // Base theme mirroring BoardView.themeStyle (matchesRef/findByRef live in
+  // boardview.js, loaded before this script), one step up the palette: the
+  // case takes --bg-2, buttons take --bg-3, strokes stay --bg-4.
+  doc.querySelectorAll(SHAPES).forEach((s) => {
+    s.setAttribute('vector-effect', 'non-scaling-stroke');
+    if (matchesRef(s, ['logo', 'ignore'])) return;
+    s.style.setProperty('fill', 'var(--bg-2)', 'important');
+    if (matchesRef(s, ['oled'])) {
+      s.style.setProperty('stroke', 'none', 'important');
+    } else {
+      s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+      s.style.setProperty('stroke-width', '2', 'important');
+    }
+  });
+  const oledEl = findByRef(doc, 'oled');
+  if (oledEl) shapesOf(oledEl).forEach((s) => s.style.setProperty('fill', '#000000', 'important'));
+  // Buttons take --bg-3; the web config button keeps the held-pin highlight
+  // and the rest are dimmed.
+  buttons.forEach((el) => {
+    if (el === target) {
+      shapesOf(el).forEach((s) => {
+        s.style.setProperty('fill', 'var(--bg-3)', 'important');
+        s.style.setProperty('stroke', 'var(--nord13)', 'important');
+        s.style.setProperty('stroke-width', '3', 'important');
+      });
+    } else {
+      shapesOf(el).forEach((s) => s.style.setProperty('fill', 'var(--bg-3)', 'important'));
+      el.style.setProperty('opacity', '0.35');
+    }
+  });
+  const svg = doc.querySelector('svg');
+  svg.removeAttribute('width');
+  svg.removeAttribute('height');
+  if (!svg.getAttribute('viewBox')) svg.setAttribute('viewBox', '0 0 100 100');
+  container.innerHTML = '';
+  container.appendChild(document.importNode(svg, true));
+  container.hidden = false;
+  return true;
+}
+
+// Poll for the board to come back in web config mode after a reboot.
+// Resolves true on success, false on timeout (caller shows the failure).
+async function waitForWebconfig(timeoutMs = 30000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (!rebooting) return false;
+    try {
+      await api('/api/getFirmwareVersion');
+      return true;
+    } catch (e) {
+      // Board not back yet (or RNDIS down during reboot); keep waiting.
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return false;
+}
+
 async function reboot(bootMode) {
   const rebootBtn = document.getElementById('reboot');
+  if (isDirty() && !confirm('You have unsaved changes. Reboot without saving?')) return;
   rebootBtn.disabled = true;
   try {
     await api('/api/reboot', {
@@ -871,15 +1032,65 @@ async function reboot(bootMode) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bootMode }),
     });
-    Toast.show('Rebooting...', 'info');
   } catch (e) {
     Toast.show('Reboot failed: ' + e, 'error');
     rebootBtn.disabled = false;
+    return;
+  }
+  // The reboot was accepted: the board drops RNDIS ~500ms later. Stop the
+  // pin-state loop, silence beforeunload (the disconnect is intentional),
+  // and show a persistent state instead of a transient toast.
+  rebooting = true;
+  stopPinState();
+  allowUnload = true;
+  // Hint shown under the board graphic. Names no pins: the highlighted
+  // button is the thing to hold. Falls back to generic wording when the
+  // board has no web config pin or no board graphic.
+  const backHint = 'To open the configurator again, hold the highlighted button while plugging the board in.';
+  if (bootMode === 1) {
+    showRebootedOverlay({
+      title: 'Rebooting',
+      message: 'Waiting for the board to come back.',
+      hint: '',
+      spinning: true,
+      showBoard: false,
+    });
+    const back = await waitForWebconfig();
+    if (!back) {
+      showRebootedOverlay({
+        title: 'Reboot timed out',
+        message: 'The board did not come back in web config mode.',
+        hint: backHint,
+        spinning: false,
+        showBoard: true,
+      });
+      return;
+    }
+    location.reload();
+  } else if (bootMode === 2) {
+    showRebootedOverlay({
+      title: 'Rebooted into bootloader mode',
+      message: 'Drag a UF2 file onto the board drive to flash new firmware.',
+      hint: backHint,
+      spinning: false,
+      showBoard: true,
+    });
+  } else {
+    showRebootedOverlay({
+      title: 'Rebooted into controller mode',
+      message: 'The configurator is now disconnected.',
+      hint: backHint,
+      spinning: false,
+      showBoard: true,
+    });
   }
 }
 
 function openRebootModal() {
   document.getElementById('reboot-modal').hidden = false;
+  // Cache the board graphic now, while the board is still up. The reboot
+  // overlay renders from this cache after the board disconnects.
+  prefetchRebootBoard();
 }
 
 function closeRebootModal() {
@@ -1066,8 +1277,9 @@ document.getElementById('reboot-modal-close').addEventListener('click', closeReb
 document.getElementById('reboot-normal').addEventListener('click', () => rebootTo(0));
 document.getElementById('reboot-bootloader').addEventListener('click', () => rebootTo(2));
 document.getElementById('reboot-webconfig').addEventListener('click', () => rebootTo(1));
-
 // Close the modal when clicking the overlay backdrop or pressing Escape.
+// (The post-reboot overlay has no dismiss affordance: the board is already
+// gone, so there is nothing to go back to.)
 document.getElementById('key-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeKeyModal();
 });

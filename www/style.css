@@ -2121,6 +2121,77 @@ button:disabled {
   border-color: transparent;
 }
 
+/* Post-reboot full-page overlay: the board is gone, so there is nothing to
+   interact with. Solid page background, status text, and (when leaving web
+   config) a simplified board graphic with the web config button highlighted. */
+.rebooted-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--page-bg);
+}
+
+.rebooted-overlay[hidden] {
+  display: none;
+}
+
+.rebooted-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 560px;
+  text-align: center;
+}
+
+.rebooted-card h2 {
+  margin: 0;
+}
+
+.rebooted-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.rebooted-spinner[hidden] {
+  display: none;
+}
+
+.loading-spinner-small {
+  width: 48px;
+  height: 48px;
+  border-width: 6px;
+}
+
+#rebooted-message {
+  margin: 0;
+}
+
+#rebooted-hint {
+  margin: 0;
+}
+
+.rebooted-board {
+  width: 100%;
+}
+
+.rebooted-board[hidden] {
+  display: none;
+}
+
+.rebooted-board svg {
+  display: block;
+  width: min(100%, 520px);
+  height: auto;
+  max-height: 55vh;
+  margin: 0 auto;
+}
+
 /* Keyboard widget (port of GP2040-th's KeyboardWidget) */
 .keyboard-widget {
   display: flex;
