@@ -322,9 +322,15 @@ window.addEventListener('popstate', () => {
 // True once a reboot has been accepted: the board is going away, so the
 // pin-state long-poll must stay stopped and api errors must not surface.
 let rebooting = false;
+// True once an unexpected disconnect is confirmed (physical reset/unplug):
+// same UI posture as a reboot, but entered from the heartbeat watcher below.
+let disconnected = false;
+let disconnectFailures = 0;
+const DISCONNECT_THRESHOLD = 3;
+let disconnectTimer = null;
 let pinStateTimer = null;
 function pollPinState() {
-  if (document.hidden || rebooting) return;
+  if (document.hidden || rebooting || disconnected) return;
   pinStateTimer = setTimeout(async () => {
     try {
       const res = await api('/api/getPinState');
@@ -340,8 +346,53 @@ function stopPinState() {
 }
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopPinState();
-  else if (!rebooting && currentRoute() === '/layout') pollPinState();
+  else if (!rebooting && !disconnected && currentRoute() === '/layout') pollPinState();
 });
+
+// Unexpected-disconnect heartbeat: the pin-state long-poll can't tell an
+// idle timeout from a dead board, so probe /api/getFirmwareVersion on a
+// timer instead. Three consecutive failures (~6s) means a physical
+// reset/unplug; a single blip just resets the counter on the next success.
+function startDisconnectWatch() {
+  if (disconnectTimer !== null) return;
+  disconnectTimer = setInterval(checkBoardAlive, 2000);
+}
+async function checkBoardAlive() {
+  if (document.hidden || rebooting || disconnected) return;
+  try {
+    await probeBoard(5000);
+    disconnectFailures = 0;
+  } catch (e) {
+    disconnectFailures++;
+    if (disconnectFailures >= DISCONNECT_THRESHOLD) enterDisconnectedState();
+  }
+}
+// Physical reset/unplug: same posture as leaving web config — block the UI
+// with the reboot overlay and reload when the board returns. Unsaved edits
+// can't survive the reload, so say so instead of failing silently on save.
+function enterDisconnectedState() {
+  if (disconnected || rebooting) return;
+  disconnected = true;
+  stopPinState();
+  allowUnload = true;
+  const dirty = (() => {
+    try {
+      return isDirty();
+    } catch (e) {
+      return false;
+    }
+  })();
+  showRebootedOverlay({
+    title: 'Board disconnected',
+    message: dirty
+      ? 'The board stopped responding. Unsaved changes will be lost on reload.'
+      : 'The board stopped responding.',
+    hint: webConfigReturnHint(true),
+    spinning: false,
+    showBoard: true,
+  });
+  watchForBoardReturn(true);
+}
 
 // Parse "v1.2.3"-style versions; returns [major, minor, patch] or null.
 function parseVersion(str) {
@@ -835,11 +886,24 @@ async function load() {
 
   const loading = document.getElementById('loading');
   if (loading) loading.hidden = true;
+  startDisconnectWatch();
 }
 
 function loadError() {
   const loading = document.getElementById('loading');
   if (loading) loading.hidden = true;
+  // Board unreachable at startup (unplugged, wrong mode): block with the
+  // same overlay rather than a blank page, and reload when it appears.
+  disconnected = true;
+  allowUnload = true;
+  showRebootedOverlay({
+    title: 'Board disconnected',
+    message: 'The board stopped responding.',
+    hint: webConfigReturnHint(true),
+    spinning: false,
+    showBoard: true,
+  });
+  watchForBoardReturn(true);
 }
 
 async function save() {
@@ -1079,8 +1143,11 @@ async function waitForWebconfig(timeoutMs = 30000) {
 // board never left (e.g. the mock server, where reboot is a no-op), so the
 // overlay stays put instead of reloading. Once armed, a status line shows
 // the watcher is waiting, so a stall is distinguishable from a disconnect.
-async function watchForBoardReturn() {
-  let down = false;
+// `startDown` skips the arming step when the disconnect is already confirmed
+// (unexpected reset/unplug, failed initial load): the overlay message covers
+// it, so the status line stays hidden.
+async function watchForBoardReturn(startDown = false) {
+  let down = startDown;
   for (;;) {
     try {
       await probeBoard();
