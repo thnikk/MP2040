@@ -895,6 +895,8 @@ async function showRebootedOverlay({ title, message, hint, spinning, showBoard }
   document.getElementById('rebooted-hint').textContent = hint || '';
   document.getElementById('rebooted-spinner').hidden = !spinning;
   document.getElementById('rebooted-board').hidden = true;
+  document.getElementById('rebooted-status').textContent = '';
+  document.getElementById('rebooted-status').hidden = true;
   document.getElementById('rebooted-overlay').hidden = false;
   if (showBoard && !(await renderRebootBoard())) {
     document.getElementById('rebooted-hint').textContent =
@@ -1005,6 +1007,25 @@ async function renderRebootBoard() {
   return true;
 }
 
+// Probe the board with a timeout so a hung connection (half-dead RNDIS,
+// hanging proxy) fails instead of stalling the reboot watchers forever.
+// Cache is bypassed so a stale cached response can neither arm early nor
+// mask the return.
+async function probeBoard(timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch('/api/getFirmwareVersion', {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    await resp.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // Poll for the board to come back in web config mode after a reboot.
 // Resolves true on success, false on timeout (caller shows the failure).
 async function waitForWebconfig(timeoutMs = 30000) {
@@ -1012,7 +1033,7 @@ async function waitForWebconfig(timeoutMs = 30000) {
   while (Date.now() < deadline) {
     if (!rebooting) return false;
     try {
-      await api('/api/getFirmwareVersion');
+      await probeBoard();
       return true;
     } catch (e) {
       // Board not back yet (or RNDIS down during reboot); keep waiting.
@@ -1020,6 +1041,33 @@ async function waitForWebconfig(timeoutMs = 30000) {
     await new Promise((r) => setTimeout(r, 1000));
   }
   return false;
+}
+
+// Watch for the board to return after leaving web config (controller /
+// bootloader reboot) and reload into the configurator when it does. Arms
+// only after the board is observed gone: a fetch that never fails means the
+// board never left (e.g. the mock server, where reboot is a no-op), so the
+// overlay stays put instead of reloading. Once armed, a status line shows
+// the watcher is waiting, so a stall is distinguishable from a disconnect.
+async function watchForBoardReturn() {
+  let down = false;
+  for (;;) {
+    try {
+      await probeBoard();
+      if (down) {
+        location.reload();
+        return;
+      }
+    } catch (e) {
+      if (!down) {
+        down = true;
+        const status = document.getElementById('rebooted-status');
+        status.textContent = 'Board disconnected. Waiting for it to return.';
+        status.hidden = false;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
 }
 
 async function reboot(bootMode) {
@@ -1064,6 +1112,8 @@ async function reboot(bootMode) {
         spinning: false,
         showBoard: true,
       });
+      // Keep watching: a later return still reloads into the configurator.
+      watchForBoardReturn();
       return;
     }
     location.reload();
@@ -1075,6 +1125,7 @@ async function reboot(bootMode) {
       spinning: false,
       showBoard: true,
     });
+    watchForBoardReturn();
   } else {
     showRebootedOverlay({
       title: 'Rebooted into controller mode',
@@ -1083,6 +1134,7 @@ async function reboot(bootMode) {
       spinning: false,
       showBoard: true,
     });
+    watchForBoardReturn();
   }
 }
 

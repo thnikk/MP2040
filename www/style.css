@@ -2176,6 +2176,14 @@ button:disabled {
   margin: 0;
 }
 
+#rebooted-status {
+  margin: 0;
+}
+
+#rebooted-status[hidden] {
+  display: none;
+}
+
 .rebooted-board {
   width: 100%;
 }
