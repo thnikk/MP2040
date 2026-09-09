@@ -218,7 +218,7 @@ class BoardView {
 
   async load() {
     try {
-      const resp = await fetch('/board.svg');
+      const resp = await fetch(assetUrl('/board.svg'));
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const text = await resp.text();
       this.render(text);

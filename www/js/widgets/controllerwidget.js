@@ -72,7 +72,7 @@ class ControllerWidget {
 
   async loadSvg() {
     try {
-      const res = await fetch('/controller.svg');
+      const res = await fetch(assetUrl('/controller.svg'));
       const text = await res.text();
       const match = text.match(CTRL_VIEWBOX_RE);
       if (match) this.viewBox = match[1];

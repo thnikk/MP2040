@@ -44,6 +44,48 @@ CONTENT_TYPES = {
 
 DEFAULT_CONTENT_TYPE = "text/plain"
 
+# Browser caching policy for the firmware web server. Static assets get a
+# long immutable lifetime; the entry page stays fresh because it carries the
+# versioned asset URLs (see --asset-version). Dynamic /api/* responses are
+# custom-file handlers, not fsdata entries, so they are unaffected.
+IMMUTABLE_EXTS = {"svg", "js", "css"}
+NO_CACHE_EXTS = {"html", "htm"}
+
+CACHE_CONTROL_IMMUTABLE = "public, max-age=31536000, immutable"
+CACHE_CONTROL_NO_CACHE = "no-cache"
+
+
+def cache_control_for(ext: str, versioned: bool) -> str:
+    # Immutable is only safe when URLs are versioned (?v=); otherwise a
+    # firmware update would serve stale assets. no-cache is always safe.
+    if ext in IMMUTABLE_EXTS:
+        return CACHE_CONTROL_IMMUTABLE if versioned else ""
+    if ext in NO_CACHE_EXTS:
+        return CACHE_CONTROL_NO_CACHE
+    return ""
+
+
+# Append ?v=<version> to local asset references so a firmware update produces
+# new URLs while the old ones stay validly cached forever. Only same-origin
+# absolute paths are rewritten; external URLs, /api/* and data: URIs are left
+# alone. Existing query strings get &v= instead.
+def version_asset_urls(text: str, version: str) -> str:
+    def bust_url(m: "re.Match") -> str:
+        quote, url = m.group(1), m.group(2)
+        sep = "&" if "?" in url else "?"
+        return f"url({quote}{url}{sep}v={version}{quote})"
+
+    def bust_attr(m: "re.Match") -> str:
+        attr, quote, url = m.group(1), m.group(2), m.group(3)
+        sep = "&" if "?" in url else "?"
+        return f"{attr}={quote}{url}{sep}v={version}{quote}"
+
+    text = re.sub(r"""url\(\s*(['"]?)(/(?:[^'"()\s]|\\.)+)\1\s*\)""", bust_url, text)
+    # Only file-like href/src targets (with an extension) are versioned: SPA
+    # route links (/, /layout, /settings) are same-document navigations.
+    text = re.sub(r"""(href|src)=(['"])(/(?!/|api/)[^'"]*?\.[^/'"?]+(?:\?[^'"]*)?)\2""", bust_attr, text)
+    return text
+
 # These extensions were not compressed by the original makefsdata
 NO_COMPRESS = {"png", "json", "svg"}
 
@@ -94,7 +136,7 @@ def gather_files(web_dir: Path):
     return sorted(files)
 
 
-def makefsdata(web_dir: Path, out_file: Path, board_svg: str = ""):
+def makefsdata(web_dir: Path, out_file: Path, board_svg: str = "", asset_version: str = ""):
     # List of (absolute path, URL path) pairs
     entries = [(p, "/" + p.relative_to(web_dir).as_posix()) for p in gather_files(web_dir)]
     if board_svg and Path(board_svg).is_file():
@@ -140,6 +182,14 @@ def makefsdata(web_dir: Path, out_file: Path, board_svg: str = ""):
 
         raw = file_path.read_bytes()
 
+        # Version the asset URLs in the entry page and stylesheet so cached
+        # copies are keyed per firmware. www/ sources stay unversioned.
+        if asset_version and ext in {"html", "htm", "css"}:
+            try:
+                raw = version_asset_urls(raw.decode("utf-8"), asset_version).encode("utf-8")
+            except UnicodeDecodeError:
+                pass
+
         is_compressed = False
         payload = raw
         if ext not in NO_COMPRESS:
@@ -163,7 +213,11 @@ def makefsdata(web_dir: Path, out_file: Path, board_svg: str = ""):
         header_parts.append(f"Content-Length: {len(payload)}\r\n".encode("utf-8"))
         if is_compressed:
             header_parts.append(b"Content-Encoding: deflate\r\n")
-        header_parts.append(f"Content-Type: {CONTENT_TYPES.get(ext, DEFAULT_CONTENT_TYPE)}\r\n\r\n".encode("utf-8"))
+        header_parts.append(f"Content-Type: {CONTENT_TYPES.get(ext, DEFAULT_CONTENT_TYPE)}\r\n".encode("utf-8"))
+        cache_control = cache_control_for(ext, bool(asset_version))
+        if cache_control:
+            header_parts.append(f"Cache-Control: {cache_control}\r\n".encode("utf-8"))
+        header_parts.append(b"\r\n")
         header = b"".join(header_parts)
 
         fsdata.append(f"static const unsigned char data_{var_name}[] FSDATA_ALIGN_PRE = {{")
@@ -176,7 +230,10 @@ def makefsdata(web_dir: Path, out_file: Path, board_svg: str = ""):
         fsdata.append(c_string(f"Content-Length: {len(payload)}\r\n"))
         if is_compressed:
             fsdata.append(c_string("Content-Encoding: deflate\r\n"))
-        fsdata.append(c_string(f"Content-Type: {CONTENT_TYPES.get(ext, DEFAULT_CONTENT_TYPE)}\r\n\r\n"))
+        fsdata.append(c_string(f"Content-Type: {CONTENT_TYPES.get(ext, DEFAULT_CONTENT_TYPE)}\r\n"))
+        if cache_control:
+            fsdata.append(c_string(f"Cache-Control: {cache_control}\r\n"))
+        fsdata.append(c_string("\r\n"))
         fsdata.append(f"/* raw file data ({len(payload)} bytes) */")
         fsdata.append(hex_bytes(payload))
         fsdata.append("};")
@@ -214,13 +271,15 @@ def main():
     parser.add_argument("out_file", type=Path, help="Output path for fsdata.c")
     parser.add_argument("--board-svg", nargs="?", const="", default="",
                         help="Optional board.svg to embed as /board.svg")
+    parser.add_argument("--asset-version", default="",
+                        help="Cache-busting version appended (?v=) to local asset URLs in html/css")
     args = parser.parse_args()
 
     if not args.web_dir.is_dir():
         print(f"Error: {args.web_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    makefsdata(args.web_dir, args.out_file, args.board_svg)
+    makefsdata(args.web_dir, args.out_file, args.board_svg, args.asset_version)
 
 
 if __name__ == "__main__":

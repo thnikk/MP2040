@@ -21,6 +21,7 @@
 ## Codegen (automatic during build)
 - Protobuf → C: `compile_proto.cmake` runs nanopb generator on `proto/enums.proto` and `proto/config.proto` (creates `generate_proto` target)
 - Web assets → C: `tools/makefsdata.py` (pure Python, no npm) turns `www/` into `lib/httpd/fsdata.c` (creates `generate_fsdata` target)
+- Web caching: firmware serves static files immutable (`Cache-Control`, baked by `makefsdata.py`) with `?v=<version+sha>` URLs (rewritten at build time in html/css, via `assetUrl()` for JS-fetched SVGs). `index.html` stays `no-cache`. Keep icons as separate files.
 
 ## Architecture
 - `configs/<Board>/BoardConfig.h` — per-pin keycodes (`KEYCODE_GPxx`), modifier masks, LED defaults (`LED_PIN`, `LED_FORMAT`, ...), web-config boot pin (`PIN_WEBCONFIG`)

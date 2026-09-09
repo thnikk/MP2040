@@ -32,6 +32,13 @@ execute_process(COMMAND ${GIT_EXECUTABLE} describe --always --abbrev=7
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 	OUTPUT_VARIABLE GIT_REPO_BUILD_ID
 	OUTPUT_STRIP_TRAILING_WHITESPACE)
+# Asset cache-buster (?v= on firmware web URLs): must be unique per commit,
+# including untagged builds where GIT_REPO_VERSION is a constant "dev".
+execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short=7 HEAD
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	OUTPUT_VARIABLE GIT_SHORT_SHA
+	OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(MP2040_ASSET_VERSION "${GIT_REPO_VERSION}+${GIT_SHORT_SHA}")
 string(REGEX REPLACE "v([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1" CMAKE_GIT_REPO_VERSION ${GIT_REPO_VERSION})
 string(REGEX REPLACE "^(.......-.*)|(.......)$|^dev" "0.0.0" CMAKE_GIT_REPO_VERSION ${CMAKE_GIT_REPO_VERSION}) # fix if all we have is the git SHA
 configure_file("headers/version.h.in" "headers/version.h")
@@ -128,6 +135,7 @@ add_custom_command(
     ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/makefsdata.py
       ${CMAKE_SOURCE_DIR}/www ${CMAKE_SOURCE_DIR}/lib/httpd/fsdata.c
       --board-svg ${BOARD_SVG}
+      --asset-version ${MP2040_ASSET_VERSION}
   DEPENDS ${WEB_SOURCES} ${CMAKE_SOURCE_DIR}/tools/makefsdata.py ${BOARD_SVG}
   COMMENT "Generating embedded web assets (fsdata.c)..."
   VERBATIM

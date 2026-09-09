@@ -27,6 +27,15 @@ let activeProfile = 0;
 // Board SVG view (see boardview.js), initialized by load()
 let boardView = null;
 
+// Asset cache-buster: the firmware serves static files with immutable
+// caching, so runtime fetches (board/controller graphics, gamepad glyphs)
+// carry the firmware version in the query string. Set once in load() from
+// /api/getFirmwareVersion; empty until then (dev server, early fetches).
+let assetVersion = '';
+function assetUrl(path) {
+  return assetVersion ? `${path}?v=${assetVersion}` : path;
+}
+
 // MultiSelect used in the key modal
 let modalSelect = null;
 

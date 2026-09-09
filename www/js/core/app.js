@@ -453,6 +453,11 @@ async function load() {
     api('/api/getFirmwareVersion'),
   ]);
   currentOptions = options;
+  // Key runtime asset fetches (board/controller graphics, gamepad glyphs)
+  // by firmware: static files are served immutable, so the version query
+  // keeps a firmware update from reusing stale cached copies. Set before
+  // anything below fetches (board view, prefetch).
+  assetVersion = [version.firmwareVersion, version.gitCommit].filter(Boolean).join('+');
   // Global macros: per-key triggers and the M1-M8 definitions. Default to
   // empty for old firmware responses that don't carry the fields.
   currentOptions.macroIndices = Array.isArray(options.macroIndices)
@@ -951,7 +956,7 @@ let rebootBoardSvg = null;
 async function prefetchRebootBoard() {
   if (rebootBoardSvg !== null) return;
   try {
-    const resp = await fetch('/board.svg');
+    const resp = await fetch(assetUrl('/board.svg'));
     if (!resp.ok) return;
     rebootBoardSvg = await resp.text();
   } catch (e) {
@@ -1007,7 +1012,7 @@ async function renderRebootBoard() {
   let text = rebootBoardSvg;
   if (text === null) {
     try {
-      const resp = await fetch('/board.svg');
+      const resp = await fetch(assetUrl('/board.svg'));
       if (!resp.ok) return false;
       text = await resp.text();
     } catch (e) {

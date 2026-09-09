@@ -180,7 +180,7 @@ function loadedGlyph(id) {
 // like before. Inline style is still dropped so themes can't be overridden.
 async function loadGlyph(id) {
   try {
-    const res = await fetch(`/icons/gamepad/${id}.svg`);
+    const res = await fetch(assetUrl(`/icons/gamepad/${id}.svg`));
     const doc = new DOMParser().parseFromString(await res.text(), 'image/svg+xml');
     const root = doc.documentElement;
     if (!root || root.tagName.toLowerCase() !== 'svg') return null;
