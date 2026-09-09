@@ -909,9 +909,24 @@ async function showRebootedOverlay({ title, message, hint, spinning, showBoard }
   document.getElementById('rebooted-status').hidden = true;
   document.getElementById('rebooted-overlay').hidden = false;
   if (showBoard && !(await renderRebootBoard())) {
-    document.getElementById('rebooted-hint').textContent =
-      'To open the configurator again, hold the web config button while plugging the board in.';
+    document.getElementById('rebooted-hint').textContent = webConfigReturnHint(false);
   }
+}
+
+// How to get back into the configurator after leaving web config. Touch
+// boards can't hold a pad from power-on: the pad is touched after boot,
+// inside the boot window. `withBoard` selects the highlighted-pad wording
+// (board graphic shown) or the generic fallback. Assumes a touch board's web
+// config pin is a touch pad, true for all shipping touch boards (the
+// firmware arms the window when the web config or boot pin is touch, which
+// the frontend can't distinguish from hasTouchPads alone).
+function webConfigReturnHint(withBoard) {
+  if (currentOptions?.touch?.hasTouchPads === true) {
+    const target = withBoard ? 'the highlighted pad' : 'the web config pad';
+    return `To open the configurator again, plug the board in, then touch ${target}.`;
+  }
+  const target = withBoard ? 'the highlighted button' : 'the web config button';
+  return `To open the configurator again, hold ${target} while plugging the board in.`;
 }
 
 // Simplified board graphic for the reboot overlay: the served /board.svg with
@@ -1107,9 +1122,9 @@ async function reboot(bootMode) {
   stopPinState();
   allowUnload = true;
   // Hint shown under the board graphic. Names no pins: the highlighted
-  // button is the thing to hold. Falls back to generic wording when the
-  // board has no web config pin or no board graphic.
-  const backHint = 'To open the configurator again, hold the highlighted button while plugging the board in.';
+  // button is the thing to hold (or touch, on touch boards). Falls back to
+  // generic wording when the board has no web config pin or no board graphic.
+  const backHint = webConfigReturnHint(true);
   if (bootMode === 1) {
     showRebootedOverlay({
       title: 'Rebooting',
