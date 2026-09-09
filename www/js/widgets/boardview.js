@@ -236,6 +236,25 @@ class BoardView {
     setDisplayElementsVisible(this.container, visible);
   }
 
+  // True when the board has an addressable per-key LED strip. dataPin is a
+  // board property enforced from BoardConfig.h (-1 = no strip, e.g.
+  // Fightboard-b). Some strip-less SVGs still author led-N slots, so element
+  // presence alone can't gate. Unknown options default to true. The mode
+  // indicator (board-led) is independent and always handled.
+  hasStrip() {
+    return !this.options || (this.options.led?.dataPin ?? -1) >= 0;
+  }
+
+  // Hide the per-key LED slots on boards without a strip. Toggle, not
+  // remove, so late-arriving options can re-show without a re-fetch.
+  applyLedVisibility() {
+    const visible = this.hasStrip();
+    ledElements(this.container).forEach((el) => {
+      if (visible) el.style.removeProperty('display');
+      else el.style.setProperty('display', 'none', 'important');
+    });
+  }
+
   setOptions(options) {
     this.options = options;
     if (this.svgRoot) {
@@ -246,6 +265,7 @@ class BoardView {
       this.applyLedCursors();
       this.applyStatusLed();
       this.applyDisplayVisibility();
+      this.applyLedVisibility();
     }
     this.updateLedSim();
   }
@@ -333,6 +353,7 @@ class BoardView {
     this.applyLedCursors();
     this.applyStatusLed();
     this.applyDisplayVisibility();
+    this.applyLedVisibility();
     this.wireEvents();
     this.buildLedSim();
 
@@ -590,6 +611,8 @@ class BoardView {
   // ---- LED slots --------------------------------------------------------
 
   applyLeds() {
+    // No strip: leave the slots at the base theme fill.
+    if (!this.hasStrip()) return;
     // The live simulation paints per-LED colors every frame; keep this static
     // fill only as the fallback / pre-sim baseline.
     if (this.ledSim) return;
@@ -616,6 +639,7 @@ class BoardView {
   buildLedSim() {
     this.stopLedSim();
     this.ledSim = null;
+    if (!this.hasStrip()) return;
     if (!this.svgRoot || !this.options?.led) return;
 
     const leds = ledElements(this.container);
@@ -687,8 +711,14 @@ class BoardView {
   // ---- pin styling / highlight ------------------------------------------
 
   // Per-key LEDs only open the color popover in custom LED mode, so only show
-  // the pointer cursor (and click affordance) in that mode.
+  // the pointer cursor (and click affordance) in that mode. No strip: default
+  // cursor everywhere, no popover.
   applyLedCursors() {
+    if (!this.hasStrip()) {
+      // Authored slots with no physical strip: no interaction, default cursor.
+      ledElements(this.container).forEach((el) => el.style.removeProperty('cursor'));
+      return;
+    }
     const custom = Number(this.options?.led?.ledMode ?? 0) === 0;
     ledElements(this.container).forEach((el) => {
       el.style.setProperty('cursor', custom ? 'pointer' : 'not-allowed');
@@ -827,18 +857,22 @@ class BoardView {
       this.ringElement.addEventListener('mouseleave', () => this.applyRing());
     }
 
-    this.container.querySelectorAll('[id]').forEach((el) => {
-      const m = el.id.match(/^led-?\d+$/);
-      if (!m) return;
-      el.addEventListener('click', () => {
-        const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
-        this.callbacks.onLedClick?.(idx, el);
+    // Per-key LED interactions only exist with a physical strip; authored
+    // slots on strip-less boards stay inert.
+    if (this.hasStrip()) {
+      this.container.querySelectorAll('[id]').forEach((el) => {
+        const m = el.id.match(/^led-?\d+$/);
+        if (!m) return;
+        el.addEventListener('click', () => {
+          const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
+          this.callbacks.onLedClick?.(idx, el);
+        });
+        el.addEventListener('mouseenter', () => {
+          if (Number(this.options?.led?.ledMode ?? 0) !== 0) this.showLedTooltip(el);
+        });
+        el.addEventListener('mouseleave', () => this.hideLedTooltip());
       });
-      el.addEventListener('mouseenter', () => {
-        if (Number(this.options?.led?.ledMode ?? 0) !== 0) this.showLedTooltip(el);
-      });
-      el.addEventListener('mouseleave', () => this.hideLedTooltip());
-    });
+    }
 
     }
 }

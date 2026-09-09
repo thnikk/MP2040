@@ -661,6 +661,16 @@ async function load() {
     touchSettingsEl.hidden = options.touch?.hasTouchPads === false;
   }
 
+  // Boards without an addressable LED strip (dataPin < 0, e.g. Fightboard-b)
+  // hide the whole LEDs section. The widgets below still initialize while
+  // hidden so save payloads, dirty tracking and profiles behave unchanged.
+  // The Settings page timeout control stays visible; only its status LED row
+  // is conditional (on hasStatusLed, handled above).
+  const ledSectionEl = document.getElementById('led-section');
+  if (ledSectionEl) {
+    ledSectionEl.hidden = (options.led?.dataPin ?? -1) < 0;
+  }
+
   document.getElementById('led-mode').value = led.ledMode ?? 0;
   document.getElementById('led-mode').addEventListener('change', () => {
     syncBrightnessSliderToMode();

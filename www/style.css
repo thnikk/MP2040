@@ -1330,6 +1330,12 @@ html[data-theme="light"] .ms-caret {
   display: none;
 }
 
+/* Layout LEDs section: hidden entirely on boards without an addressable LED
+   strip, same display:flex override reason as above. */
+#led-section[hidden] {
+  display: none;
+}
+
 /* Key modal picker groups: the active tab's group is shown. The groups are
    display:flex (see .key-modal-group below), which would override the hidden
    attribute, so keep an explicit display:none override. */
