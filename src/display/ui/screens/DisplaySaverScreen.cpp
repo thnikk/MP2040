@@ -226,7 +226,7 @@ void DisplaySaverScreen::drawStarsScene() {
 
 		uint32_t now = getMillis();
 		if (nextStarTime == 0)
-			nextStarTime = now + 2000 + (rand() % 3000);
+			nextStarTime = now + 1000 + (rand() % 1000);
 		if (now >= nextStarTime) {
 			uint32_t animPos = now - nextStarTime;
 			if (animPos < ANIM_MS) {
@@ -240,7 +240,7 @@ void DisplaySaverScreen::drawStarsScene() {
 			} else {
 				occasionalStarX = 3 + (rand() % (SCREEN_WIDTH - 6));
 				occasionalStarY = 3 + (rand() % (SCREEN_HEIGHT - 6));
-				nextStarTime = now + 2000 + (rand() % 3000);
+				nextStarTime = now + 1000 + (rand() % 1000);
 			}
 		}
 	}
