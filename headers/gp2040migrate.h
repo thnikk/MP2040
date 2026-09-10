@@ -32,6 +32,11 @@
 // customThemeUp..customThemeA2 (fields 9-26), pressed variants (27-44).
 #define GP2040_THEME_BUTTONS 18
 
+// GP2040-th default for staticColorNormal/staticColorPressed: "unset", i.e.
+// the user never picked a static color. Values equal to this are not migrated
+// (a color picker can't produce the alpha bits, so no real choice collides).
+#define GP2040_COLOR_UNSET 0xffffffffu
+
 typedef struct
 {
 	uint32_t keycodes[GP2040_PIN_COUNT];

@@ -91,6 +91,31 @@ function gpPinName(i) {
   return 'pin' + String(i).padStart(2, '0');
 }
 
+// GP2040-th "unset" static color (its default): never migrated, so stock
+// configs keep the board's LED colors. A picker can't produce the alpha bits,
+// so no real choice collides with the sentinel.
+const GP2040_COLOR_UNSET = 0xffffffff;
+
+// One static half (normal/pressed): migrated value, or null when unset.
+function gpStaticColor(v) {
+  if (!Number.isFinite(Number(v))) return null;
+  const n = Number(v);
+  if (n === GP2040_COLOR_UNSET) return null;
+  return Math.max(0, Math.min(0xffffff, n));
+}
+
+// The custom theme carries usable colors only when enabled with at least one
+// nonzero entry. An all-zero theme is the untouched default: migrating it
+// would wipe the board's per-key colors with zeros.
+function gpThemeUsable(ledTheme) {
+  if (!ledTheme || ledTheme.enabled !== true) return false;
+  for (const key of Object.values(GP2040_ACTION_THEMES)) {
+    const entry = ledTheme[key];
+    if (entry && (Number(entry.u) || Number(entry.d))) return true;
+  }
+  return false;
+}
+
 // Gamepad mask for one GP2040-th pin mapping. Returns {mask, mapped} where
 // mapped is false when the action has no MP2040 equivalent.
 function gpGamepadMask(pin) {
@@ -127,11 +152,13 @@ function gpConvertProfile(section, ledTheme, keyCount) {
   let keys = 0;
   let gamepadPins = 0;
   let unmappedGamepadPins = 0;
-  // Per-key custom colors only when the source used a custom theme; the
-  // theme is keyed by gamepad button, resolved through the pin's action.
-  const custom = ledTheme?.enabled === true ? ledTheme : null;
-  const staticNormal = gpClamp(ledTheme?.staticColorNormal, 0, 0xffffff, 0);
-  const staticPressed = gpClamp(ledTheme?.staticColorPressed, 0, 0xffffff, 0);
+  // Per-key custom colors only for a usable custom theme (see
+  // gpThemeUsable); the theme is keyed by gamepad button, resolved through
+  // the pin's action. Otherwise the arrays are omitted so the board's per-key
+  // colors survive.
+  const usableTheme = gpThemeUsable(ledTheme);
+  const staticNormal = gpStaticColor(ledTheme?.staticColorNormal);
+  const staticPressed = gpStaticColor(ledTheme?.staticColorPressed);
   for (let i = 0; i < keyCount; i++) {
     const code = i < 30 ? gpClamp(kc[i], 0, 255, 0) : 0;
     const mods = i < 30 ? gpClamp(km[i], 0, 255, 0) : 0;
@@ -149,22 +176,20 @@ function gpConvertProfile(section, ledTheme, keyCount) {
       }
     }
     gamepadMasks.push(mask);
-    if (custom && i < 30 && section) {
+    if (usableTheme && i < 30 && section) {
       const themeKey = GP2040_ACTION_THEMES[gpNum(section[gpPinName(i)]?.action, -10)];
-      const entry = themeKey ? custom[themeKey] : null;
+      const entry = themeKey ? ledTheme[themeKey] : null;
+      const entryUsable = entry && (Number(entry.u) || Number(entry.d));
       ledNormalColors.push(
-        entry && Number.isFinite(Number(entry.u))
+        entryUsable && Number.isFinite(Number(entry.u))
           ? gpClamp(entry.u, 0, 0xffffff, 0)
-          : staticNormal
+          : (staticNormal ?? 0)
       );
       ledPressedColors.push(
-        entry && Number.isFinite(Number(entry.d))
+        entryUsable && Number.isFinite(Number(entry.d))
           ? gpClamp(entry.d, 0, 0xffffff, 0)
-          : staticPressed
+          : (staticPressed ?? 0)
       );
-    } else {
-      ledNormalColors.push(0);
-      ledPressedColors.push(0);
     }
   }
   return {
@@ -174,10 +199,9 @@ function gpConvertProfile(section, ledTheme, keyCount) {
       midiNotes: [],
       midiVelocities: [],
       midi: {},
-      led: {
-        ledNormalColors,
-        ledPressedColors,
-      },
+      // Per-key arrays ride along only with a usable theme; app.js backfills
+      // the board's live colors otherwise so nothing is wiped.
+      led: usableTheme ? { ledNormalColors, ledPressedColors } : {},
     },
     gamepadMasks,
     keys,
@@ -227,7 +251,9 @@ function convertGp2040Backup(data, keyCount, fallbackProfile) {
   let totalKeys = 0;
   let totalGamepadPins = 0;
   let unmappedGamepadPins = 0;
-  let customColors = false;
+  const themeUsable = gpThemeUsable(ledTheme);
+  const staticNormal = gpStaticColor(ledTheme?.staticColorNormal);
+  const staticPressed = gpStaticColor(ledTheme?.staticColorPressed);
   for (let i = 0; i < Math.min(sections.length, 4); i++) {
     const section = sections[i] || fallbackProfile;
     const r = gpConvertProfile(section, ledTheme, kc);
@@ -235,7 +261,6 @@ function convertGp2040Backup(data, keyCount, fallbackProfile) {
     totalKeys += r.keys;
     totalGamepadPins += r.gamepadPins;
     unmappedGamepadPins += r.unmappedGamepadPins;
-    if (ledTheme?.enabled === true) customColors = true;
     profiles.push(r.profile);
   }
   const gamepad = data.gamepad && typeof data.gamepad === 'object' ? data.gamepad : {};
@@ -250,13 +275,13 @@ function convertGp2040Backup(data, keyCount, fallbackProfile) {
   const led = {};
   const brightness = gpClamp(data.led?.brightnessMaximum, 0, 255, null);
   if (brightness !== null) led.brightnessByMode = Array(7).fill(brightness);
-  if (ledTheme && (Number.isFinite(Number(ledTheme.staticColorNormal)) || Number.isFinite(Number(ledTheme.staticColorPressed)))) {
-    led.colorNormalByMode = Array(7).fill(gpClamp(ledTheme.staticColorNormal, 0, 0xffffff, 0));
-    led.colorPressedByMode = Array(7).fill(gpClamp(ledTheme.staticColorPressed, 0, 0xffffff, 0));
-  }
+  if (staticNormal !== null) led.colorNormalByMode = Array(7).fill(staticNormal);
+  if (staticPressed !== null) led.colorPressedByMode = Array(7).fill(staticPressed);
+  // The LED mode follows migrated colors: without color data there is nothing
+  // faithful to show in Custom mode, so untouched LEDs keep the board mode.
   const anim = gpNum(ledTheme?.animationMode, -1);
   const ledMode = anim in GP2040_ANIMATIONS ? GP2040_ANIMATIONS[anim] : null;
-  if (ledMode !== null) {
+  if (ledMode !== null && (staticNormal !== null || staticPressed !== null || themeUsable)) {
     for (const p of profiles) p.led.ledMode = ledMode;
   }
   const skipped = ['macros'];
@@ -267,8 +292,9 @@ function convertGp2040Backup(data, keyCount, fallbackProfile) {
     profiles: profiles.length,
     keys: totalKeys,
     gamepadPins: totalGamepadPins,
-    customColors,
-    ledMode,
+    customColors: themeUsable,
+    staticColors: staticNormal !== null || staticPressed !== null,
+    ledMode: ledMode !== null && (staticNormal !== null || staticPressed !== null || themeUsable) ? ledMode : null,
     inputMode: defaultInputMode,
     inputFallback,
     unmappedGamepadPins,
@@ -313,6 +339,7 @@ function gp2040SummaryText(summary) {
     bits.push(`${summary.gamepadPins} gamepad mapping${summary.gamepadPins === 1 ? '' : 's'}`);
   }
   if (summary.customColors) bits.push('custom LED colors');
+  else if (summary.staticColors) bits.push('static LED colors');
   if (summary.inputFallback) bits.push('input mode not supported, using keyboard');
   if (summary.unmappedGamepadPins > 0) {
     bits.push(`${summary.unmappedGamepadPins} gamepad action${summary.unmappedGamepadPins === 1 ? '' : 's'} dropped`);

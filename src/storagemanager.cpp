@@ -4126,9 +4126,6 @@ void Storage::init() {
     const ConfigFooter& footer = *reinterpret_cast<const ConfigFooter*>(
         EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
 
-    // Set when the stored blob migrates from GP2040-th below; the converted
-    // config is saved at the end of init so the migration runs exactly once.
-    bool didMigrate = false;
     if (footer.magic == FOOTER_MAGIC &&
         footer.dataSize + sizeof(ConfigFooter) <= EEPROM_CACHE_BYTES)
     {
@@ -4147,8 +4144,15 @@ void Storage::init() {
             if (gp2040LooksLike(dataPtr, footer.dataSize) &&
                 gp2040Extract(dataPtr, footer.dataSize, &gpStored))
             {
+                // RAM-resident only: the footer keeps the GP2040-th blob, so
+                // a power loss before the first user save simply re-migrates
+                // identically next boot. Nothing is written to flash here on
+                // purpose: a save (deferred or synchronous) would stall on
+                // the multicore lockout while core 1 isn't launched yet and
+                // hang the boot whenever setup takes longer than the commit
+                // delay. The first user-initiated save persists the MP2040
+                // encoding and ends the migration.
                 gp2040MigrateToConfig(gpStored, config);
-                didMigrate = true;
             }
             else
             {
@@ -4337,13 +4341,6 @@ void Storage::init() {
     // again so unassigned keys fall back to the board defaults.
     normalizeKeyMapping(config.keyMapping);
     normalizeGamepadMapping(config);
-
-    // Persist a GP2040-th migration (deferred flash write, safe this early:
-    // core 1 isn't launched yet). Afterwards the footer holds an MP2040 blob,
-    // so later boots take the normal path. Re-running the migration after a
-    // power loss in the 50ms commit window converges to the same config.
-    if (didMigrate)
-        save(true);
 }
 
 /**

@@ -1394,6 +1394,14 @@ async function importSettings(file) {
             ? { colorNormalByMode: led.colorNormalByMode } : {}),
           ...(Array.isArray(led.colorPressedByMode) && led.colorPressedByMode.length
             ? { colorPressedByMode: led.colorPressedByMode } : {}),
+          // Converted GP2040-th profiles without a usable custom theme carry
+          // no per-key colors: re-send the board's live ones so the import
+          // doesn't wipe them. Native exports always carry both arrays, and
+          // themed conversions carry their own, so neither path changes.
+          ...(!Array.isArray(p.led?.ledNormalColors) && Array.isArray(profiles[i]?.led?.ledNormalColors)
+            ? { ledNormalColors: profiles[i].led.ledNormalColors } : {}),
+          ...(!Array.isArray(p.led?.ledPressedColors) && Array.isArray(profiles[i]?.led?.ledPressedColors)
+            ? { ledPressedColors: profiles[i].led.ledPressedColors } : {}),
           // Absent keys leave the board's values untouched (converted
           // GP2040-th payloads omit what has no equivalent). MP2040 exports
           // always carry both, so their behavior is unchanged.

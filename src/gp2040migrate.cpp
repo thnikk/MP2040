@@ -390,23 +390,23 @@ static void gpParseAnim(const uint8_t* data, size_t len, Gp2040Config* out)
 		else if (field >= GP_ANIM_THEME_FIRST && field <= GP_ANIM_THEME_LAST)
 		{
 			uint32_t i = field - GP_ANIM_THEME_FIRST;
-			out->themeNormal[i] = (uint32_t)v & 0xffffffu;
+			out->themeNormal[i] = (uint32_t)v; // raw: masked on write, keeps sentinel checks exact
 			out->hasTheme[i] = true;
 		}
 		else if (field >= GP_ANIM_THEME_PRESSED_FIRST && field <= GP_ANIM_THEME_PRESSED_LAST)
 		{
 			uint32_t i = field - GP_ANIM_THEME_PRESSED_FIRST;
-			out->themePressed[i] = (uint32_t)v & 0xffffffu;
+			out->themePressed[i] = (uint32_t)v; // raw: masked on write
 			out->hasTheme[i] = true;
 		}
 		else if (field == GP_ANIM_STATIC_NORMAL)
 		{
-			out->staticNormal = (uint32_t)v & 0xffffffu;
+			out->staticNormal = (uint32_t)v; // raw: UNSET sentinel (0xFFFFFFFF) must survive
 			out->hasStaticColors = true;
 		}
 		else if (field == GP_ANIM_STATIC_PRESSED)
 		{
-			out->staticPressed = (uint32_t)v & 0xffffffu;
+			out->staticPressed = (uint32_t)v; // raw: UNSET sentinel (0xFFFFFFFF) must survive
 			out->hasStaticColors = true;
 		}
 	}
@@ -520,16 +520,38 @@ static uint32_t gpClampU(uint32_t v, uint32_t hi)
 
 void gp2040MigrateToConfig(const Gp2040Config& src, Config& config)
 {
+	// LED state migrates only for explicitly customized sources. A stock
+	// GP2040-th config (default static colors, no custom theme) carries no
+	// usable color, and forcing Custom mode then would strand the board on
+	// the green Custom default — so untouched LEDs keep the board defaults.
+	bool staticNormal = src.hasStaticColors && src.staticNormal != GP2040_COLOR_UNSET;
+	bool staticPressed = src.hasStaticColors && src.staticPressed != GP2040_COLOR_UNSET;
+	bool usableTheme = src.hasCustomTheme;
+	if (usableTheme)
+	{
+		usableTheme = false;
+		for (uint32_t i = 0; i < GP2040_THEME_BUTTONS; i++)
+		{
+			if (src.hasTheme[i] && (src.themeNormal[i] != 0 || src.themePressed[i] != 0))
+			{
+				usableTheme = true;
+				break;
+			}
+		}
+	}
+	bool knownAnim = false;
+	int ledMode = 0;
+	if (src.hasAnim)
+		ledMode = gp2040LedMode(src.animIndex, &knownAnim);
+	// The LED mode follows migrated colors: without color data there is
+	// nothing faithful to show in Custom mode.
+	bool migrateLedMode = (staticNormal || staticPressed || usableTheme) && knownAnim;
 	// Per-profile key maps. Missing alternates copy the base (like
 	// seedProfiles); pins past GP2040_PIN_COUNT keep the board defaults from
 	// applyDefaults. Unmapped (zero) entries are backfilled with board
 	// defaults by normalizeKeyMapping afterwards, as with a web import.
 	if (src.setCount > 0)
 	{
-		bool knownAnim = false;
-		int ledMode = 0;
-		if (src.hasAnim)
-			ledMode = gp2040LedMode(src.animIndex, &knownAnim);
 		config.profiles_count = GP2040_SET_COUNT;
 		for (uint8_t s = 0; s < GP2040_SET_COUNT; s++)
 		{
@@ -539,24 +561,48 @@ void gp2040MigrateToConfig(const Gp2040Config& src, Config& config)
 			KeyMapping& km = profile.keyMapping;
 			km.keycodes_count = MAX_KEYS;
 			km.modifierMasks_count = MAX_KEYS;
-			km.ledNormalColors_count = MAX_KEYS;
-			km.ledPressedColors_count = MAX_KEYS;
 			for (uint32_t pin = 0; pin < GP2040_PIN_COUNT; pin++)
 			{
 				km.keycodes[pin] = set.keycodes[pin];
 				km.modifierMasks[pin] = set.modifiers[pin];
-				if (src.hasCustomTheme)
+			}
+			// Per-key colors resolve through the pin's gamepad action into
+			// the custom theme; entries without a theme color fall back to
+			// the static color. Without a usable theme the profile inherits
+			// the top-level arrays, which still hold the applyDefaults board
+			// values at this point (the mapper never touches them and the
+			// GP2040 path skips pb_decode). This matters: profiles with
+			// zeroed per-key arrays would clobber the board defaults when
+			// copyProfileToTopLevel stamps the active profile over the
+			// working copy at the end of init, green-screening Custom mode.
+			if (!usableTheme)
+			{
+				km.ledNormalColors_count = MAX_KEYS;
+				km.ledPressedColors_count = MAX_KEYS;
+				for (uint32_t pin = 0; pin < MAX_KEYS; pin++)
 				{
-					int theme = gp2040ThemeIndex(set.actions[pin]);
-					km.ledNormalColors[pin] = theme >= 0 && src.hasTheme[theme]
-						? src.themeNormal[theme]
-						: (src.hasStaticColors ? src.staticNormal : 0);
-					km.ledPressedColors[pin] = theme >= 0 && src.hasTheme[theme]
-						? src.themePressed[theme]
-						: (src.hasStaticColors ? src.staticPressed : 0);
+					km.ledNormalColors[pin] = config.keyMapping.ledNormalColors[pin];
+					km.ledPressedColors[pin] = config.keyMapping.ledPressedColors[pin];
 				}
 			}
-			if (knownAnim)
+			else
+			{
+				km.ledNormalColors_count = MAX_KEYS;
+				km.ledPressedColors_count = MAX_KEYS;
+				for (uint32_t pin = 0; pin < GP2040_PIN_COUNT; pin++)
+				{
+					int theme = gp2040ThemeIndex(set.actions[pin]);
+					bool hasEntry = theme >= 0 && src.hasTheme[theme] &&
+						(src.themeNormal[theme] != 0 || src.themePressed[theme] != 0);
+					km.ledNormalColors[pin] = hasEntry
+						? src.themeNormal[theme] & 0xffffffu
+						: (staticNormal ? src.staticNormal & 0xffffffu : 0);
+					km.ledPressedColors[pin] = hasEntry
+						? src.themePressed[theme] & 0xffffffu
+						: (staticPressed ? src.staticPressed & 0xffffffu : 0);
+				}
+			}
+			if (migrateLedMode)
 			{
 				profile.has_ledMode = true;
 				profile.ledMode = (uint32_t)ledMode;
@@ -598,14 +644,16 @@ void gp2040MigrateToConfig(const Gp2040Config& src, Config& config)
 		for (uint32_t i = 0; i < 7; i++)
 			config.ledOptions.brightnessByMode[i] = src.brightnessMaximum;
 	}
-	if (src.hasStaticColors)
+	if (staticNormal)
 	{
 		config.ledOptions.colorNormalByMode_count = 7;
+		for (uint32_t i = 0; i < 7; i++)
+			config.ledOptions.colorNormalByMode[i] = src.staticNormal & 0xffffffu;
+	}
+	if (staticPressed)
+	{
 		config.ledOptions.colorPressedByMode_count = 7;
 		for (uint32_t i = 0; i < 7; i++)
-		{
-			config.ledOptions.colorNormalByMode[i] = src.staticNormal;
-			config.ledOptions.colorPressedByMode[i] = src.staticPressed;
-		}
+			config.ledOptions.colorPressedByMode[i] = src.staticPressed & 0xffffffu;
 	}
 }
