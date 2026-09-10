@@ -170,6 +170,7 @@ src/mp2040.cpp
 src/mp2040aux.cpp
 src/helper.cpp
 src/storagemanager.cpp
+src/gp2040migrate.cpp
 src/configmanager.cpp
 src/drivermanager.cpp
 src/hotkeys.cpp

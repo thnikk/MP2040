@@ -28,6 +28,7 @@
 #include "touch/TouchGpio.h"
 #include "FlashPROM.h"
 #include "config.pb.h"
+#include "gp2040migrate.h"
 #include "hardware/watchdog.h"
 #include "pico/sync.h"
 #include "pico/time.h"
@@ -4125,20 +4126,41 @@ void Storage::init() {
     const ConfigFooter& footer = *reinterpret_cast<const ConfigFooter*>(
         EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter));
 
+    // Set when the stored blob migrates from GP2040-th below; the converted
+    // config is saved at the end of init so the migration runs exactly once.
+    bool didMigrate = false;
     if (footer.magic == FOOTER_MAGIC &&
         footer.dataSize + sizeof(ConfigFooter) <= EEPROM_CACHE_BYTES)
     {
         const uint8_t* dataPtr = EEPROM.writeCache + EEPROM_CACHE_BYTES - sizeof(ConfigFooter) - footer.dataSize;
         if (CRC32::calculate(dataPtr, footer.dataSize) == footer.dataCrc)
         {
-            pb_istream_t inputStream = pb_istream_from_buffer(dataPtr, footer.dataSize);
-            // Static: Config is ~25KB (128-key arrays), far larger than the
-            // 8KB core-0 stack. init() runs once at boot, so reuse a buffer.
-            static Config loaded;
-            loaded = Config Config_init_zero;
-            if (pb_decode(&inputStream, Config_fields, &loaded))
+            // A blob left by GP2040-th shares this flash tail and footer
+            // magic but follows a different schema. Detect it first: nanopb
+            // would otherwise parse its fields into the wrong struct without
+            // erroring. A migrated config flows through the normalize path
+            // below like any stored config (board-fixed re-enforcement,
+            // zero-fill from board defaults).
+            // Static: the extractor workspace is ~2.5KB and the core-0 stack
+            // is 4KB. init() runs once at boot, so reuse a buffer.
+            static Gp2040Config gpStored;
+            if (gp2040LooksLike(dataPtr, footer.dataSize) &&
+                gp2040Extract(dataPtr, footer.dataSize, &gpStored))
             {
-                config = loaded;
+                gp2040MigrateToConfig(gpStored, config);
+                didMigrate = true;
+            }
+            else
+            {
+                pb_istream_t inputStream = pb_istream_from_buffer(dataPtr, footer.dataSize);
+                // Static: Config is ~25KB (128-key arrays), far larger than the
+                // 8KB core-0 stack. init() runs once at boot, so reuse a buffer.
+                static Config loaded;
+                loaded = Config Config_init_zero;
+                if (pb_decode(&inputStream, Config_fields, &loaded))
+                {
+                    config = loaded;
+                }
             }
         }
     }
@@ -4315,6 +4337,13 @@ void Storage::init() {
     // again so unassigned keys fall back to the board defaults.
     normalizeKeyMapping(config.keyMapping);
     normalizeGamepadMapping(config);
+
+    // Persist a GP2040-th migration (deferred flash write, safe this early:
+    // core 1 isn't launched yet). Afterwards the footer holds an MP2040 blob,
+    // so later boots take the normal path. Re-running the migration after a
+    // power loss in the 50ms commit window converges to the same config.
+    if (didMigrate)
+        save(true);
 }
 
 /**
