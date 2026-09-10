@@ -1321,15 +1321,43 @@ async function importSettings(file) {
     Toast.show('Import failed: not a valid JSON file', 'error');
     return;
   }
+  // GP2040-th backup (.gp2040): auto-convert to an mp2040-config payload.
+  // Keys the backup doesn't cover (macros, LED timeout, ...) are omitted so
+  // the board's existing values are left untouched.
+  let summaryText = null;
+  if (data && data.type !== 'mp2040-config' && isGp2040Backup(data)) {
+    try {
+      const keyCount = (currentOptions?.keycodes || []).length || 30;
+      const fallbackProfile = {
+        keyboardKeycodes: [...(profiles[0]?.keycodes ?? currentOptions?.keycodes ?? [])],
+        keyboardModifierMasks: [...(profiles[0]?.modifierMasks ?? currentOptions?.modifierMasks ?? [])],
+      };
+      const converted = convertGp2040Backup(data, keyCount, fallbackProfile);
+      if (!data.pins && !Array.isArray(data.profiles?.alternativePinMappings)) {
+        converted.payload.gamepadMasks = Array.from(
+          { length: keyCount }, (_, i) => currentOptions?.gamepadMasks?.[i] ?? 0);
+      }
+      data = converted.payload;
+      summaryText = gp2040SummaryText(converted.summary);
+    } catch (e) {
+      Toast.show('Import failed: ' + e.message, 'error');
+      return;
+    }
+  }
   if (!data || data.type !== 'mp2040-config' || !Array.isArray(data.profiles) || !data.profiles.length) {
-    Toast.show('Import failed: not an MP2040 settings file', 'error');
+    Toast.show('Import failed: not an MP2040 settings file or GP2040-th backup', 'error');
     return;
   }
-  const profiles = data.profiles.slice(0, 4);
+  // Named to avoid shadowing the global `profiles` (state.js), which the
+  // GP2040-th fallback above reads.
+  const importProfiles = data.profiles.slice(0, 4);
   const led = data.led || {};
   const globals = {
-    macroIndices: data.macroIndices || [],
-    macros: data.macros || [],
+    // Converted GP2040-th payloads omit macros (no equivalent), leaving the
+    // board's macros untouched; MP2040 exports always carry both keys.
+    ...(data.macros !== undefined || data.macroIndices !== undefined
+      ? { macroIndices: data.macroIndices || [], macros: data.macros || [] }
+      : {}),
     defaultInputMode: data.defaultInputMode ?? 1,
     serialConfigEnabled: data.serialConfigEnabled === true,
     activeProfile: Number.isInteger(data.activeProfile) ? data.activeProfile : 0,
@@ -1345,10 +1373,13 @@ async function importSettings(file) {
       ringMidiBehavior: Number.isInteger(data.ring?.ringMidiBehavior) ? data.ring.ringMidiBehavior : 1,
     },
     gamepadMasks: data.gamepadMasks || [],
+    // Converted GP2040-th payloads carry the debounce delay; MP2040 exports
+    // don't (web UI edits it separately). Both firmware and mock honor it.
+    ...(Number.isInteger(data.debounceInterval) ? { debounceInterval: data.debounceInterval } : {}),
   };
   try {
-    for (let i = 0; i < profiles.length; i++) {
-      const p = profiles[i];
+    for (let i = 0; i < importProfiles.length; i++) {
+      const p = importProfiles[i];
       const body = {
         profileIndex: i,
         keycodes: p.keycodes || [],
@@ -1358,14 +1389,19 @@ async function importSettings(file) {
         midi: p.midi || {},
         led: {
           ...(p.led || {}),
-          ledSpeeds: led.ledSpeeds || [],
-          colorNormalByMode: led.colorNormalByMode || [],
-          colorPressedByMode: led.colorPressedByMode || [],
-          ledTimeout: led.ledTimeout ?? 0,
-          statusLedEnabled: led.statusLedEnabled ?? true,
+          ...(Array.isArray(led.ledSpeeds) && led.ledSpeeds.length ? { ledSpeeds: led.ledSpeeds } : {}),
+          ...(Array.isArray(led.colorNormalByMode) && led.colorNormalByMode.length
+            ? { colorNormalByMode: led.colorNormalByMode } : {}),
+          ...(Array.isArray(led.colorPressedByMode) && led.colorPressedByMode.length
+            ? { colorPressedByMode: led.colorPressedByMode } : {}),
+          // Absent keys leave the board's values untouched (converted
+          // GP2040-th payloads omit what has no equivalent). MP2040 exports
+          // always carry both, so their behavior is unchanged.
+          ...(led.ledTimeout !== undefined ? { ledTimeout: led.ledTimeout } : {}),
+          ...(led.statusLedEnabled !== undefined ? { statusLedEnabled: led.statusLedEnabled } : {}),
         },
         // Globals only on the last call.
-        ...(i === profiles.length - 1 ? globals : {}),
+        ...(i === importProfiles.length - 1 ? globals : {}),
       };
       await api('/api/setOptions', {
         method: 'POST',
@@ -1373,7 +1409,7 @@ async function importSettings(file) {
         body: JSON.stringify(body),
       });
     }
-    Toast.show('Settings imported.', 'success');
+    Toast.show(summaryText ?? 'Settings imported.', 'success');
     allowUnload = true;
     location.reload();
   } catch (e) {

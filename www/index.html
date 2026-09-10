@@ -297,12 +297,13 @@
 
       <section>
         <h2><span class="heading-icon icon icon-download" aria-hidden="true"></span>Import/Export</h2>
+        <p class="hint">Import accepts MP2040 settings files and GP2040-th backup (.gp2040) files, which are auto-converted.</p>
         <div class="general-form">
           <div class="general-import-export">
             <button id="export-settings" type="button"><span class="icon icon-download" aria-hidden="true"></span>Export Settings</button>
             <button id="import-settings" type="button"><span class="icon icon-upload" aria-hidden="true"></span>Import Settings</button>
             <button id="reset" class="danger"><span class="icon icon-reboot" aria-hidden="true"></span>Reset Settings</button>
-            <input type="file" id="import-file" accept=".json,application/json" hidden>
+            <input type="file" id="import-file" accept=".json,.gp2040,application/json" hidden>
           </div>
         </div>
       </section>
@@ -463,6 +464,7 @@
   <script src="/js/core/profiles.js"></script>
   <script src="/js/core/led.js"></script>
   <script src="/js/core/modals.js"></script>
+  <script src="/js/core/gp2040.js"></script>
   <script src="/js/core/app.js"></script>
 </body>
 </html>
