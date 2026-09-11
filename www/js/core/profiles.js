@@ -214,11 +214,20 @@ function profileEdited() {
 }
 
 // Seed the current profile with another profile's mappings and per-key colors.
-function copyProfileFrom(src) {
+async function copyProfileFrom(src) {
   src = Number(src);
   if (src === currentProfileIndex) return;
-  if (profileEdited() &&
-      !confirm('This profile has unsaved changes. Copying will replace them. Continue?')) return;
+  if (profileEdited()) {
+    const choice = await confirmDialog({
+      title: 'Copy profile',
+      message: 'This profile has unsaved changes. Copying will replace them.',
+      buttons: [
+        { value: 'copy', label: 'Copy', kind: 'danger' },
+        { value: 'cancel', label: 'Cancel' },
+      ],
+    });
+    if (choice !== 'copy') return;
+  }
   profiles[currentProfileIndex] = cloneProfile(profiles[src]);
   loadProfileIntoUi();
   updateProfileTabs();

@@ -2158,6 +2158,30 @@ button:disabled {
   border-color: transparent;
 }
 
+/* Generic confirm modal actions: primary (save/confirm) and danger
+   (destructive confirm) variants of the reboot-picker option buttons. */
+.modal-options .modal-option.primary {
+  background: var(--nord14);
+  color: var(--nord0);
+  border-color: transparent;
+}
+
+.modal-options .modal-option.primary:hover {
+  background: color-mix(in srgb, var(--nord14) 75%, var(--nord0));
+  border-color: transparent;
+}
+
+.modal-options .modal-option.danger {
+  background: var(--nord11);
+  color: var(--nord6);
+  border-color: transparent;
+}
+
+.modal-options .modal-option.danger:hover {
+  background: color-mix(in srgb, var(--nord11) 75%, var(--nord0));
+  border-color: transparent;
+}
+
 /* display:flex on .modal-options would override the hidden attribute */
 .modal-options #reboot-save[hidden],
 #reboot-dirty-hint[hidden] {

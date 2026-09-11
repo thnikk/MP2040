@@ -379,7 +379,7 @@ function updateDirtyUi() {
   const dirty = isDirty();
   document.querySelectorAll('#save, #save-settings').forEach((btn) => {
     btn.classList.toggle('dirty', dirty);
-    btn.title = dirty ? 'Unsaved changes' : '';
+    btn.title = dirty ? 'Unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)';
   });
   for (const id of ['profile-section', 'board-section', 'led-section', 'input-section',
     'led-settings-section', 'display-settings', 'macros-section', 'hotkeys-section',
@@ -445,23 +445,65 @@ function renderRoute() {
   }
 }
 
-function navigate(path, event) {
+// Unsaved-changes prompt shared by the route-leave paths (link navigation
+// and browser back/forward). Resolves true when the leave may proceed.
+async function confirmLeave() {
+  const choice = await confirmDialog({
+    title: 'Unsaved changes',
+    message: 'You have unsaved changes. Save them before leaving?',
+    buttons: [
+      { value: 'save', label: 'Save & Leave', kind: 'primary' },
+      { value: 'discard', label: 'Discard' },
+      { value: 'cancel', label: 'Cancel' },
+    ],
+  });
+  if (choice === 'save') return save();
+  return choice === 'discard';
+}
+
+async function navigate(path, event) {
   if (event) event.preventDefault();
   if (location.pathname === path) return;
-  if (isDirty() && !confirm('You have unsaved changes. Discard them and leave?')) return;
+  if (isDirty() && !await confirmLeave()) return;
   lastRoute = path;
   history.pushState({}, '', path);
   renderRoute();
   window.scrollTo(0, 0);
 }
 
+// Keyboard refresh (F5 / Ctrl+R) shows the custom prompt instead of the
+// native beforeunload dialog. Toolbar-button refresh, address-bar reloads and
+// tab/window close can't be intercepted, so beforeunload stays as the
+// fallback for those paths.
+async function handleRefreshRequest() {
+  if (rebooting || disconnected) return;
+  if (allowUnload || !isDirty()) return;
+  const choice = await confirmDialog({
+    title: 'Unsaved changes',
+    message: 'You have unsaved changes. Save them before reloading?',
+    buttons: [
+      { value: 'save', label: 'Save & Reload', kind: 'primary' },
+      { value: 'discard', label: 'Discard & Reload' },
+      { value: 'cancel', label: 'Cancel' },
+    ],
+  });
+  if (choice === 'save') {
+    if (!await save()) return;
+    allowUnload = true;
+    location.reload();
+  } else if (choice === 'discard') {
+    allowUnload = true;
+    location.reload();
+  }
+}
+
 // Back/forward buttons fire popstate after the URL has already changed; on
-// cancel, push the previous route back so the confirm isn't a one-way trip.
+// cancel, push the previous route back so the prompt isn't a one-way trip.
 let lastRoute = currentRoute();
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', async () => {
   const prev = lastRoute;
   const next = currentRoute();
-  if (isDirty() && !confirm('You have unsaved changes. Discard them and leave?')) {
+  if (isDirty() && !await confirmLeave()) {
     history.pushState({}, '', prev);
     renderRoute();
     return;
@@ -1337,7 +1379,22 @@ async function watchForBoardReturn(startDown = false) {
 
 async function reboot(bootMode) {
   const rebootBtn = document.getElementById('reboot');
-  if (isDirty() && !confirm('You have unsaved changes. Reboot without saving?')) return;
+  if (isDirty()) {
+    const choice = await confirmDialog({
+      title: 'Unsaved changes',
+      message: 'You have unsaved changes. Save them before rebooting?',
+      buttons: [
+        { value: 'save', label: 'Save & Reboot', kind: 'primary' },
+        { value: 'discard', label: 'Reboot without saving' },
+        { value: 'cancel', label: 'Cancel' },
+      ],
+    });
+    if (choice === 'save') {
+      if (!await save()) return;
+    } else if (choice !== 'discard') {
+      return;
+    }
+  }
   rebootBtn.disabled = true;
   try {
     await api('/api/reboot', {
@@ -1436,8 +1493,56 @@ async function rebootTo(bootMode) {
   await reboot(bootMode);
 }
 
+// ---- generic confirm modal ------------------------------------------------
+// Promise-based replacement for native confirm(): resolves to the chosen
+// button's value, or null when dismissed (×, backdrop or Escape). Buttons are
+// [{ value, label, kind }], kind one of '' (default), 'primary' or 'danger'.
+// Only one prompt at a time; a concurrent call reuses the open prompt.
+let confirmResolvers = null;
+
+function confirmDialog({ title, message, buttons }) {
+  const overlay = document.getElementById('confirm-modal');
+  if (confirmResolvers) {
+    // A prompt is already open; share its outcome rather than stacking.
+    return new Promise((resolve) => { confirmResolvers.push(resolve); });
+  }
+  document.getElementById('confirm-title').textContent = title || '';
+  document.getElementById('confirm-message').textContent = message || '';
+  const box = document.getElementById('confirm-options');
+  box.innerHTML = '';
+  for (const b of buttons || []) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'modal-option' + (b.kind ? ' ' + b.kind : '');
+    btn.textContent = b.label;
+    btn.addEventListener('click', () => closeConfirmModal(b.value));
+    box.appendChild(btn);
+  }
+  overlay.hidden = false;
+  const primary = box.querySelector('.modal-option.primary') || box.querySelector('.modal-option');
+  if (primary) primary.focus();
+  return new Promise((resolve) => { confirmResolvers = [resolve]; });
+}
+
+function closeConfirmModal(value = null) {
+  document.getElementById('confirm-modal').hidden = true;
+  if (confirmResolvers) {
+    const resolvers = confirmResolvers;
+    confirmResolvers = null;
+    resolvers.forEach((resolve) => resolve(value));
+  }
+}
+
 async function resetSettings() {
-  if (!confirm('Reset all settings to defaults and reboot?')) return;
+  const choice = await confirmDialog({
+    title: 'Reset settings',
+    message: 'Reset all settings to defaults and reboot?',
+    buttons: [
+      { value: 'reset', label: 'Reset', kind: 'danger' },
+      { value: 'cancel', label: 'Cancel' },
+    ],
+  });
+  if (choice !== 'reset') return;
   await api('/api/resetSettings', { method: 'POST' });
   Toast.show('Settings reset. Rebooting...', 'info');
 }
@@ -1673,7 +1778,24 @@ document.getElementById('ring-modal').addEventListener('click', (e) => {
 document.getElementById('reboot-modal').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) closeRebootModal();
 });
+document.getElementById('confirm-close').addEventListener('click', () => closeConfirmModal());
+document.getElementById('confirm-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeConfirmModal();
+});
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'F5' || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r')) {
+    if (!allowUnload && !rebooting && !disconnected && isDirty()) {
+      e.preventDefault();
+      handleRefreshRequest();
+    }
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    if (isDirty() && !saving) save();
+    return;
+  }
+  if (e.key === 'Escape' && !document.getElementById('confirm-modal').hidden) closeConfirmModal();
   if (e.key === 'Escape' && !document.getElementById('key-modal').hidden) closeKeyModal();
   if (e.key === 'Escape' && !document.getElementById('ring-modal').hidden) closeRingModal();
   if (e.key === 'Escape' && !document.getElementById('reboot-modal').hidden) closeRebootModal();
