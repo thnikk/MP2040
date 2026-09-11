@@ -26,19 +26,19 @@
   --text: var(--nord4);
   --muted: color-mix(in srgb, var(--text) 60%, transparent);
   --card-bg: var(--bg-2);
-  --card-border: var(--bg-3);
+  --card-border: transparent;
   --btn-bg: var(--bg-3);
   --btn-text: var(--text);
-  --btn-border: var(--bg-4);
-  --btn-hover-border: var(--bg-4);
+  --btn-border: transparent;
+  --btn-hover-border: transparent;
   --toggle-active-bg: var(--bg-4);
   --hover-bg: var(--bg-4);
   --accent: var(--nord14);
   --logo-color: var(--text);
   --nav-hover-bg: var(--bg-2);
-  --nav-hover-border: var(--bg-3);
+  --nav-hover-border: transparent;
   --footer-bg: var(--bg-2);
-  --footer-border: var(--bg-3);
+  --footer-border: transparent;
 }
 
 html[data-theme="light"] {
@@ -387,7 +387,6 @@ main {
   max-width: 100%;
   max-height: 600px;
   user-select: none;
-  filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.1));
 }
 
 .board-placeholder {
@@ -1088,7 +1087,7 @@ html[data-theme="light"] .ms-caret {
   justify-content: center;
   gap: 0.25rem;
   padding: 5px 10px;
-  border: 1px solid var(--bg-4);
+  border: 1px solid var(--btn-order);
   border-radius: 999px;
   background: var(--bg-3);
   color: var(--text);

@@ -1068,20 +1068,22 @@ async function renderRebootBoard() {
   };
   // Base theme mirroring BoardView.themeStyle (matchesRef/findByRef live in
   // boardview.js, loaded before this script), one step up the palette: the
-  // case takes --bg-2, buttons take --bg-3, strokes stay --bg-4.
+  // case takes --bg-2, buttons take --bg-3, no strokes.
   doc.querySelectorAll(SHAPES).forEach((s) => {
-    s.setAttribute('vector-effect', 'non-scaling-stroke');
+    s.removeAttribute('vector-effect');
     if (matchesRef(s, ['logo', 'ignore'])) return;
     s.style.setProperty('fill', 'var(--bg-2)', 'important');
-    if (matchesRef(s, ['oled'])) {
-      s.style.setProperty('stroke', 'none', 'important');
-    } else {
-      s.style.setProperty('stroke', 'var(--bg-4)', 'important');
-      s.style.setProperty('stroke-width', '2', 'important');
-    }
+    s.style.setProperty('stroke', 'none', 'important');
+    s.style.removeProperty('stroke-width');
   });
   const oledEl = findByRef(doc, 'oled');
   if (oledEl) shapesOf(oledEl).forEach((s) => s.style.setProperty('fill', '#000000', 'important'));
+  doc.querySelectorAll(SHAPES).forEach((s) => {
+    if (matchesRef(s, ['boot', 'reset'])) {
+      s.style.setProperty('fill', 'var(--bg-3)', 'important');
+      s.style.setProperty('opacity', '0.5', 'important');
+    }
+  });
   // Buttons take --bg-3; the web config button keeps the held-pin highlight
   // and the rest are dimmed.
   buttons.forEach((el) => {
