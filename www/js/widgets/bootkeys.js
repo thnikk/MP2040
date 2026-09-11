@@ -33,8 +33,8 @@ class BootKeysPanel {
     this.rows = [];
     this.fixedKeys = [];
     this.buildDom(container);
-    this.setValue(bootKeys || []);
     this.setFixedKeys(fixedKeys || []);
+    this.setValue(bootKeys || []);
   }
 
   buildDom(container) {
@@ -109,17 +109,53 @@ class BootKeysPanel {
     }
   }
 
+  // Pins reserved by the board (web config / USB bootloader): never offered
+  // as boot-key choices, since holding them at boot already has a fixed meaning.
+  fixedPinSet() {
+    const out = new Set();
+    for (const fk of (this.fixedKeys || [])) {
+      if (Number(fk.pin) >= 0) out.add(Number(fk.pin));
+    }
+    return out;
+  }
+
+  // Per-row option filtering: a row offers every pin except the fixed pins
+  // and pins taken by *other* rows, plus its own pick (so setOptions'
+  // re-resolution never drops the row's current value). Makes duplicate and
+  // fixed-pin picks unselectable instead of warning about them at save time.
+  refreshFilters() {
+    const fixed = this.fixedPinSet();
+    for (const row of this.rows) {
+      const own = row.select.getGroupValues('bootkey');
+      const taken = new Set(fixed);
+      for (const other of this.rows) {
+        if (other === row) continue;
+        for (const pin of other.select.getGroupValues('bootkey')) taken.add(pin);
+      }
+      row.select.setOptions(this.keyOptions.filter((o) => !taken.has(o.value) || own.includes(o.value)));
+    }
+  }
+
+  // Configured boot keys only: rows with a pin assigned. Imported duplicates
+  // and fixed-pin rows are dropped (keep-first) since the picker itself can
+  // no longer produce them.
   setValue(bootKeys) {
     this.rowsEl.innerHTML = '';
     this.rows = [];
+    const fixed = this.fixedPinSet();
+    const seen = new Set(fixed);
     for (const bk of (bootKeys || [])) {
-      this.addRow({ pin: Number(bk.pin) || -1, mode: Number(bk.mode) || 1 });
+      const pin = Number(bk.pin);
+      if (!(pin >= 0) || seen.has(pin)) continue;
+      seen.add(pin);
+      this.addRow({ pin, mode: Number(bk.mode) || 1 }, true);
     }
+    this.refreshFilters();
   }
 
   setKeyOptions(options) {
     this.keyOptions = options;
-    for (const row of this.rows) row.select.setOptions(options);
+    this.refreshFilters();
     // Fixed row labels can change with the input mode too.
     this.setFixedKeys(this.fixedKeys);
   }
@@ -136,7 +172,7 @@ class BootKeysPanel {
     return out;
   }
 
-  addRow(value) {
+  addRow(value, skipFilter = false) {
     if (this.rows.length >= BK_MAX_BOOT_KEYS) {
       Toast.show(`Max ${BK_MAX_BOOT_KEYS} boot keys.`, 'error');
       return;
@@ -189,9 +225,24 @@ class BootKeysPanel {
     this.rowsEl.appendChild(el);
     this.rows.push(row);
     row.el = el;
+    if (!skipFilter) this.refreshFilters();
+    this.markIncomplete();
+  }
+
+  // Rows without a pin are inert (getValue skips them): dim them so it's
+  // legible that they won't be saved.
+  markIncomplete() {
+    for (const row of this.rows) {
+      const empty = row.select.getGroupValues('bootkey').length === 0;
+      row.el.classList.toggle('incomplete', empty);
+      if (empty) row.el.title = 'Pick a key to activate this boot key';
+      else row.el.removeAttribute('title');
+    }
   }
 
   notify() {
+    this.refreshFilters();
+    this.markIncomplete();
     this.onChange(this.getValue());
   }
 }

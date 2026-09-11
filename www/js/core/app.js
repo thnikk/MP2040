@@ -120,7 +120,10 @@ function buildOptionsBody() {
     gamepadMasks: currentOptions.gamepadMasks || [],
     macroIndices: currentOptions.macroIndices,
     macros: currentOptions.macros || [],
-    hotkeys: hotkeysPanel ? hotkeysPanel.getValue() : (currentOptions.hotkeys || []),
+    // Incomplete hotkey rows (keys without an action, or vice versa) are
+    // inert: never sent to the firmware. This is also the dirty-tracking
+    // baseline, so half-filled rows neither mark dirty nor stick around.
+    hotkeys: hotkeysPanel ? hotkeysPanel.getActiveValue() : (currentOptions.hotkeys || []),
     bootKeys: bootKeysPanel ? bootKeysPanel.getValue() : (currentOptions.bootKeys || []),
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
@@ -377,9 +380,12 @@ function sectionDirty(id) {
 function updateDirtyUi() {
   if (saving) return;
   const dirty = isDirty();
+  const blocked = typeof hotkeysPanel !== 'undefined' && hotkeysPanel && hotkeysPanel.hasConflicts();
   document.querySelectorAll('#save, #save-settings').forEach((btn) => {
     btn.classList.toggle('dirty', dirty);
-    btn.title = dirty ? 'Unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)';
+    btn.classList.toggle('blocked', !!blocked);
+    btn.title = blocked ? 'Fix the conflicting hotkeys before saving'
+      : dirty ? 'Unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)';
   });
   for (const id of ['profile-section', 'board-section', 'led-section', 'input-section',
     'led-settings-section', 'display-settings', 'macros-section', 'hotkeys-section',
@@ -391,6 +397,24 @@ function updateDirtyUi() {
     const dot = slotDirty(i) || (i === currentProfileIndex && profileEdited());
     btn.classList.toggle('dirty', !!dot);
   });
+  refreshBoardEmptyHint();
+}
+
+// Empty-board guidance (not a warning): shown when no inputs are mapped in
+// the working copy or any profile slot.
+function anyMappedInputs() {
+  if (!currentOptions) return true;
+  for (const p of [currentOptions, ...profiles]) {
+    const arrs = [p.keycodes, p.modifierMasks, p.midiNotes, p.midiVelocities,
+      p.gamepadMasks, p.macroIndices];
+    if (arrs.some((a) => Array.isArray(a) && a.some((v) => Number(v) !== 0))) return true;
+  }
+  return false;
+}
+
+function refreshBoardEmptyHint() {
+  const el = document.getElementById('board-empty-hint');
+  if (el) el.hidden = anyMappedInputs();
 }
 
 const refreshDirtyUi = debounce(updateDirtyUi, 80);
@@ -994,7 +1018,10 @@ async function load() {
       keyOptions: buildComboOptions('hotkey'),
       // Only display boards can use the mini-menu toggle action.
       menuToggle: display.hasDisplay === true,
-      onChange: (hotkeys) => { currentOptions.hotkeys = hotkeys; },
+      // Refresh immediately: MultiSelect picks fire no DOM change/input/click
+      // of their own (the widget stops propagation), so the debounced global
+      // listeners would otherwise leave dots/button state lagging a beat.
+      onChange: (hotkeys) => { currentOptions.hotkeys = hotkeys; refreshDirtyUi(); },
     });
   }
 
@@ -1010,7 +1037,7 @@ async function load() {
         { label: 'Web Config', pin: options.webConfigPin ?? -1 },
         { label: 'USB Bootloader', pin: options.bootPin ?? -1 },
       ],
-      onChange: (bootKeys) => { currentOptions.bootKeys = bootKeys; },
+      onChange: (bootKeys) => { currentOptions.bootKeys = bootKeys; refreshDirtyUi(); },
     });
   }
 
@@ -1111,6 +1138,12 @@ function loadError() {
 }
 
 async function save() {
+  // Conflicting hotkeys are never written: fix them first. All save paths
+  // (buttons, Ctrl+S, Save & Leave/Reboot/Reload) funnel through here.
+  if (typeof hotkeysPanel !== 'undefined' && hotkeysPanel && hotkeysPanel.hasConflicts()) {
+    Toast.show('Fix the conflicting hotkeys before saving.', 'error');
+    return false;
+  }
   const saveBtns = [document.getElementById('save'), document.getElementById('save-settings')].filter(Boolean);
   saveBtns.forEach((b) => { b.disabled = true; });
   saving = true;

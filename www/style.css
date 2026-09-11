@@ -1182,6 +1182,13 @@ html[data-theme="light"] .ms-caret {
   min-width: 0;
 }
 
+/* Inert rows (nothing to save: empty or half-filled) get a dashed control
+   so it's legible they won't take effect. No opacity: it makes the
+   multiselect dropdowns harder to read. */
+.hotkey-row.incomplete .ms-control {
+  border-style: dashed;
+}
+
 .hotkey-action-wrap {
   flex: 0 0 200px;
 }
@@ -1952,6 +1959,23 @@ html[data-theme="light"] .ms-caret {
 .actions button.dirty:hover {
   background: color-mix(in srgb, var(--accent) 75%, var(--nord0));
   border-color: transparent;
+}
+
+/* Save blocked by conflicting hotkeys: red until the conflict is fixed. */
+.actions button.blocked {
+  background: var(--nord11);
+  color: var(--nord6);
+  border-color: transparent;
+}
+
+.actions button.blocked:hover {
+  background: color-mix(in srgb, var(--nord11) 75%, var(--nord0));
+  border-color: transparent;
+}
+
+/* Rows sharing an exact hotkey combo: red multiselect border on each. */
+.hotkey-row.conflict .ms-control {
+  border-color: var(--nord11);
 }
 
 button {

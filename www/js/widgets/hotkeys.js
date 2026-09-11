@@ -71,7 +71,13 @@ class HotkeysPanel {
     container.appendChild(this.root);
   }
 
-  // Rebuild from a saved hotkeys array.
+  // Canonical form of a combo for duplicate comparison: sorted ids.
+  static comboKey(keys) {
+    return (keys || []).slice().sort((a, b) => a - b).join(',');
+  }
+
+  // Rebuild from a saved hotkeys array. Duplicates are kept and flagged as
+  // conflicts (see markConflicts) so imported configs stay editable.
   setValue(hotkeys) {
     this.rowsEl.innerHTML = '';
     this.rows = [];
@@ -81,6 +87,7 @@ class HotkeysPanel {
         action: Number(hotkey.action) || 0,
       });
     }
+    this.markConflicts();
   }
 
   // Refresh the trigger-key option list (e.g. after an input-mode change).
@@ -101,6 +108,12 @@ class HotkeysPanel {
     return out;
   }
 
+  // Complete hotkeys only: rows with keys AND a real action. Incomplete rows
+  // are inert (never sent to the firmware); see buildOptionsBody.
+  getActiveValue() {
+    return this.getValue().filter((h) => h.keys.length > 0 && h.action !== 0);
+  }
+
   addRow(value) {
     if (this.rows.length >= HK_MAX_HOTKEYS) {
       Toast.show(`Max ${HK_MAX_HOTKEYS} hotkeys.`, 'error');
@@ -119,7 +132,7 @@ class HotkeysPanel {
       container: keysWrap,
       groups: [{ id: 'hotkey', label: 'Keys' }],
       options: this.keyOptions,
-      onChange: () => this.notify(),
+      onChange: () => this.onRowKeysChanged(row),
     });
 
     const actionWrap = document.createElement('div');
@@ -154,8 +167,51 @@ class HotkeysPanel {
       row.select.setGroupValues('hotkey', Array.isArray(value.keys) ? value.keys : []);
       row.actionSelect.value = String(Number(value.action) || 0);
     }
+    this.markIncomplete();
 
     return row;
+  }
+
+  // Rows sharing an exact combo are flagged, not reverted: blocking the pick
+  // would punish the natural flow of starting from an overlap and adding a
+  // key to differentiate. Firmware matches the first row whose keys are all
+  // held, so later duplicates are dead until edited apart.
+  onRowKeysChanged(row) {
+    this.notify();
+  }
+
+  // Indices of rows in an exact-duplicate combo. Only live rows count
+  // (keys picked AND a real action): incomplete rows are inert and never
+  // reach the firmware, so flagging them would be noise. Partial overlap is
+  // legal and never flagged.
+  conflictIndices() {
+    const seen = new Map();
+    const dupes = new Set();
+    this.rows.forEach((row, i) => {
+      const ck = HotkeysPanel.comboKey(row.select.getGroupValues('hotkey'));
+      if (!ck || Number(row.actionSelect.value) === 0) return;
+      if (seen.has(ck)) {
+        dupes.add(seen.get(ck));
+        dupes.add(i);
+      } else {
+        seen.set(ck, i);
+      }
+    });
+    return dupes;
+  }
+
+  hasConflicts() {
+    return this.conflictIndices().size > 0;
+  }
+
+  markConflicts() {
+    const dupes = this.conflictIndices();
+    this.rows.forEach((row, i) => {
+      const on = dupes.has(i);
+      row.el.classList.toggle('conflict', on);
+      if (on) row.el.title = 'This combo is already used in another hotkey row';
+      else if (!row.el.classList.contains('incomplete')) row.el.removeAttribute('title');
+    });
   }
 
   removeRow(row, el) {
@@ -166,7 +222,22 @@ class HotkeysPanel {
     this.notify();
   }
 
+  // Rows that won't be saved (empty, or keys without an action / action
+  // without keys) are dimmed so it's legible that they're inert.
+  markIncomplete() {
+    for (const row of this.rows) {
+      const keys = row.select.getGroupValues('hotkey');
+      const action = Number(row.actionSelect.value) || 0;
+      const incomplete = keys.length === 0 || action === 0;
+      row.el.classList.toggle('incomplete', incomplete);
+      if (incomplete) row.el.title = 'Pick keys and an action to activate this hotkey';
+      else row.el.removeAttribute('title');
+    }
+  }
+
   notify() {
+    this.markIncomplete();
+    this.markConflicts();
     this.onChange(this.getValue());
   }
 }
