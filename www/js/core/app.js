@@ -226,13 +226,170 @@ function isDirty() {
   return profileEdited() || profilesDirty() || globalsDirty();
 }
 
-// Toggle the unsaved-changes indicator on the Save buttons (both pages).
+// ---- per-section dirty tracking -------------------------------------------
+// The Save buttons show the global state; section headings and profile tabs
+// each get their own dot so the edit's location is visible without hunting.
+// Every check diffs against the board snapshots (savedProfiles/savedGlobals),
+// split by where the field lives in the UI rather than where it lives in the
+// payload: per-profile MIDI channel/velocity counts as Input, per-key LED
+// colors and LED mode count as LEDs, macro assignment counts as Board while
+// macro definitions count as Macros.
+
+function subsetEq(g, sg, keys) {
+  if (!g || !sg) return true;
+  return keys.every((k) => JSON.stringify(g[k]) === JSON.stringify(sg[k]));
+}
+
+function ledSubsetEq(g, sg, keys) {
+  if (!g || !sg) return true;
+  return keys.every((k) => JSON.stringify(g.led?.[k]) === JSON.stringify(sg.led?.[k]));
+}
+
+// Full-profile slot diff (any per-profile field), for the tab dots.
+function slotDirty(i) {
+  if (!savedProfiles || !profiles[i] || !savedProfiles[i]) return false;
+  return JSON.stringify(cloneProfile(profiles[i])) !== JSON.stringify(savedProfiles[i]);
+}
+
+// Board-mapping part of a profile (keycodes, modifiers, MIDI notes,
+// velocities): the working copy vs its slot, and slots vs the snapshot.
+function boardFieldsOf(p) {
+  return [p.keycodes || [], p.modifierMasks || [], p.midiNotes || [], p.midiVelocities || []];
+}
+
+function workingBoardEdited() {
+  if (!currentOptions || !profiles[currentProfileIndex]) return false;
+  const a = boardFieldsOf(cloneProfile(currentOptions));
+  const b = boardFieldsOf(profiles[currentProfileIndex]);
+  const len = Math.max(...a.concat(b).map((arr) => arr.length), 0);
+  const pad = (arr) => {
+    const out = new Array(len).fill(0);
+    for (let i = 0; i < arr.length; i++) out[i] = arr[i] || 0;
+    return out;
+  };
+  return a.some((arr, i) => JSON.stringify(pad(arr)) !== JSON.stringify(pad(b[i])));
+}
+
+function anySlotBoardDirty() {
+  if (!savedProfiles) return false;
+  return profiles.some((p, i) => {
+    if (!savedProfiles[i]) return false;
+    const a = boardFieldsOf(cloneProfile(p));
+    const b = boardFieldsOf(savedProfiles[i]);
+    const len = Math.max(...a.concat(b).map((arr) => arr.length), 0);
+    const pad = (arr) => {
+      const out = new Array(len).fill(0);
+      for (let j = 0; j < arr.length; j++) out[j] = arr[j] || 0;
+      return out;
+    };
+    return a.some((arr, j) => JSON.stringify(pad(arr)) !== JSON.stringify(pad(b[j])));
+  });
+}
+
+// Per-profile MIDI channel/velocity (edited in Input, stored per-profile).
+function midiOf(p) {
+  return p.midi || { channel: 0, velocity: 127 };
+}
+
+function workingMidiEdited() {
+  if (!currentOptions || !profiles[currentProfileIndex]) return false;
+  const a = midiOf(cloneProfile(currentOptions));
+  const b = midiOf(profiles[currentProfileIndex]);
+  return a.channel !== b.channel || a.velocity !== b.velocity;
+}
+
+function anySlotMidiDirty() {
+  if (!savedProfiles) return false;
+  return profiles.some((p, i) => {
+    if (!savedProfiles[i]) return false;
+    const a = midiOf(cloneProfile(p));
+    const b = midiOf(savedProfiles[i]);
+    return a.channel !== b.channel || a.velocity !== b.velocity;
+  });
+}
+
+// Per-profile LED fields (mode + per-key colors, edited in the LEDs card).
+function ledProfileOf(p) {
+  return {
+    ledMode: p.led?.ledMode ?? 0,
+    ledNormalColors: p.led?.ledNormalColors || [],
+    ledPressedColors: p.led?.ledPressedColors || [],
+  };
+}
+
+function workingLedProfileEdited() {
+  if (!currentOptions || !profiles[currentProfileIndex]) return false;
+  return JSON.stringify(ledProfileOf(cloneProfile(currentOptions))) !==
+    JSON.stringify(ledProfileOf(profiles[currentProfileIndex]));
+}
+
+function anySlotLedProfileDirty() {
+  if (!savedProfiles) return false;
+  return profiles.some((p, i) => {
+    if (!savedProfiles[i]) return false;
+    return JSON.stringify(ledProfileOf(cloneProfile(p))) !==
+      JSON.stringify(ledProfileOf(savedProfiles[i]));
+  });
+}
+
+const INPUT_GLOBAL_KEYS = ['defaultInputMode', 'debounceInterval', 'touchMargin', 'touchRelease', 'serialConfigEnabled', 'gamepad', 'ring'];
+const LED_GLOBAL_KEYS = ['ledSpeeds', 'brightnessByMode', 'colorNormalByMode', 'colorPressedByMode'];
+const LED_SETTINGS_KEYS = ['ledTimeout', 'statusLedEnabled', 'statusLedBrightnessMinimum', 'statusLedBrightnessMaximum'];
+
+function sectionDirty(id) {
+  if (!currentOptions || !savedGlobals) return false;
+  let g = null;
+  try {
+    g = buildGlobalState();
+  } catch (e) {
+    return false;
+  }
+  const sg = savedGlobals;
+  switch (id) {
+    case 'profile-section':
+      return !subsetEq(g, sg, ['activeProfile']);
+    case 'board-section':
+      return workingBoardEdited() || anySlotBoardDirty() ||
+        !subsetEq(g, sg, ['macroIndices', 'gamepadMasks']);
+    case 'led-section':
+      return workingLedProfileEdited() || anySlotLedProfileDirty() ||
+        !ledSubsetEq(g, sg, LED_GLOBAL_KEYS);
+    case 'input-section':
+      return workingMidiEdited() || anySlotMidiDirty() ||
+        !subsetEq(g, sg, INPUT_GLOBAL_KEYS);
+    case 'led-settings-section':
+      return !ledSubsetEq(g, sg, LED_SETTINGS_KEYS);
+    case 'display-settings':
+      return !subsetEq(g, sg, ['display']);
+    case 'macros-section':
+      return !subsetEq(g, sg, ['macros']);
+    case 'hotkeys-section':
+      return !subsetEq(g, sg, ['hotkeys']);
+    case 'bootkeys-section':
+      return !subsetEq(g, sg, ['bootKeys']);
+    default:
+      return false;
+  }
+}
+
+// Toggle the unsaved-changes indicator on the Save buttons (both pages),
+// plus per-section heading dots and per-profile tab dots.
 function updateDirtyUi() {
   if (saving) return;
   const dirty = isDirty();
   document.querySelectorAll('#save, #save-settings').forEach((btn) => {
     btn.classList.toggle('dirty', dirty);
     btn.title = dirty ? 'Unsaved changes' : '';
+  });
+  for (const id of ['profile-section', 'board-section', 'led-section', 'input-section',
+    'led-settings-section', 'display-settings', 'macros-section', 'hotkeys-section',
+    'bootkeys-section']) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('section-dirty', sectionDirty(id));
+  }
+  document.querySelectorAll('#profile-tabs .profile-tab').forEach((btn, i) => {
+    const dot = slotDirty(i) || (i === currentProfileIndex && profileEdited());
+    btn.classList.toggle('dirty', !!dot);
   });
 }
 
@@ -912,9 +1069,10 @@ function loadError() {
 }
 
 async function save() {
-  const saveBtn = document.getElementById('save');
-  saveBtn.disabled = true;
+  const saveBtns = [document.getElementById('save'), document.getElementById('save-settings')].filter(Boolean);
+  saveBtns.forEach((b) => { b.disabled = true; });
   saving = true;
+  let ok = false;
   try {
     syncCurrentToProfile();
     const res = await api('/api/setOptions', {
@@ -939,12 +1097,15 @@ async function save() {
     savedProfiles = profiles.map(cloneProfile);
     savedGlobals = buildGlobalState();
     Toast.show('Saved.', 'success');
+    ok = true;
   } catch (e) {
     Toast.show('Save failed: ' + e, 'error');
   }
   saving = false;
-  saveBtn.disabled = false;
+  saveBtns.forEach((b) => { b.disabled = false; });
   updateDirtyUi();
+  refreshRebootDirtyUi();
+  return ok;
 }
 
 // Cached /board.svg text for the reboot overlay. Fetched while the board is
@@ -1242,8 +1403,25 @@ async function reboot(bootMode) {
   }
 }
 
+// Show the "Save changes" row in the reboot picker when there are unsaved
+// edits, so Save & Reboot is one modal instead of a discard confirm.
+function refreshRebootDirtyUi() {
+  const hint = document.getElementById('reboot-dirty-hint');
+  const saveBtn = document.getElementById('reboot-save');
+  if (!hint || !saveBtn) return;
+  let dirty = false;
+  try {
+    dirty = isDirty();
+  } catch (e) {
+    dirty = false;
+  }
+  hint.hidden = !dirty;
+  saveBtn.hidden = !dirty;
+}
+
 function openRebootModal() {
   document.getElementById('reboot-modal').hidden = false;
+  refreshRebootDirtyUi();
   // Cache the board graphic now, while the board is still up. The reboot
   // overlay renders from this cache after the board disconnects.
   prefetchRebootBoard();
@@ -1474,6 +1652,12 @@ document.getElementById('ring-modal-keyboard').addEventListener('change', (e) =>
 });
 
 document.getElementById('reboot-modal-close').addEventListener('click', closeRebootModal);
+document.getElementById('reboot-save').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  await save();
+  btn.disabled = false;
+});
 document.getElementById('reboot-normal').addEventListener('click', () => rebootTo(0));
 document.getElementById('reboot-bootloader').addEventListener('click', () => rebootTo(2));
 document.getElementById('reboot-webconfig').addEventListener('click', () => rebootTo(1));

@@ -447,6 +447,18 @@ section h2 {
   flex: none;
 }
 
+/* Per-section unsaved-changes dot: appended to the section heading when the
+   section's fields differ from the board snapshot (see updateDirtyUi). */
+section.section-dirty > h2::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: 2px;
+}
+
 /* Header action buttons, pushed to the right edge of the section heading. */
 .section-header-actions {
   margin-left: auto;
@@ -628,7 +640,7 @@ select.btn-small:hover {
   padding: 10px 18px;
   border-radius: 999px;
   background: var(--bg-2);
-  border: 1px solid var(--bg-3);
+  border: 1px solid var(--card-border);
   color: var(--btn-text);
   font-family: inherit;
   font-size: 16px;
@@ -703,6 +715,19 @@ select.btn-small:hover {
 .profile-tab.active {
   background: var(--bg-4);
   border-color: transparent;
+}
+
+/* Per-profile unsaved-changes dot: top-right of the tab (the boot indicator
+   already uses ::after, so the dirty dot uses ::before). */
+.profile-tab.dirty::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 select, input[type="number"] {
@@ -1880,11 +1905,13 @@ html[data-theme="light"] .ms-caret {
 }
 
 /* Buttons */
-/* Save-row wrapper: full width with side padding so the button stays inset
-   from the window edges at narrow widths, mirroring the nav. */
+/* Save-row wrapper: sticky to the viewport bottom so Save stays reachable
+   without scrolling back down. Mirrors the nav's blur treatment. */
 .actions-container {
   width: 100%;
-  padding: 0 10px;
+  position: sticky;
+  bottom: 0px;
+  z-index: 50;
 }
 
 .actions {
@@ -1895,6 +1922,11 @@ html[data-theme="light"] .ms-caret {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  background: color-mix(in srgb, var(--bg-1) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 0px;
+  padding: 8px 10px;
 }
 
 /* Save buttons (Layout + Settings pages): icon aligned inline before label. */
@@ -2115,15 +2147,21 @@ button:disabled {
   text-align: center;
 }
 
-.modal-options .modal-option:last-child {
+.modal-options #reboot-webconfig {
   background: var(--nord14);
   color: var(--nord0);
   border-color: transparent;
 }
 
-.modal-options .modal-option:last-child:hover {
+.modal-options #reboot-webconfig:hover {
   background: color-mix(in srgb, var(--nord14) 75%, var(--nord0));
   border-color: transparent;
+}
+
+/* display:flex on .modal-options would override the hidden attribute */
+.modal-options #reboot-save[hidden],
+#reboot-dirty-hint[hidden] {
+  display: none;
 }
 
 /* Post-reboot full-page overlay: the board is gone, so there is nothing to
