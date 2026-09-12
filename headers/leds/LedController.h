@@ -101,6 +101,10 @@ private:
     // Mode indicator LED: a separate single-WS2812 strip (board-fixed pin)
     // showing the active input mode. Independent of the theme strip.
     void updateStatusLed();
+    // Show a color on the status LED, scaled by the same brightness path as
+    // the steady mode color (inactivity fade + min/max brightness). Used by
+    // the profile-change flash animation.
+    void showStatusColor(uint32_t rgb);
 
     Neopixel* neopixel;
     Neopixel* statusLed;
@@ -113,6 +117,16 @@ private:
     // Mode indicator LED brightness cap (0-255) when awake. Runtime override
     // of the board's STATUS_LED_BRIGHTNESS_DEFAULT.
     uint32_t statusLedBrightnessMaximum;
+    // Profile-change flash animation state: when the active profile changes,
+    // the status LED blinks white once per profile number (1-4) then returns
+    // to the mode color. Matches GP2040-th's BoardLedRgb profile blink.
+    uint8_t prevProfile;          // last seen active profile (1-based)
+    uint8_t profileBlinkCount;    // flashes shown so far
+    uint8_t profileBlinkTarget;   // total flashes for this change (0 = idle)
+    uint32_t profileBlinkTimer;   // when the current profile change was seen
+    bool profileBlinkStarted;     // first white pulse already shown
+    bool blinkState;              // true = LED on during a pulse
+    uint32_t timeSinceBlink;      // last blink edge time
     int32_t dataPin;
     LEDFormat_Proto ledFormat;
     uint32_t ledsPerKey;

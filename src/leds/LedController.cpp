@@ -88,6 +88,16 @@ static const SpeedRange speedRanges[] = {
 #ifndef STATUS_LED_BRIGHTNESS_DEFAULT
 #define STATUS_LED_BRIGHTNESS_DEFAULT 255
 #endif
+// Profile-change animation: blink interval and pre-blink delay in ms. After a
+// profile switch the status LED blinks white once per profile number, then
+// returns to the mode color. The delay clears the blocking reinit+save window
+// on Core 0 (same as GP2040-th's BOARD_LEDS_RGB_PROFILE_BLINK_DELAY_MS).
+#ifndef STATUS_LED_PROFILE_BLINK_MS
+#define STATUS_LED_PROFILE_BLINK_MS 100
+#endif
+#ifndef STATUS_LED_PROFILE_BLINK_DELAY_MS
+#define STATUS_LED_PROFILE_BLINK_DELAY_MS 100
+#endif
 
 // Suspend/wake fade step (0-255 per 20ms render tick). 255/10 = ~25 ticks,
 // so the fade in/out takes roughly half a second.
@@ -134,6 +144,13 @@ LedController::LedController() :
     statusLedEnabled(true),
     statusLedBrightnessMinimum(0),
     statusLedBrightnessMaximum(STATUS_LED_BRIGHTNESS_DEFAULT),
+    prevProfile(0),
+    profileBlinkCount(0),
+    profileBlinkTarget(0),
+    profileBlinkTimer(0),
+    profileBlinkStarted(false),
+    blinkState(false),
+    timeSinceBlink(0),
     dataPin(-1),
     ledFormat(LED_FORMAT_GRB),
     ledsPerKey(1),
@@ -231,6 +248,9 @@ void LedController::configure()
         ? 255 : ledOptions.statusLedBrightnessMinimum;
     statusLedBrightnessMaximum = ledOptions.statusLedBrightnessMaximum > 255
         ? 255 : ledOptions.statusLedBrightnessMaximum;
+    // Seed the profile-change tracker with the boot profile so the LED doesn't
+    // flash on startup.
+    prevProfile = Storage::getInstance().getActiveProfile() + 1;
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;
     ledDim = 255;
@@ -557,6 +577,20 @@ void LedController::updateStatusLed()
 {
     if (statusLed == nullptr) return;
 
+    // Detect profile changes (always, even while disabled, so a switch that
+    // happens while the LED is off doesn't blink later on re-enable). The
+    // blink target is 1-based to match the "Profile N" numbers shown in the UI.
+    const uint32_t profile = Storage::getInstance().getActiveProfile() + 1;
+    if (profile != prevProfile)
+    {
+        prevProfile = profile;
+        profileBlinkCount = 0;
+        profileBlinkTarget = profile;
+        profileBlinkTimer = to_ms_since_boot(get_absolute_time());
+        blinkState = false;
+        profileBlinkStarted = false;
+    }
+
     // User toggle: turn the indicator off (once) and stay dark until re-enabled.
     if (!statusLedEnabled)
     {
@@ -566,6 +600,53 @@ void LedController::updateStatusLed()
             statusLed->off();
         }
         return;
+    }
+
+    // Profile-change animation: blink white once per profile number, then
+    // return to the mode color. Skipped in web config mode (matching
+    // GP2040-th, which doesn't run its status LED there). While active it owns
+    // the LED; when finished it falls through so the mode color returns on the
+    // same tick.
+    if (profileBlinkTarget > 0 && !Storage::getInstance().GetConfigMode())
+    {
+        const uint32_t now = to_ms_since_boot(get_absolute_time());
+
+        // Wait out the blocking reinit+save window on Core 0 before starting.
+        if (now - profileBlinkTimer >= STATUS_LED_PROFILE_BLINK_DELAY_MS)
+        {
+            if (!profileBlinkStarted)
+            {
+                showStatusColor(0xFFFFFF);
+                profileBlinkStarted = true;
+                blinkState = true;
+                timeSinceBlink = now;
+            }
+            else if (blinkState)
+            {
+                if (now - timeSinceBlink >= STATUS_LED_PROFILE_BLINK_MS)
+                {
+                    showStatusColor(0);
+                    blinkState = false;
+                    timeSinceBlink = now;
+                }
+            }
+            else if (now - timeSinceBlink >= STATUS_LED_PROFILE_BLINK_MS)
+            {
+                profileBlinkCount++;
+                if (profileBlinkCount >= profileBlinkTarget)
+                {
+                    profileBlinkTarget = 0;
+                }
+                else
+                {
+                    showStatusColor(0xFFFFFF);
+                    blinkState = true;
+                    timeSinceBlink = now;
+                }
+            }
+        }
+        if (profileBlinkTarget > 0)
+            return;
     }
 
     uint32_t color = STATUS_LED_COLOR_KEYBOARD;
@@ -599,6 +680,25 @@ void LedController::updateStatusLed()
 
     if (out == lastStatusColor) return;
     lastStatusColor = out;
+    statusLed->setPixel(0, r, g, b);
+    statusLed->show();
+}
+
+// Show a color on the status LED, scaled by the same brightness path as the
+// steady mode color (inactivity fade + statusLedBrightnessMinimum/Maximum).
+// Used by the profile-change flash animation so its white pulses follow the
+// status LED brightness settings.
+void LedController::showStatusColor(uint32_t rgb)
+{
+    uint32_t minDim = statusLedBrightnessMinimum;
+    uint32_t maxDim = statusLedBrightnessMaximum;
+    if (minDim > maxDim) minDim = maxDim; // a floor above the cap is nonsense
+    uint32_t dim = ledDim * maxDim / 255;
+    if (dim < minDim) dim = minDim;
+    uint32_t r = ((rgb >> 16) & 0xFF) * dim / 255;
+    uint32_t g = ((rgb >> 8) & 0xFF) * dim / 255;
+    uint32_t b = (rgb & 0xFF) * dim / 255;
+    lastStatusColor = (r << 16) | (g << 8) | b;
     statusLed->setPixel(0, r, g, b);
     statusLed->show();
 }

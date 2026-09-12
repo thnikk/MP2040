@@ -67,6 +67,13 @@
 // Default input mode for a fight stick.
 #define DEFAULT_INPUT_MODE INPUT_MODE_XINPUT
 
+// Configurable hotkeys (seeded into a fresh config). L3+R3+Left / L3+R3+Right
+// step to the previous / next profile (pins 8=L3, 4=R3, 1=Left, 3=Right).
+#define HOTKEY_01_KEYS   { 8, 4, 1 }
+#define HOTKEY_01_ACTION HOTKEY_PREVIOUS_PROFILE
+#define HOTKEY_02_KEYS   { 8, 4, 3 }
+#define HOTKEY_02_ACTION HOTKEY_NEXT_PROFILE
+
 // Boot keys: hold a button at power-on to boot directly into an input mode
 // (B1=XInput, B2=Switch Pro, B3=Keyboard, B4=MIDI). First held pin wins.
 #define BOOT_KEY_01_PIN 9
