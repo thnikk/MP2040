@@ -1961,6 +1961,20 @@ html[data-theme="light"] .ms-caret {
   border-color: transparent;
 }
 
+/* Discard button: neutral when clean, orange while unsaved changes exist
+   (same mechanism as the Save button's dirty state, but distinct from both
+   the green Save fill and the red blocked/danger states). */
+.actions button.discard.dirty {
+  background: var(--nord12);
+  color: var(--nord0);
+  border-color: transparent;
+}
+
+.actions button.discard.dirty:hover {
+  background: color-mix(in srgb, var(--nord12) 75%, var(--nord0));
+  border-color: transparent;
+}
+
 /* Save blocked by conflicting hotkeys: red until the conflict is fixed. */
 .actions button.blocked {
   background: var(--nord11);

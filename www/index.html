@@ -148,6 +148,7 @@
 
       <div class="actions-container">
         <div class="actions">
+          <button id="discard" class="discard"><span class="icon icon-trash" aria-hidden="true"></span>Discard</button>
           <button id="save"><span class="icon icon-floppy-disk" aria-hidden="true"></span>Save</button>
         </div>
       </div>
@@ -309,8 +310,21 @@
         </div>
       </section>
 
+      <section id="browser-section">
+        <h2><span class="heading-icon icon icon-web" aria-hidden="true"></span>Browser</h2>
+        <div class="general-form">
+          <label for="restore-mode">Unsaved changes</label>
+          <select id="restore-mode">
+            <option value="auto">Restore automatically</option>
+            <option value="ask">Ask every time</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </section>
+
       <div class="actions-container">
         <div class="actions">
+          <button id="discard-settings" class="discard"><span class="icon icon-trash" aria-hidden="true"></span>Discard</button>
           <button id="save-settings"><span class="icon icon-floppy-disk" aria-hidden="true"></span>Save</button>
         </div>
       </div>

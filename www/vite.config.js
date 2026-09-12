@@ -47,6 +47,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       open: false,
+      // Never cache dev responses: stale classic scripts served from disk
+      // cache are the classic "works in a private window, broken in mine"
+      // report (the firmware path instead versions URLs with ?v=, which dev
+      // can't do for files served straight off disk).
+      headers: { 'Cache-Control': 'no-store' },
       ...(proxyToBoard
         ? {
             proxy: {

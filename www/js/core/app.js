@@ -9,13 +9,17 @@ async function api(path, options) {
   return res.json();
 }
 
-// Debounce a function by `ms`; trailing edge fires the last call.
+// Debounce a function by `ms`; trailing edge fires the last call. The
+// returned function carries .cancel() so pending writes can be revoked
+// (e.g. a draft persist must not land after the draft was cleared).
 function debounce(fn, ms) {
   let timer = null;
-  return (...args) => {
+  const debounced = (...args) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), ms);
   };
+  debounced.cancel = () => clearTimeout(timer);
+  return debounced;
 }
 
 // Live LED preview, debounced (previewLed itself lives in led.js).
@@ -387,6 +391,10 @@ function updateDirtyUi() {
     btn.title = blocked ? 'Fix the conflicting hotkeys before saving'
       : dirty ? 'Unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)';
   });
+  document.querySelectorAll('#discard, #discard-settings').forEach((btn) => {
+    btn.classList.toggle('dirty', dirty);
+    btn.title = dirty ? 'Discard unsaved changes' : 'No unsaved changes';
+  });
   for (const id of ['profile-section', 'board-section', 'led-section', 'input-section',
     'led-settings-section', 'display-settings', 'macros-section', 'hotkeys-section',
     'bootkeys-section']) {
@@ -398,6 +406,7 @@ function updateDirtyUi() {
     btn.classList.toggle('dirty', !!dot);
   });
   refreshBoardEmptyHint();
+  schedulePersistDraft();
 }
 
 // Empty-board guidance (not a warning): shown when no inputs are mapped in
@@ -430,9 +439,239 @@ document.addEventListener('click', refreshDirtyUi);
 // mock board switch) set `allowUnload` so they don't trigger the prompt.
 window.addEventListener('beforeunload', (e) => {
   if (allowUnload || !isDirty()) return;
+  // Auto mode keeps a draft backstop, so refresh/close needs no prompt: force
+  // the (debounced) write through synchronously and reload silently. Ask/off
+  // keep the native dialog since nothing restores the edits.
+  if (getRestoreMode() === 'auto' && !saving) {
+    persistDraft();
+    return;
+  }
   e.preventDefault();
   e.returnValue = '';
 });
+
+// ---- draft persistence (localStorage backstop) ------------------------------
+// Unsaved edits are stashed per board + firmware version, so a refresh the
+// page can't intercept (toolbar button, address bar, tab close) still offers
+// them back on load. Writes happen only while dirty and are cleared on save;
+// mismatched board/version keys are ignored, never restored.
+const DRAFT_MODE_KEY = 'mp2040-restore-mode';
+let draftBoard = '';
+let draftFirmware = '';
+
+// Restore behavior: 'auto' (default), 'ask' or 'off'. Browser-local, never
+// sent to the board.
+function getRestoreMode() {
+  try {
+    return localStorage.getItem(DRAFT_MODE_KEY) || 'auto';
+  } catch (e) {
+    return 'auto';
+  }
+}
+
+function setRestoreMode(mode) {
+  try {
+    localStorage.setItem(DRAFT_MODE_KEY, mode);
+  } catch (e) {
+    // Private mode / quota: drafts just stay unavailable.
+  }
+}
+
+function draftKey() {
+  return `mp2040-draft:${draftBoard}:${draftFirmware}`;
+}
+
+function clearDraft() {
+  // Revoke a pending debounced write first: location.reload() doesn't preempt
+  // already-scheduled timers, so without this a persist landing between the
+  // clear and the reload would resurrect the draft (discard appearing to do
+  // nothing). Safe to call before persistDraftDebounced exists (post-load
+  // callers only run after full init).
+  try {
+    if (typeof persistDraftDebounced === 'function') persistDraftDebounced.cancel();
+  } catch (e) {
+    // Ignore (temporal dead zone before init; nothing scheduled yet).
+  }
+  try {
+    localStorage.removeItem(draftKey());
+  } catch (e) {
+    // Ignore.
+  }
+}
+
+function persistDraft() {
+  // The page is intentionally going away (discard/import/board-switch accepted
+  // a reload): never write then. The modal confirm click bubbles to document
+  // and schedules a fresh debounced persist *after* clearDraft() already ran;
+  // without this, that write landing before a slow reload commits would
+  // resurrect the draft.
+  if (allowUnload) return;
+  // Off means no drafts at all: drop any lingering one, even when switched
+  // programmatically rather than through the select.
+  if (getRestoreMode() === 'off') {
+    clearDraft();
+    return;
+  }
+  if (!currentOptions || saving) return;
+  if (!savedGlobals || !profiles.length) return;
+  try {
+    // Clean means the board holds everything: no draft needed. This also
+    // clears after a successful save (updateDirtyUi runs there).
+    if (!isDirty()) {
+      clearDraft();
+      return;
+    }
+    localStorage.setItem(draftKey(), JSON.stringify({
+      savedAt: Date.now(),
+      slots: profiles.map(cloneProfile),
+      globals: buildGlobalState(),
+      working: cloneProfile(currentOptions),
+      activeProfile,
+      currentProfileIndex,
+    }));
+  } catch (e) {
+    // Private mode / quota: the beforeunload prompt remains the backstop.
+  }
+}
+
+const persistDraftDebounced = debounce(persistDraft, 500);
+
+function schedulePersistDraft() {
+  if (!currentOptions || !savedGlobals || !profiles.length) return;
+  persistDraftDebounced();
+}
+
+// A stored draft, or null when missing, malformed, disabled, or for another
+// board/version (the key already namespaces board + firmware).
+function readDraft() {
+  try {
+    if (getRestoreMode() === 'off') {
+      clearDraft();
+      return null;
+    }
+    const raw = localStorage.getItem(draftKey());
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (!d || !Array.isArray(d.slots) || !d.globals || !d.working) {
+      clearDraft();
+      return null;
+    }
+    return d;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Board-state view of the globals buildGlobalState() captures, derived purely
+// from a getOptions response (no DOM): mirrors control initialization plus
+// payload fallbacks, with canonical key orders so JSON comparison is exact.
+// Used both to diff a draft and as the dirty baseline after a restore.
+function buildBoardGlobals(options) {
+  const led = options.led || {};
+  const fill7 = (arr, fb) => (Array.isArray(arr) && arr.length >= 7) ? arr.slice() : new Array(7).fill(fb);
+  const gamepad = options.gamepad || {};
+  const display = options.display || {};
+  return {
+    macros: options.macros || [],
+    macroIndices: Array.isArray(options.macroIndices)
+      ? options.macroIndices.slice()
+      : new Array(128).fill(0),
+    gamepadMasks: options.gamepadMasks || [],
+    defaultInputMode: parseInt(options.defaultInputMode ?? 1, 10),
+    debounceInterval: options.debounceInterval ?? 5,
+    touchMargin: options.touchMargin ?? 15,
+    touchRelease: options.touchRelease ?? 10,
+    serialConfigEnabled: options.serialConfigEnabled === true,
+    gamepad: {
+      socdMode: parseInt(gamepad.socdMode ?? 0, 10),
+      dpadMode: parseInt(gamepad.dpadMode ?? 0, 10),
+      useNintendoLayout: gamepad.useNintendoLayout === true,
+    },
+    ring: {
+      ringStickTarget: options.ring?.ringStickTarget ?? 1,
+      ringKeyboardMode: options.ring?.ringKeyboardMode ?? 2,
+      ringScrollAxis: options.ring?.ringScrollAxis ?? 0,
+      ringMidiBehavior: options.ring?.ringMidiBehavior ?? 1,
+    },
+    display: {
+      size: display.size ?? 3,
+      flip: display.flip ?? 0,
+      invert: display.invert ?? false,
+      splashDuration: display.splashDuration ?? 3,
+      displaySaverTimeout: display.displaySaverTimeout ?? 0,
+      displaySaverMode: parseInt(display.displaySaverMode ?? 0, 10),
+      inputHistoryEnabled: display.inputHistoryEnabled !== false,
+      inputHistoryTimeout: display.inputHistoryTimeout ?? 3,
+    },
+    // Same completeness rules as the panels: incomplete rows never reach the
+    // payload, so they count as board state here too.
+    hotkeys: (options.hotkeys || [])
+      .filter((h) => (h.keys || []).length > 0 && Number(h.action) !== 0)
+      .map((h) => ({ keys: h.keys.slice(0, 8), action: Number(h.action) || 0 })),
+    bootKeys: (options.bootKeys || [])
+      .filter((bk) => Number(bk.pin) >= 0)
+      .map((bk) => ({ pin: Number(bk.pin), mode: Number(bk.mode) })),
+    activeProfile: Number(options.activeProfile ?? 0),
+    led: {
+      ledSpeeds: fill7(led.ledSpeeds, Number.isFinite(led.ledSpeed) ? led.ledSpeed : 50),
+      brightnessByMode: fill7(led.brightnessByMode,
+        Number.isFinite(led.brightnessMaximum) ? led.brightnessMaximum : 255),
+      ledTimeout: led.ledTimeout ?? 0,
+      statusLedEnabled: Boolean(led.statusLedEnabled),
+      statusLedBrightnessMinimum: led.statusLedBrightnessMinimum ?? 0,
+      statusLedBrightnessMaximum: led.statusLedBrightnessMaximum ?? 255,
+      colorNormalByMode: fill7(led.colorNormalByMode,
+        Number.isFinite(led.colorNormal) ? led.colorNormal : 0x00ff00),
+      colorPressedByMode: fill7(led.colorPressedByMode,
+        Number.isFinite(led.colorPressed) ? led.colorPressed : 0xffffff),
+    },
+  };
+}
+
+// Fresh profile slots exactly as load() builds them.
+function boardSlotsOf(options) {
+  return (Array.isArray(options.profiles) && options.profiles.length >= PROFILE_COUNT)
+    ? options.profiles.map(cloneProfile)
+    : [options, options, options, options].map(cloneProfile);
+}
+
+// Whether applying the draft would change anything versus the fresh board
+// state, so an already-saved draft clears silently instead of prompting.
+function draftDiffersFromOptions(d, options) {
+  const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const freshSlots = boardSlotsOf(options);
+  if (!eq(freshSlots, (d.slots || []).map(cloneProfile))) return true;
+  if (!eq(buildBoardGlobals(options), d.globals || {})) return true;
+  // Unsynced working-copy edits (no tab switch yet) live outside the slots.
+  const idx = Number.isInteger(d.currentProfileIndex) &&
+    d.currentProfileIndex >= 0 && d.currentProfileIndex < PROFILE_COUNT
+    ? d.currentProfileIndex
+    : Number(options.activeProfile ?? 0);
+  if (!eq(cloneProfile(d.working), freshSlots[idx] || cloneProfile())) return true;
+  return false;
+}
+
+// Merge a draft over fresh options in place, before UI init flows from it.
+function applyDraftToOptions(options, d) {
+  const g = d.globals || {};
+  options.profiles = (d.slots || []).map(cloneProfile);
+  options.activeProfile = (Number.isInteger(d.activeProfile) &&
+    d.activeProfile >= 0 && d.activeProfile < PROFILE_COUNT) ? d.activeProfile : 0;
+  options.macroIndices = g.macroIndices || [];
+  options.macros = g.macros || [];
+  options.gamepadMasks = g.gamepadMasks || [];
+  options.defaultInputMode = g.defaultInputMode ?? 1;
+  options.debounceInterval = g.debounceInterval ?? 5;
+  options.touchMargin = g.touchMargin ?? 15;
+  options.touchRelease = g.touchRelease ?? 10;
+  options.serialConfigEnabled = g.serialConfigEnabled === true;
+  options.gamepad = g.gamepad || {};
+  options.ring = g.ring || {};
+  options.display = g.display || {};
+  options.hotkeys = g.hotkeys || [];
+  options.bootKeys = g.bootKeys || [];
+  options.led = { ...(options.led || {}), ...(g.led || {}) };
+}
 
 // ---- routing ----------------------------------------------------------
 // Single HTML file, three routes: the landing page (/), the layout editor
@@ -469,39 +708,32 @@ function renderRoute() {
   }
 }
 
-// Unsaved-changes prompt shared by the route-leave paths (link navigation
-// and browser back/forward). Resolves true when the leave may proceed.
-async function confirmLeave() {
-  const choice = await confirmDialog({
-    title: 'Unsaved changes',
-    message: 'You have unsaved changes. Save them before leaving?',
-    buttons: [
-      { value: 'save', label: 'Save & Leave', kind: 'primary' },
-      { value: 'discard', label: 'Discard' },
-      { value: 'cancel', label: 'Cancel' },
-    ],
-  });
-  if (choice === 'save') return save();
-  return choice === 'discard';
-}
-
-async function navigate(path, event) {
+// In-app route switches (link navigation and browser back/forward) never
+// prompt: both pages share one SPA state with a Save control each, so there
+// is nothing to lose by switching. Prompts remain for paths that actually
+// leave the state behind (reboot, reload, copy-profile, reset, tab close).
+function navigate(path, event) {
   if (event) event.preventDefault();
   if (location.pathname === path) return;
-  if (isDirty() && !await confirmLeave()) return;
   lastRoute = path;
   history.pushState({}, '', path);
   renderRoute();
   window.scrollTo(0, 0);
 }
 
-// Keyboard refresh (F5 / Ctrl+R) shows the custom prompt instead of the
-// native beforeunload dialog. Toolbar-button refresh, address-bar reloads and
-// tab/window close can't be intercepted, so beforeunload stays as the
-// fallback for those paths.
+// Keyboard refresh (F5 / Ctrl+R). Auto mode reloads silently: the draft
+// backstop restores the edits, so no prompt is needed. Ask/off keep the
+// custom prompt (and beforeunload keeps the native dialog for refresh paths
+// keyboard interception can't reach: toolbar button, address bar, tab close).
 async function handleRefreshRequest() {
   if (rebooting || disconnected) return;
   if (allowUnload || !isDirty()) return;
+  if (getRestoreMode() === 'auto' && !saving) {
+    persistDraft();
+    allowUnload = true;
+    location.reload();
+    return;
+  }
   const choice = await confirmDialog({
     title: 'Unsaved changes',
     message: 'You have unsaved changes. Save them before reloading?',
@@ -516,23 +748,15 @@ async function handleRefreshRequest() {
     allowUnload = true;
     location.reload();
   } else if (choice === 'discard') {
+    clearDraft();
     allowUnload = true;
     location.reload();
   }
 }
 
-// Back/forward buttons fire popstate after the URL has already changed; on
-// cancel, push the previous route back so the prompt isn't a one-way trip.
 let lastRoute = currentRoute();
-window.addEventListener('popstate', async () => {
-  const prev = lastRoute;
-  const next = currentRoute();
-  if (isDirty() && !await confirmLeave()) {
-    history.pushState({}, '', prev);
-    renderRoute();
-    return;
-  }
-  lastRoute = next;
+window.addEventListener('popstate', () => {
+  lastRoute = currentRoute();
   renderRoute();
 });
 
@@ -608,7 +832,7 @@ function enterDisconnectedState() {
   showRebootedOverlay({
     title: 'Board disconnected',
     message: dirty
-      ? 'The board stopped responding. Unsaved changes will be lost on reload.'
+      ? 'The board stopped responding. Your unsaved changes are kept and will be offered back on reload.'
       : 'The board stopped responding.',
     hint: webConfigReturnHint(true),
     spinning: false,
@@ -676,6 +900,42 @@ async function load() {
     api('/api/getFirmwareVersion'),
   ]);
   currentOptions = options;
+  // Draft restore runs before any UI init so restored values flow through
+  // the normal path. Keyed by board + firmware: other boards/versions never
+  // match, and an already-saved draft clears silently.
+  draftBoard = version.boardLabel || '';
+  draftFirmware = version.firmwareVersion || '';
+  let draftData = readDraft();
+  let useDraft = false;
+  let draftMode = getRestoreMode();
+  if (draftData && draftDiffersFromOptions(draftData, options)) {
+    if (draftMode === 'ask') {
+      const when = draftData.savedAt ? new Date(draftData.savedAt).toLocaleString() : '';
+      useDraft = await confirmDialog({
+        title: 'Unsaved changes',
+        message: `Found unsaved changes${when ? ` from ${when}` : ''}. Restore them?`,
+        buttons: [
+          { value: 'restore', label: 'Restore', kind: 'primary' },
+          { value: 'discard', label: 'Discard' },
+        ],
+      }) === 'restore';
+      if (!useDraft) clearDraft();
+    } else {
+      useDraft = true;
+    }
+  } else if (draftData) {
+    clearDraft();
+    draftData = null;
+  }
+  // Board baselines for dirty tracking: captured before the draft merge so a
+  // restore compares against the board, not against itself.
+  let boardSlots = null;
+  let boardGlobals = null;
+  if (useDraft && draftData) {
+    boardSlots = boardSlotsOf(options);
+    boardGlobals = buildBoardGlobals(options);
+    applyDraftToOptions(options, draftData);
+  }
   // Key runtime asset fetches (board/controller graphics, gamepad glyphs)
   // by firmware: static files are served immutable, so the version query
   // keeps a firmware update from reusing stale cached copies. Set before
@@ -728,6 +988,8 @@ async function load() {
           Toast.show('Failed to switch board: ' + res.error, 'error');
           return;
         }
+        // The new board resolves a different draft key, so this board's
+        // draft (if any) is left alone and restores when switching back.
         allowUnload = true;
         window.location.reload();
       });
@@ -1108,15 +1370,33 @@ async function load() {
 
   loadProfileIntoUi();
 
-  // Baseline for dirty tracking: the state exactly as loaded from the board.
-  savedProfiles = profiles.map(cloneProfile);
-  savedGlobals = buildGlobalState();
+  // Draft working-copy edits (made without a tab switch) live outside the
+  // slots: re-apply them over the mirrored slot and re-reflect the controls.
+  // Globals and slots are already merged into `options` above, so panels
+  // constructed them directly.
+  if (useDraft && draftData) {
+    if (Number.isInteger(draftData.currentProfileIndex) &&
+        draftData.currentProfileIndex >= 0 && draftData.currentProfileIndex < PROFILE_COUNT) {
+      currentProfileIndex = draftData.currentProfileIndex;
+    }
+    applyProfileToOptions(cloneProfile(draftData.working), currentOptions);
+    refreshPerProfileControls();
+    if (boardView) boardView.setOptions(currentOptions);
+    updateProfileTabs();
+    refreshCopyProfileSelect();
+  }
+
+  // Baseline for dirty tracking: the state exactly as loaded from the board
+  // (after a restore, the pre-merge board snapshots, not the draft).
+  savedProfiles = (useDraft && boardSlots) ? boardSlots : profiles.map(cloneProfile);
+  savedGlobals = (useDraft && boardGlobals) ? boardGlobals : buildGlobalState();
   updateDirtyUi();
 
   renderRoute();
 
   const loading = document.getElementById('loading');
   if (loading) loading.hidden = true;
+  if (useDraft && draftMode !== 'ask') Toast.show('Restored unsaved changes.', 'info');
   startDisconnectWatch();
 }
 
@@ -1144,7 +1424,10 @@ async function save() {
     Toast.show('Fix the conflicting hotkeys before saving.', 'error');
     return false;
   }
-  const saveBtns = [document.getElementById('save'), document.getElementById('save-settings')].filter(Boolean);
+  const saveBtns = [
+    document.getElementById('save'), document.getElementById('save-settings'),
+    document.getElementById('discard'), document.getElementById('discard-settings'),
+  ].filter(Boolean);
   saveBtns.forEach((b) => { b.disabled = true; });
   saving = true;
   let ok = false;
@@ -1171,6 +1454,9 @@ async function save() {
     // are the new baseline for dirty tracking.
     savedProfiles = profiles.map(cloneProfile);
     savedGlobals = buildGlobalState();
+    // The board holds everything now: drop any draft synchronously (the
+    // debounced persist may not fire before a save-and-leave reload).
+    clearDraft();
     Toast.show('Saved.', 'success');
     ok = true;
   } catch (e) {
@@ -1424,7 +1710,9 @@ async function reboot(bootMode) {
     });
     if (choice === 'save') {
       if (!await save()) return;
-    } else if (choice !== 'discard') {
+    } else if (choice === 'discard') {
+      clearDraft();
+    } else {
       return;
     }
   }
@@ -1576,6 +1864,7 @@ async function resetSettings() {
     ],
   });
   if (choice !== 'reset') return;
+  clearDraft();
   await api('/api/resetSettings', { method: 'POST' });
   Toast.show('Settings reset. Rebooting...', 'info');
 }
@@ -1736,6 +2025,8 @@ async function importSettings(file) {
       });
     }
     Toast.show(summaryText ?? 'Settings imported.', 'success');
+    // The board now holds the import: a pre-import draft must not haunt it.
+    clearDraft();
     allowUnload = true;
     location.reload();
   } catch (e) {
@@ -1756,6 +2047,36 @@ document.getElementById('import-file').addEventListener('change', (e) => {
 
 document.getElementById('save').addEventListener('click', save);
 document.getElementById('save-settings').addEventListener('click', save);
+// Discard all unsaved changes: confirm, drop the draft backstop, and reload
+// into board truth (same tradeoff as import: always correct, ~1s flash).
+// Works while Save is conflict-blocked, since reverting resolves conflicts.
+async function discardChanges() {
+  if (!isDirty()) {
+    Toast.show('No unsaved changes.', 'info');
+    return;
+  }
+  const choice = await confirmDialog({
+    title: 'Discard changes',
+    message: 'Discard all unsaved changes?',
+    buttons: [
+      { value: 'discard', label: 'Discard', kind: 'danger' },
+      { value: 'cancel', label: 'Cancel' },
+    ],
+  });
+  if (choice !== 'discard') return;
+  clearDraft();
+  allowUnload = true;
+  location.reload();
+}
+document.getElementById('discard').addEventListener('click', discardChanges);
+document.getElementById('discard-settings').addEventListener('click', discardChanges);
+// Browser-local restore setting: lives outside the board payload and dirty
+// tracking (its own element ID is never read by either).
+document.getElementById('restore-mode').value = getRestoreMode();
+document.getElementById('restore-mode').addEventListener('change', (e) => {
+  setRestoreMode(e.target.value);
+  if (e.target.value === 'off') clearDraft();
+});
 document.querySelectorAll('[data-route]').forEach((el) => {
   el.addEventListener('click', (e) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;

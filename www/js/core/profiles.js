@@ -100,6 +100,15 @@ function applyProfileToOptions(profile, options) {
   // per-profile LED scalars (mode, per-key colors).
   const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...profileLed } = profile.led || {};
   options.led = { ...(options.led || {}), ...profileLed };
+  // The spread above shares array references: per-key color edits must stay in
+  // the working copy until synced, so copy the arrays (keycodes etc. already
+  // slice above for the same reason).
+  if (Array.isArray(profile.led?.ledNormalColors)) {
+    options.led.ledNormalColors = profile.led.ledNormalColors.slice();
+  }
+  if (Array.isArray(profile.led?.ledPressedColors)) {
+    options.led.ledPressedColors = profile.led.ledPressedColors.slice();
+  }
 }
 
 // Copy `options`' per-profile fields back into a profile (opposite of above).
@@ -111,6 +120,14 @@ function applyOptionsToProfile(options, profile) {
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
   const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...optionsLed } = options.led || {};
   profile.led = { ...(profile.led || {}), ...optionsLed };
+  // Same aliasing hazard as above, in reverse: syncing must not link the slot
+  // to the working copy's arrays.
+  if (Array.isArray(options.led?.ledNormalColors)) {
+    profile.led.ledNormalColors = options.led.ledNormalColors.slice();
+  }
+  if (Array.isArray(options.led?.ledPressedColors)) {
+    profile.led.ledPressedColors = options.led.ledPressedColors.slice();
+  }
 }
 
 // Save any unsaved edits of the current tab back into its profile slot.
