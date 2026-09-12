@@ -380,7 +380,8 @@ function sectionDirty(id) {
 }
 
 // Toggle the unsaved-changes indicator on the Save buttons (both pages),
-// plus per-section heading dots and per-profile tab dots.
+// plus per-section heading dots and per-profile tab dots. Save/Discard are
+// truly disabled while clean so the dim state means "nothing to do".
 function updateDirtyUi() {
   if (saving) return;
   const dirty = isDirty();
@@ -388,11 +389,13 @@ function updateDirtyUi() {
   document.querySelectorAll('#save, #save-settings').forEach((btn) => {
     btn.classList.toggle('dirty', dirty);
     btn.classList.toggle('blocked', !!blocked);
+    btn.disabled = !dirty;
     btn.title = blocked ? 'Fix the conflicting hotkeys before saving'
       : dirty ? 'Unsaved changes (Ctrl+S)' : 'Save (Ctrl+S)';
   });
   document.querySelectorAll('#discard, #discard-settings').forEach((btn) => {
     btn.classList.toggle('dirty', dirty);
+    btn.disabled = !dirty;
     btn.title = dirty ? 'Discard unsaved changes' : 'No unsaved changes';
   });
   for (const id of ['profile-section', 'board-section', 'led-section', 'input-section',

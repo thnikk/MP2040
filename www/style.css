@@ -1956,7 +1956,7 @@ html[data-theme="light"] .ms-caret {
   border-color: var(--accent);
 }
 
-.actions button.dirty:hover {
+.actions button.dirty:not(:disabled):hover {
   background: color-mix(in srgb, var(--accent) 75%, var(--nord0));
   border-color: transparent;
 }
@@ -1970,7 +1970,7 @@ html[data-theme="light"] .ms-caret {
   border-color: transparent;
 }
 
-.actions button.discard.dirty:hover {
+.actions button.discard.dirty:not(:disabled):hover {
   background: color-mix(in srgb, var(--nord12) 75%, var(--nord0));
   border-color: transparent;
 }
@@ -1982,7 +1982,7 @@ html[data-theme="light"] .ms-caret {
   border-color: transparent;
 }
 
-.actions button.blocked:hover {
+.actions button.blocked:not(:disabled):hover {
   background: color-mix(in srgb, var(--nord11) 75%, var(--nord0));
   border-color: transparent;
 }
@@ -2006,7 +2006,7 @@ button {
   transition: border-color 0.15s, background 0.15s;
 }
 
-button:hover {
+button:not(:disabled):hover {
   border-color: var(--btn-hover-border);
 	background: var(--bg-4);
 }
@@ -2024,7 +2024,7 @@ button.secondary {
 
 button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: default;
 }
 
 /* Key edit modal */
@@ -2191,7 +2191,7 @@ button:disabled {
   border-color: transparent;
 }
 
-.modal-options #reboot-webconfig:hover {
+.modal-options #reboot-webconfig:not(:disabled):hover {
   background: color-mix(in srgb, var(--nord14) 75%, var(--nord0));
   border-color: transparent;
 }
@@ -2204,7 +2204,7 @@ button:disabled {
   border-color: transparent;
 }
 
-.modal-options .modal-option.primary:hover {
+.modal-options .modal-option.primary:not(:disabled):hover {
   background: color-mix(in srgb, var(--nord14) 75%, var(--nord0));
   border-color: transparent;
 }
@@ -2215,7 +2215,7 @@ button:disabled {
   border-color: transparent;
 }
 
-.modal-options .modal-option.danger:hover {
+.modal-options .modal-option.danger:not(:disabled):hover {
   background: color-mix(in srgb, var(--nord11) 75%, var(--nord0));
   border-color: transparent;
 }
