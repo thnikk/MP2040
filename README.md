@@ -60,6 +60,9 @@ MP2040 currently supports the following input modes:
 - **XInput**: Presents as an Xbox 360 controller (PC)
 - **XBOne**: Presents as an Xbox One controller (PC, supports USB CDC and capture button)
 - **Switch Pro**: Emulates a Pro Controller (Nintendo hardware)
+- **PS3**: Presents as a PS3 controller
+- **PS4**: Presents as a PS4 controller (supports auth-dongle passthrough over the USB host port where available; otherwise unauthenticated with no timeout on PC and ~8-minute timeout on console)
+- **PS5**: Presents as a PS4 arcade stick for PS5 backward compatibility (same auth note as PS4)
 
 ## Key Scanning
 
