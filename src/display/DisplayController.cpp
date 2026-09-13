@@ -92,7 +92,13 @@ void DisplayController::update() {
 					setMode((DisplayMode)result);
 			}
 		} else if (mode == REMAP) {
-			setMode(BUTTONS);
+			// Route through the screen so staged remap changes hit the save
+			// prompt instead of being silently saved on toggle-close.
+			if (screen != nullptr) {
+				int8_t result = screen->requestClose();
+				if (result >= 0 && result != (int8_t)mode)
+					setMode((DisplayMode)result);
+			}
 		} else if (mode == BUTTONS || mode == SAVER) {
 			setMode(MAIN_MENU);
 			// Seed the nav edge tracker with the current key states so the

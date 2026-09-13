@@ -199,6 +199,17 @@ void RemapScreen::init() {
 	cursorIndex = 0;
 	hasChanges = false;
 	returnToMenu = false;
+	screenIsPrompting = false;
+	promptChoice = false;
+	pendingExitMode = -1;
+
+	// Snapshot the mappings the remap edits so the exit prompt's "No" can
+	// restore them (the live config is mutated in place as the user assigns).
+	Storage& storage = Storage::getInstance();
+	keyMappingSnapshot = storage.getKeyMapping();
+	keyMappingHasSnapshot = storage.getConfig().has_keyMapping;
+	gamepadSnapshot = storage.getGamepadMapping();
+	gamepadHasSnapshot = storage.getConfig().has_gamepadMapping;
 
 	actionCategory = 0;
 	actionCategoryIndex = 0;
@@ -231,9 +242,8 @@ void RemapScreen::init() {
 }
 
 void RemapScreen::shutdown() {
-	if (hasChanges) {
-		save();
-	}
+	// No auto-save here: staged changes are committed (or discarded) by the
+	// exit prompt, so tearing the screen down must not silently persist them.
 	clearElements();
 }
 
@@ -246,6 +256,42 @@ int8_t RemapScreen::update() {
 }
 
 int8_t RemapScreen::handleNavigation(uint8_t action) {
+	// While the save prompt is up, all navigation drives Yes/No: directions
+	// flip the choice, SELECT resolves it (exiting to the pending target),
+	// BACK cancels back to the remap layout with the changes still staged.
+	if (screenIsPrompting) {
+		switch (action) {
+			case ACTION_UP:
+			case ACTION_DOWN:
+			case ACTION_LEFT:
+			case ACTION_RIGHT:
+				promptChoice = !promptChoice;
+				break;
+			case ACTION_SELECT:
+				if (promptChoice) {
+					save();
+				} else {
+					discardChanges();
+				}
+				hasChanges = false;
+				screenIsPrompting = false;
+				promptChoice = false;
+				{
+					const int8_t target = pendingExitMode;
+					pendingExitMode = -1;
+					if (target >= 0) return target;
+				}
+				break;
+			case ACTION_BACK:
+				screenIsPrompting = false;
+				promptChoice = false;
+				break;
+			default:
+				break;
+		}
+		return -1;
+	}
+
 	switch (mode) {
 		case REMAP_LAYOUT:          updateLayout(action); break;
 		case REMAP_GAMEPAD_MANAGE:  updateGamepadManage(action); break;
@@ -298,10 +344,45 @@ bool RemapScreen::updateLayout(uint8_t action) {
 			}
 			return true;
 		case ACTION_BACK:
-			exitToMainMenu();
+			if (hasChanges) {
+				raiseSavePrompt(DisplayMode::MAIN_MENU);
+			} else {
+				exitToMainMenu();
+			}
 			return true;
 		default:
 			return false;
+	}
+}
+
+void RemapScreen::raiseSavePrompt(int8_t exitMode) {
+	pendingExitMode = exitMode;
+	screenIsPrompting = true;
+	promptChoice = false;
+}
+
+int8_t RemapScreen::requestClose() {
+	// Toggle-close behaves like a root B2: staged changes raise the save
+	// prompt instead of being silently committed on teardown.
+	if (hasChanges) {
+		raiseSavePrompt(DisplayMode::BUTTONS);
+		return -1;
+	}
+	return DisplayMode::BUTTONS;
+}
+
+void RemapScreen::discardChanges() {
+	Storage& s = Storage::getInstance();
+	s.getKeyMapping() = keyMappingSnapshot;
+	s.getConfig().has_keyMapping = keyMappingHasSnapshot;
+	s.getGamepadMapping() = gamepadSnapshot;
+	s.getConfig().has_gamepadMapping = gamepadHasSnapshot;
+	// Keyboard/MIDI edits also mirror into the active profile's stored
+	// KeyMapping (see persistKeyboardKeyToConfig), so restore that too.
+	Profile* profile = s.getProfile(s.getActiveProfile());
+	if (profile != nullptr) {
+		profile->keyMapping = keyMappingSnapshot;
+		profile->has_keyMapping = keyMappingHasSnapshot;
 	}
 }
 
@@ -918,6 +999,10 @@ void RemapScreen::drawMidi() {
 }
 
 void RemapScreen::drawScreen() {
+	if (screenIsPrompting) {
+		drawSavePrompt();
+		return;
+	}
 	switch (mode) {
 		case REMAP_LAYOUT:          drawLayout(); break;
 		case REMAP_GAMEPAD_MANAGE:  drawGamepadManage(); break;
@@ -929,15 +1014,23 @@ void RemapScreen::drawScreen() {
 	}
 }
 
+void RemapScreen::drawSavePrompt() {
+	getRenderer()->drawText(1, 1, "Config has changed.");
+	getRenderer()->drawText(3, 3, "Would you like");
+	getRenderer()->drawText(6, 4, "to save?");
+
+	if (promptChoice) getRenderer()->drawText(5, 6, CHAR_RIGHT);
+	getRenderer()->drawText(6, 6, "Yes");
+	if (!promptChoice) getRenderer()->drawText(11, 6, CHAR_RIGHT);
+	getRenderer()->drawText(12, 6, "No");
+}
+
 void RemapScreen::save() {
 	Storage::getInstance().save(true);
 }
 
 void RemapScreen::exitToMainMenu() {
-	// Commit changes (if any) and request a switch back to the mini menu.
-	if (hasChanges) {
-		save();
-		hasChanges = false;
-	}
+	// No changes to commit here: staged changes are resolved by the exit
+	// prompt (save or discard) before this is reached.
 	returnToMenu = true;
 }

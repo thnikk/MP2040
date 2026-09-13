@@ -24,6 +24,10 @@
 // keycode + modifier mask, gamepad pins hold a control bitmask, and MIDI pins
 // hold a note. Persistence writes the active profile's KeyMapping (keycodes /
 // modifierMasks / midiNotes) or the global GamepadMapping, then saves.
+//
+// Exiting with staged changes (BACK or a toggle-close) raises a Yes/No save
+// prompt instead of committing silently. Yes saves to flash; No discards by
+// restoring the mapping snapshots taken at init().
 enum RemapMode {
 	REMAP_LAYOUT,
 	REMAP_GAMEPAD_MANAGE,
@@ -45,6 +49,10 @@ class RemapScreen : public GPScreen {
 		// Fed by the DisplayController (nav pins). Returns a target DisplayMode
 		// (REMAP stays, MAIN_MENU on back) or -1.
 		int8_t handleNavigation(uint8_t action);
+		// Toggle-close: behave like a root B2 so staged changes hit the save
+		// prompt instead of being silently saved. Returns the exit target or
+		// -1 (prompt shown).
+		int8_t requestClose() override;
 	protected:
 		virtual void drawScreen();
 	private:
@@ -78,6 +86,26 @@ class RemapScreen : public GPScreen {
 
 		InputMode currentMode;
 		bool returnToMenu = false;
+
+		// Yes/No save prompt shown when exiting with staged changes. Mirrors
+		// the mini menu's prompt (see MainMenuScreen). pendingExitMode is the
+		// display the prompt resolves to (MAIN_MENU on BACK, BUTTONS on
+		// toggle-close).
+		bool screenIsPrompting = false;
+		bool promptChoice = false;
+		int8_t pendingExitMode = -1;
+
+		// Mapping snapshots for the prompt's "No" (discard) path. Remap edits
+		// the live config.keyMapping / config.gamepadMapping in place, so a
+		// discard must restore them (and the active profile's stored copy).
+		KeyMapping keyMappingSnapshot;
+		bool keyMappingHasSnapshot = false;
+		GamepadMapping gamepadSnapshot;
+		bool gamepadHasSnapshot = false;
+
+		void raiseSavePrompt(int8_t exitMode);
+		void discardChanges();
+		void drawSavePrompt();
 
 		void enterGamepadManage();
 		void enterActionSelect();
