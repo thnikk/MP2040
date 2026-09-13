@@ -193,6 +193,11 @@ static const char* getModifierName(uint8_t mask) {
 	return "Mod";
 }
 
+// MIDI pitch class names (index 0-11 = C..B), matching the web UI.
+static const char* midiPitchNames[] = {
+	"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
+};
+
 void RemapScreen::init() {
 	getRenderer()->clearScreen();
 	mode = REMAP_LAYOUT;
@@ -219,8 +224,10 @@ void RemapScreen::init() {
 	kbdCategory = 0;
 	kbdCategoryIndex = 0;
 	kbdModifierIndex = 0;
-	midiNote = 0;
-	midiNoteSnapshot = 0;
+	midiField = 0;
+	midiNoteIdx = -1;
+	midiOctave = 4;
+	midiVelocity = 0;
 
 	currentMode = DriverManager::getInstance().getInputMode();
 
@@ -512,11 +519,19 @@ void RemapScreen::enterKbdModifier() {
 
 void RemapScreen::enterMidi() {
 	mode = REMAP_MIDI;
+	midiField = 0;
 	if (cursorIndex >= layoutElements.size()) return;
 	uint8_t pin = layoutElements[cursorIndex].parameters.value;
 	const KeyMapping& mapping = Storage::getInstance().getKeyMapping();
-	midiNote = (pin < mapping.midiNotes_count) ? (uint8_t)mapping.midiNotes[pin] : 0;
-	midiNoteSnapshot = midiNote;
+	uint8_t note = (pin < mapping.midiNotes_count) ? (uint8_t)mapping.midiNotes[pin] : 0;
+	if (note == 0) {
+		midiNoteIdx = -1;
+		midiOctave = 4;
+	} else {
+		midiNoteIdx = note % 12;
+		midiOctave = (int8_t)(note / 12) - 1;
+	}
+	midiVelocity = (pin < mapping.midiVelocities_count) ? (uint8_t)mapping.midiVelocities[pin] : 0;
 }
 
 void RemapScreen::clearKeyboardKey() {
@@ -671,31 +686,56 @@ bool RemapScreen::updateKbdModifier(uint8_t action) {
 bool RemapScreen::updateMidi(uint8_t action) {
 	switch (action) {
 		case ACTION_UP:
-			if (midiNote < 127) midiNote++;
+			switch (midiField) {
+				case 0:
+					midiNoteIdx = (midiNoteIdx >= 11) ? -1 : midiNoteIdx + 1;
+					break;
+				case 1:
+					if (midiOctave < 9) midiOctave++;
+					break;
+				case 2:
+					if (midiVelocity < 127) midiVelocity++;
+					break;
+			}
 			return true;
 		case ACTION_DOWN:
-			if (midiNote > 0) midiNote--;
+			switch (midiField) {
+				case 0:
+					midiNoteIdx = (midiNoteIdx < 0) ? 11 : midiNoteIdx - 1;
+					break;
+				case 1:
+					if (midiOctave > -1) midiOctave--;
+					break;
+				case 2:
+					if (midiVelocity > 0) midiVelocity--;
+					break;
+			}
 			return true;
 		case ACTION_LEFT:
-			midiNote = midiNote >= 12 ? midiNote - 12 : 0;
+			midiField = (midiField + 2) % 3;
 			return true;
 		case ACTION_RIGHT:
-			midiNote = midiNote <= 127 - 12 ? midiNote + 12 : 127;
+			midiField = (midiField + 1) % 3;
 			return true;
 		case ACTION_SELECT:
 			if (cursorIndex < layoutElements.size()) {
 				uint8_t pin = layoutElements[cursorIndex].parameters.value;
 				KeyMapping& mapping = Storage::getInstance().getKeyMapping();
+				uint8_t note = 0;
+				if (midiNoteIdx >= 0) {
+					note = (uint8_t)((midiOctave + 1) * 12 + midiNoteIdx);
+					if (note > 127) note = 127;
+				}
 				if (pin >= mapping.midiNotes_count) mapping.midiNotes_count = pin + 1;
-				mapping.midiNotes[pin] = midiNote;
+				mapping.midiNotes[pin] = note;
+				if (pin >= mapping.midiVelocities_count) mapping.midiVelocities_count = pin + 1;
+				mapping.midiVelocities[pin] = midiVelocity;
 				persistMidiNoteToConfig(pin);
 				hasChanges = true;
-				midiNoteSnapshot = midiNote;
 			}
 			mode = REMAP_LAYOUT;
 			return true;
 		case ACTION_BACK:
-			midiNote = midiNoteSnapshot;
 			mode = REMAP_LAYOUT;
 			return true;
 		default:
@@ -989,13 +1029,34 @@ void RemapScreen::drawKbdModifier() {
 }
 
 void RemapScreen::drawMidi() {
-	char lineBuf[22];
+	char buf[8];
 
-	getRenderer()->drawText(0, 0, "MIDI note");
+	getRenderer()->drawText((21 - (int)strlen("MIDI remap")) / 2, 0, "MIDI remap");
 
-	snprintf(lineBuf, sizeof(lineBuf), "%d (0-127)", midiNote);
-	getRenderer()->drawText((21 - strlen(lineBuf)) / 2, 3, lineBuf);
-	getRenderer()->drawText(2, 6, "L/R:oct B1:ok B2:back");
+	// Three side-by-side fields, laid out like the LED color spinner: labels
+	// on row 2, values on row 3, caret under the focused field on row 4.
+	getRenderer()->drawText(2, 2, "Note");
+	getRenderer()->drawText(9, 2, "Oct");
+	getRenderer()->drawText(15, 2, "Vel");
+
+	if (midiNoteIdx >= 0)
+		snprintf(buf, sizeof(buf), "%s", midiPitchNames[midiNoteIdx]);
+	else
+		snprintf(buf, sizeof(buf), "None");
+	getRenderer()->drawText(4 - (int)(strlen(buf) / 2), 3, buf);
+
+	snprintf(buf, sizeof(buf), "%d", midiOctave);
+	getRenderer()->drawText(10 - (int)(strlen(buf) / 2), 3, buf);
+
+	snprintf(buf, sizeof(buf), "%d", midiVelocity);
+	getRenderer()->drawText(16 - (int)(strlen(buf) / 2), 3, buf);
+
+	static const uint8_t caretX[3] = {4, 10, 16};
+	getRenderer()->drawText(caretX[midiField], 4, "^");
+
+	// Hints (rows 6-7), matching the LED color spinner.
+	getRenderer()->drawText(2, 6, CHAR_UP CHAR_DOWN ":val " CHAR_LEFT CHAR_RIGHT ":field");
+	getRenderer()->drawText(3, 7, "B1:set B2:back");
 }
 
 void RemapScreen::drawScreen() {

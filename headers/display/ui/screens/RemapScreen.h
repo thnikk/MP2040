@@ -18,7 +18,8 @@
 //     controls (dpad directions + buttons B1..A2); selecting one removes it.
 //     "+ Add Button" opens the action browser, where picking a control toggles
 //     its bit and returns to the manage screen so the list stays current.
-//   - MIDI: set the pin's MIDI note (0-127).
+//   - MIDI: three spinners set the pin's note (pitch class + octave, or
+//     "None" to clear) and per-pin velocity.
 //
 // Unlike GP2040-th, MP2040 has no GpioAction concept: keyboard pins hold a
 // keycode + modifier mask, gamepad pins hold a control bitmask, and MIDI pins
@@ -53,6 +54,12 @@ class RemapScreen : public GPScreen {
 		// prompt instead of being silently saved. Returns the exit target or
 		// -1 (prompt shown).
 		int8_t requestClose() override;
+		// Repeat UP/DOWN while scrubbing a MIDI spinner.
+		bool wantsNavRepeat(uint8_t action) {
+			if (screenIsPrompting) return false;
+			if (mode != REMAP_MIDI) return false;
+			return action == ACTION_UP || action == ACTION_DOWN;
+		}
 	protected:
 		virtual void drawScreen();
 	private:
@@ -81,8 +88,13 @@ class RemapScreen : public GPScreen {
 		uint16_t kbdCategoryIndex = 0;
 		uint8_t kbdModifierIndex = 0;
 
-		uint8_t midiNote = 0;
-		uint8_t midiNoteSnapshot = 0;
+		// MIDI editor state (three spinners: note pitch class, octave, and
+		// per-pin velocity). midiNoteIdx -1 = None (note 0, pin silent);
+		// midiVelocity 0 = use the global velocity.
+		uint8_t midiField = 0;
+		int8_t midiNoteIdx = -1;
+		int8_t midiOctave = 4;
+		uint8_t midiVelocity = 0;
 
 		InputMode currentMode;
 		bool returnToMenu = false;
