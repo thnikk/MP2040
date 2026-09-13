@@ -53,6 +53,19 @@ static const ActionCategory actionCategories[] = {
 
 static const uint8_t actionCategoryCount = sizeof(actionCategories) / sizeof(actionCategories[0]);
 
+// The set controls of a mask, in browse order (D-Pad then Buttons). Out holds
+// every possible control (4 dpad + 14 buttons); returns the count.
+static uint8_t collectSetActions(uint32_t mask, ActionEntry* out) {
+	uint8_t n = 0;
+	for (uint8_t c = 0; c < actionCategoryCount; c++) {
+		for (uint8_t i = 0; i < actionCategories[c].count; i++) {
+			if (mask & actionCategories[c].entries[i].bit)
+				out[n++] = actionCategories[c].entries[i];
+		}
+	}
+	return n;
+}
+
 // --- Keyboard keycode browser (same table as GP2040-th) -------------------
 
 struct KeyEntry {
@@ -189,6 +202,7 @@ void RemapScreen::init() {
 
 	actionCategory = 0;
 	actionCategoryIndex = 0;
+	gpManageIndex = 0;
 	kbdManageIndex = 0;
 	kbdPendingKeycode = 0;
 	kbdCategory = 0;
@@ -233,12 +247,13 @@ int8_t RemapScreen::update() {
 
 int8_t RemapScreen::handleNavigation(uint8_t action) {
 	switch (mode) {
-		case REMAP_LAYOUT:        updateLayout(action); break;
-		case REMAP_ACTION_SELECT: updateActionSelect(action); break;
-		case REMAP_KBD_MANAGE:    updateKbdManage(action); break;
-		case REMAP_KBD_SELECT:    updateKbdSelect(action); break;
-		case REMAP_KBD_MODIFIER:  updateKbdModifier(action); break;
-		case REMAP_MIDI:          updateMidi(action); break;
+		case REMAP_LAYOUT:          updateLayout(action); break;
+		case REMAP_GAMEPAD_MANAGE:  updateGamepadManage(action); break;
+		case REMAP_ACTION_SELECT:   updateActionSelect(action); break;
+		case REMAP_KBD_MANAGE:      updateKbdManage(action); break;
+		case REMAP_KBD_SELECT:      updateKbdSelect(action); break;
+		case REMAP_KBD_MODIFIER:    updateKbdModifier(action); break;
+		case REMAP_MIDI:            updateMidi(action); break;
 	}
 	return -1;
 }
@@ -279,7 +294,7 @@ bool RemapScreen::updateLayout(uint8_t action) {
 			} else if (currentMode == INPUT_MODE_MIDI) {
 				enterMidi();
 			} else {
-				enterActionSelect();
+				enterGamepadManage();
 			}
 			return true;
 		case ACTION_BACK:
@@ -288,6 +303,11 @@ bool RemapScreen::updateLayout(uint8_t action) {
 		default:
 			return false;
 	}
+}
+
+void RemapScreen::enterGamepadManage() {
+	mode = REMAP_GAMEPAD_MANAGE;
+	gpManageIndex = 0;
 }
 
 void RemapScreen::enterActionSelect() {
@@ -319,6 +339,36 @@ void RemapScreen::clearAction() {
 	hasChanges = true;
 }
 
+bool RemapScreen::updateGamepadManage(uint8_t action) {
+	if (cursorIndex >= layoutElements.size()) return false;
+	uint8_t pin = layoutElements[cursorIndex].parameters.value;
+	uint32_t mask = Storage::getInstance().getGamepadMask(pin);
+	ActionEntry setActions[18];
+	uint8_t setCount = collectSetActions(mask, setActions);
+	uint16_t itemCount = setCount + 1; // +1 = Add
+
+	switch (action) {
+		case ACTION_UP:
+			if (gpManageIndex > 0) gpManageIndex--;
+			return true;
+		case ACTION_DOWN:
+			if (gpManageIndex < itemCount - 1) gpManageIndex++;
+			return true;
+		case ACTION_SELECT:
+			if (gpManageIndex < setCount) {
+				toggleAction(setActions[gpManageIndex].bit);
+			} else {
+				enterActionSelect();
+			}
+			return true;
+		case ACTION_BACK:
+			mode = REMAP_LAYOUT;
+			return true;
+		default:
+			return false;
+	}
+}
+
 bool RemapScreen::updateActionSelect(uint8_t action) {
 	uint16_t catSize = actionCategories[actionCategory].count + 1; // +1 = Clear
 
@@ -348,9 +398,13 @@ bool RemapScreen::updateActionSelect(uint8_t action) {
 			} else {
 				clearAction();
 			}
+			// Drop back to the manage screen so the updated assignment list
+			// (and any controls that were toggled off) is visible immediately.
+			gpManageIndex = 0;
+			mode = REMAP_GAMEPAD_MANAGE;
 			return true;
 		case ACTION_BACK:
-			mode = REMAP_LAYOUT;
+			mode = REMAP_GAMEPAD_MANAGE;
 			return true;
 		default:
 			return false;
@@ -703,6 +757,14 @@ void RemapScreen::drawActionSelect() {
 		actionCategory + 1, actionCategoryCount);
 	getRenderer()->drawText(0, 0, lineBuf);
 
+	// Mark controls already assigned to the selected pin so toggling them
+	// (on or off) is legible while browsing.
+	uint32_t mask = 0;
+	if (cursorIndex < layoutElements.size()) {
+		uint8_t pin = layoutElements[cursorIndex].parameters.value;
+		mask = Storage::getInstance().getGamepadMask(pin);
+	}
+
 	uint16_t catSize = actionCategories[actionCategory].count + 1; // +1 = Clear
 	uint8_t pageSize = 4;
 	uint16_t page = actionCategoryIndex / pageSize;
@@ -715,6 +777,8 @@ void RemapScreen::drawActionSelect() {
 		getRenderer()->drawText(1, 2 + i, (idx == actionCategoryIndex) ? CHAR_RIGHT : " ");
 		if (idx < actionCategories[actionCategory].count) {
 			getRenderer()->drawText(2, 2 + i, actionCategories[actionCategory].entries[idx].name);
+			if (mask & actionCategories[actionCategory].entries[idx].bit)
+				getRenderer()->drawText(10, 2 + i, "*");
 		} else {
 			getRenderer()->drawText(2, 2 + i, "Clear");
 		}
@@ -722,6 +786,42 @@ void RemapScreen::drawActionSelect() {
 
 	if (catSize > pageSize) {
 		uint16_t totalPages = (catSize + pageSize - 1) / pageSize;
+		snprintf(lineBuf, sizeof(lineBuf), "Page %d/%d", page + 1, totalPages);
+		getRenderer()->drawText(11, 7, lineBuf);
+	}
+}
+
+void RemapScreen::drawGamepadManage() {
+	if (cursorIndex >= layoutElements.size()) return;
+	char lineBuf[22];
+
+	uint8_t pin = layoutElements[cursorIndex].parameters.value;
+	uint32_t mask = Storage::getInstance().getGamepadMask(pin);
+	ActionEntry setActions[18];
+	uint8_t setCount = collectSetActions(mask, setActions);
+	uint16_t itemCount = setCount + 1; // +1 = Add
+
+	getRenderer()->drawText(0, 0, "Button mapping:");
+
+	uint8_t pageSize = 4;
+	uint16_t page = gpManageIndex / pageSize;
+	uint16_t pageStart = page * pageSize;
+	uint8_t onPage = itemCount - pageStart;
+	if (onPage > pageSize) onPage = pageSize;
+
+	for (uint8_t i = 0; i < onPage; i++) {
+		uint16_t idx = pageStart + i;
+		getRenderer()->drawText(1, 2 + i, (idx == gpManageIndex) ? CHAR_RIGHT : " ");
+		if (idx < setCount) {
+			getRenderer()->drawText(3, 2 + i, "x");
+			getRenderer()->drawText(5, 2 + i, setActions[idx].name);
+		} else {
+			getRenderer()->drawText(3, 2 + i, "+ Add Button");
+		}
+	}
+
+	if (itemCount > pageSize) {
+		uint16_t totalPages = (itemCount + pageSize - 1) / pageSize;
 		snprintf(lineBuf, sizeof(lineBuf), "Page %d/%d", page + 1, totalPages);
 		getRenderer()->drawText(11, 7, lineBuf);
 	}
@@ -819,12 +919,13 @@ void RemapScreen::drawMidi() {
 
 void RemapScreen::drawScreen() {
 	switch (mode) {
-		case REMAP_LAYOUT:        drawLayout(); break;
-		case REMAP_ACTION_SELECT: drawActionSelect(); break;
-		case REMAP_KBD_MANAGE:    drawKbdManage(); break;
-		case REMAP_KBD_SELECT:    drawKbdSelect(); break;
-		case REMAP_KBD_MODIFIER:  drawKbdModifier(); break;
-		case REMAP_MIDI:          drawMidi(); break;
+		case REMAP_LAYOUT:          drawLayout(); break;
+		case REMAP_GAMEPAD_MANAGE:  drawGamepadManage(); break;
+		case REMAP_ACTION_SELECT:   drawActionSelect(); break;
+		case REMAP_KBD_MANAGE:      drawKbdManage(); break;
+		case REMAP_KBD_SELECT:      drawKbdSelect(); break;
+		case REMAP_KBD_MODIFIER:    drawKbdModifier(); break;
+		case REMAP_MIDI:            drawMidi(); break;
 	}
 }
 

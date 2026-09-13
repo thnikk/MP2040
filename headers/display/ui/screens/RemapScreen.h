@@ -14,9 +14,10 @@
 //   - Keyboard: manage the pin's keycode + modifier (add / clear), browse key
 //     categories (letters, numbers, punctuation, nav, function, numpad,
 //     system, media), then pick a modifier preset.
-//   - Gamepad (XInput / Switch Pro): assign a gamepad control mask (dpad
-//     directions + buttons B1..A2). Selecting toggles a control bit; "Clear"
-//     zeroes the mask.
+//   - Gamepad (XInput / Switch Pro): a manage screen lists the pin's assigned
+//     controls (dpad directions + buttons B1..A2); selecting one removes it.
+//     "+ Add Button" opens the action browser, where picking a control toggles
+//     its bit and returns to the manage screen so the list stays current.
 //   - MIDI: set the pin's MIDI note (0-127).
 //
 // Unlike GP2040-th, MP2040 has no GpioAction concept: keyboard pins hold a
@@ -25,6 +26,7 @@
 // modifierMasks / midiNotes) or the global GamepadMapping, then saves.
 enum RemapMode {
 	REMAP_LAYOUT,
+	REMAP_GAMEPAD_MANAGE,
 	REMAP_ACTION_SELECT,
 	REMAP_KBD_MANAGE,
 	REMAP_KBD_SELECT,
@@ -61,6 +63,7 @@ class RemapScreen : public GPScreen {
 
 		uint8_t actionCategory = 0;
 		uint16_t actionCategoryIndex = 0;
+		uint8_t gpManageIndex = 0;
 
 		bool hasChanges = false;
 
@@ -76,6 +79,7 @@ class RemapScreen : public GPScreen {
 		InputMode currentMode;
 		bool returnToMenu = false;
 
+		void enterGamepadManage();
 		void enterActionSelect();
 		void toggleAction(uint32_t controlBit);
 		void clearAction();
@@ -92,6 +96,7 @@ class RemapScreen : public GPScreen {
 		void persistMidiNoteToConfig(uint8_t pin);
 
 		bool updateLayout(uint8_t action);
+		bool updateGamepadManage(uint8_t action);
 		bool updateActionSelect(uint8_t action);
 		bool updateKbdManage(uint8_t action);
 		bool updateKbdSelect(uint8_t action);
@@ -101,6 +106,7 @@ class RemapScreen : public GPScreen {
 		int8_t findNearestPin(int8_t dirX, int8_t dirY);
 
 		void drawLayout();
+		void drawGamepadManage();
 		void drawActionSelect();
 		void drawKbdManage();
 		void drawKbdSelect();
