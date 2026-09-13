@@ -31,6 +31,10 @@
 // Sentinel for LedPreview.statusLedBrightnessMaximum: "leave the maximum
 // untouched". Used by previews that don't carry the value.
 #define LED_PREVIEW_MAX_UNSET 0xFFFFFFFF
+// Sentinel for LedPreview.statusLedColor: "no override". The status LED keeps
+// showing its input-mode color. Used by previews that don't carry a color
+// (web config, boot cue, etc.).
+#define LED_PREVIEW_STATUS_COLOR_UNSET 0xFFFFFFFF
 
 // Live LED options pushed from the web config (core 0) to the running LED
 // controller (core 1). Only user-tunable scalars; board properties are
@@ -59,6 +63,9 @@ struct LedPreview
     // Mode indicator LED brightness cap (0-255). LED_PREVIEW_MAX_UNSET =
     // leave untouched.
     uint32_t statusLedBrightnessMaximum;
+    // Mode indicator LED color override (mini-menu hex color spinner preview).
+    // LED_PREVIEW_STATUS_COLOR_UNSET = no override (input-mode color).
+    uint32_t statusLedColor;
     // Per-key colors for custom mode. A value of 0 (or no entry) uses Custom
     // mode's colorNormalByMode[0] / colorPressedByMode[0].
     uint32_t ledNormalColorCount;

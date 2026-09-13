@@ -668,6 +668,12 @@ void LedController::updateStatusLed()
     else if (inputMode == INPUT_MODE_PS5)
         color = STATUS_LED_COLOR_PS5;
 
+    // Mini-menu color preview: while scrubbing a hex color spinner the status
+    // LED shows the edited color. Cleared (back to the input-mode color) when
+    // the spinner is left, via a preview carrying the sentinel.
+    if (statusLedColorOverride != LED_PREVIEW_STATUS_COLOR_UNSET)
+        color = statusLedColorOverride;
+
     uint32_t minDim = statusLedBrightnessMinimum;
     uint32_t maxDim = statusLedBrightnessMaximum;
     if (minDim > maxDim) minDim = maxDim; // a floor above the cap is nonsense
@@ -756,6 +762,15 @@ void LedController::applyLedPreview(const LedPreview& preview)
         statusLedBrightnessMaximum = preview.statusLedBrightnessMaximum > 255
             ? 255 : preview.statusLedBrightnessMaximum;
         lastStatusColor = 0xFFFFFFFF; // force a re-show so the cap applies now
+    }
+    // Status LED color override (mini-menu hex color spinner scrub);
+    // LED_PREVIEW_STATUS_COLOR_UNSET clears it back to the input-mode color.
+    const uint32_t newStatusOverride = preview.statusLedColor != LED_PREVIEW_STATUS_COLOR_UNSET
+        ? preview.statusLedColor : LED_PREVIEW_STATUS_COLOR_UNSET;
+    if (newStatusOverride != statusLedColorOverride)
+    {
+        statusLedColorOverride = newStatusOverride;
+        lastStatusColor = 0xFFFFFFFF; // force a re-show so the override applies now
     }
     ledLastActivityMillis = to_ms_since_boot(get_absolute_time());
     ledState = LedState::ON;

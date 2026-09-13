@@ -160,6 +160,11 @@ class MainMenuScreen : public GPScreen {
 		// visible immediately (MP2040's LedPreview pipeline replaces GP2040-th's
 		// setPreviewColor).
 		void previewLedState();
+		// Discard any live LED preview, returning the strip and the status LED
+		// override to the saved config. Called when leaving a hex color spinner
+		// or tearing the menu down, so the mode indicator's override doesn't
+		// linger.
+		void clearStatusLedPreview();
 
 		#define INPUT_MODE_ENTRIES(name, value) {name##_NAME, NULL, nullptr, std::bind(&MainMenuScreen::currentInputMode, this), std::bind(&MainMenuScreen::selectInputMode, this), value},
 		#define SOCD_MODE_ENTRIES(name, value)  {name##_NAME, NULL, nullptr, std::bind(&MainMenuScreen::currentSOCDMode, this), std::bind(&MainMenuScreen::selectSOCDMode, this), value},

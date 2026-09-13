@@ -253,6 +253,9 @@ void MainMenuScreen::init() {
 }
 
 void MainMenuScreen::shutdown() {
+    // If the menu is closed while inside a color spinner, clear the status LED
+    // preview override so the input-mode color returns.
+    clearStatusLedPreview();
     clearElements();
     gpMenu = nullptr;
     exitToScreen = -1;
@@ -458,6 +461,10 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                             currentSpinnerUnit = 0;
                         }
                     }
+                    // Entering a hex color editor shows its color on the status
+                    // LED right away, before any nibble is scrubbed.
+                    if (currentMenu == &colorNormalMenu || currentMenu == &colorPressedMenu)
+                        previewLedState();
                     gpMenu->setMenuData(currentMenu);
                     gpMenu->setMenuTitle(menuBackStack.back().menu->at(menuBackStack.back().index).label);
                     menuIndex = 0;
@@ -486,6 +493,8 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
             break;
         case MENU_ACTION_BACK:
             if (!screenIsPrompting) {
+                const bool leavingColorMenu =
+                    currentMenu == &colorNormalMenu || currentMenu == &colorPressedMenu;
                 if (isSpinnerItem)
                     revertSpinnerValue();
                 if (!menuBackStack.empty()) {
@@ -496,6 +505,10 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                     changeIndex = true;
                     gpMenu->setMenuData(currentMenu);
                     gpMenu->setMenuTitle(back.title);
+                    // Leaving a hex color editor: drop the status LED preview
+                    // override so the input-mode color returns.
+                    if (leavingColorMenu)
+                        clearStatusLedPreview();
                 } else {
                     exitToScreen = DisplayMode::BUTTONS;
                     exitToScreenBeforePrompt = DisplayMode::BUTTONS;
@@ -922,19 +935,15 @@ void MainMenuScreen::saveSpinnerValue() {
             prevColorNormal = updateColorNormal;
             s.getLedOptions().colorNormalByMode[updateAnimationIndex] = updateColorNormal;
             s.save(true);
-            LedPreview preview;
-            s.buildLedPreviewFromConfig(preview);
-            s.publishLedPreview(preview);
         }
+        clearStatusLedPreview();
     } else if (currentMenu == &colorPressedMenu) {
         if (spinnerValueSnapshot != updateColorPressed) {
             prevColorPressed = updateColorPressed;
             s.getLedOptions().colorPressedByMode[updateAnimationIndex] = updateColorPressed;
             s.save(true);
-            LedPreview preview;
-            s.buildLedPreviewFromConfig(preview);
-            s.publishLedPreview(preview);
         }
+        clearStatusLedPreview();
     }
 }
 
@@ -977,5 +986,19 @@ void MainMenuScreen::previewLedState() {
         preview.colorNormalByMode[mode] = updateColorNormal;
         preview.colorPressedByMode[mode] = updateColorPressed;
     }
+    // Mirror the edited color onto the status LED while scrubbing a hex color
+    // spinner. Other previews keep the sentinel, which clears any active
+    // override back to the input-mode color.
+    if (currentMenu == &colorNormalMenu)
+        preview.statusLedColor = updateColorNormal;
+    else if (currentMenu == &colorPressedMenu)
+        preview.statusLedColor = updateColorPressed;
+    s.publishLedPreview(preview);
+}
+
+void MainMenuScreen::clearStatusLedPreview() {
+    Storage& s = Storage::getInstance();
+    LedPreview preview;
+    s.buildLedPreviewFromConfig(preview);
     s.publishLedPreview(preview);
 }

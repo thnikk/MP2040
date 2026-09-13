@@ -117,6 +117,11 @@ private:
     // Mode indicator LED brightness cap (0-255) when awake. Runtime override
     // of the board's STATUS_LED_BRIGHTNESS_DEFAULT.
     uint32_t statusLedBrightnessMaximum;
+    // Mini-menu color preview override (LedPreview.statusLedColor): while the
+    // user scrubs a hex color spinner the status LED shows the edited color
+    // instead of the input-mode color. 0xFFFFFFFF (LED_PREVIEW_STATUS_COLOR_UNSET)
+    // = none.
+    uint32_t statusLedColorOverride = 0xFFFFFFFF;
     // Profile-change flash animation state: when the active profile changes,
     // the status LED blinks white once per profile number (1-4) then returns
     // to the mode color. Matches GP2040-th's BoardLedRgb profile blink.

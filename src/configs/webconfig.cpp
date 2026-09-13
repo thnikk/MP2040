@@ -808,6 +808,7 @@ std::string setLedPreview()
     preview.statusLedEnabled = LED_PREVIEW_STATUS_UNSET;
     preview.statusLedBrightnessMinimum = LED_PREVIEW_MIN_UNSET;
     preview.statusLedBrightnessMaximum = LED_PREVIEW_MAX_UNSET;
+    preview.statusLedColor = LED_PREVIEW_STATUS_COLOR_UNSET;
     JsonObject led = doc["led"];
     if (!led.isNull())
     {

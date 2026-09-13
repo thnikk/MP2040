@@ -4502,6 +4502,7 @@ void Storage::buildLedPreviewFromConfig(LedPreview& preview)
     preview.statusLedEnabled = lo.statusLedEnabled != 0 ? 1 : 0;
     preview.statusLedBrightnessMinimum = lo.statusLedBrightnessMinimum;
     preview.statusLedBrightnessMaximum = lo.statusLedBrightnessMaximum;
+    preview.statusLedColor = LED_PREVIEW_STATUS_COLOR_UNSET;
     preview.ledNormalColorCount = km.ledNormalColors_count;
     for (Pin_t pin = 0; pin < (Pin_t)MAX_KEYS && pin < (Pin_t)km.ledNormalColors_count; pin++)
         preview.ledNormalColors[pin] = km.ledNormalColors[pin];
