@@ -4,6 +4,9 @@
 // Spawns a mock Vite server (www/ + server/app.js) and a headless Chromium,
 // then drives it over CDP with Node's built-in WebSocket (no deps). Captures
 // full-page PNGs of the Layout page in every LED mode, in light and dark.
+// The viewport auto-fits the page content height (no blank space on boards
+// without an LED section), and the theme is baked into each filename
+// (layout-<board>-<theme>.png).
 //
 // Usage:
 //   node tools/screenshots.mjs                      # MacroPad, default LED mode
@@ -44,6 +47,9 @@ const THEME = arg('--theme', null); // null = keep 'auto' default
 const LED_MODE = arg('--led-mode', null); // e.g. 'cycle', 'rain'; default = board's default
 const MODAL = arg('--modal', null); // e.g. 'key'
 const SCALE = Math.max(1, parseInt(arg('--scale', '1'), 10) || 1);
+// The script always forces a theme (dark unless --theme is given), so the
+// effective theme is what goes in every output filename.
+const theme = THEME || 'dark';
 mkdirSync(OUT, { recursive: true });
 
 // ---- helpers ------------------------------------------------------------
@@ -147,6 +153,32 @@ async function screenshot(cdp, name) {
   const file = path.join(OUT, name);
   writeFileSync(file, Buffer.from(shot.data, 'base64'));
   console.log(`  saved ${path.relative(ROOT, file)} (${(Buffer.byteLength(shot.data, 'base64') / 1024).toFixed(0)} KB)`);
+}
+
+// Resize the viewport to the actual page content extent so screenshots have
+// no blank space (e.g. boards without an LED section). Width stays at the
+// design width. Can't use document.scrollHeight: main { flex: 1 } stretches to
+// fill the viewport, so scrollHeight tracks the viewport height, not the
+// content. Measure the visible .page rect instead. Re-measure after each
+// resize since shrinking the viewport can reflow.
+async function fitViewport(cdp) {
+  let lastH = 0;
+  for (let i = 0; i < 4; i++) {
+    const { w, h } = await cdp.evalJs(`(() => {
+      const page = document.querySelector('.page:not([hidden])');
+      const main = document.querySelector('main');
+      const rect = page && page.getBoundingClientRect();
+      const pad = main ? (parseFloat(getComputedStyle(main).paddingBottom) || 0) : 0;
+      const h = rect ? Math.ceil(rect.bottom + pad) : document.documentElement.scrollHeight;
+      return { w: document.documentElement.scrollWidth, h };
+    })()`);
+    if (i > 0 && Math.abs(h - lastH) < 2) return;
+    lastH = h;
+    await cdp.send('Emulation.setDeviceMetricsOverride', {
+      width: w, height: h, deviceScaleFactor: SCALE, mobile: false,
+    });
+    await sleep(100);
+  }
 }
 
 // ---- targets ------------------------------------------------------------
@@ -265,7 +297,7 @@ async function captureKeyModal(cdp) {
     await sleep(250);
     const rect = await cdp.evalJs(MODAL_RECT);
     console.log(`key modal (${name}):`);
-    await screenshotModal(cdp, rect, `keymodal-${name}-${BOARD}.png`);
+    await screenshotModal(cdp, rect, `keymodal-${name}-${BOARD}-${theme}.png`);
   }
 }
 
@@ -327,10 +359,12 @@ async function main() {
       console.log(`layout (LED mode ${LED_MODE}):`);
       await cdp.evalJs(SET_LED_MODE(value));
       await sleep(900); // let the LedSim animate a frame or two
-      await screenshot(cdp, `layout-${LED_MODE}-${BOARD}.png`);
+      await fitViewport(cdp);
+      await screenshot(cdp, `layout-${LED_MODE}-${BOARD}-${theme}.png`);
     } else {
       console.log('layout (default):');
-      await screenshot(cdp, `layout-${BOARD}.png`);
+      await fitViewport(cdp);
+      await screenshot(cdp, `layout-${BOARD}-${theme}.png`);
     }
 
     cdp.ws.close();
