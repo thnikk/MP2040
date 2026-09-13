@@ -208,6 +208,13 @@ static std::string modifierPrefix(uint8_t mask) {
 	return prefix;
 }
 
+// MIDI note number (0-127) -> note name, matching the web UI's midiNoteName()
+// (e.g. 60 = "C4", 58 = "A#3", 127 = "G9").
+static std::string midiNoteToName(uint8_t note) {
+	static const char* names[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+	return std::string(names[note % 12]) + std::to_string((int)note / 12 - 1);
+}
+
 void ButtonLayoutScreen::init() {
 	isInputHistoryEnabled = getDisplayOptions().inputHistoryEnabled;
 	inputHistoryX = getDisplayOptions().inputHistoryEnabled ? 0 : 0;
@@ -221,6 +228,7 @@ void ButtonLayoutScreen::init() {
 	historyString = "";
 	inputHistory.clear();
 	lastInput.fill(false);
+	lastKeyedState.clear();
 
 	// Layout coordinates map 1:1 to the panel (authored for 128x64): use the
 	// full panel as the viewport so no scaling/offset is applied at draw time.
@@ -426,13 +434,16 @@ void ButtonLayoutScreen::processInputHistory() {
 	std::deque<std::string> pressed;
 
 	// Current input snapshot. Gamepad modes resolve the 22 controls through the
-	// assembled gamepad state (dpad exact-match + buttons); keyboard mode shows
-	// the actual pressed keycodes instead. Web config resolves to the board's
-	// default input mode so the history matches a normal boot.
+	// assembled gamepad state (dpad exact-match + buttons); keyboard and MIDI
+	// modes show the actual held keycodes / notes instead (their gamepad slots
+	// are always empty). Web config resolves to the board's default input mode
+	// so the history matches a normal boot.
 	const InputMode displayMode = effectiveInputMode();
 	const bool keyboardMode = (displayMode == INPUT_MODE_KEYBOARD);
+	const bool midiMode = (displayMode == INPUT_MODE_MIDI);
+	const bool gamepadMode = !keyboardMode && !midiMode;
 	GamepadState state;
-	if (!keyboardMode) {
+	if (gamepadMode) {
 		buildGamepadState(state);
 		// Resolve the dpad through the configured SOCD cleaner so the history
 		// reflects what the console receives (L+R collapses to neutral, etc.).
@@ -441,57 +452,41 @@ void ButtonLayoutScreen::processInputHistory() {
 	}
 
 	std::array<bool, INPUT_HISTORY_MAX_INPUTS> currentInput = {
-		!keyboardMode && (state.dpad == GAMEPAD_MASK_UP),
-		!keyboardMode && (state.dpad == GAMEPAD_MASK_DOWN),
-		!keyboardMode && (state.dpad == GAMEPAD_MASK_LEFT),
-		!keyboardMode && (state.dpad == GAMEPAD_MASK_RIGHT),
-		!keyboardMode && (state.dpad == (GAMEPAD_MASK_UP | GAMEPAD_MASK_LEFT)),
-		!keyboardMode && (state.dpad == (GAMEPAD_MASK_UP | GAMEPAD_MASK_RIGHT)),
-		!keyboardMode && (state.dpad == (GAMEPAD_MASK_DOWN | GAMEPAD_MASK_LEFT)),
-		!keyboardMode && (state.dpad == (GAMEPAD_MASK_DOWN | GAMEPAD_MASK_RIGHT)),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_B1) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_B2) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_B3) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_B4) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_L1) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_R1) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_L2) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_R2) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_S1) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_S2) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_L3) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_R3) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_A1) != 0),
-		!keyboardMode && ((state.buttons & GAMEPAD_MASK_A2) != 0),
+		gamepadMode && (state.dpad == GAMEPAD_MASK_UP),
+		gamepadMode && (state.dpad == GAMEPAD_MASK_DOWN),
+		gamepadMode && (state.dpad == GAMEPAD_MASK_LEFT),
+		gamepadMode && (state.dpad == GAMEPAD_MASK_RIGHT),
+		gamepadMode && (state.dpad == (GAMEPAD_MASK_UP | GAMEPAD_MASK_LEFT)),
+		gamepadMode && (state.dpad == (GAMEPAD_MASK_UP | GAMEPAD_MASK_RIGHT)),
+		gamepadMode && (state.dpad == (GAMEPAD_MASK_DOWN | GAMEPAD_MASK_LEFT)),
+		gamepadMode && (state.dpad == (GAMEPAD_MASK_DOWN | GAMEPAD_MASK_RIGHT)),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_B1) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_B2) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_B3) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_B4) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_L1) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_R1) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_L2) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_R2) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_S1) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_S2) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_L3) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_R3) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_A1) != 0),
+		gamepadMode && ((state.buttons & GAMEPAD_MASK_A2) != 0),
 	};
-
-	// Track last input time
-	for (auto b : currentInput) {
-		if (b) { lastInputTime = getMillis(); break; }
-	}
 
 	uint8_t mode = (displayModeLookup.count(displayMode) > 0) ? displayModeLookup.at(displayMode) : 0;
 	if (displayMode == INPUT_MODE_SWITCH_PRO && !Storage::getInstance().getUseNintendoLayout())
 		mode = 2;
 
-	// Check if any new keys have been pressed
-	if (lastInput != currentInput) {
-		if (keyboardMode) {
-			// Keyboard mode: list every held pin's keycode (with modifier prefix).
-			Storage& s = Storage::getInstance();
-			const KeyMask keyState = s.getKeyState();
-			KeyMapping& mapping = s.getKeyMapping();
-			const uint32_t keyCount = s.getKeyCount();
-			for (uint32_t pin = 0; pin < keyCount; pin++) {
-				if (!keyState.test(pin)) continue;
-				uint8_t kc = (pin < mapping.keycodes_count) ? (uint8_t)mapping.keycodes[pin] : 0;
-				if (kc == 0) continue;
-				uint8_t mod = (pin < mapping.modifierMasks_count) ? (uint8_t)mapping.modifierMasks[pin] : 0;
-				std::string name = modifierPrefix(mod) + keycodeToName(kc);
-				if (!name.empty()) pressed.push_back(name);
-			}
-		} else {
+	// Check if any new keys have been pressed.
+	bool inputChanged;
+	if (gamepadMode) {
+		inputChanged = (lastInput != currentInput);
+		if (inputChanged) {
 			// Gamepad mode: map held controls to the console-specific names.
+			lastInput = currentInput;
 			for (uint8_t x = 0; x < INPUT_HISTORY_MAX_INPUTS; x++) {
 				if (currentInput[x]) {
 					std::string inputChar = std::string(displayNames[mode][x]);
@@ -499,11 +494,46 @@ void ButtonLayoutScreen::processInputHistory() {
 				}
 			}
 		}
-		// Update the last keypress array
-		lastInput = currentInput;
+	} else {
+		// Keyboard / MIDI mode: list every held pin's keycode (with modifier
+		// prefix) or MIDI note. The gamepad array can't carry these, so edge
+		// detection compares the joined pressed-name snapshot instead.
+		Storage& s = Storage::getInstance();
+		const KeyMask keyState = s.getKeyState();
+		KeyMapping& mapping = s.getKeyMapping();
+		const uint32_t keyCount = s.getKeyCount();
+		for (uint32_t pin = 0; pin < keyCount; pin++) {
+			if (!keyState.test(pin)) continue;
+			std::string name;
+			if (keyboardMode) {
+				uint8_t kc = (pin < mapping.keycodes_count) ? (uint8_t)mapping.keycodes[pin] : 0;
+				if (kc == 0) continue;
+				uint8_t mod = (pin < mapping.modifierMasks_count) ? (uint8_t)mapping.modifierMasks[pin] : 0;
+				name = modifierPrefix(mod) + keycodeToName(kc);
+			} else {
+				uint8_t note = (pin < mapping.midiNotes_count) ? (uint8_t)mapping.midiNotes[pin] : 0;
+				if (note == 0) continue;
+				name = midiNoteToName(note);
+			}
+			if (!name.empty()) pressed.push_back(name);
+		}
+		std::string snapshot;
+		for (const auto& p : pressed) {
+			if (!snapshot.empty()) snapshot += "+";
+			snapshot += p;
+		}
+		inputChanged = (snapshot != lastKeyedState);
+		lastKeyedState = snapshot;
 	}
 
-	if (pressed.size() > 0) {
+	// Track last input time (keeps the inactivity timeout from firing mid-hold)
+	for (auto b : currentInput) {
+		if (b) { lastInputTime = getMillis(); break; }
+	}
+	if (!gamepadMode && !pressed.empty())
+		lastInputTime = getMillis();
+
+	if (inputChanged && pressed.size() > 0) {
 		std::string newInput;
 		for (const auto &s : pressed) {
 			if (!newInput.empty()) newInput += "+";

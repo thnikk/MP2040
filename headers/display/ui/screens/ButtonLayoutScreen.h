@@ -55,6 +55,10 @@ class ButtonLayoutScreen : public GPScreen {
 		std::string historyString;
 		std::deque<std::string> inputHistory;
 		std::array<bool, INPUT_HISTORY_MAX_INPUTS> lastInput;
+		// Last held-key/note snapshot for keyboard/MIDI modes (gamepad modes use
+		// lastInput). The 22-slot gamepad array is always empty there, so edge
+		// detection compares the joined pressed-name string instead.
+		std::string lastKeyedState;
 		// SOCD cleaner history owned by the display (core 1) so it never races
 		// the gamepad drivers' cleaner state on core 0.
 		SocdHistory socdHistory;
