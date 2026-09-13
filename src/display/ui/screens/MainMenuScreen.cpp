@@ -333,12 +333,8 @@ void MainMenuScreen::setMenu(std::vector<MenuEntry>* menu) {
 }
 
 int8_t MainMenuScreen::update() {
-    // An exit request with staged changes becomes the save prompt.
-    if ((exitToScreen != -1) && (changeRequiresSave || changeRequiresReboot)) {
-        exitToScreenBeforePrompt = exitToScreen;
-        exitToScreen = -1;
-        screenIsPrompting = true;
-    }
+    // Exit requests are resolved in handleNavigation()/requestClose(); this
+    // just surfaces the current exit target (or -1).
     return exitToScreen;
 }
 
@@ -380,7 +376,6 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                 gpMenu->setIndex(menuIndex);
             }
         }
-        isPressed = true;
         return;
     }
     bool changeIndex = false;
@@ -405,7 +400,6 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
             } else {
                 promptChoice = !promptChoice;
             }
-            isPressed = true;
             break;
         case MENU_ACTION_DOWN:
             if (!screenIsPrompting) {
@@ -422,7 +416,6 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
             } else {
                 promptChoice = !promptChoice;
             }
-            isPressed = true;
             break;
         case MENU_ACTION_LEFT:
             if (screenIsPrompting) {
@@ -430,7 +423,6 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
             } else if (isSpinnerItem) {
                 switchSpinnerUnit(-1);
             }
-            isPressed = true;
             break;
         case MENU_ACTION_RIGHT:
             if (screenIsPrompting) {
@@ -438,7 +430,6 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
             } else if (isSpinnerItem) {
                 switchSpinnerUnit(1);
             }
-            isPressed = true;
             break;
         case MENU_ACTION_SELECT:
             if (!screenIsPrompting) {
@@ -506,10 +497,8 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                     } else {
                         exitToScreen = DisplayMode::BUTTONS;
                     }
-                    isPressed = false;
                 }
             }
-            isPressed = true;
             break;
         case MENU_ACTION_BACK:
             if (!screenIsPrompting) {
@@ -532,13 +521,10 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                 } else {
                     exitToScreen = DisplayMode::BUTTONS;
                     exitToScreenBeforePrompt = DisplayMode::BUTTONS;
-                    isPressed = false;
                 }
             } else {
                 screenIsPrompting = false;
-                isPressed = false;
             }
-            isPressed = true;
             break;
         default:
             break;

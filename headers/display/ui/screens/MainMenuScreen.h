@@ -139,7 +139,6 @@ class MainMenuScreen : public GPScreen {
 		void updateMenuNavigation(uint8_t action);
 
 		uint8_t menuIndex = 0;
-		bool isPressed = false;
 		std::vector<MenuEntry>* currentMenu;
 		struct MenuBackEntry {
 			std::vector<MenuEntry>* menu;
