@@ -353,6 +353,18 @@ int8_t MainMenuScreen::handleNavigation(uint8_t action) {
     return exitToScreen;
 }
 
+int8_t MainMenuScreen::requestClose() {
+    // Treat a toggle-close like a root B2: with staged changes, raise the
+    // save prompt instead of tearing the menu down and losing them.
+    exitToScreen = DisplayMode::BUTTONS;
+    exitToScreenBeforePrompt = DisplayMode::BUTTONS;
+    if (changeRequiresSave || changeRequiresReboot) {
+        exitToScreen = -1;
+        screenIsPrompting = true;
+    }
+    return exitToScreen;
+}
+
 void MainMenuScreen::updateMenuNavigation(uint8_t action) {
     if (currentMenu == &infoMenu) {
         // Info page is read-only: B1 (select) or B2 (back) returns to the main
@@ -445,8 +457,10 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                     menuBackStack.push_back({currentMenu, menuIndex, gpMenu->getMenuTitle()});
                     currentMenu = currentMenu->at(menuIndex).submenu;
                     if (currentMenu->size() > 0 && currentMenu->at(0).isSpinner) {
-                        if (currentMenu == &displayTimeoutMenu)
+                        if (currentMenu == &displayTimeoutMenu) {
                             spinnerValueSnapshot = updateDisplaySaverTimeout;
+                            currentSpinnerUnit = 0;
+                        }
                         else if (currentMenu == &histTimeoutMenu)
                             histSpinnerValueSnapshot = updateInputHistoryTimeout;
                         else if (currentMenu == &brightnessMenu)
@@ -484,8 +498,14 @@ void MainMenuScreen::updateMenuNavigation(uint8_t action) {
                     saveOptions();
                 } else {
                     resetOptions();
-                    exitToScreen = DisplayMode::BUTTONS;
-                    exitToScreenBeforePrompt = DisplayMode::BUTTONS;
+                    // Honor the exit that raised the prompt (e.g. Remap) instead
+                    // of always dumping to the button screen.
+                    if (exitToScreenBeforePrompt != -1) {
+                        exitToScreen = exitToScreenBeforePrompt;
+                        exitToScreenBeforePrompt = -1;
+                    } else {
+                        exitToScreen = DisplayMode::BUTTONS;
+                    }
                     isPressed = false;
                 }
             }
@@ -702,8 +722,25 @@ void MainMenuScreen::selectProfile() {
         prevProfile = (uint8_t)Storage::getInstance().getActiveProfile();
         updateProfile = valueToSave;
 
-        if (prevProfile != valueToSave) changeRequiresSave = true;
+        if (prevProfile != valueToSave) {
+            changeRequiresSave = true;
+            // Reload the LED-mode baseline from the newly selected profile so
+            // the Mode menu shows that profile's mode, not the previous
+            // profile's (re-selecting the current profile keeps staged edits).
+            loadProfileLedMode();
+        }
     }
+}
+
+void MainMenuScreen::loadProfileLedMode() {
+    Storage& s = Storage::getInstance();
+    if (updateProfile >= s.getProfileCount()) return;
+    Profile* profile = s.getProfile(updateProfile);
+    if (profile == nullptr) return;
+    uint8_t mode = profile->has_ledMode ? (uint8_t)profile->ledMode : 0;
+    if (mode >= (uint8_t)ledModeCount) mode = 0;
+    prevAnimationIndex = updateAnimationIndex = mode;
+    loadLedBaselines();
 }
 
 int32_t MainMenuScreen::currentProfile() {
@@ -761,24 +798,28 @@ void MainMenuScreen::selectAnimation() {
         // Load the newly selected mode's own brightness/speed/colors into the
         // staged spinners and their baseline so the preview and the spinners
         // reflect that mode's config values, not the previously selected mode's.
-        const LEDOptions& lo = Storage::getInstance().getLedOptions();
-        uint8_t brightness = (uint8_t)(lo.brightnessByMode_count > valueToSave
-            ? lo.brightnessByMode[valueToSave] : lo.brightnessMaximum);
-        uint8_t speed = (uint8_t)(lo.ledSpeeds_count > valueToSave
-            ? lo.ledSpeeds[valueToSave] : lo.ledSpeed);
-        if (speed > 100) speed = 100;
-        uint32_t normal = lo.colorNormalByMode_count > valueToSave
-            ? lo.colorNormalByMode[valueToSave] : lo.colorNormal;
-        uint32_t pressed = lo.colorPressedByMode_count > valueToSave
-            ? lo.colorPressedByMode[valueToSave] : lo.colorPressed;
-        prevBrightness = updateBrightness = brightness;
-        prevSpeed = updateSpeed = speed;
-        prevColorNormal = updateColorNormal = normal;
-        prevColorPressed = updateColorPressed = pressed;
+        loadLedBaselines();
         // Always push a preview so the newly selected mode applies live (and
         // switching back to the saved mode re-applies it).
         previewLedState();
     }
+}
+
+void MainMenuScreen::loadLedBaselines() {
+    const LEDOptions& lo = Storage::getInstance().getLedOptions();
+    uint8_t brightness = (uint8_t)(lo.brightnessByMode_count > updateAnimationIndex
+        ? lo.brightnessByMode[updateAnimationIndex] : lo.brightnessMaximum);
+    uint8_t speed = (uint8_t)(lo.ledSpeeds_count > updateAnimationIndex
+        ? lo.ledSpeeds[updateAnimationIndex] : lo.ledSpeed);
+    if (speed > 100) speed = 100;
+    uint32_t normal = lo.colorNormalByMode_count > updateAnimationIndex
+        ? lo.colorNormalByMode[updateAnimationIndex] : lo.colorNormal;
+    uint32_t pressed = lo.colorPressedByMode_count > updateAnimationIndex
+        ? lo.colorPressedByMode[updateAnimationIndex] : lo.colorPressed;
+    prevBrightness = updateBrightness = brightness;
+    prevSpeed = updateSpeed = speed;
+    prevColorNormal = updateColorNormal = normal;
+    prevColorPressed = updateColorPressed = pressed;
 }
 
 int32_t MainMenuScreen::currentAnimation() {
@@ -914,6 +955,7 @@ void MainMenuScreen::saveSpinnerValue() {
         }
     } else if (currentMenu == &speedMenu) {
         if (speedSpinnerSnapshot != updateSpeed) {
+            commitStagedLedMode();
             prevSpeed = updateSpeed;
             s.getLedOptions().ledSpeeds[updateAnimationIndex] = updateSpeed;
             s.save(true);
@@ -923,6 +965,7 @@ void MainMenuScreen::saveSpinnerValue() {
         }
     } else if (currentMenu == &brightnessMenu) {
         if (brightnessSpinnerSnapshot != updateBrightness) {
+            commitStagedLedMode();
             prevBrightness = updateBrightness;
             s.getLedOptions().brightnessByMode[updateAnimationIndex] = updateBrightness;
             s.save(true);
@@ -932,6 +975,7 @@ void MainMenuScreen::saveSpinnerValue() {
         }
     } else if (currentMenu == &colorNormalMenu) {
         if (spinnerValueSnapshot != updateColorNormal) {
+            commitStagedLedMode();
             prevColorNormal = updateColorNormal;
             s.getLedOptions().colorNormalByMode[updateAnimationIndex] = updateColorNormal;
             s.save(true);
@@ -939,12 +983,46 @@ void MainMenuScreen::saveSpinnerValue() {
         clearStatusLedPreview();
     } else if (currentMenu == &colorPressedMenu) {
         if (spinnerValueSnapshot != updateColorPressed) {
+            commitStagedLedMode();
             prevColorPressed = updateColorPressed;
             s.getLedOptions().colorPressedByMode[updateAnimationIndex] = updateColorPressed;
             s.save(true);
         }
         clearStatusLedPreview();
     }
+    recomputePendingChanges();
+}
+
+void MainMenuScreen::commitStagedLedMode() {
+    Storage& s = Storage::getInstance();
+    if (prevAnimationIndex == updateAnimationIndex) return;
+    s.getLedOptions().ledMode = updateAnimationIndex;
+    // ledMode is per-profile; mirror it so the persisted value stays attached
+    // to the mode it was edited under.
+    Profile* profile = s.getProfile(s.getActiveProfile());
+    if (profile != nullptr) {
+        profile->has_ledMode = true;
+        profile->ledMode = updateAnimationIndex;
+    }
+    prevAnimationIndex = updateAnimationIndex;
+}
+
+void MainMenuScreen::recomputePendingChanges() {
+    changeRequiresSave =
+        (prevInputMode != updateInputMode) ||
+        (prevSocdMode != updateSocdMode) ||
+        (prevDpadMode != updateDpadMode) ||
+        (prevProfile != updateProfile) ||
+        (prevDisplaySaverTimeout != updateDisplaySaverTimeout) ||
+        (prevDisplaySaverMode != updateDisplaySaverMode) ||
+        (prevInputHistoryTimeout != updateInputHistoryTimeout) ||
+        (prevAnimationIndex != updateAnimationIndex) ||
+        (prevBrightness != updateBrightness) ||
+        (prevSpeed != updateSpeed) ||
+        (prevColorNormal != updateColorNormal) ||
+        (prevColorPressed != updateColorPressed);
+    if (!changeRequiresSave)
+        changeRequiresReboot = false;
 }
 
 void MainMenuScreen::revertSpinnerValue() {

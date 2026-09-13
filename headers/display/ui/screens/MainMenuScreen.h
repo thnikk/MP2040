@@ -96,6 +96,13 @@ class MainMenuScreen : public GPScreen {
 		void selectAnimation();
 		int32_t currentAnimation();
 
+		// Load the current updateAnimationIndex mode's brightness/speed/colors
+		// into the staged spinners and their baselines.
+		void loadLedBaselines();
+		// When a profile is selected, load that profile's stored LED mode into
+		// the staged animation index so the Mode menu shows the right mode.
+		void loadProfileLedMode();
+
 		int32_t currentBrightness();
 		int32_t currentSpeed();
 
@@ -107,6 +114,10 @@ class MainMenuScreen : public GPScreen {
 		// Fed by the DisplayController (nav pins / repeat). Returns a target
 		// DisplayMode or -1.
 		int8_t handleNavigation(uint8_t action);
+		// Toggle-close: behave like a root B2 so staged changes hit the save
+		// prompt instead of being silently discarded. Returns the exit target
+		// or -1 (prompt shown).
+		int8_t requestClose() override;
 		// Repeat UP/DOWN only while the current row is a spinner.
 		bool wantsNavRepeat(uint8_t action) {
 			if (screenIsPrompting) return false;
@@ -154,6 +165,13 @@ class MainMenuScreen : public GPScreen {
 		void switchSpinnerUnit(int8_t direction);
 		void saveSpinnerValue();
 		void revertSpinnerValue();
+		// Commit a staged (uncommitted) animation mode when a per-mode spinner
+		// value is saved, so the persisted value stays under the mode it
+		// belongs to.
+		void commitStagedLedMode();
+		// Re-derive the change flags from the prev/update pairs after a spinner
+		// save has synchronized them, so no spurious save prompt appears.
+		void recomputePendingChanges();
 		uint8_t currentSpinnerUnit = 0;
 		// Live LED preview: push the currently-edited LED state to the strip
 		// without persisting. Used while scrubbing spinners so the effect is

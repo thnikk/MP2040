@@ -19,6 +19,9 @@ class GPWidget : public GPGFX_UI {
 		// value scrubbing). Default off; menu screens override for UP/DOWN
 		// when the current row is a spinner.
 		virtual bool wantsNavRepeat(uint8_t action) { (void)action; return false; }
+		// Optional request to close the screen (the menu-toggle hotkey). Returns
+		// a target DisplayMode to switch to, or -1 to stay (e.g. a save prompt).
+		virtual int8_t requestClose() { return -1; }
 
 		void setPosition(uint16_t x, uint16_t y) { this->x = x; this->y = y; }
 

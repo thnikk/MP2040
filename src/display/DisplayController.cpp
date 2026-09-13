@@ -83,7 +83,15 @@ void DisplayController::update() {
 	// A "toggle menu" hotkey (requested by core 0) flips the mini menu; nav
 	// drives it while open.
 	if (Storage::getInstance().consumeMenuToggle()) {
-		if (mode == MAIN_MENU || mode == REMAP) {
+		if (mode == MAIN_MENU) {
+			// Route through the screen so staged changes hit the save prompt
+			// instead of being silently discarded on toggle-close.
+			if (screen != nullptr) {
+				int8_t result = screen->requestClose();
+				if (result >= 0 && result != (int8_t)mode)
+					setMode((DisplayMode)result);
+			}
+		} else if (mode == REMAP) {
 			setMode(BUTTONS);
 		} else if (mode == BUTTONS || mode == SAVER) {
 			setMode(MAIN_MENU);
