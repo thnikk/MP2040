@@ -54,7 +54,13 @@ LED_COLOR = "#bf616a"
 
 # Layout constants (SVG units).
 ICON_SIZE = 160
+# Target cell width; the real cell width is derived from IMAGE_WIDTH so the
+# rows fill the canvas edge-to-edge.
 CELL_WIDTH = 180
+IMAGE_WIDTH = 800
+ROW_GAP = 30
+COLUMN_GAP = 10
+PADDING = 0
 LABEL_GAP = 8
 LABEL_HEIGHT = 20
 HEADING_HEIGHT = 80
@@ -206,13 +212,14 @@ def find_boards():
     return boards
 
 
-def render_variant(boards, mode):
+def render_variant(boards, mode, canvas_width, columns, row_gap, column_gap,
+                   padding):
     """Render the full preview SVG for one color mode."""
     colors = COLOR_SCHEMES[mode]
     text_fill = colors["case"]
     active = [(key, title) for key, title in CATEGORIES if boards[key]]
-    max_count = max(len(boards[key]) for key, _ in active)
-    canvas_width = max_count * CELL_WIDTH
+    content_width = canvas_width - 2 * padding
+    cols = columns if columns else max(1, content_width // CELL_WIDTH)
 
     body = []
     y = TOP_PAD
@@ -227,29 +234,35 @@ def render_variant(boards, mode):
         y += HEADING_HEIGHT
 
         row = boards[key]
-        row_width = len(row) * CELL_WIDTH
-        x_start = (canvas_width - row_width) / 2
-        icons = []
-        for i, (label, svg_path, has_oled, has_leds) in enumerate(row):
-            cx = x_start + i * CELL_WIDTH + CELL_WIDTH / 2
-            icon, vb_w, vb_h = load_board_icon(svg_path, colors, has_oled, has_leds)
-            scale = ICON_SIZE / max(vb_w, vb_h)
-            icons.append((cx, icon, scale, vb_w * scale, vb_h * scale,
-                          label))
-        row_height = max(render_h for *_, render_h, _ in icons)
-        for cx, icon, scale, render_w, render_h, label in icons:
-            icon_x = cx - render_w / 2
-            icon_y = y + (row_height - render_h) / 2
-            body.append(
-                '<g transform="translate(%g,%g) scale(%g)">%s</g>'
-                % (icon_x, icon_y, scale, icon))
-            label_y = y + row_height + LABEL_GAP + LABEL_FONT_SIZE * 0.8
-            body.append(
-                '<text x="%g" y="%g" font-family="%s" font-size="%g" '
-                'fill="%s" text-anchor="middle">%s</text>'
-                % (cx, label_y, FONT_FAMILY, LABEL_FONT_SIZE, text_fill,
-                   escape(label)))
-        y += row_height + LABEL_GAP + LABEL_HEIGHT
+        avail = max(1, (content_width - (cols - 1) * column_gap) / cols)
+        step = avail + column_gap
+        for start in range(0, len(row), cols):
+            chunk = row[start:start + cols]
+            row_width = len(chunk) * step - column_gap
+            x_start = padding + (content_width - row_width) / 2
+            icons = []
+            for i, (label, svg_path, has_oled, has_leds) in enumerate(chunk):
+                cx = x_start + i * step + avail / 2
+                icon, vb_w, vb_h = load_board_icon(svg_path, colors, has_oled, has_leds)
+                scale = min(ICON_SIZE, avail) / max(vb_w, vb_h)
+                icons.append((cx, icon, scale, vb_w * scale, vb_h * scale,
+                              label))
+            row_height = max(render_h for *_, render_h, _ in icons)
+            for cx, icon, scale, render_w, render_h, label in icons:
+                icon_x = cx - render_w / 2
+                icon_y = y + (row_height - render_h) / 2
+                body.append(
+                    '<g transform="translate(%g,%g) scale(%g)">%s</g>'
+                    % (icon_x, icon_y, scale, icon))
+                label_y = y + row_height + LABEL_GAP + LABEL_FONT_SIZE * 0.8
+                body.append(
+                    '<text x="%g" y="%g" font-family="%s" font-size="%g" '
+                    'fill="%s" text-anchor="middle">%s</text>'
+                    % (cx, label_y, FONT_FAMILY, LABEL_FONT_SIZE, text_fill,
+                       escape(label)))
+            y += row_height + LABEL_GAP + LABEL_HEIGHT
+            if start + cols < len(row):
+                y += row_gap
     canvas_height = y + TOP_PAD
 
     return (
@@ -301,7 +314,22 @@ def update_readme(block):
 def main():
     parser = argparse.ArgumentParser(
         description="Regenerate the supported-boards preview image.")
-    parser.parse_args()
+    parser.add_argument(
+        "-w", "--width", type=int, default=IMAGE_WIDTH, metavar="PX",
+        help="canvas width in px (default: %(default)s)")
+    parser.add_argument(
+        "-c", "--columns", type=int, default=5, metavar="N",
+        help="boards per row (default: %(default)s)")
+    parser.add_argument(
+        "-r", "--row-gap", type=int, default=ROW_GAP, metavar="PX",
+        help="gap between wrapped rows within a section (default: %(default)s)")
+    parser.add_argument(
+        "-g", "--column-gap", type=int, default=COLUMN_GAP, metavar="PX",
+        help="gap between columns within a row (default: %(default)s)")
+    parser.add_argument(
+        "-p", "--padding", type=int, default=PADDING, metavar="PX",
+        help="outer padding around the board grid (default: %(default)s)")
+    args = parser.parse_args()
 
     boards = find_boards()
     if not any(boards.values()):
@@ -310,9 +338,11 @@ def main():
     light_path = os.path.join(ASSETS, "supported-boards-light.svg")
     dark_path = os.path.join(ASSETS, "supported-boards.svg")
     with open(light_path, "w", encoding="utf-8") as fh:
-        fh.write(render_variant(boards, "light"))
+        fh.write(render_variant(boards, "light", args.width, args.columns,
+                               args.row_gap, args.column_gap, args.padding))
     with open(dark_path, "w", encoding="utf-8") as fh:
-        fh.write(render_variant(boards, "dark"))
+        fh.write(render_variant(boards, "dark", args.width, args.columns,
+                                args.row_gap, args.column_gap, args.padding))
 
     light_rel = os.path.relpath(light_path, ROOT)
     dark_rel = os.path.relpath(dark_path, ROOT)
