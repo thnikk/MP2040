@@ -43,6 +43,8 @@
 #define TOUCH_GP28 1
 #define TOUCH_GP29 1
 
+#define TOUCH_MARGIN 25  // Increase touch margin for this model since the pads are more sensitive
+
 // Touch ring pins, in order of their angle around the ring. The TouchRing
 // mapping places pad at 0° = right, 90° = up, 180° = left, 270° = down, so:
 //   RING_PAD0 (right, 0°)   = GP27
