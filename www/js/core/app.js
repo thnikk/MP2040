@@ -784,7 +784,10 @@ function pollPinState() {
   pinStateTimer = setTimeout(async () => {
     try {
       const res = await api('/api/getPinState');
-      if (boardView) boardView.setHeldPins(res.heldPins || []);
+      if (boardView) {
+        boardView.setHeldPins(res.heldPins || []);
+        boardView.setRingState(res.ringActive, res.ringAngle, res.ringMagnitude);
+      }
     } catch (e) {
       // Server closed the parked request (idle timeout); just retry.
     }

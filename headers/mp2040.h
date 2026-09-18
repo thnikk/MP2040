@@ -28,6 +28,12 @@ private:
     // (button boards).
     uint32_t bootTouchDeadline = 0;
 
+    // Last time TouchRing::process() ran. In web-config mode the ring is
+    // sampled at a throttled rate (the config loop spins freely, and the PIO
+    // capsense read is too expensive to run at unbounded speed just to feed
+    // the web UI's pressed-position marker).
+    uint32_t lastRingReadMillis = 0;
+
     // Boot mode captured once in setup() from the watchdog scratch register
     // (takeBootMode() resets it, so it can only be read once per boot). Used by
     // getBootAction() and to decide whether the touch pads load their stored

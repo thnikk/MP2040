@@ -196,6 +196,25 @@ function parsePathEndpoints(d) {
   return { x1: points[0].x, y1: points[0].y, x2: points[points.length - 1].x, y2: points[points.length - 1].y };
 }
 
+// Inner and outer radius of a torus (donut) touch ring path. The ring is drawn
+// as two concentric circles (outer ring + inner hole), each made of 180° arc
+// commands, so collecting every arc's rx gives both radii. Returns null when
+// the path has no arcs (non-circle rings fall back to a fraction of the bbox).
+function ringRadii(pathEl) {
+  const d = pathEl?.getAttribute('d') || '';
+  const re = /[aA]\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)/g;
+  let m;
+  let min = Infinity;
+  let max = 0;
+  while ((m = re.exec(d))) {
+    const r = Math.abs(parseFloat(m[1]));
+    if (r < min) min = r;
+    if (r > max) max = r;
+  }
+  if (max === 0) return null;
+  return { inner: min, outer: max };
+}
+
 class BoardView {
   constructor(container, callbacks) {
     this.container = container;
@@ -205,6 +224,11 @@ class BoardView {
     this.pinElements = [];
     this.ringElement = null;
     this.ringShapes = [];
+    this.ringGeometry = null;
+    this.ringMarker = null;
+    this.ringActive = false;
+    this.ringAngle = 0;
+    this.ringMagnitude = 0;
     this.heldPins = new Set();
     this.wired = false;
     this.ledSim = null;
@@ -276,6 +300,89 @@ class BoardView {
     this.applyPins();
   }
 
+  // Live touch-ring contact point from the firmware (pressed position on the
+  // ring). Draws a marker dot on the ring midline at the reported angle, sized
+  // by the touch magnitude (0..1); hides it when the ring reads inactive.
+  setRingState(active, angleDeg, magnitude) {
+    this.ringActive = !!active;
+    this.ringAngle = Number(angleDeg) || 0;
+    // Firmware sends magnitude as 0..100 percent; normalize to 0..1.
+    this.ringMagnitude = Math.max(0, Math.min(1, (Number(magnitude) || 0) / 100));
+    this.renderRingMarker();
+  }
+
+  // ---- ring pressed-position marker -------------------------------------
+
+  // Center + marker radius from the ring's geometry. The center is the bbox
+  // midpoint (the two concentric circles share it); the marker sits on the
+  // band midline, halfway between the outer and inner radii parsed from the
+  // path's arcs.
+  computeRingGeometry() {
+    const shape = this.ringShapes[0];
+    if (!shape) return null;
+    let bbox;
+    try { bbox = shape.getBBox(); } catch (e) { return null; }
+    if (!bbox || bbox.width === 0 || bbox.height === 0) return null;
+    const radii = ringRadii(shape);
+    if (!radii) return null;
+    // Center and marker radius in the path's local user space, converted to
+    // root user units so a transformed ring layer doesn't misplace the marker
+    // (same CTM approach the button labels use).
+    const geo = {
+      cx: bbox.x + bbox.width / 2,
+      cy: bbox.y + bbox.height / 2,
+      r: (radii.inner + radii.outer) / 2,
+      // Marker dot sized to the band width so it scales with the board.
+      markerR: (radii.outer - radii.inner) * 0.18,
+    };
+    const ctm = shape.getScreenCTM();
+    const rootCtm = this.svgRoot?.getScreenCTM();
+    if (ctm && rootCtm) {
+      const screenPt = new DOMPoint(geo.cx, geo.cy).matrixTransform(ctm);
+      const root = screenPt.matrixTransform(rootCtm.inverse());
+      geo.cx = root.x;
+      geo.cy = root.y;
+    }
+    return geo;
+  }
+
+  renderRingMarker() {
+    if (!this.ringElement) return;
+    if (!this.ringActive) {
+      if (this.ringMarker) this.ringMarker.style.display = 'none';
+      return;
+    }
+    if (!this.ringGeometry) {
+      this.ringGeometry = this.computeRingGeometry();
+      if (!this.ringGeometry) return;
+    }
+    // Firmware reports the angle in screen convention: 0° = up, increasing
+    // clockwise. SVG y points down, so up is -y.
+    const rad = this.ringAngle * Math.PI / 180;
+    const x = this.ringGeometry.cx + Math.sin(rad) * this.ringGeometry.r;
+    const y = this.ringGeometry.cy - Math.cos(rad) * this.ringGeometry.r;
+
+    if (!this.ringMarker) {
+      const ns = 'http://www.w3.org/2000/svg';
+      const marker = document.createElementNS(ns, 'circle');
+      marker.setAttribute('class', 'ring-marker');
+      marker.setAttribute('pointer-events', 'none');
+      this.ringMarker = marker;
+      // Append to the SVG root, not the ring: the ring is often a <path> (a
+      // leaf SVG element that can't render children), and the geometry is in
+      // root user units, so root coordinates are used directly below.
+      this.svgRoot.appendChild(marker);
+    }
+
+    // Size the dot by touch magnitude: small for a light touch, up to 1.5×
+    // the base size for a firm press.
+    const size = this.ringGeometry.markerR * (0.6 + 0.9 * this.ringMagnitude);
+    this.ringMarker.setAttribute('r', String(size));
+    this.ringMarker.setAttribute('cx', String(x));
+    this.ringMarker.setAttribute('cy', String(y));
+    this.ringMarker.style.display = '';
+  }
+
   // Refresh button labels after a config change that doesn't affect the LED
   // sim (e.g. input mode toggle). Cheaper than setOptions: leaves a running
   // LED preview untouched, but builds the sim if it was skipped because the
@@ -344,6 +451,9 @@ class BoardView {
 
     this.ringElement = findByRef(this.svgRoot, 'ring');
     this.ringShapes = this.ringElement ? shapesOf(this.ringElement) : [];
+    // innerHTML replaced the old SVG, so the marker and its geometry are gone.
+    this.ringGeometry = null;
+    this.ringMarker = null;
 
     this.themeStyle();
     this.updateLabels();
@@ -354,6 +464,7 @@ class BoardView {
     this.applyStatusLed();
     this.applyDisplayVisibility();
     this.applyLedVisibility();
+    this.renderRingMarker();
     this.wireEvents();
     this.buildLedSim();
 

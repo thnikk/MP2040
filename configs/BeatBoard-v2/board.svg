@@ -31,10 +31,10 @@
      labelstyle="default"
      inkscape:document-units="mm"
      inkscape:zoom="2.3069121"
-     inkscape:cx="65.672203"
-     inkscape:cy="248.60072"
-     inkscape:window-width="2560"
-     inkscape:window-height="1440"
+     inkscape:cx="65.455463"
+     inkscape:cy="92.547956"
+     inkscape:window-width="1261"
+     inkscape:window-height="678"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="0"
@@ -98,7 +98,7 @@
      inkscape:label="leds">
     <rect
        style="fill:#fd0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="led01"
+       id="led00"
        width="30.236221"
        height="15.118111"
        x="38.795277"
@@ -107,7 +107,7 @@
        ry="7.5590553" />
     <rect
        style="fill:#fd0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="led02"
+       id="led01"
        width="30.236221"
        height="15.118111"
        x="38.795277"
@@ -116,7 +116,7 @@
        ry="7.5590553" />
     <rect
        style="fill:#fd0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="led04"
+       id="led03"
        width="30.236221"
        height="15.118111"
        x="333.59851"
@@ -125,11 +125,20 @@
        ry="7.5590553" />
     <rect
        style="fill:#fd0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
-       id="led03"
+       id="led02"
        width="30.236221"
        height="15.118111"
        x="333.59851"
        y="114.38579"
+       rx="7.5590553"
+       ry="7.5590553" />
+    <rect
+       style="fill:#fd0000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1"
+       id="rect2"
+       width="30.236221"
+       height="15.118111"
+       x="333.59851"
+       y="17.118114"
        rx="7.5590553"
        ry="7.5590553" />
   </g>

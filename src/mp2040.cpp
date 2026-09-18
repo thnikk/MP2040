@@ -28,6 +28,15 @@
 #define WEB_CONFIG_TOUCH_WINDOW_MS 3000
 #endif
 
+// Web-config ring sampling interval. In config mode the ring powers the live
+// pressed-position preview in the board view; outside it the active input
+// driver consumes the contact point. The config loop otherwise spins freely,
+// and the ring's PIO capsense read (several samples per pad) is too expensive
+// to run at unbounded rate just to feed a UI marker.
+#ifndef RING_CONFIG_READ_INTERVAL_MS
+#define RING_CONFIG_READ_INTERVAL_MS 5
+#endif
+
 // Used for the boot-window LED cue; boards without an LED config still compile.
 #ifndef LED_COLOR_PRESSED
 #define LED_COLOR_PRESSED 0xFFFFFF
@@ -372,10 +381,16 @@ void MP2040::run() {
 		// Publish the current key state for the other core (and drivers)
 		Storage::getInstance().publishKeyState(debouncedGpio);
 
-		// Update the touch ring (config-mode ring use isn't meaningful). The
-		// ring reads its pads directly through the TouchGpio driver.
-		if (!configMode)
+		// Update the touch ring. In config mode the ring powers the live
+		// pressed-position preview in the web config's board view; outside it
+		// the active input driver consumes the contact point. The ring reads
+		// its pads directly through the TouchGpio driver. Config-mode reads are
+		// throttled to RING_CONFIG_READ_INTERVAL_MS (see above).
+		if (!configMode || getMillis() - lastRingReadMillis >= RING_CONFIG_READ_INTERVAL_MS)
+		{
+			lastRingReadMillis = getMillis();
 			TouchRing::getInstance().process(nullptr);
+		}
 
 		// Config Loop (Web-Config does not require keyboard)
 		if (configMode == true) {

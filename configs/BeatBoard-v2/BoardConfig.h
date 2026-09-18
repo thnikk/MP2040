@@ -49,9 +49,9 @@
 //   RING_PAD1 (up,   90°)   = GP26
 //   RING_PAD2 (left, 180°)  = GP29
 //   RING_PAD3 (down, 270°)  = GP28
-#define RING_PAD0 27
+#define RING_PAD0 29
 #define RING_PAD1 26
-#define RING_PAD2 29
+#define RING_PAD2 27
 #define RING_PAD3 28
 
 // LEDs

@@ -100,7 +100,7 @@
 static inline float f_abs(float v) { return v < 0.0f ? -v : v; }
 
 TouchRing::TouchRing()
-	: configured(false), prevAngleDeg(0.0f), prevRawAngle(0.0f), vel(0.0f), hadPrev(false), wasActive(false), emaX(0.0f), emaY(0.0f)
+	: configured(false), prevAngleDeg(0.0f), prevRawAngle(0.0f), vel(0.0f), hadPrev(false), wasActive(false), emaX(0.0f), emaY(0.0f), emaStrength(0.0f)
 {
 	memset(&state, 0, sizeof(state));
 	for (int i = 0; i < 4; i++) pins[i] = 0xFF;
@@ -246,12 +246,19 @@ void TouchRing::process(const uint32_t* touchValues)
 	{
 		emaX = vx;
 		emaY = vy;
+		emaStrength = peak / peakRaw;
 		hadPrev = true;
 	}
 	else
 	{
 		emaX = a * vx + (1.0f - a) * emaX;
 		emaY = a * vy + (1.0f - a) * emaY;
+		// EMA the press strength (strongest pad's added capacitance as a
+		// fraction of its raw reading) with the same adaptive coefficient.
+		// Unlike the direction vector this survives normalization, so it
+		// reflects how hard the ring is pressed rather than just the angle.
+		const float strength = peak / peakRaw;
+		emaStrength = a * strength + (1.0f - a) * emaStrength;
 	}
 
 	// Angle from the smoothed vector, with the board's rotation offset. The
@@ -275,7 +282,7 @@ void TouchRing::process(const uint32_t* touchValues)
 	prevAngleDeg = angleDeg;
 
 	state.active = true;
-	state.magnitude = emaMag;
+	state.magnitude = emaStrength;
 	state.angleDeg = angleDeg;
 	state.deltaDegrees = delta;
 	// Cartesian stick vector: top (angle 0) = +Y up, right (+90) = +X.

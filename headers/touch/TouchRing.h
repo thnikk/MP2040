@@ -21,7 +21,8 @@
 //
 
 // Result of a ring read. `active` means a touch was detected on the ring;
-// `magnitude` (0..1) is how strongly, `angleDeg` (0..359) the position around
+// `magnitude` (0..1) is the smoothed press strength (how strongly), `angleDeg`
+// (0..359) the position around
 // the ring (0 = the RING_PAD0 direction, increasing toward RING_PAD1), and
 // `deltaDegrees` the angular motion since the previous read (for rate-based
 // consumers like volume / scroll). lx/ly are the cartesian stick vector
@@ -96,6 +97,11 @@ private:
 	// EMA of the vector (normalized) for stability.
 	float emaX;
 	float emaY;
+	// EMA of the press strength: the strongest pad's finger-added capacitance
+	// as a fraction of its raw reading (peak/peakRaw). Unlike the direction
+	// vector this is measured before normalization, so it reflects how hard
+	// the ring is pressed (0..1) rather than always reading near 1.
+	float emaStrength;
 };
 
 #endif // _TOUCH_RING_H_

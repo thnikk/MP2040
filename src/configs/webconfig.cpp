@@ -6,6 +6,7 @@
 #include "system.h"
 #include "matrix.h"
 #include "touch/TouchGpio.h"
+#include "touch/TouchRing.h"
 #include "types.h"
 #include "version.h"
 #include "helper.h"
@@ -87,12 +88,22 @@ struct PinStateFile
     fs_wait_cb callback;     // httpd's http_continue, filled by fs_wait_read_custom
     void *callbackArg;
     bool ready;
-    char data[256];          // full HTTP response (header + JSON body)
+    char data[384];          // full HTTP response (header + JSON body)
 };
 
 static PinStateFile *pendingPinState[MAX_PENDING_PIN_STATE] = {};
 static KeyMask lastDeliveredPinState;
 static bool hasDeliveredPinState = false; // force a snapshot on first request
+
+// Ring state change detection: the ring reports a continuous angle, so unlike
+// the binary key mask it changes on every read. Deliver ring updates at a
+// modest rate (RING_DELIVERY_MIN_INTERVAL_MS) so a sliding finger doesn't flood
+// lwIP / the client; button presses are never throttled.
+#define RING_DELIVERY_MIN_INTERVAL_MS 33
+static int lastDeliveredRingAngle = -1; // -1: no snapshot delivered yet
+static int lastDeliveredRingMagnitude = -1; // -1: no snapshot delivered yet
+static bool lastDeliveredRingActive = false;
+static absolute_time_t lastRingDeliveryTime = nil_time;
 
 static void deliverPinState();
 
@@ -915,6 +926,13 @@ std::string getPinState()
         }
     }
 
+    // Live touch-ring contact point, for the board view's pressed-position
+    // marker. Mirrors the long-poll path (pinStateJson()).
+    const RingState& ring = TouchRing::getInstance().getState();
+    doc["ringActive"] = ring.active;
+    doc["ringAngle"] = ring.active ? (int)ring.angleDeg : 0;
+    doc["ringMagnitude"] = ring.active ? (int)(ring.magnitude * 100.0f) : 0;
+
     return serialize_json(doc);
 }
 
@@ -1048,6 +1066,24 @@ static KeyMask readKeyState()
     return Storage::getInstance().keyState;
 }
 
+// JSON suffix describing the touch ring's live contact point, appended to the
+// long-poll body after heldPins. The angle is floored to an integer degree so
+// the change-detection in deliverPinState() can compare snapshots cheaply.
+static std::string ringStateJson()
+{
+    const RingState& ring = TouchRing::getInstance().getState();
+    const int angle = ring.active ? (int)ring.angleDeg : 0;
+    // Magnitude (0..1) as a 0..100 integer percent for a compact payload.
+    const int magnitude = ring.active ? (int)(ring.magnitude * 100.0f) : 0;
+    std::string json = ",\"ringActive\":";
+    json += ring.active ? '1' : '0';
+    json += ",\"ringAngle\":";
+    json += std::to_string(angle);
+    json += ",\"ringMagnitude\":";
+    json += std::to_string(magnitude);
+    return json;
+}
+
 static std::string pinStateJson(const KeyMask& state)
 {
     std::string json = "{\"heldPins\":[";
@@ -1063,7 +1099,7 @@ static std::string pinStateJson(const KeyMask& state)
             first = false;
         }
     }
-    json += "]}";
+    json += "]" + ringStateJson() + "}";
     return json;
 }
 
@@ -1111,11 +1147,45 @@ static void deliverToParked(const KeyMask& state)
     }
 }
 
-// Answer parked getPinState requests when the debounced key state changes.
+// Snapshot the delivered ring state. Called whenever a response is actually
+// sent so a later client that sees no further change can park again.
+static void recordRingDelivery()
+{
+    const RingState& ring = TouchRing::getInstance().getState();
+    lastDeliveredRingActive = ring.active;
+    lastDeliveredRingAngle = ring.active ? (int)ring.angleDeg : 0;
+    lastDeliveredRingMagnitude = ring.active ? (int)(ring.magnitude * 100.0f) : 0;
+    lastRingDeliveryTime = get_absolute_time();
+}
+
+// True if the ring's contact point has moved since the last delivery. Ring
+// updates are throttled to RING_DELIVERY_MIN_INTERVAL_MS so a sliding finger
+// doesn't flood lwIP / the client; key presses are never throttled and are
+// checked separately by the callers.
+static bool ringStateChanged()
+{
+    const RingState& ring = TouchRing::getInstance().getState();
+    const bool active = ring.active;
+    const int angle = active ? (int)ring.angleDeg : 0;
+    const int magnitude = active ? (int)(ring.magnitude * 100.0f) : 0;
+    if (active == lastDeliveredRingActive &&
+        angle == lastDeliveredRingAngle &&
+        magnitude == lastDeliveredRingMagnitude)
+        return false;
+    if (lastDeliveredRingAngle < 0)
+        return true; // no snapshot yet: always answer a first client
+    if (is_nil_time(lastRingDeliveryTime))
+        return true;
+    const uint64_t elapsedUs = absolute_time_diff_us(lastRingDeliveryTime, get_absolute_time());
+    return elapsedUs / 1000 >= RING_DELIVERY_MIN_INTERVAL_MS;
+}
+
+// Answer parked getPinState requests when the key state or ring position
+// changes.
 static void deliverPinState()
 {
     const KeyMask state = readKeyState();
-    if (hasDeliveredPinState && state == lastDeliveredPinState)
+    if (hasDeliveredPinState && state == lastDeliveredPinState && !ringStateChanged())
         return;
 
     bool hasParked = false;
@@ -1133,20 +1203,22 @@ static void deliverPinState()
     deliverToParked(state);
     lastDeliveredPinState = state;
     hasDeliveredPinState = true;
+    recordRingDelivery();
 }
 
-// Open a /api/getPinState request. Normally park it until the key state
-// changes; answer immediately if there's an undelivered change or all park
-// slots are taken.
+// Open a /api/getPinState request. Normally park it until the key state or
+// ring position changes; answer immediately if there's an undelivered change
+// or all park slots are taken.
 static int openPinState(struct fs_file *file)
 {
     const KeyMask state = readKeyState();
 
-    if (!hasDeliveredPinState || state != lastDeliveredPinState)
+    if (!hasDeliveredPinState || state != lastDeliveredPinState || ringStateChanged())
     {
         deliverToParked(state); // don't leave parked clients on a stale change
         lastDeliveredPinState = state;
         hasDeliveredPinState = true;
+        recordRingDelivery();
         return set_file_data(file, DataAndStatusCode(std::move(pinStateJson(state)), HttpStatusCode::_200));
     }
 

@@ -389,6 +389,13 @@ main {
   user-select: none;
 }
 
+/* Live touch-ring pressed-position marker (board view) */
+.ring-marker {
+  fill: var(--nord13);
+  stroke: var(--bg-1);
+  stroke-width: 1.5;
+}
+
 .board-placeholder {
   color: var(--muted);
   font-size: 0.9rem;
