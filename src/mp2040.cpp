@@ -234,6 +234,16 @@ KeyMask MP2040::scanMatrix() {
  * TouchGpio driver. Both feed the same debouncer, so a touch pad is
  * indistinguishable from a button press to everything downstream. In matrix
  * mode the raw mask comes from scanMatrix() instead.
+ *
+ * The debounce interval acts as a per-key *lockout*, not a settle delay:
+ * a change latches immediately as long as it arrives after the previous
+ * accepted change on that key is older than the interval, and changes that
+ * arrive inside the window are ignored (or, if they persist, deferred until
+ * it expires). A fresh press therefore pays zero debounce latency; the
+ * interval only rate-limits edges that come close after a prior one. This
+ * trusts the first sample, so noise rejection is delegated to the inputs:
+ * the touch driver confirms transitions over TOUCH_CONFIRM_SAMPLES, and a
+ * button's raw GPIO line holds clean once the switch settles.
  */
 void MP2040::debounceGpioGetAll() {
 	KeyMask raw_gpio;
@@ -254,8 +264,10 @@ void MP2040::debounceGpioGetAll() {
 	// return if state isn't different than the actual
 	if (debouncedGpio == (raw_gpio & keyGpios)) return;
 
-	// Debounce interval in ms (0 = apply raw state immediately). Clamp
-	// defensively against hand-edited configs.
+	// Debounce interval in ms (0 = apply raw state immediately). Acts as a
+	// per-key lockout (see the doc comment above): not a settle delay, so a
+	// fresh change latches immediately. Clamp defensively against
+	// hand-edited configs.
 	uint32_t debounceDelay = Storage::getInstance().getConfig().debounceInterval;
 	if (debounceDelay > 100) debounceDelay = 100;
 	// abort if no delay is configured
@@ -269,7 +281,9 @@ void MP2040::debounceGpioGetAll() {
 	const uint32_t keyCount = Storage::getInstance().getKeyCount();
 	for (Pin_t pin = 0; pin < (Pin_t)keyCount; pin++) {
 		if (keyGpios.test(pin)) {
-			// Allow debouncer to change state if key state changed and debounce delay threshold met
+			// Eager latch: the key differs and the lockout since the last
+			// accepted change has expired, so accept it now and re-arm the
+			// window. Mid-window differences are ignored here.
 			if (debouncedGpio.test(pin) != raw_gpio.test(pin) &&
 			    ((now - gpioDebounceTime[pin]) > debounceDelay)) {
 				debouncedGpio ^= keyMaskBit(pin);
