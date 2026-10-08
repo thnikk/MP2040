@@ -53,7 +53,10 @@ public:
 	void setup(GpioMask touchMask, bool useStored);
 
 	// Measure all configured pads and return a mask of currently-touched pins.
-	// Applies per-pad thresholds with release hysteresis.
+	// Applies per-pad thresholds with release hysteresis, and requires
+	// TOUCH_CONFIRM_SAMPLES consecutive readings on the far side of a
+	// threshold before a press/release transition commits, so a single noisy
+	// sample can't flip the key. Costs at most one extra scan cycle of latency.
 	GpioMask scan();
 
 	// Re-apply the current config's touchMargin / touchRelease to the live
@@ -113,6 +116,7 @@ private:
 	uint32_t release;                       // release % of press threshold (config)
 	bool active[NUM_BANK0_GPIOS];
 	bool touched[NUM_BANK0_GPIOS];
+	uint8_t stability[NUM_BANK0_GPIOS]; // consecutive readings toward a transition
 };
 
 #endif

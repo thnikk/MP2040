@@ -20,6 +20,15 @@
 #define TOUCH_CAL_SAMPLES 8
 #endif
 
+// Consecutive readings required to commit a press/release transition. 2 means
+// a sample must be backed by the next scan, so one-off noise can't flip a key
+// while adding only a single scan cycle of latency. The keymask debouncer
+// latches changes immediately (eager, see MP2040::debounceGpioGetAll), so this
+// is the touch path's only temporal filter.
+#ifndef TOUCH_CONFIRM_SAMPLES
+#define TOUCH_CONFIRM_SAMPLES 2
+#endif
+
 // Fixed threshold overrides (0 = auto-calibrate at boot).
 #ifndef TOUCH_THRESHOLD_GP00
 #define TOUCH_THRESHOLD_GP00 0
@@ -134,6 +143,7 @@ TouchGpio::TouchGpio()
         baseline[i] = 0;
         active[i] = false;
         touched[i] = false;
+        stability[i] = 0;
     }
 }
 
@@ -361,10 +371,34 @@ GpioMask TouchGpio::scan()
         // can't chatter the key. The gap between thresholdOn and thresholdOff
         // (set by the release percentage) stops a finger held right at the
         // press threshold from rapidly re-triggering the key.
+        //
+        // Transitions must also survive TOUCH_CONFIRM_SAMPLES consecutive
+        // readings on the far side of the threshold before they commit (the
+        // stability counter, reset whenever a reading falls back into the dead
+        // band or stays on the settled side). A single spike past thresholdOn
+        // can therefore no longer register as a press: it has to be confirmed
+        // by the next scan. Worst case that costs one extra scan cycle of
+        // latency, well under the lockout window of the eager key debouncer.
         if (!touched[pin] && v > thresholdOn[pin])
-            touched[pin] = true;
+        {
+            if (++stability[pin] >= TOUCH_CONFIRM_SAMPLES)
+            {
+                touched[pin] = true;
+                stability[pin] = 0;
+            }
+        }
         else if (touched[pin] && v < thresholdOff[pin])
-            touched[pin] = false;
+        {
+            if (++stability[pin] >= TOUCH_CONFIRM_SAMPLES)
+            {
+                touched[pin] = false;
+                stability[pin] = 0;
+            }
+        }
+        else
+        {
+            stability[pin] = 0;
+        }
 
         if (touched[pin]) result |= (1u << pin);
     }
