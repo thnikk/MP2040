@@ -152,7 +152,7 @@ uint32_t GPGFX_TinySSD1306::getPixel(uint8_t x, uint8_t y) {
 		row = ((y / 8) * MAX_SCREEN_WIDTH) + x;
 		bitIndex = y % 8;
 
-		result = (frameBuffer[row] >> bitIndex) && 0x01;
+		result = (frameBuffer[row] >> bitIndex) & 0x01;
 	}
 
 	return result;
@@ -276,7 +276,10 @@ void GPGFX_TinySSD1306::drawArc(uint16_t x, uint16_t y, uint32_t radiusX, uint32
 }
 
 void GPGFX_TinySSD1306::drawEllipse(uint16_t x, uint16_t y, uint32_t radiusX, uint32_t radiusY, uint32_t color, uint8_t filled) {
-	long x1 = -radiusX, y1 = 0;
+	// radiusX is unsigned: negate after a signed cast, or -radiusX wraps to a
+	// huge positive value and the midpoint loop never runs (every ellipse
+	// would render as a vertical line).
+	long x1 = -((long)radiusX), y1 = 0;
 	long e2 = radiusY, dx = (1 + 2 * x1) * e2 * e2;
 	long dy = x1 * x1, err = dx + dy;
 
