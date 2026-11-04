@@ -479,35 +479,28 @@ class BoardView {
 
   themeStyle() {
     this.container.querySelectorAll(SHAPE_SEL).forEach((el) => {
+      el.setAttribute('vector-effect', 'non-scaling-stroke');
       if (matchesRef(el, ['logo'])) return;
       // Elements inside an "ignore" group keep their authored fill/stroke.
       if (matchesRef(el, ['ignore'])) return;
       el.style.fill = 'var(--bg-1)';
-      el.style.setProperty('stroke', 'none', 'important');
-      el.style.removeProperty('stroke-width');
-      el.removeAttribute('vector-effect');
+      if (matchesRef(el, ['oled'])) {
+        el.style.stroke = 'none';
+      } else {
+        el.style.stroke = 'var(--bg-4)';
+        el.style.setProperty('stroke-width', '2', 'important');
+      }
     });
 
     const caseEl = findByRef(this.container, 'case');
     if (caseEl) {
       caseEl.style.setProperty('fill', 'var(--bg-1)', 'important');
-      caseEl.style.setProperty('stroke', 'none', 'important');
-      caseEl.style.removeProperty('stroke-width');
+      caseEl.style.setProperty('stroke-width', '2', 'important');
     }
     const oledEl = findByRef(this.container, 'oled');
     if (oledEl) {
       oledEl.style.setProperty('fill', '#000000', 'important');
     }
-    // Physical MCU buttons (BOOT / RESET tactile switches): presentational
-    // only, so render them in the button fill, dimmed, against the case.
-    this.container.querySelectorAll(SHAPE_SEL).forEach((el) => {
-      if (matchesRef(el, ['boot', 'reset'])) {
-        shapesOf(el).forEach((s) => {
-          s.style.setProperty('fill', 'var(--bg-2)', 'important');
-          s.style.setProperty('opacity', '0.5', 'important');
-        });
-      }
-    });
   }
 
   // ---- labels -----------------------------------------------------------
@@ -745,8 +738,8 @@ class BoardView {
       shapesOf(led).forEach((s) => {
         s.style.setProperty('fill', color, 'important');
         s.style.setProperty('opacity', '0.85', 'important');
-        s.style.setProperty('stroke', 'none', 'important');
-        s.style.removeProperty('stroke-width');
+        s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+        s.style.setProperty('stroke-width', '1.5', 'important');
       });
     });
   }
@@ -907,8 +900,8 @@ class BoardView {
         } else {
           s.style.setProperty('fill', 'var(--bg-2)', 'important');
           s.style.removeProperty('fill-opacity');
-          s.style.setProperty('stroke', 'none', 'important');
-          s.style.removeProperty('stroke-width');
+          s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+          s.style.setProperty('stroke-width', '2', 'important');
         }
       });
     });
@@ -921,8 +914,8 @@ class BoardView {
     this.ringShapes.forEach((s) => {
       s.style.setProperty('fill', 'var(--bg-2)', 'important');
       s.style.removeProperty('fill-opacity');
-      s.style.setProperty('stroke', 'none', 'important');
-      s.style.removeProperty('stroke-width');
+      s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+      s.style.setProperty('stroke-width', '2', 'important');
     });
   }
 
@@ -936,8 +929,8 @@ class BoardView {
     const fill = enabled ? statusLedColor(this.options?.defaultInputMode) : 'var(--bg-1)';
     shapesOf(el).forEach((s) => {
       s.style.setProperty('fill', fill, 'important');
-      s.style.setProperty('stroke', 'none', 'important');
-      s.style.removeProperty('stroke-width');
+      s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+      s.style.setProperty('stroke-width', '2', 'important');
     });
   }
 
@@ -956,7 +949,7 @@ class BoardView {
 
       el.addEventListener('mouseenter', () => {
         shapesOf(el).forEach((s) => {
-          s.style.setProperty('fill', 'var(--bg-3)', 'important');
+          s.style.setProperty('fill-opacity', '0.6', 'important');
         });
       });
       el.addEventListener('mouseleave', () => this.applyPins());
@@ -970,7 +963,7 @@ class BoardView {
         s.style.setProperty('cursor', 'pointer');
       });
       this.ringElement.addEventListener('mouseenter', () => {
-        this.ringShapes.forEach((s) => s.style.setProperty('fill', 'var(--bg-3)', 'important'));
+        this.ringShapes.forEach((s) => s.style.setProperty('fill-opacity', '0.6', 'important'));
       });
       this.ringElement.addEventListener('mouseleave', () => this.applyRing());
     }
