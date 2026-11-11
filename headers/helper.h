@@ -19,6 +19,10 @@ extern uint64_t getMicro();
 #define MP2040_BOARDCONFIG "Unknown"
 #endif
 
+// Web config address. The board is the RNDIS/CDC-ECM DHCP, DNS and web server,
+// so this is fixed in lib/rndis/rndis.c and never changes at runtime.
+#define MP2040_WEBCONFIG_IP "192.168.7.1"
+
 #ifndef BOARD_EXTRA_PINS
 #define BOARD_EXTRA_PINS {}
 #endif

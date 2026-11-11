@@ -46,6 +46,10 @@ class ButtonLayoutScreen : public GPScreen {
 		std::string statusBarRight;
 		std::string footer;
 
+		// Web config mode: the footer row shows the config page address instead
+		// of input history (the web UI already shows live held buttons).
+		bool isConfigMode = false;
+
 		bool isInputHistoryEnabled = false;
 		uint16_t inputHistoryX = 0;
 		uint16_t inputHistoryY = 0;

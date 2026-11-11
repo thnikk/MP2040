@@ -70,7 +70,9 @@ for a 3x board, OLED at ~2px/pixel).
 `--nav` replays menu/remap actions (`up,down,left,right,select,back`).
 `--time-ms` fixes the virtual clock so animated screens (splash close-in, savers)
 capture deterministically. `--fg`/`--bg` tint the output (e.g. `--fg 7fd0ff` for
-a blue OLED look). `--size 128x32` forces a 128x32 panel.
+a blue OLED look). `--size 128x32` forces a 128x32 panel. `--config` renders
+web config mode, where the footer shows `CFG at 192.168.7.1` instead of input
+history.
 
 `display-screenshots.mjs` writes bare framebuffer PNGs (`display-<state>.png`);
 `board-oled-screenshots.mjs` overlays each frame inside the `oled` element of

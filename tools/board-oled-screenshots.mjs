@@ -346,6 +346,7 @@ async function main() {
       if (state.saverMode !== undefined) args.push('--saver-mode', String(state.saverMode));
       if (state.timeMs !== undefined) args.push('--time-ms', String(state.timeMs));
       if (state.inputMode) args.push('--input-mode', state.inputMode);
+      if (state.config) args.push('--config');
       if (FG) args.push('--fg', FG);
       if (BG) args.push('--bg', BG);
       try {

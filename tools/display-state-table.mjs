@@ -1,11 +1,12 @@
 // Shared display-sim state table for the screenshot scripts.
 //
-// Each entry: name -> { screen, nav?, saverMode?, timeMs?, inputMode? }.
+// Each entry: name -> { screen, nav?, saverMode?, timeMs?, inputMode?, config? }.
 // `nav` is replayed as menu/remap actions (up/down/left/right/select/back),
 // `timeMs` fixes the virtual clock for animated screens (splash/savers).
 export const DISPLAY_STATES = [
   ['splash', { screen: 'splash', timeMs: 0 }],
   ['buttons', { screen: 'buttons' }],
+  ['buttons-config', { screen: 'buttons', config: true }],
   ['menu', { screen: 'menu' }],
   ['menu-display', { screen: 'menu', nav: 'down,down,down,down,select' }],
   ['menu-display-idle', { screen: 'menu', nav: 'down,down,down,down,select,select' }],

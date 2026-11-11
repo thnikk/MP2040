@@ -133,6 +133,7 @@ struct Options {
     std::string inputMode;
     std::string mask;
     bool drawTest = false;
+    bool config = false;
 };
 
 static void usage() {
@@ -148,6 +149,7 @@ static void usage() {
         "  --size <128x64|128x32> override panel size\n"
         "  --saver-mode <n>      screen saver scene (0..5)\n"
         "  --input-mode <n|name> input mode shown in the status bar\n"
+        "  --config              simulate web config mode (footer shows the address)\n"
         "  --time-ms <n>         virtual clock for animated screens\n"
         "  --shot-dir <dir>      interactive screenshot directory (default screenshots)\n"
         "  --mask <path>         write the 128x64 1bpp bitmask (for pixel SVGs)\n"
@@ -174,6 +176,7 @@ static Options parseArgs(int argc, char** argv) {
         else if (a == "--time-ms") o.timeMs = atoi(next("--time-ms").c_str());
         else if (a == "--saver-mode") o.saverMode = atoi(next("--saver-mode").c_str());
         else if (a == "--input-mode") o.inputMode = next("--input-mode");
+        else if (a == "--config") o.config = true;
         else if (a == "--mask") o.mask = next("--mask");
         else if (a == "--draw-test") o.drawTest = true;
         else if (a == "--size") {
@@ -201,6 +204,13 @@ int main(int argc, char** argv) {
     if (opt.saverMode >= 0) { disp.displaySaverMode = (DisplaySaverMode)opt.saverMode; disp.has_displaySaverMode = true; }
     if (!opt.inputMode.empty())
         DriverManager::getInstance().setInputMode(inputModeFromToken(opt.inputMode));
+
+    // Config mode always runs the config input driver; the header then shows
+    // the board's default input mode with the "-C" suffix, like the firmware.
+    if (opt.config) {
+        storage.SetConfigMode(true);
+        DriverManager::getInstance().setInputMode(INPUT_MODE_CONFIG);
+    }
 
     bool flip = opt.flip >= 0 ? (bool)opt.flip : (disp.has_flip && disp.flip != 0);
     bool invert = opt.invert >= 0 ? (bool)opt.invert : (disp.invert != 0);

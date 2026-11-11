@@ -2,6 +2,7 @@
 #include "buttonlayouts.h"
 #include "drivermanager.h"
 #include "storagemanager.h"
+#include "helper.h"
 #include "drivers/shared/gamepadhelper.h"
 
 #include <cctype>
@@ -216,6 +217,7 @@ static std::string midiNoteToName(uint8_t note) {
 }
 
 void ButtonLayoutScreen::init() {
+	isConfigMode = Storage::getInstance().GetConfigMode();
 	isInputHistoryEnabled = getDisplayOptions().inputHistoryEnabled;
 	inputHistoryX = getDisplayOptions().inputHistoryEnabled ? 0 : 0;
 	inputHistoryY = 7;
@@ -266,8 +268,7 @@ void ButtonLayoutScreen::shutdown() {
 
 int8_t ButtonLayoutScreen::update() {
 	// reload if the layout changed in config mode
-	bool configMode = Storage::getInstance().GetConfigMode();
-	if (configMode) {
+	if (isConfigMode) {
 		uint8_t layout = getDisplayOptions().has_buttonLayout ? getDisplayOptions().buttonLayout : BUTTON_LAYOUT_BOARD_DEFINED;
 		ButtonLayoutOrientation orientation = getDisplayOptions().orientation;
 		bool inputHistoryEnabled = getDisplayOptions().inputHistoryEnabled;
@@ -278,8 +279,14 @@ int8_t ButtonLayoutScreen::update() {
 	}
 
 	generateHeader();
-	if (isInputHistoryEnabled)
+	if (isConfigMode) {
+		// The board serves the configurator at a fixed address: show it on the
+		// footer row instead of input history, since the web UI already shows
+		// live held buttons in its board view.
+		footer = std::string("CFG at ") + MP2040_WEBCONFIG_IP;
+	} else if (isInputHistoryEnabled) {
 		processInputHistory();
+	}
 
 	return -1;
 }
@@ -354,7 +361,7 @@ void ButtonLayoutScreen::drawScreen() {
 		getRenderer()->drawText((21 - statusBarCenter.length()) / 2, 0, statusBarCenter);
 	if (!statusBarRight.empty())
 		getRenderer()->drawText(rightX, 0, statusBarRight);
-	if (isInputHistoryEnabled)
+	if (isInputHistoryEnabled || isConfigMode)
 		getRenderer()->drawText(0, 7, footer);
 }
 

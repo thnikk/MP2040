@@ -49,7 +49,8 @@ To flash:
 Hold the first key while powering on to open the web config; hold the second
 key to enter the bootloader. The device appears as a network adapter and
 serves the configurator at `http://192.168.7.1`, where you can remap keys, set
-up macros, and adjust LED colors.
+up macros, and adjust LED colors. Boards with a display show
+`CFG at 192.168.7.1` on the bottom row while the config is active.
 
 ## Input Modes
 
