@@ -260,8 +260,7 @@ void TouchGpio::loadCalibration()
         if (defaultTouchThresholds[pin] > 0)
         {
             // Fixed threshold from the board config: no calibration needed.
-            thresholdOn[pin] = defaultTouchThresholds[pin];
-            thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
+            deriveThresholds(pin);
             active[pin] = true;
             touched[pin] = false;
             continue;
@@ -292,8 +291,7 @@ void TouchGpio::calibratePin(Pin_t pin)
     if (defaultTouchThresholds[pin] > 0)
     {
         // Fixed threshold from the board config: no calibration needed.
-        thresholdOn[pin] = defaultTouchThresholds[pin];
-        thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
+        deriveThresholds(pin);
         active[pin] = true;
         touched[pin] = false;
         return;
@@ -325,8 +323,35 @@ void TouchGpio::calibratePin(Pin_t pin)
 
 void TouchGpio::deriveThresholds(Pin_t pin)
 {
+    // A pad can only release while its reading is above the idle baseline, so
+    // never let the release threshold reach it: release=100 would park the
+    // threshold exactly at idle (or at 0 for a fixed threshold) and hold the
+    // key forever. Leave at least a 1% window.
+    const uint32_t r = release >= 100 ? 99 : release;
+
+    const uint32_t fixed = defaultTouchThresholds[pin];
+    if (fixed > 0)
+    {
+        // Fixed board threshold: no idle baseline is known, so the dead-band
+        // is taken from the press threshold itself. Board configs choose a
+        // value well above idle, so this stays clear of the baseline for
+        // normal release percentages (very high values can still land below
+        // idle here, which is why the calibrated path is preferred).
+        thresholdOn[pin] = fixed;
+        thresholdOff[pin] = fixed - (fixed * r / 100);
+        return;
+    }
+
+    // The press threshold sits `margin` percent above the idle baseline. The
+    // release threshold hangs `release` percent of that span below it, so it
+    // always stays between the baseline and the press threshold. (Deriving it
+    // from the press threshold let it sink below the idle baseline -- e.g. 15%
+    // margin + 15% release put it at 0.98x baseline -- where a released pad
+    // can never cross it and the key sticks.)
     thresholdOn[pin] = baseline[pin] + (baseline[pin] * margin / 100);
-    thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
+    const uint32_t span = thresholdOn[pin] - baseline[pin];
+    const uint32_t deadBand = span * r / 100;
+    thresholdOff[pin] = thresholdOn[pin] - deadBand;
 }
 
 void TouchGpio::applyConfig()
@@ -340,18 +365,7 @@ void TouchGpio::applyConfig()
     for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
     {
         if (smForPin[pin] == 0xFF || !active[pin]) continue;
-
-        if (defaultTouchThresholds[pin] > 0)
-        {
-            // Fixed threshold: the ON value is a board property, only the
-            // release threshold follows the release percentage.
-            thresholdOn[pin] = defaultTouchThresholds[pin];
-            thresholdOff[pin] = thresholdOn[pin] - (thresholdOn[pin] * release / 100);
-        }
-        else
-        {
-            deriveThresholds(pin);
-        }
+        deriveThresholds(pin);
     }
 }
 

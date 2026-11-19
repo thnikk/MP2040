@@ -132,7 +132,7 @@ function buildOptionsBody() {
     defaultInputMode: parseInt(document.getElementById('default-input-mode').value, 10),
     debounceInterval: debounceSpinner ? debounceSpinner.getValue() : 5,
     touchMargin: touchMarginSpinner ? touchMarginSpinner.getValue() : 15,
-    touchRelease: touchReleaseSpinner ? touchReleaseSpinner.getValue() : 10,
+    touchRelease: touchReleaseSpinner ? touchReleaseSpinner.getValue() : 15,
     serialConfigEnabled: serialPill ? serialPill.checked : false,
     midi: {
       channel: midiChannelSpinner ? midiChannelSpinner.getValue() : 0,
@@ -583,7 +583,7 @@ function buildBoardGlobals(options) {
     defaultInputMode: parseInt(options.defaultInputMode ?? 1, 10),
     debounceInterval: options.debounceInterval ?? 5,
     touchMargin: options.touchMargin ?? 15,
-    touchRelease: options.touchRelease ?? 10,
+    touchRelease: options.touchRelease ?? 15,
     serialConfigEnabled: options.serialConfigEnabled === true,
     gamepad: {
       socdMode: parseInt(gamepad.socdMode ?? 0, 10),
@@ -666,7 +666,7 @@ function applyDraftToOptions(options, d) {
   options.defaultInputMode = g.defaultInputMode ?? 1;
   options.debounceInterval = g.debounceInterval ?? 5;
   options.touchMargin = g.touchMargin ?? 15;
-  options.touchRelease = g.touchRelease ?? 10;
+  options.touchRelease = g.touchRelease ?? 15;
   options.serialConfigEnabled = g.serialConfigEnabled === true;
   options.gamepad = g.gamepad || {};
   options.ring = g.ring || {};
@@ -1198,7 +1198,7 @@ async function load() {
     container: document.getElementById('touch-release-spinner'),
     min: 0,
     max: 100,
-    value: options.touchRelease ?? 10,
+    value: options.touchRelease ?? 15,
     onChange: () => {},
   });
 

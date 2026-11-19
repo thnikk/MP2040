@@ -176,7 +176,7 @@ function defaultOptions() {
     defaultInputMode: board?.defaultInputMode ?? 1,
     debounceInterval: 5,
     touchMargin: 15,
-    touchRelease: 10,
+    touchRelease: 15,
     touch: {
       hasTouchPads: !!board?.hasTouchPads,
     },

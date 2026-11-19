@@ -94,7 +94,9 @@ private:
 	// lowest of several idle samples + margin).
 	void calibratePin(Pin_t pin);
 	// Derive thresholdOn/thresholdOff from baseline[pin] using the configured
-	// margin (press) and hysteresis (release) percentages.
+	// margin (press, percent over the idle baseline) and release (percent of
+	// that margin that must be shed before the pad releases). Also applies the
+	// fixed board threshold, if the pin has one.
 	void deriveThresholds(Pin_t pin);
 	uint32_t readPin(Pin_t pin);
 
@@ -113,7 +115,7 @@ private:
 	uint32_t thresholdOn[NUM_BANK0_GPIOS];
 	uint32_t thresholdOff[NUM_BANK0_GPIOS];
 	uint32_t margin;                        // press % over baseline (config)
-	uint32_t release;                       // release % of press threshold (config)
+	uint32_t release;                       // release % of the press margin (config)
 	bool active[NUM_BANK0_GPIOS];
 	bool touched[NUM_BANK0_GPIOS];
 	uint8_t stability[NUM_BANK0_GPIOS]; // consecutive readings toward a transition
