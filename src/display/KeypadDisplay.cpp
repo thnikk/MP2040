@@ -20,7 +20,7 @@
 namespace
 {
 constexpr uint32_t BORDER = 2;
-constexpr uint32_t CELL_GAP = 2;
+constexpr uint32_t CELL_GAP = 4;
 constexpr float CELL_RADIUS = 10.0f;
 constexpr uint32_t LABEL_PAD = 2;
 
