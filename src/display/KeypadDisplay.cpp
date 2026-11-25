@@ -2,7 +2,9 @@
 
 #include "BoardConfig.h"
 #include "display/LCD35.h"
-#include "display/fonts/GP_Font_Standard.h"
+#include "display/fonts/KeypadFontNunito16.h"
+#include "display/fonts/KeypadFontNunito20.h"
+#include "display/fonts/KeypadFontNunito28.h"
 #include "display/inputlabels.h"
 #include "helper.h"
 #include "leds/LedLayout.h"
@@ -14,13 +16,10 @@
 
 namespace
 {
-constexpr uint8_t FONT_W = 5;
-constexpr uint8_t FONT_H = 7;
-constexpr uint8_t FONT_ADVANCE = 6;
-constexpr uint32_t FONT_CHAR_OFFSET = 32;
 constexpr uint32_t BORDER = 3;
 constexpr uint32_t CELL_GAP = 2;
 constexpr float CELL_RADIUS = 10.0f;
+constexpr uint32_t LABEL_PAD = 2;
 
 constexpr uint32_t RGB(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -35,7 +34,6 @@ inline uint16_t rgb565(uint32_t c)
 	return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
 }
 
-// Byte order the panel expects over SPI (high byte first).
 inline uint16_t swap16(uint16_t v)
 {
 	return (uint16_t)((v >> 8) | (v << 8));
@@ -53,13 +51,11 @@ uint32_t borderColor(uint32_t c)
 {
 	if (luminance(c) > 140)
 	{
-		// Light button: darken the edge.
 		const uint32_t r = ((c >> 16) & 0xFF) * 3 / 5;
 		const uint32_t g = ((c >> 8) & 0xFF) * 3 / 5;
 		const uint32_t b = (c & 0xFF) * 3 / 5;
 		return RGB((uint8_t)r, (uint8_t)g, (uint8_t)b);
 	}
-	// Dark button: lighten the edge.
 	const uint32_t r = ((c >> 16) & 0xFF) + 48;
 	const uint32_t g = ((c >> 8) & 0xFF) + 48;
 	const uint32_t b = (c & 0xFF) + 48;
@@ -67,7 +63,6 @@ uint32_t borderColor(uint32_t c)
 		(uint8_t)(g > 255 ? 255 : g),
 		(uint8_t)(b > 255 ? 255 : b));
 }
-
 
 inline uint32_t blend(uint32_t a, uint32_t b, uint32_t cover)
 {
@@ -79,6 +74,7 @@ inline uint32_t blend(uint32_t a, uint32_t b, uint32_t cover)
 	return RGB((uint8_t)r, (uint8_t)g, (uint8_t)bl);
 }
 
+// Blend one 565 buffer pixel with a color, for rounded-edge coverage.
 void blendPixel(uint16_t* buf, uint32_t index, uint32_t color, uint32_t cover)
 {
 	if (cover == 0)
@@ -96,6 +92,8 @@ void blendPixel(uint16_t* buf, uint32_t index, uint32_t color, uint32_t cover)
 	buf[index] = swap16(rgb565(blend(old888, color, cover)));
 }
 
+// Filled rounded rectangle with horizontal anti-aliasing. The vertical edges
+// are 1px-stepped, which is imperceptible at the 10px radius used here.
 void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
 	float x0, float y0, float x1, float y1, float radius, uint32_t color)
 {
@@ -116,12 +114,15 @@ void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
 		const float right = x1 - inset;
 		if (right <= left)
 			continue;
+
 		int32_t fullStart = (int32_t)ceilf(left);
 		int32_t fullEnd = (int32_t)floorf(right) - 1;
 		if (fullStart < 0) fullStart = 0;
 		if (fullEnd >= (int32_t)w) fullEnd = (int32_t)w - 1;
 		for (int32_t x = fullStart; x <= fullEnd; x++)
 			buf[(uint32_t)y * w + x] = swap16(rgb565(color));
+
+		// Partial pixels at the curved left/right boundary.
 		const int32_t li = (int32_t)floorf(left);
 		const float lcov = 1.0f - (left - (float)li);
 		if (li >= 0 && li < (int32_t)w && lcov > 0.0f)
@@ -133,12 +134,75 @@ void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
 	}
 }
 
-// Cell boundaries use the same integer split as TouchKeypad so the drawn and
-// hit-tested areas agree exactly.
-inline uint32_t colX0(uint32_t col) { return col * LCD_WIDTH / MATRIX_COLS; }
-inline uint32_t colX1(uint32_t col) { return (col + 1) * LCD_WIDTH / MATRIX_COLS; }
-inline uint32_t rowY0(uint32_t row) { return row * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / MATRIX_ROWS; }
-inline uint32_t rowY1(uint32_t row) { return (row + 1) * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / MATRIX_ROWS; }
+uint32_t textWidth(const std::string& text, const KeypadFont& font)
+{
+	uint32_t width = 0;
+	for (char c : text)
+	{
+		const uint8_t ch = (uint8_t)c;
+		if (ch < 32 || ch > 126)
+			continue;
+		width += font.glyphs[ch - 32].advance;
+	}
+	return width;
+}
+
+void drawText(uint16_t* buf, uint32_t stride, uint32_t maxW, uint32_t maxH,
+	int32_t x, int32_t y, const std::string& text, const KeypadFont& font,
+	uint32_t textColor, uint32_t fillColor)
+{
+	int32_t penX = x;
+	for (char c : text)
+	{
+		const uint8_t ch = (uint8_t)c;
+		if (ch < 32 || ch > 126)
+			continue;
+		const KeypadGlyph& glyph = font.glyphs[ch - 32];
+		for (uint16_t gy = 0; gy < glyph.height; gy++)
+		{
+			const int32_t py = y + glyph.yoff + gy;
+			if (py < 0 || py >= (int32_t)maxH)
+				continue;
+			for (uint16_t gx = 0; gx < glyph.width; gx++)
+			{
+				const int32_t px = penX + glyph.xoff + gx;
+				if (px < 0 || px >= (int32_t)maxW)
+					continue;
+				const uint8_t a = font.alpha[glyph.offset + (uint32_t)gy * glyph.width + gx];
+				if (a == 0)
+					continue;
+				const uint32_t color = a == 255
+					? textColor : blend(fillColor, textColor, a);
+				buf[(uint32_t)py * stride + (uint32_t)px] = swap16(rgb565(color));
+			}
+		}
+		penX += glyph.advance;
+	}
+}
+
+struct FontChoice
+{
+	const KeypadFont* font;
+	std::string text;
+};
+
+FontChoice chooseFont(const std::string& text, uint32_t maxW, uint32_t maxH)
+{
+	static const KeypadFont* const candidates[] = {
+		&KeypadFontNunito28, &KeypadFontNunito20, &KeypadFontNunito16
+	};
+	for (const KeypadFont* font : candidates)
+	{
+		if (font->lineHeight <= maxH && textWidth(text, *font) <= maxW)
+			return { font, text };
+	}
+	// Last resort: truncate at the smallest size.
+	std::string fitted = text;
+	const KeypadFont* font = &KeypadFontNunito16;
+	while (!fitted.empty() && textWidth(fitted, *font) > maxW)
+		fitted.pop_back();
+	return { font, fitted };
+}
 
 const char* inputModeName(InputMode mode)
 {
@@ -255,6 +319,7 @@ void KeypadDisplay::updateLabels(bool force)
 	lastLabelHash = hash;
 
 	Storage& s = Storage::getInstance();
+	const KeyMapping& km = s.getKeyMapping();
 	const InputMode mode = s.getDefaultInputMode();
 	const bool nintendo = s.getUseNintendoLayout();
 	for (uint32_t pin = 0; pin < CELL_COUNT; pin++)
@@ -302,61 +367,18 @@ void KeypadDisplay::show()
 	}
 }
 
-uint32_t KeypadDisplay::textWidth(const std::string& text, uint8_t scale)
-{
-	if (text.empty())
-		return 0;
-	const uint32_t advance = FONT_ADVANCE * scale;
-	return (uint32_t)text.size() * advance - scale;
-}
-
-void KeypadDisplay::drawText(uint16_t* buf, uint32_t stride, int32_t x, int32_t y,
-	const std::string& text, uint8_t scale, uint16_t color)
-{
-	for (size_t i = 0; i < text.size(); i++)
-	{
-		const uint8_t ch = (uint8_t)text[i];
-		if (ch < FONT_CHAR_OFFSET)
-			continue;
-		const uint32_t glyphIndex = ch - FONT_CHAR_OFFSET;
-		const uint8_t* glyph = &GP_Font_Standard[glyphIndex * FONT_W];
-		const int32_t gx = x + (int32_t)i * FONT_ADVANCE * scale;
-		for (uint8_t col = 0; col < FONT_W; col++)
-		{
-			const uint8_t bits = glyph[col];
-			for (uint8_t row = 0; row < FONT_H; row++)
-			{
-				if (!(bits & (1u << row)))
-					continue;
-				for (uint8_t sy = 0; sy < scale; sy++)
-				{
-					const int32_t py = y + (int32_t)row * scale + sy;
-					if (py < 0)
-						continue;
-					for (uint8_t sx = 0; sx < scale; sx++)
-					{
-						const int32_t px = gx + col * scale + sx;
-						if (px < 0)
-							continue;
-						buf[(uint32_t)py * stride + (uint32_t)px] = color;
-					}
-				}
-			}
-		}
-	}
-}
-
 void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 {
 	const uint32_t row = cell / COLS;
 	const uint32_t col = cell % COLS;
-	const uint32_t x0 = colX0(col);
-	const uint32_t y0 = rowY0(row);
-	const uint32_t w = colX1(col) - x0;
-	const uint32_t h = rowY1(row) - y0;
+	const uint32_t x0 = col * LCD_WIDTH / COLS;
+	const uint32_t y0 = row * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / ROWS;
+	const uint32_t w = (col + 1) * LCD_WIDTH / COLS - x0;
+	const uint32_t h = (row + 1) * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / ROWS - y0;
 	if (w == 0 || h == 0 || w * h > MAX_CELL_PIXELS)
 		return;
 
+	// Black background (the gap around the rounded button).
 	for (uint32_t i = 0; i < w * h; i++)
 		pixelBuf[i] = 0;
 
@@ -377,32 +399,22 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 
 	const uint32_t innerW = (uint32_t)(innerX1 - innerX0);
 	const uint32_t innerH = (uint32_t)(innerY1 - innerY0);
+	const uint32_t maxTextW = innerW > 2 * LABEL_PAD ? innerW - 2 * LABEL_PAD : innerW;
+	const uint32_t maxTextH = innerH > 2 * LABEL_PAD ? innerH - 2 * LABEL_PAD : innerH;
+	const uint32_t textColor = luminance(color888) > 140 ? 0x000000 : 0xFFFFFF;
+
 	const std::string& label = labels[cell];
 	if (!label.empty())
 	{
-		const uint32_t maxTextW = innerW > 2 * (BORDER + 3) ? innerW - 2 * (BORDER + 3) : innerW;
-		const uint32_t maxTextH = innerH > 2 * (BORDER + 3) ? innerH - 2 * (BORDER + 3) : innerH;
-		uint8_t scale = 5;
-		while (scale > 1 &&
-		       (textWidth(label, scale) > maxTextW || FONT_H * scale > maxTextH))
-			scale--;
-		std::string fitted = label;
-		if (textWidth(fitted, scale) > maxTextW)
+		FontChoice choice = chooseFont(label, maxTextW, maxTextH);
+		if (!choice.text.empty())
 		{
-			const uint32_t maxChars = maxTextW / (FONT_ADVANCE * scale);
-			if (maxChars == 0)
-				fitted.clear();
-			else if (fitted.size() > maxChars)
-				fitted.resize(maxChars);
-		}
-		if (!fitted.empty())
-		{
-			const uint16_t textColor = swap16(luminance(color888) > 140 ? 0x0000 : 0xFFFF);
-			const uint32_t tw = textWidth(fitted, scale);
-			const uint32_t th = FONT_H * scale;
-			const int32_t tx = (int32_t)(w - tw) / 2;
-			const int32_t ty = (int32_t)(h - th) / 2;
-			drawText(pixelBuf, w, tx, ty, fitted, scale, textColor);
+			const uint32_t tw = textWidth(choice.text, *choice.font);
+			const uint32_t th = choice.font->lineHeight;
+			const int32_t tx = (int32_t)innerX0 + (int32_t)(innerW - tw) / 2;
+			const int32_t ty = (int32_t)innerY0 + (int32_t)(innerH - th) / 2;
+			drawText(pixelBuf, w, w, h, tx, ty, choice.text, *choice.font,
+				textColor, color888);
 		}
 	}
 
@@ -419,7 +431,8 @@ void KeypadDisplay::drawFooter()
 		return;
 
 	const uint32_t footerY = LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT;
-	const uint16_t bg = swap16(rgb565(RGB(0x10, 0x14, 0x1A)));
+	const uint32_t bg888 = RGB(0x10, 0x14, 0x1A);
+	const uint16_t bg = swap16(rgb565(bg888));
 	for (uint32_t y = 0; y < KEYPAD_FOOTER_HEIGHT; y++)
 	{
 		uint16_t* line = &pixelBuf[y * LCD_WIDTH];
@@ -429,15 +442,13 @@ void KeypadDisplay::drawFooter()
 
 	if (!footerText.empty())
 	{
-		uint8_t scale = 2;
-		if (textWidth(footerText, scale) > LCD_WIDTH - 12)
-			scale = 1;
-		const uint32_t tw = textWidth(footerText, scale);
-		const uint32_t th = FONT_H * scale;
+		const std::string& text = footerText;
+		const uint32_t tw = textWidth(text, KeypadFontNunito16);
+		const uint32_t th = KeypadFontNunito16.lineHeight;
 		const int32_t tx = (int32_t)(LCD_WIDTH - tw) / 2;
 		const int32_t ty = (int32_t)(KEYPAD_FOOTER_HEIGHT - th) / 2;
-		const uint16_t color = swap16(rgb565(RGB(0xD8, 0xDE, 0xE9)));
-		drawText(pixelBuf, LCD_WIDTH, tx, ty, footerText, scale, color);
+		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT, tx, ty,
+			text, KeypadFontNunito16, RGB(0xD8, 0xDE, 0xE9), bg888);
 	}
 
 	LCD35::getInstance().setWindow(0, (uint16_t)footerY, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT);

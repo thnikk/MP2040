@@ -50,9 +50,6 @@ private:
 	uint32_t labelHash() const;
 	void drawCell(uint32_t cell, uint32_t color888);
 	void drawFooter();
-	void drawText(uint16_t* buf, uint32_t stride, int32_t x, int32_t y,
-		const std::string& text, uint8_t scale, uint16_t color);
-	static uint32_t textWidth(const std::string& text, uint8_t scale);
 
 	uint16_t pixelBuf[MAX_CELL_PIXELS] = {};
 	int32_t ledToCell[256] = {};
