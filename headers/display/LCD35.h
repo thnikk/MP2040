@@ -41,7 +41,6 @@ private:
 	void data(const uint8_t* buf, uint32_t len);
 	void reset();
 
-	int dmaChannel = -1;
 	bool ready = false;
 };
 

@@ -4,28 +4,34 @@
 
 #if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
 
-#include "hardware/dma.h"
 #include "hardware/gpio.h"
 #include "hardware/pwm.h"
 #include "hardware/spi.h"
+#include "hardware/timer.h"
 #include "pico/stdlib.h"
 
 namespace
 {
 spi_inst_t* const SPI = LCD_SPI;
 
+// The panel samples CS/DC on the SPI clock edge. The pico-sdk GPIO writes are
+// only a few ns ahead of the first SPI clock, while the vendor Arduino code
+// has implicit microseconds of overhead between control-line changes and the
+// transfer. Without a short settle time the ST7796 intermittently misreads a
+// command or treats the start of the next window command as pixel data.
+#ifndef LCD_CTRL_DELAY_US
+#define LCD_CTRL_DELAY_US 2
+#endif
+
+void controlDelay()
+{
+	busy_wait_us(LCD_CTRL_DELAY_US);
+}
+
 void writeBytes(const uint8_t* buf, uint32_t len)
 {
 	if (len)
 		spi_write_blocking(SPI, buf, len);
-}
-
-// DMA completion only means the TX FIFO has been filled; wait for the shift
-// register to drain before raising CS so the last pixel isn't truncated.
-void waitIdle()
-{
-	while (spi_is_busy(SPI))
-		tight_loop_contents();
 }
 } // namespace
 
@@ -61,8 +67,6 @@ bool LCD35::setup()
 	gpio_put(LCD_PIN_DC, 1);
 	gpio_init(LCD_PIN_RST);
 	gpio_set_dir(LCD_PIN_RST, GPIO_OUT);
-
-	dmaChannel = dma_claim_unused_channel(true);
 
 	reset();
 
@@ -161,16 +165,20 @@ void LCD35::command(uint8_t cmd)
 {
 	gpio_put(LCD_PIN_DC, 0);
 	gpio_put(LCD_PIN_CS, 0);
+	controlDelay();
 	writeBytes(&cmd, 1);
 	gpio_put(LCD_PIN_CS, 1);
+	controlDelay();
 }
 
 void LCD35::data(const uint8_t* buf, uint32_t len)
 {
 	gpio_put(LCD_PIN_DC, 1);
 	gpio_put(LCD_PIN_CS, 0);
+	controlDelay();
 	writeBytes(buf, len);
 	gpio_put(LCD_PIN_CS, 1);
+	controlDelay();
 }
 
 void LCD35::setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
@@ -201,32 +209,26 @@ void LCD35::setWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 
 void LCD35::writePixels(const uint16_t* swapped, uint32_t count)
 {
-	if (dmaChannel < 0 || count == 0)
+	if (count == 0)
 		return;
 
 	gpio_put(LCD_PIN_DC, 1);
 	gpio_put(LCD_PIN_CS, 0);
+	controlDelay();
 
-	dma_channel_config cfg = dma_channel_get_default_config((uint)dmaChannel);
-	channel_config_set_transfer_data_size(&cfg, DMA_SIZE_8);
-	channel_config_set_read_increment(&cfg, true);
-	channel_config_set_write_increment(&cfg, false);
-	channel_config_set_dreq(&cfg, spi_get_dreq(SPI, true));
-	dma_channel_configure((uint)dmaChannel, &cfg,
-		&spi_get_hw(SPI)->dr,
-		swapped,
-		count * 2,
-		true);
-	dma_channel_wait_for_finish_blocking((uint)dmaChannel);
-	waitIdle();
+	// Blocking write: spi_write_blocking waits for the TX FIFO to drain and
+	// BSY to clear, so the panel has definitely received every pixel before
+	// CS goes high and the next window command starts. The DMA path could
+	// raise CS while the last FIFO entry was still shifting, which made the
+	// next 0x2A/0x2B command get interpreted as pixel data.
+	writeBytes(reinterpret_cast<const uint8_t*>(swapped), count * 2);
+
 	gpio_put(LCD_PIN_CS, 1);
+	controlDelay();
 }
 
 void LCD35::fill(uint16_t color565)
 {
-	if (dmaChannel < 0)
-		return;
-
 	static uint16_t chunk[256];
 	const uint16_t swapped = (uint16_t)((color565 >> 8) | (color565 << 8));
 	for (uint32_t i = 0; i < 256; i++)
@@ -237,23 +239,17 @@ void LCD35::fill(uint16_t color565)
 
 	gpio_put(LCD_PIN_DC, 1);
 	gpio_put(LCD_PIN_CS, 0);
-	dma_channel_config cfg = dma_channel_get_default_config((uint)dmaChannel);
-	channel_config_set_transfer_data_size(&cfg, DMA_SIZE_8);
-	channel_config_set_read_increment(&cfg, true);
-	channel_config_set_write_increment(&cfg, false);
-	channel_config_set_dreq(&cfg, spi_get_dreq(SPI, true));
+	controlDelay();
 
 	uint32_t remaining = total;
 	while (remaining)
 	{
 		const uint32_t n = remaining < 256 ? remaining : 256;
-		dma_channel_configure((uint)dmaChannel, &cfg,
-			&spi_get_hw(SPI)->dr, chunk, n * 2, true);
-		dma_channel_wait_for_finish_blocking((uint)dmaChannel);
+		writeBytes(reinterpret_cast<const uint8_t*>(chunk), n * 2);
 		remaining -= n;
 	}
-	waitIdle();
 	gpio_put(LCD_PIN_CS, 1);
+	controlDelay();
 }
 
 void LCD35::backlight(uint8_t percent)
