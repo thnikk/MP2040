@@ -8,6 +8,8 @@
 #include "leds/LedLayout.h"
 #include "storagemanager.h"
 
+#include <math.h>
+
 #if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
 
 namespace
@@ -17,6 +19,8 @@ constexpr uint8_t FONT_H = 7;
 constexpr uint8_t FONT_ADVANCE = 6;
 constexpr uint32_t FONT_CHAR_OFFSET = 32;
 constexpr uint32_t BORDER = 3;
+constexpr uint32_t CELL_GAP = 2;
+constexpr float CELL_RADIUS = 10.0f;
 
 constexpr uint32_t RGB(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -62,6 +66,71 @@ uint32_t borderColor(uint32_t c)
 	return RGB((uint8_t)(r > 255 ? 255 : r),
 		(uint8_t)(g > 255 ? 255 : g),
 		(uint8_t)(b > 255 ? 255 : b));
+}
+
+
+inline uint32_t blend(uint32_t a, uint32_t b, uint32_t cover)
+{
+	const uint32_t ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;
+	const uint32_t br = (b >> 16) & 0xFF, bg = (b >> 8) & 0xFF, bb = b & 0xFF;
+	const uint32_t r = ar + ((br - ar) * cover) / 255;
+	const uint32_t g = ag + ((bg - ag) * cover) / 255;
+	const uint32_t bl = ab + ((bb - ab) * cover) / 255;
+	return RGB((uint8_t)r, (uint8_t)g, (uint8_t)bl);
+}
+
+void blendPixel(uint16_t* buf, uint32_t index, uint32_t color, uint32_t cover)
+{
+	if (cover == 0)
+		return;
+	if (cover >= 255)
+	{
+		buf[index] = swap16(rgb565(color));
+		return;
+	}
+	const uint16_t old565 = swap16(buf[index]);
+	const uint32_t old888 = RGB(
+		(uint8_t)(((old565 >> 11) & 0x1F) * 255 / 31),
+		(uint8_t)(((old565 >> 5) & 0x3F) * 255 / 63),
+		(uint8_t)((old565 & 0x1F) * 255 / 31));
+	buf[index] = swap16(rgb565(blend(old888, color, cover)));
+}
+
+void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
+	float x0, float y0, float x1, float y1, float radius, uint32_t color)
+{
+	const int32_t ys = (int32_t)ceilf(y0);
+	const int32_t ye = (int32_t)ceilf(y1) - 1;
+	for (int32_t y = ys; y <= ye; y++)
+	{
+		if (y < 0 || y >= (int32_t)h)
+			continue;
+		const float dy = fminf((float)y - y0, y1 - (float)y);
+		float inset = 0.0f;
+		if (dy < radius)
+		{
+			const float d = radius - dy;
+			inset = radius - sqrtf(radius * radius - d * d);
+		}
+		const float left = x0 + inset;
+		const float right = x1 - inset;
+		if (right <= left)
+			continue;
+		int32_t fullStart = (int32_t)ceilf(left);
+		int32_t fullEnd = (int32_t)floorf(right) - 1;
+		if (fullStart < 0) fullStart = 0;
+		if (fullEnd >= (int32_t)w) fullEnd = (int32_t)w - 1;
+		for (int32_t x = fullStart; x <= fullEnd; x++)
+			buf[(uint32_t)y * w + x] = swap16(rgb565(color));
+		const int32_t li = (int32_t)floorf(left);
+		const float lcov = 1.0f - (left - (float)li);
+		if (li >= 0 && li < (int32_t)w && lcov > 0.0f)
+			blendPixel(buf, (uint32_t)y * w + li, color, (uint32_t)(lcov * 255.0f));
+		const int32_t ri = (int32_t)floorf(right);
+		const float rcov = right - (float)ri;
+		if (ri >= 0 && ri < (int32_t)w && rcov > 0.0f)
+			blendPixel(buf, (uint32_t)y * w + ri, color, (uint32_t)(rcov * 255.0f));
+	}
 }
 
 // Cell boundaries use the same integer split as TouchKeypad so the drawn and
@@ -288,28 +357,31 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	if (w == 0 || h == 0 || w * h > MAX_CELL_PIXELS)
 		return;
 
-	const uint16_t fill = swap16(rgb565(color888));
-	const uint16_t border = swap16(rgb565(borderColor(color888)));
-	for (uint32_t y = 0; y < h; y++)
-	{
-		uint16_t* line = &pixelBuf[y * w];
-		for (uint32_t x = 0; x < w; x++)
-			line[x] = fill;
-	}
-	for (uint32_t y = 0; y < h; y++)
-	{
-		for (uint32_t x = 0; x < w; x++)
-		{
-			if (x < BORDER || y < BORDER || x >= w - BORDER || y >= h - BORDER)
-				pixelBuf[y * w + x] = border;
-		}
-	}
+	for (uint32_t i = 0; i < w * h; i++)
+		pixelBuf[i] = 0;
 
+	const float outerX0 = (float)CELL_GAP;
+	const float outerY0 = (float)CELL_GAP;
+	const float outerX1 = (float)w - CELL_GAP;
+	const float outerY1 = (float)h - CELL_GAP;
+	const float innerInset = (float)(CELL_GAP + BORDER);
+	const float innerX0 = innerInset;
+	const float innerY0 = innerInset;
+	const float innerX1 = (float)w - innerInset;
+	const float innerY1 = (float)h - innerInset;
+
+	fillRounded(pixelBuf, w, h, outerX0, outerY0, outerX1, outerY1,
+		CELL_RADIUS, borderColor(color888));
+	fillRounded(pixelBuf, w, h, innerX0, innerY0, innerX1, innerY1,
+		CELL_RADIUS - BORDER, color888);
+
+	const uint32_t innerW = (uint32_t)(innerX1 - innerX0);
+	const uint32_t innerH = (uint32_t)(innerY1 - innerY0);
 	const std::string& label = labels[cell];
 	if (!label.empty())
 	{
-		const uint32_t maxTextW = w - 2 * (BORDER + 3);
-		const uint32_t maxTextH = h - 2 * (BORDER + 3);
+		const uint32_t maxTextW = innerW > 2 * (BORDER + 3) ? innerW - 2 * (BORDER + 3) : innerW;
+		const uint32_t maxTextH = innerH > 2 * (BORDER + 3) ? innerH - 2 * (BORDER + 3) : innerH;
 		uint8_t scale = 5;
 		while (scale > 1 &&
 		       (textWidth(label, scale) > maxTextW || FONT_H * scale > maxTextH))
