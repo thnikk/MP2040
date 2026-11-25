@@ -121,6 +121,9 @@ function buildOptionsBody() {
     modifierMasks: currentOptions.modifierMasks,
     midiNotes: currentOptions.midiNotes,
     midiVelocities: currentOptions.midiVelocities,
+    // @SCREENPAD_START@
+    ...(currentOptions.display?.colorKeypad === true ? { iconIds: currentOptions.iconIds || [] } : {}),
+    // @SCREENPAD_END@
     gamepadMasks: currentOptions.gamepadMasks || [],
     macroIndices: currentOptions.macroIndices,
     macros: currentOptions.macros || [],
@@ -261,7 +264,7 @@ function slotDirty(i) {
 // Board-mapping part of a profile (keycodes, modifiers, MIDI notes,
 // velocities): the working copy vs its slot, and slots vs the snapshot.
 function boardFieldsOf(p) {
-  return [p.keycodes || [], p.modifierMasks || [], p.midiNotes || [], p.midiVelocities || []];
+  return [p.keycodes || [], p.modifierMasks || [], p.midiNotes || [], p.midiVelocities || [], p.iconIds || []];
 }
 
 function workingBoardEdited() {
@@ -1276,11 +1279,14 @@ async function load() {
   syncColorPickersToMode();
 
   buildLedColorPopover();
+  // @SCREENPAD_START@
   initKeyColorPickers(display);
+  initKeyIconSection(display);
   if (display.colorKeypad === true) {
     const title = document.getElementById('led-section-title');
     if (title) title.textContent = 'Button Colors';
   }
+  // @SCREENPAD_END@
 
   const macrosPanel = document.getElementById('macros-panel');
   if (macrosPanel) {
@@ -2011,6 +2017,10 @@ async function importSettings(file) {
         midiNotes: p.midiNotes || [],
         midiVelocities: p.midiVelocities || [],
         midi: p.midi || {},
+        // @SCREENPAD_START@
+        ...(Array.isArray(p.iconIds) ? { iconIds: p.iconIds }
+          : (Array.isArray(profiles[i]?.iconIds) ? { iconIds: profiles[i].iconIds } : {})),
+        // @SCREENPAD_END@
         led: {
           ...(p.led || {}),
           ...(Array.isArray(led.ledSpeeds) && led.ledSpeeds.length ? { ledSpeeds: led.ledSpeeds } : {}),

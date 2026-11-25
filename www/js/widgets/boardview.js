@@ -558,12 +558,16 @@ class BoardView {
       const gamepadMode = [3, 4, 5, 6, 7, 8].includes(Number(this.options?.defaultInputMode || 1));
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
       const gamepadMask = Number(this.options?.gamepadMasks?.[pinNumber] || 0);
+      const iconId = Number(this.options?.iconIds?.[pinNumber] || 0);
 
       // Label content: text lines for keyboard/MIDI/macro assignments; gamepad
       // mode uses the active layout's control labels + glyphs, matching the
       // controller widget (and the Nintendo-layout toggle).
       const items = [];
-      if (midiMode) {
+      if (iconId > 0) {
+        // Explicit per-key icon (ScreenPad/color keypad).
+        items.push({ text: String.fromCodePoint(iconId), icon: true });
+      } else if (midiMode) {
         if (midiNote > 0) items.push({ text: midiNoteName(midiNote) });
       } else if (gamepadMode) {
         // Gamepad mode: only gamepad control assignments are shown. A pin with
@@ -679,7 +683,18 @@ class BoardView {
         items.forEach((item, idx) => {
           const itemY = cy + (idx - (items.length - 1) / 2) * lineHeight;
           const glyph = item.glyphId ? loadedGlyph(item.glyphId) : null;
-          if (glyph) {
+          if (item.icon) {
+            const text = document.createElementNS(ns, 'text');
+            text.textContent = item.text;
+            text.setAttribute('x', String(cx));
+            text.setAttribute('y', String(itemY));
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'central');
+            text.setAttribute('font-family', 'Font Awesome 6 Free');
+            text.setAttribute('font-weight', '900');
+            text.setAttribute('font-size', String(30 / labelScale));
+            labelEl.appendChild(text);
+          } else if (glyph) {
             this.appendPinGlyph(labelEl, glyph, cx, itemY, labelScale);
           } else {
             if (item.glyphId) ensureGlyph(item.glyphId, () => this.updateLabels());

@@ -40,6 +40,7 @@ CONTENT_TYPES = {
     "pdf": "application/pdf",
     "json": "application/json",
     "svg": "image/svg+xml",
+    "woff2": "font/woff2",
 }
 
 DEFAULT_CONTENT_TYPE = "text/plain"
@@ -48,7 +49,7 @@ DEFAULT_CONTENT_TYPE = "text/plain"
 # long immutable lifetime; the entry page stays fresh because it carries the
 # versioned asset URLs (see --asset-version). Dynamic /api/* responses are
 # custom-file handlers, not fsdata entries, so they are unaffected.
-IMMUTABLE_EXTS = {"svg", "js", "css"}
+IMMUTABLE_EXTS = {"svg", "js", "css", "woff2"}
 NO_CACHE_EXTS = {"html", "htm"}
 
 CACHE_CONTROL_IMMUTABLE = "public, max-age=31536000, immutable"
@@ -87,7 +88,7 @@ def version_asset_urls(text: str, version: str) -> str:
     return text
 
 # These extensions were not compressed by the original makefsdata
-NO_COMPRESS = {"png", "json", "svg"}
+NO_COMPRESS = {"png", "json", "svg", "woff2"}
 
 PAYLOAD_ALIGNMENT = 4
 HEX_BYTES_PER_LINE = 16
@@ -136,9 +137,32 @@ def gather_files(web_dir: Path):
     return sorted(files)
 
 
-def makefsdata(web_dir: Path, out_file: Path, board_svg: str = "", asset_version: str = ""):
+SCREENPAD_ASSETS = {
+    "/js/core/fontawesome-solid.js",
+    "/js/widgets/iconpicker.js",
+    "/fonts/fontawesome.css",
+    "/fonts/LICENSE-fontawesome.txt",
+}
+
+# ScreenPad-only web UI regions. The markers are comments so the source tree
+# stays valid for the dev server; non-ScreenPad firmware images strip the
+# region entirely.
+SCREENPAD_MARKER_RE = re.compile(
+    r"(?ms)^[^\S\n]*(?://|/\*|<!--)[^\n]*@SCREENPAD_START@[^\n]*\n"
+    r".*?^[^\S\n]*(?://|/\*|<!--)[^\n]*@SCREENPAD_END@[^\n]*\n"
+)
+
+
+def strip_screenpad(text: str) -> str:
+    return SCREENPAD_MARKER_RE.sub("", text)
+
+
+def makefsdata(web_dir: Path, out_file: Path, board_svg: str = "", asset_version: str = "",
+               keypad_icons: bool = False):
     # List of (absolute path, URL path) pairs
     entries = [(p, "/" + p.relative_to(web_dir).as_posix()) for p in gather_files(web_dir)]
+    if not keypad_icons:
+        entries = [(p, url) for p, url in entries if url not in SCREENPAD_ASSETS]
     if board_svg and Path(board_svg).is_file():
         entries.append((Path(board_svg), "/board.svg"))
     entries.sort(key=lambda e: e[1])
@@ -181,6 +205,11 @@ def makefsdata(web_dir: Path, out_file: Path, board_svg: str = "", asset_version
         payload_alignment_counter += 1
 
         raw = file_path.read_bytes()
+        if not keypad_icons and ext in {"html", "htm", "css", "js"}:
+            try:
+                raw = strip_screenpad(raw.decode("utf-8")).encode("utf-8")
+            except UnicodeDecodeError:
+                pass
 
         # Version the asset URLs in the entry page and stylesheet so cached
         # copies are keyed per firmware. www/ sources stay unversioned.
@@ -273,13 +302,16 @@ def main():
                         help="Optional board.svg to embed as /board.svg")
     parser.add_argument("--asset-version", default="",
                         help="Cache-busting version appended (?v=) to local asset URLs in html/css")
+    parser.add_argument("--keypad-icons", action="store_true",
+                        help="Include the per-key Font Awesome picker assets (ScreenPad)")
     args = parser.parse_args()
 
     if not args.web_dir.is_dir():
         print(f"Error: {args.web_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    makefsdata(args.web_dir, args.out_file, args.board_svg, args.asset_version)
+    makefsdata(args.web_dir, args.out_file, args.board_svg, args.asset_version,
+               args.keypad_icons)
 
 
 if __name__ == "__main__":

@@ -22,18 +22,38 @@ function (compile_proto)
 	set(PROTO_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto)
 	set(PROTO_OUTPUT_DIR ${PROTO_OUTPUT_DIR} PARENT_SCOPE)
 
+	# Board-specific config schema. ScreenPad injects the per-key icon field;
+	# every other board gets an exact copy of the base proto.
+	set(BOARD_PROTO_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto_src)
+	set(BOARD_CONFIG_PROTO ${BOARD_PROTO_DIR}/config.proto)
+	set(BOARD_KEYPAD_ICONS 0)
+	if(MP2040_KEYPAD_ICONS)
+		set(BOARD_KEYPAD_ICONS 1)
+	endif()
+	add_custom_command(
+		OUTPUT ${BOARD_CONFIG_PROTO}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${BOARD_PROTO_DIR}
+		COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/gen_board_proto.py
+			${CMAKE_SOURCE_DIR}/proto/config.proto ${BOARD_CONFIG_PROTO}
+			${BOARD_KEYPAD_ICONS}
+		DEPENDS ${CMAKE_SOURCE_DIR}/proto/config.proto
+			${CMAKE_SOURCE_DIR}/tools/gen_board_proto.py
+		COMMENT "Generating board config proto"
+	)
+
 	# Tell nanopb to use a temp directory for pb2 regeneration instead of
 	# writing to the source tree (which may be read-only in Docker).
 	set(NANOPB_PB2_TEMP_DIR "${CMAKE_CURRENT_BINARY_DIR}/nanopb_pb2_temp")
 
 	add_custom_command(
-		DEPENDS ${VENV_FILE} ${NANOPB_GENERATOR} ${CMAKE_SOURCE_DIR}/proto/enums.proto ${CMAKE_SOURCE_DIR}/proto/config.proto ${CMAKE_SOURCE_DIR}/lib/nanopb/generator/proto/nanopb.proto
+		DEPENDS ${VENV_FILE} ${NANOPB_GENERATOR} ${CMAKE_SOURCE_DIR}/proto/enums.proto ${BOARD_CONFIG_PROTO} ${CMAKE_SOURCE_DIR}/lib/nanopb/generator/proto/nanopb.proto
 		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTO_OUTPUT_DIR}
 		COMMAND ${CMAKE_COMMAND} -E env NANOPB_PB2_TEMP_DIR=${NANOPB_PB2_TEMP_DIR}
 			${VENV_BIN_DIR}/python ${NANOPB_GENERATOR}
 			-q
 			-D ${PROTO_OUTPUT_DIR}
+			-I ${BOARD_PROTO_DIR}
 			-I ${CMAKE_SOURCE_DIR}/proto
 			-I ${CMAKE_SOURCE_DIR}/lib/nanopb/generator/proto
 			${CMAKE_SOURCE_DIR}/proto/enums.proto
@@ -41,9 +61,10 @@ function (compile_proto)
 			${VENV_BIN_DIR}/python ${NANOPB_GENERATOR}
 			-q
 			-D ${PROTO_OUTPUT_DIR}
+			-I ${BOARD_PROTO_DIR}
 			-I ${CMAKE_SOURCE_DIR}/proto
 			-I ${CMAKE_SOURCE_DIR}/lib/nanopb/generator/proto
-			${CMAKE_SOURCE_DIR}/proto/config.proto
+			${BOARD_CONFIG_PROTO}
 		OUTPUT ${PROTO_OUTPUT_DIR}/config.pb.c ${PROTO_OUTPUT_DIR}/config.pb.h ${PROTO_OUTPUT_DIR}/enums.pb.c ${PROTO_OUTPUT_DIR}/enums.pb.h
 		COMMENT "Compiling enums.proto and config.proto"
 	)

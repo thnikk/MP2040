@@ -18,6 +18,7 @@ message KeyMapping
     // MAX_KEYS) uses Custom mode's colorNormalByMode[0] / colorPressedByMode[0].
     repeated uint32 ledNormalColors = 5 [(nanopb).max_count = 128];
     repeated uint32 ledPressedColors = 6 [(nanopb).max_count = 128];
+    // @MP2040_BOARD_ICONS@
 }
 
 // Gamepad control mapping for the gamepad input modes (XInput / Switch Pro).

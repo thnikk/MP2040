@@ -92,6 +92,7 @@ function initBoard(options) {
   boardView.setOptions(options);
 }
 
+// @SCREENPAD_START@
 // ---- per-key button colors (color keypad boards) -------------------------
 //
 // On a color keypad the on-screen cells are the board's "LEDs", so the existing
@@ -158,6 +159,7 @@ function syncKeyColorSection(pin) {
   keyColorPressedPicker.setValue(intToColor(pressed));
 }
 
+// @SCREENPAD_END@
 function openKeyModal(pin) {
   editingPin = pin;
   const keycode = Number(currentOptions.keycodes[pin] || 0);
@@ -171,7 +173,10 @@ function openKeyModal(pin) {
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
   gamepadSelect.setGroupMask('gamepad', gamepadMask);
   if (gamepadWidget) gamepadWidget.setMask(gamepadMask);
+  // @SCREENPAD_START@
   syncKeyColorSection(pin);
+  syncKeyIconSection(pin);
+  // @SCREENPAD_END@
   closeLedColorPopover();
   setModalTab(currentOptions.defaultInputMode ?? 1);
   document.getElementById('key-modal').hidden = false;

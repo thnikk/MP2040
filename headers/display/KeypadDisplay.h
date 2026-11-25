@@ -55,6 +55,7 @@ private:
 	int32_t ledToCell[256] = {};
 	uint32_t pending[CELL_COUNT] = {};
 	uint32_t shown[CELL_COUNT] = {};
+	uint32_t iconIds[CELL_COUNT] = {};
 	bool dirty[CELL_COUNT] = {};
 	std::string labels[CELL_COUNT];
 	std::string footerText;

@@ -79,6 +79,9 @@ function cloneProfile(p) {
     modifierMasks: (p.modifierMasks || []).slice(),
     midiNotes: (p.midiNotes || new Array(30).fill(0)).slice(),
     midiVelocities: (p.midiVelocities || new Array(30).fill(0)).slice(),
+    // @SCREENPAD_START@
+    iconIds: (p.iconIds || []).slice(),
+    // @SCREENPAD_END@
     midi: { channel: p.midi?.channel ?? 0, velocity: p.midi?.velocity ?? 127 },
     led: {
       ledMode: p.led?.ledMode ?? 0,
@@ -95,6 +98,9 @@ function applyProfileToOptions(profile, options) {
   options.modifierMasks = profile.modifierMasks.slice();
   options.midiNotes = profile.midiNotes.slice();
   options.midiVelocities = profile.midiVelocities.slice();
+  // @SCREENPAD_START@
+  options.iconIds = (profile.iconIds || []).slice();
+  // @SCREENPAD_END@
   options.midi = { ...(options.midi || {}), ...profile.midi };
   // Speed, brightness and per-mode colors are global; profiles only carry the
   // per-profile LED scalars (mode, per-key colors).
@@ -117,6 +123,9 @@ function applyOptionsToProfile(options, profile) {
   profile.modifierMasks = options.modifierMasks.slice();
   profile.midiNotes = options.midiNotes.slice();
   profile.midiVelocities = options.midiVelocities.slice();
+  // @SCREENPAD_START@
+  profile.iconIds = (options.iconIds || []).slice();
+  // @SCREENPAD_END@
   profile.midi = { ...(profile.midi || {}), ...(options.midi || {}) };
   const { ledSpeeds: _ledSpeeds, colorNormalByMode: _colorNormal, colorPressedByMode: _colorPressed, brightnessByMode: _brightness, ...optionsLed } = options.led || {};
   profile.led = { ...(profile.led || {}), ...optionsLed };
@@ -210,6 +219,9 @@ function profileEdited() {
     a.midiVelocities.length, b.midiVelocities.length,
     a.led.ledNormalColors.length, b.led.ledNormalColors.length,
     a.led.ledPressedColors.length, b.led.ledPressedColors.length,
+    // @SCREENPAD_START@
+    a.iconIds.length, b.iconIds.length,
+    // @SCREENPAD_END@
   );
   const pad = (arr) => {
     const out = new Array(len).fill(0);
@@ -222,6 +234,9 @@ function profileEdited() {
     same(a.modifierMasks, b.modifierMasks) &&
     same(a.midiNotes, b.midiNotes) &&
     same(a.midiVelocities, b.midiVelocities) &&
+    // @SCREENPAD_START@
+    same(a.iconIds, b.iconIds) &&
+    // @SCREENPAD_END@
     a.midi.channel === b.midi.channel &&
     a.midi.velocity === b.midi.velocity &&
     a.led.ledMode === b.led.ledMode &&

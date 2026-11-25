@@ -115,6 +115,9 @@ function makeProfile(src = {}) {
     modifierMasks,
     midiNotes: Array.isArray(src.midiNotes) ? src.midiNotes.slice() : new Array(keyCount()).fill(0),
     midiVelocities: Array.isArray(src.midiVelocities) ? src.midiVelocities.slice() : new Array(keyCount()).fill(0),
+    iconIds: Array.isArray(src.iconIds)
+      ? src.iconIds.slice()
+      : (board?.display?.colorKeypad ? new Array(keyCount()).fill(0) : []),
     midi: {
       channel: src.midi?.channel ?? 0,
       velocity: src.midi?.velocity ?? 127,
@@ -162,6 +165,7 @@ function defaultOptions() {
     modifierMasks,
     midiNotes: new Array(keyCount()).fill(0),
     midiVelocities: new Array(keyCount()).fill(0),
+    ...(board?.display?.colorKeypad ? { iconIds: new Array(keyCount()).fill(0) } : {}),
     // Global macros: per-key triggers + the M1-M8 definitions.
     macroIndices,
     macros: Array.from({ length: 8 }, () => ({ steps: [] })),
@@ -336,6 +340,7 @@ export function createMockApp() {
     if (Array.isArray(body.modifierMasks)) profile.modifierMasks = body.modifierMasks;
     if (Array.isArray(body.midiNotes)) profile.midiNotes = body.midiNotes;
     if (Array.isArray(body.midiVelocities)) profile.midiVelocities = body.midiVelocities;
+    if (board?.display?.colorKeypad && Array.isArray(body.iconIds)) profile.iconIds = body.iconIds;
     // Global gamepad control mapping (not per-profile), like the firmware.
     if (Array.isArray(body.gamepadMasks)) current.gamepadMasks = body.gamepadMasks;
     // Global macros (shared across profiles), like the firmware.
@@ -406,6 +411,7 @@ export function createMockApp() {
     current.midiNotes = active.midiNotes;
     current.midiVelocities = active.midiVelocities;
     current.midi = { ...current.midi, ...active.midi };
+    current.iconIds = active.iconIds || [];
     current.led = { ...current.led, ...active.led };
 
     store = current;

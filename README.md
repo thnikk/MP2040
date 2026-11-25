@@ -74,6 +74,12 @@ How the board reads the keys:
 - **Capacitive Touch**: Each key is a capacitive touch pad
 - **Touch Ring**: 4 pad touch ring
 
+## Fonts and Icons
+
+The ScreenPad on-screen labels use Nunito (SIL Open Font License). Its icon
+picker uses Font Awesome Free solid icons (icons CC BY 4.0, font SIL OFL).
+License texts are in `assets/licenses/`.
+
 ## Development
 
 Build the firmware:

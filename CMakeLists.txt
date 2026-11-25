@@ -138,6 +138,10 @@ set(BOARD_SVG ${CMAKE_SOURCE_DIR}/configs/${MP2040_BOARDCONFIG}/board.svg)
 if(NOT EXISTS ${BOARD_SVG})
   set(BOARD_SVG "")
 endif()
+set(KEYPAD_ICONS_ARG "")
+if(MP2040_KEYPAD_ICONS)
+  set(KEYPAD_ICONS_ARG --keypad-icons)
+endif()
 add_custom_command(
   OUTPUT ${CMAKE_SOURCE_DIR}/lib/httpd/fsdata.c
   COMMAND ${CMAKE_COMMAND} -E env
@@ -145,6 +149,7 @@ add_custom_command(
       ${CMAKE_SOURCE_DIR}/www ${CMAKE_SOURCE_DIR}/lib/httpd/fsdata.c
       --board-svg ${BOARD_SVG}
       --asset-version ${MP2040_ASSET_VERSION}
+      ${KEYPAD_ICONS_ARG}
   DEPENDS ${WEB_SOURCES} ${CMAKE_SOURCE_DIR}/tools/makefsdata.py ${BOARD_SVG}
   COMMENT "Generating embedded web assets (fsdata.c)..."
   VERBATIM
@@ -285,6 +290,10 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
   PICO_XOSC_STARTUP_DELAY_MULTIPLIER=64
   MP2040_BOARDCONFIG="${MP2040_BOARDCONFIG}"
 )
+
+if(MP2040_KEYPAD_ICONS)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC MP2040_KEYPAD_ICONS=1)
+endif()
 
 target_include_directories(${PROJECT_NAME}  PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}

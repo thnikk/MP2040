@@ -2,6 +2,9 @@
 
 #include "BoardConfig.h"
 #include "display/LCD35.h"
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+#include "display/fonts/FontAwesomeSolid40.h"
+#endif
 #include "display/fonts/KeypadFontNunito16.h"
 #include "display/fonts/KeypadFontNunito20.h"
 #include "display/fonts/KeypadFontNunito28.h"
@@ -220,6 +223,52 @@ const char* inputModeName(InputMode mode)
 	}
 }
 
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+const KeypadIcon* findIcon(uint32_t codepoint)
+{
+	int32_t lo = 0;
+	int32_t hi = (int32_t)FONTAWESOME_SOLID_COUNT - 1;
+	while (lo <= hi)
+	{
+		const int32_t mid = lo + (hi - lo) / 2;
+		const KeypadIcon& icon = FontAwesomeSolidIcons[mid];
+		if (icon.codepoint == codepoint)
+			return &icon;
+		if (icon.codepoint < codepoint)
+			lo = mid + 1;
+		else
+			hi = mid - 1;
+	}
+	return nullptr;
+}
+
+bool drawIcon(uint16_t* buf, uint32_t w, uint32_t h,
+	uint32_t left, uint32_t top, uint32_t width, uint32_t height,
+	uint32_t codepoint, uint32_t color, uint32_t fillColor)
+{
+	const KeypadIcon* icon = findIcon(codepoint);
+	if (icon == nullptr || width < FONTAWESOME_ICON_SIZE || height < FONTAWESOME_ICON_SIZE)
+		return false;
+	const uint32_t x0 = left + (width - FONTAWESOME_ICON_SIZE) / 2;
+	const uint32_t y0 = top + (height - FONTAWESOME_ICON_SIZE) / 2;
+	for (uint32_t y = 0; y < FONTAWESOME_ICON_SIZE; y++)
+	{
+		for (uint32_t x = 0; x < FONTAWESOME_ICON_SIZE; x++)
+		{
+			const uint32_t index = icon->offset + y * FONTAWESOME_ICON_ROW_BYTES + (x >> 1);
+			const uint8_t packed = FontAwesomeSolidMask[index];
+			const uint8_t alpha = (x & 1) ? (packed & 0x0F) : (packed >> 4);
+			if (alpha == 0)
+				continue;
+			const uint32_t blended = alpha == 15
+				? color : blend(fillColor, color, alpha * 17);
+			buf[(y0 + y) * w + x0 + x] = swap16(rgb565(blended));
+		}
+	}
+	return true;
+}
+#endif
+
 void uppercase(std::string& s)
 {
 	for (char& c : s)
@@ -307,6 +356,9 @@ uint32_t KeypadDisplay::labelHash() const
 		mix(pin < (uint32_t)km.midiNotes_count ? (uint32_t)km.midiNotes[pin] : 0);
 		mix(s.getGamepadMask(pin));
 		mix(pin < (uint32_t)cfg.macroIndices_count ? (uint32_t)cfg.macroIndices[pin] : 0);
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+		mix(pin < (uint32_t)km.iconIds_count ? (uint32_t)km.iconIds[pin] : 0);
+#endif
 	}
 	return h;
 }
@@ -326,6 +378,11 @@ void KeypadDisplay::updateLabels(bool force)
 	{
 		labels[pin] = inputLabelForPin(pin, mode, nintendo);
 		uppercase(labels[pin]);
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+		iconIds[pin] = pin < (uint32_t)km.iconIds_count ? km.iconIds[pin] : 0;
+#else
+		iconIds[pin] = 0;
+#endif
 		dirty[pin] = true;
 	}
 }
@@ -404,7 +461,16 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	const uint32_t textColor = luminance(color888) > 140 ? 0x000000 : 0xFFFFFF;
 
 	const std::string& label = labels[cell];
-	if (!label.empty())
+	bool drewIcon = false;
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+	if (iconIds[cell] != 0)
+	{
+		drewIcon = drawIcon(pixelBuf, w, h,
+			(uint32_t)innerX0, (uint32_t)innerY0, innerW, innerH,
+			iconIds[cell], textColor, color888);
+	}
+#endif
+	if (!drewIcon && !label.empty())
 	{
 		FontChoice choice = chooseFont(label, maxTextW, maxTextH);
 		if (!choice.text.empty())

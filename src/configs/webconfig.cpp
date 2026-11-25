@@ -213,6 +213,14 @@ static void writeKeyMappingJson(JsonObject obj, const KeyMapping& km)
         midiNotes.add(pin < (Pin_t)km.midiNotes_count ? km.midiNotes[pin] : 0);
         midiVelocities.add(pin < (Pin_t)km.midiVelocities_count ? km.midiVelocities[pin] : 0);
     }
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+    JsonArray iconIds = obj.createNestedArray("iconIds");
+    const uint32_t iconCapacity =
+        (uint32_t)(sizeof(km.iconIds) / sizeof(km.iconIds[0]));
+    const uint32_t iconCount = keyCount < iconCapacity ? keyCount : iconCapacity;
+    for (Pin_t pin = 0; pin < (Pin_t)iconCount; pin++)
+        iconIds.add(pin < (Pin_t)km.iconIds_count ? km.iconIds[pin] : 0);
+#endif
 }
 
 // Serialize one profile's editable fields. `profile` may be null for a slot
@@ -278,6 +286,14 @@ std::string getOptions()
         midiVelocities.add(pin < (Pin_t)keyMapping.midiVelocities_count ? keyMapping.midiVelocities[pin] : 0);
         gamepadMasks.add(Storage::getInstance().getGamepadMask(pin));
     }
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+    JsonArray iconIds = doc.createNestedArray("iconIds");
+    const uint32_t iconCapacity =
+        (uint32_t)(sizeof(keyMapping.iconIds) / sizeof(keyMapping.iconIds[0]));
+    const uint32_t iconCount = keyCount < iconCapacity ? keyCount : iconCapacity;
+    for (Pin_t pin = 0; pin < (Pin_t)iconCount; pin++)
+        iconIds.add(pin < (Pin_t)keyMapping.iconIds_count ? keyMapping.iconIds[pin] : 0);
+#endif
 
     // Global macro triggers (per-key, 0 = none) and definitions (M1-M8).
     JsonArray macroIndices = doc.createNestedArray("macroIndices");
@@ -506,6 +522,17 @@ std::string setOptions()
     keyMapping.midiVelocities_count = midiVelocities.size() > MAX_KEYS ? MAX_KEYS : midiVelocities.size();
     for (Pin_t pin = 0; pin < (Pin_t)keyMapping.midiVelocities_count; pin++)
         keyMapping.midiVelocities[pin] = midiVelocities[pin];
+
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+    JsonArray iconIds = doc["iconIds"];
+    // The generated field is sized for this board's keypad (16 entries), not
+    // MAX_KEYS; cap the client array so a malformed request can't overflow it.
+    const uint32_t iconCapacity =
+        (uint32_t)(sizeof(keyMapping.iconIds) / sizeof(keyMapping.iconIds[0]));
+    keyMapping.iconIds_count = iconIds.size() > iconCapacity ? iconCapacity : iconIds.size();
+    for (Pin_t pin = 0; pin < (Pin_t)keyMapping.iconIds_count; pin++)
+        keyMapping.iconIds[pin] = iconIds[pin] | 0;
+#endif
 
     // Gamepad control mapping is global (not per-profile), written every call
     // like the other global fields.

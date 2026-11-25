@@ -10,6 +10,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+  <!-- @SCREENPAD_START@ -->
+  <link rel="stylesheet" href="/fonts/fontawesome.css">
+  <!-- @SCREENPAD_END@ -->
   <link rel="stylesheet" href="/style.css">
   <script>
     // Apply the saved theme before first paint to avoid a flash.
@@ -412,6 +415,13 @@
         </div>
       </div>
       <div class="modal-actions">
+        <!-- @SCREENPAD_START@ -->
+        <div id="key-modal-icon" class="key-modal-icon" hidden>
+          <label class="led-mode-label">Icon</label>
+          <button id="key-icon-btn" type="button" class="led-color-btn">
+            <span id="key-icon-preview" class="icon-preview-text">Text</span>
+          </button>
+        </div>
         <div id="key-modal-color" class="key-modal-color" hidden>
           <label class="led-mode-label">Button color</label>
           <div class="led-colors">
@@ -419,6 +429,7 @@
             <div class="led-color-picker"><div id="key-color-pressed"></div></div>
           </div>
         </div>
+        <!-- @SCREENPAD_END@ -->
         <div class="key-modal-buttons">
           <button id="key-modal-cancel" type="button">Cancel</button>
           <button id="key-modal-save" type="button">Save</button>
@@ -426,6 +437,24 @@
       </div>
     </div>
   </div>
+
+  <!-- @SCREENPAD_START@ -->
+  <div id="icon-modal" class="modal-overlay" hidden>
+    <div class="modal icon-modal">
+      <div class="modal-header">
+        <h3>Choose Icon</h3>
+        <button id="icon-modal-close" class="modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <p class="hint">Font Awesome Free solid icons (CC BY 4.0). Choose “No icon” to use the text label.</p>
+      <input id="icon-search" class="icon-search" type="search" placeholder="Search icons" autocomplete="off">
+      <div id="icon-grid" class="icon-grid"></div>
+      <div class="modal-actions">
+        <button id="icon-none" type="button">No icon</button>
+        <button id="icon-modal-cancel" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <!-- @SCREENPAD_END@ -->
 
   <div id="macro-key-modal" class="modal-overlay" hidden>
     <div class="modal">
@@ -501,6 +530,9 @@
   <script src="/js/core/profiles.js"></script>
   <script src="/js/core/led.js"></script>
   <script src="/js/core/modals.js"></script>
+  <!-- @SCREENPAD_START@ -->
+  <script src="/js/widgets/iconpicker.js"></script>
+  <!-- @SCREENPAD_END@ -->
   <script src="/js/core/gp2040.js"></script>
   <script src="/js/core/app.js"></script>
 </body>
