@@ -99,12 +99,14 @@ function intToCss(value) {
   return '#' + value.toString(16).padStart(6, '0');
 }
 
+// @SCREENPAD_START@
 // Per-key label/icon color, mirroring KeypadDisplay::drawCell: the panel picks
 // black or white from the cell fill's luminance (same integer threshold).
 function labelColorForRgb(c) {
   const lum = Math.floor((c[0] * 299 + c[1] * 587 + c[2] * 114) / 1000);
   return lum > 140 ? '#000000' : '#ffffff';
 }
+// @SCREENPAD_END@
 
 // Mode indicator LED color for the active input mode, mirroring the firmware's
 // defaults (LedController::updateStatusLed): keyboard=yellow, MIDI=amber,
@@ -229,7 +231,9 @@ class BoardView {
     this.options = null;
     this.svgRoot = null;
     this.pinElements = [];
+    // @SCREENPAD_START@
     this.pinLabelEls = new Map();
+    // @SCREENPAD_END@
     this.ringElement = null;
     this.ringShapes = [];
     this.ringGeometry = null;
@@ -519,7 +523,9 @@ class BoardView {
   updateLabels() {
     if (!this.svgRoot) return;
 
+    // @SCREENPAD_START@
     this.pinLabelEls = new Map();
+    // @SCREENPAD_END@
 
     // Scale factor from SVG user units to screen pixels (horizontal). The
     // board SVG is scaled responsively, so SVG text (which uses user units)
@@ -560,7 +566,9 @@ class BoardView {
       // Counter-scale the font so the label stays ~24px on screen regardless
       // of the board's CSS scale factor (labelScale = screen px / user unit).
       labelEl.setAttribute('font-size', String(24 / labelScale));
+      // @SCREENPAD_START@
       this.pinLabelEls.set(pinNumber, labelEl);
+      // @SCREENPAD_END@
 
       const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
@@ -570,7 +578,10 @@ class BoardView {
       const midiNote = Number(this.options?.midiNotes?.[pinNumber] || 0);
       const gamepadMask = Number(this.options?.gamepadMasks?.[pinNumber] || 0);
       // @SCREENPAD_START@
-      const iconId = Number(this.options?.iconIds?.[pinNumber] || 0);
+      const rawIconId = Number(this.options?.iconIds?.[pinNumber] || 0);
+      // vector-square (0xF5CB) was removed in Font Awesome 7; treat it like a
+      // missing glyph and fall back to the text label, matching the panel.
+      const iconId = rawIconId === 0xF5CB ? 0 : rawIconId;
       // @SCREENPAD_END@
 
       // Label content: text lines for keyboard/MIDI/macro assignments; gamepad
@@ -701,8 +712,8 @@ class BoardView {
           const glyph = item.glyphId ? loadedGlyph(item.glyphId) : null;
           // @SCREENPAD_START@
           if (item.icon) {
-            // Quote the family: an unquoted "Font Awesome 6 Free" is not a
-            // valid CSS identifier sequence (the "6" breaks it), so the
+            // Quote the family: an unquoted "Font Awesome 7 Free" is not a
+            // valid CSS identifier sequence (the "7" breaks it), so the
             // attribute would be ignored and the glyph would fall back to
             // Nunito, rendering a hex tofu box.
             const text = document.createElementNS(ns, 'text');
@@ -711,7 +722,7 @@ class BoardView {
             text.setAttribute('y', String(itemY));
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('dominant-baseline', 'central');
-            text.setAttribute('font-family', "'Font Awesome 6 Free'");
+            text.setAttribute('font-family', "'Font Awesome 7 Free'");
             text.setAttribute('font-weight', '900');
             text.setAttribute('font-size', String(30 / labelScale));
             labelEl.appendChild(text);
@@ -858,9 +869,12 @@ class BoardView {
         s.style.setProperty('fill', rgb, 'important');
       });
     });
+    // @SCREENPAD_START@
     this.updatePinLabelColors(colors);
+    // @SCREENPAD_END@
   }
 
+  // @SCREENPAD_START@
   // Match the panel's per-key text/icon color: the firmware picks black or
   // white from each cell's fill, so the preview has to do the same instead of
   // inheriting the theme's text color.
@@ -880,6 +894,7 @@ class BoardView {
       labelEl.style.setProperty('fill', fill, 'important');
     }
   }
+  // @SCREENPAD_END@
 
   // ---- pin styling / highlight ------------------------------------------
 

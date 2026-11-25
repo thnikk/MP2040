@@ -35,8 +35,13 @@ function ensureIconIds() {
   return currentOptions.iconIds;
 }
 
+// Codepoints that existed in Font Awesome 6 but have no glyph in 7. Treat
+// them as "no icon" so an old profile shows its text label instead of tofu.
+const REMOVED_SOLID_CODEPOINTS = new Set([0xF5CB]);
+
 function iconPreviewText(codepoint) {
-  return codepoint ? String.fromCodePoint(codepoint) : 'Text';
+  return codepoint && !REMOVED_SOLID_CODEPOINTS.has(codepoint)
+    ? String.fromCodePoint(codepoint) : 'Text';
 }
 
 function syncKeyIconSection(pin) {
@@ -49,8 +54,9 @@ function syncKeyIconSection(pin) {
   const preview = document.getElementById('key-icon-preview');
   if (!preview) return;
   preview.textContent = iconPreviewText(codepoint);
-  preview.classList.toggle('fa-glyph', codepoint > 0);
-  preview.classList.toggle('icon-preview-text', codepoint === 0);
+  const showGlyph = codepoint > 0 && !REMOVED_SOLID_CODEPOINTS.has(codepoint);
+  preview.classList.toggle('fa-glyph', showGlyph);
+  preview.classList.toggle('icon-preview-text', !showGlyph);
 }
 
 function closeIconPicker() {
