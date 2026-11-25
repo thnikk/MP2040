@@ -393,18 +393,22 @@ void KeypadDisplay::updateFooter(bool force)
 		return;
 
 	Storage& s = Storage::getInstance();
-	std::string text;
+	std::string left;
+	std::string right;
 	if (s.getBootWindowActive())
-		text = "HOLD KEY 1 FOR WEB CONFIG";
+		left = "HOLD KEY 1 FOR WEB CONFIG";
 	else if (s.GetConfigMode())
-		text = std::string("CFG ") + MP2040_WEBCONFIG_IP;
+		left = std::string("CFG ") + MP2040_WEBCONFIG_IP;
 	else
-		text = std::string(inputModeName(s.getDefaultInputMode())) +
-			"  P" + std::to_string(s.getActiveProfile() + 1);
+	{
+		left = inputModeName(s.getDefaultInputMode());
+		right = "Profile " + std::to_string(s.getActiveProfile() + 1);
+	}
 
-	if (!force && text == footerText)
+	if (!force && left == footerLeft && right == footerRight)
 		return;
-	footerText = text;
+	footerLeft = left;
+	footerRight = right;
 	drawFooter();
 }
 
@@ -506,15 +510,28 @@ void KeypadDisplay::drawFooter()
 			line[x] = bg;
 	}
 
-	if (!footerText.empty())
+	const uint32_t textColor = RGB(0xD8, 0xDE, 0xE9);
+	const uint32_t th = KeypadFontNunito16.lineHeight;
+	const int32_t ty = (int32_t)(KEYPAD_FOOTER_HEIGHT - th) / 2;
+	constexpr int32_t PAD = 8;
+
+	if (!footerRight.empty())
 	{
-		const std::string& text = footerText;
-		const uint32_t tw = textWidth(text, KeypadFontNunito16);
-		const uint32_t th = KeypadFontNunito16.lineHeight;
-		const int32_t tx = (int32_t)(LCD_WIDTH - tw) / 2;
-		const int32_t ty = (int32_t)(KEYPAD_FOOTER_HEIGHT - th) / 2;
-		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT, tx, ty,
-			text, KeypadFontNunito16, RGB(0xD8, 0xDE, 0xE9), bg888);
+		// Normal keypad: input mode on the left, profile on the right.
+		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+			PAD, ty, footerLeft, KeypadFontNunito16, textColor, bg888);
+		const uint32_t rw = textWidth(footerRight, KeypadFontNunito16);
+		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+			(int32_t)(LCD_WIDTH - PAD - (int32_t)rw), ty, footerRight,
+			KeypadFontNunito16, textColor, bg888);
+	}
+	else if (!footerLeft.empty())
+	{
+		// Boot/config prompts stay centered.
+		const uint32_t tw = textWidth(footerLeft, KeypadFontNunito16);
+		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+			(int32_t)(LCD_WIDTH - tw) / 2, ty, footerLeft,
+			KeypadFontNunito16, textColor, bg888);
 	}
 
 	LCD35::getInstance().setWindow(0, (uint16_t)footerY, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT);

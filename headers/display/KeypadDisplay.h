@@ -58,7 +58,8 @@ private:
 	uint32_t iconIds[CELL_COUNT] = {};
 	bool dirty[CELL_COUNT] = {};
 	std::string labels[CELL_COUNT];
-	std::string footerText;
+	std::string footerLeft;
+	std::string footerRight;
 	uint32_t lastLabelHash = 0xFFFFFFFFu;
 	bool present = false;
 };
