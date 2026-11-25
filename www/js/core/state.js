@@ -83,6 +83,9 @@ let nintendoPill = null;
 // LED color pickers (see createColorPicker below)
 let colorNormalPicker = null;
 let colorPressedPicker = null;
+// Key-modal per-key button colors (color keypad boards only)
+let keyColorNormalPicker = null;
+let keyColorPressedPicker = null;
 
 // Per-LED color popover (custom LED mode): the currently-open popover state,
 // the LED element it's anchored to, and the pin whose colors it edits.

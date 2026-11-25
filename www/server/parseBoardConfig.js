@@ -329,6 +329,9 @@ export function parseBoardConfig(configDir, rootDir) {
   // arrays are indexed by linear matrix key (row * MATRIX_COLS + col), not GPIO.
   const matrixRows = parseNum(d.MATRIX_ROWS) ?? 0;
   const matrixCols = parseNum(d.MATRIX_COLS) ?? 0;
+  // Touchscreen keypad: the matrix is drawn on a color LCD and scanned from
+  // the touch controller instead of wired row/column pins.
+  const touchKeypad = (parseNum(d.MATRIX_TOUCH_KEYPAD) ?? 0) === 1;
 
   return {
     boardConfigLabel,
@@ -345,6 +348,7 @@ export function parseBoardConfig(configDir, rootDir) {
       rowPins: parsePinArray(d.MATRIX_ROW_PINS),
       colPins: parsePinArray(d.MATRIX_COL_PINS),
       activeHigh: (parseNum(d.MATRIX_ACTIVE_HIGH) ?? 0) === 1,
+      touchKeypad,
     },
     led: {
       dataPin: parseNum(d.LED_PIN) ?? -1,
@@ -387,6 +391,7 @@ export function parseBoardConfig(configDir, rootDir) {
     display: {
       enabled: (parseNum(d.HAS_I2C_DISPLAY) ?? 0) === 1,
       hasDisplay: (parseNum(d.HAS_I2C_DISPLAY) ?? 0) === 1,
+      colorKeypad: touchKeypad,
       size: parseNum(d.DISPLAY_SIZE) ?? 3,
       flip: parseNum(d.DISPLAY_FLIP) ?? 0,
       invert: (parseNum(d.DISPLAY_INVERT) ?? 0) === 1,

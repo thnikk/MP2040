@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- ScreenPad: Waveshare RP2350-Touch-LCD-3.5 (3.5" 320x480 touch panel). -->
+<svg
+   width="58mm"
+   height="96mm"
+   viewBox="0 0 58 96"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
+
+  <rect
+     id="case"
+     inkscape:label="case"
+     x="0.5"
+     y="0.5"
+     width="57"
+     height="95"
+     rx="4"
+     ry="4" />
+
+  <!-- Decorative board details, left at their authored colors. -->
+  <g inkscape:label="ignore">
+    <rect x="24" y="90.2" width="10" height="3.2" rx="1.4" fill="#2b303b" stroke="#000000" stroke-width="0.3" />
+    <circle cx="6" cy="92" r="1.1" fill="#2b303b" stroke="#000000" stroke-width="0.3" />
+    <circle cx="52" cy="92" r="1.1" fill="#2b303b" stroke="#000000" stroke-width="0.3" />
+  </g>
+
+  <!-- Screen bezel -->
+  <rect
+     id="screen-bezel"
+     inkscape:label="ignore"
+     x="5"
+     y="10"
+     width="48"
+     height="70"
+     rx="1.5"
+     ry="1.5"
+     fill="#05070a"
+     stroke="#000000"
+     stroke-width="0.3" />
+
+  <!-- LED slots (the on-screen buttons). Authored before the key shapes so the
+       key outlines and labels draw on top; a color-keypad board lets the LED
+       fill show through. Indices are row-major, matching the 4x3 touch grid. -->
+  <g inkscape:label="leds">
+    <rect id="led0"  x="7.55"  y="12.55"  width="13.9" height="14.9" rx="1.2" />
+    <rect id="led1"  x="22.216" y="12.55" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led2"  x="36.883" y="12.55" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led3"  x="7.55"  y="28.225" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led4"  x="22.216" y="28.225" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led5"  x="36.883" y="28.225" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led6"  x="7.55"  y="43.9"  width="13.9" height="14.9" rx="1.2" />
+    <rect id="led7"  x="22.216" y="43.9" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led8"  x="36.883" y="43.9" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led9"  x="7.55"  y="59.575" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led10" x="22.216" y="59.575" width="13.9" height="14.9" rx="1.2" />
+    <rect id="led11" x="36.883" y="59.575" width="13.9" height="14.9" rx="1.2" />
+  </g>
+
+  <!-- Key hit areas / label anchors (linear matrix key index). -->
+  <g inkscape:label="buttons">
+    <rect id="key0"  x="7.55"  y="12.55"  width="13.9" height="14.9" rx="1.2" />
+    <rect id="key1"  x="22.216" y="12.55" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key2"  x="36.883" y="12.55" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key3"  x="7.55"  y="28.225" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key4"  x="22.216" y="28.225" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key5"  x="36.883" y="28.225" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key6"  x="7.55"  y="43.9"  width="13.9" height="14.9" rx="1.2" />
+    <rect id="key7"  x="22.216" y="43.9" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key8"  x="36.883" y="43.9" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key9"  x="7.55"  y="59.575" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key10" x="22.216" y="59.575" width="13.9" height="14.9" rx="1.2" />
+    <rect id="key11" x="36.883" y="59.575" width="13.9" height="14.9" rx="1.2" />
+  </g>
+
+  <!-- Status/footer strip at the bottom of the panel. -->
+  <rect
+     id="screen-footer"
+     inkscape:label="ignore"
+     x="7"
+     y="74.7"
+     width="44"
+     height="3.3"
+     rx="0.5"
+     fill="#10141a" />
+</svg>

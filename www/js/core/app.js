@@ -670,7 +670,11 @@ function applyDraftToOptions(options, d) {
   options.serialConfigEnabled = g.serialConfigEnabled === true;
   options.gamepad = g.gamepad || {};
   options.ring = g.ring || {};
-  options.display = g.display || {};
+  // The draft only carries the editable display fields. Keep the board-fixed
+  // capabilities from the live options (hasDisplay, enabled, colorKeypad,
+  // buttonLayout, orientation, splashMode) so restoring a draft doesn't hide
+  // the display/button-color UI.
+  options.display = { ...(options.display || {}), ...(g.display || {}) };
   options.hotkeys = g.hotkeys || [];
   options.bootKeys = g.bootKeys || [];
   options.led = { ...(options.led || {}), ...(g.led || {}) };
@@ -1209,13 +1213,17 @@ async function load() {
   }
 
   // Boards without an addressable LED strip (dataPin < 0, e.g. Fightboard-b)
-  // hide the whole LEDs section. The widgets below still initialize while
-  // hidden so save payloads, dirty tracking and profiles behave unchanged.
-  // The Settings page timeout control stays visible; only its status LED row
-  // is conditional (on hasStatusLed, handled above).
+  // hide the whole LEDs section. A color keypad has no strip either, but its
+  // on-screen buttons are driven from the per-key LED colors, so the section
+  // (mode/effects/global colors) must stay visible for it.
+  // The widgets below still initialize while hidden so save payloads, dirty
+  // tracking and profiles behave unchanged. The Settings page timeout control
+  // stays visible; only its status LED row is conditional (on hasStatusLed,
+  // handled above).
   const ledSectionEl = document.getElementById('led-section');
   if (ledSectionEl) {
-    ledSectionEl.hidden = (options.led?.dataPin ?? -1) < 0;
+    const colorKeypad = options.display?.colorKeypad === true;
+    ledSectionEl.hidden = (options.led?.dataPin ?? -1) < 0 && !colorKeypad;
   }
 
   document.getElementById('led-mode').value = led.ledMode ?? 0;
@@ -1268,6 +1276,11 @@ async function load() {
   syncColorPickersToMode();
 
   buildLedColorPopover();
+  initKeyColorPickers(display);
+  if (display.colorKeypad === true) {
+    const title = document.getElementById('led-section-title');
+    if (title) title.textContent = 'Button Colors';
+  }
 
   const macrosPanel = document.getElementById('macros-panel');
   if (macrosPanel) {

@@ -11,6 +11,7 @@
 #include "hotkeys.h"
 #include "touch/TouchGpio.h"
 #include "touch/TouchRing.h"
+#include "touch/TouchKeypad.h"
 #include "types.h"
 
 #include "pico/bootrom.h"
@@ -97,12 +98,20 @@ void MP2040::setup() {
 	// via the web config). Arm the touch boot window so a touch pad (web
 	// config or boot) can be touched before the input driver starts to enter
 	// that mode. Arming is based on the board's physical touch pins, not on
-	// which pins have a keycode assigned.
+	// which pins have a keycode assigned. A touchscreen keypad always arms the
+	// window: its cells can't be held from before power-on, so the only way to
+	// reach web config is the on-screen prompt after the panel lights up.
+	bool armTouchWindow = false;
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+	armTouchWindow = true;
+#else
 	const GpioMask touchPinMask = Storage::getInstance().getTouchPinMask();
 	const int32_t wcPin = Storage::getInstance().getWebConfigPin();
 	const int32_t bootPin = Storage::getInstance().getBootPin();
-	if ((wcPin >= 0 && (touchPinMask & (1 << wcPin))) ||
-	    (bootPin >= 0 && (touchPinMask & (1 << bootPin))))
+	armTouchWindow = (wcPin >= 0 && (touchPinMask & (1 << wcPin))) ||
+	                 (bootPin >= 0 && (touchPinMask & (1 << bootPin)));
+#endif
+	if (armTouchWindow)
 	{
 		bootTouchDeadline = getMillis() + WEB_CONFIG_TOUCH_WINDOW_MS;
 	}
@@ -138,6 +147,12 @@ void MP2040::initializeKeyGpio(bool configBoot) {
 
 	if (Storage::getInstance().isMatrixMode())
 	{
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+		// Touchscreen keypad: there are no row/column GPIOs to drive. The
+		// FT6336 driver synthesizes the matrix state through matrixScanKeys().
+		TouchKeypad::getInstance().setup();
+		return;
+#endif
 		const bool activeHigh = Storage::getInstance().isMatrixActiveHigh();
 		const uint8_t rows = Storage::getInstance().getMatrixRows();
 		const uint8_t cols = Storage::getInstance().getMatrixCols();
@@ -323,6 +338,7 @@ void MP2040::run() {
 			boot.colorPressedByMode[i] = LED_COLOR_PRESSED;
 		}
 		Storage::getInstance().publishLedPreview(boot);
+		Storage::getInstance().setBootWindowActive(true);
 
 		const int32_t wcPin = Storage::getInstance().getWebConfigPin();
 		const int32_t bootPin = Storage::getInstance().getBootPin();
@@ -370,6 +386,7 @@ void MP2040::run() {
 			}
 		}
 		bootTouchDeadline = 0;
+		Storage::getInstance().setBootWindowActive(false);
 
 		// Window passed without a touch: restore the board's normal LED mode.
 		restoreBoardLedMode();
@@ -532,6 +549,13 @@ bool MP2040::isBootPinHeld(int32_t pin) {
 	const uint32_t keyCount = Storage::getInstance().getKeyCount();
 	if (pin < 0 || pin >= (int32_t)keyCount)
 		return false;
+
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+	// A touchscreen key can't be held from before power-on; the boot-window
+	// prompt handles web config / input-mode selection instead.
+	(void)pin;
+	return false;
+#endif
 
 	if (Storage::getInstance().isMatrixMode()) {
 		if (scanMatrix().test(pin)) {

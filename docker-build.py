@@ -41,9 +41,32 @@ def get_valid_boards():
     )
 
 
+def board_uses_rp2350(board):
+    """True when the board's optional board.cmake selects an RP2350 platform.
+
+    Used only to avoid flashing the bundled RP2040 nuke image to an RP2350
+    board, which the bootrom rejects.
+    """
+    path = REPO_ROOT / "configs" / board / "board.cmake"
+    try:
+        return path.exists() and "rp2350" in path.read_text().lower()
+    except OSError:
+        return False
+
+
 def resolve_flash_path(path_str):
     """Expand $VAR references in the flash mount path."""
-    return os.path.expandvars(path_str)
+    path = Path(os.path.expandvars(path_str))
+    if path.is_dir():
+        return path
+    # The RP2350 BOOTSEL drive can appear as "RP2350" instead of "RPI-RP2"
+    # (some boards/OTP configs keep the RP2040 name). Fall back to whichever
+    # sibling mount exists so the default path works on both chips.
+    for name in ("RPI-RP2", "RP2350"):
+        candidate = path.parent / name
+        if candidate.is_dir():
+            return candidate
+    return path
 
 
 def wait_for_mount(path, timeout, log_file=None):
@@ -154,6 +177,11 @@ def nuke_flash(args, flash_dir):
     (or None if the drive never mounted, so the later flash step can skip)."""
     if not args.nuke:
         return flash_dir
+    if board_uses_rp2350(args.board):
+        log_msg("RP2350 board: the bundled nuke image targets RP2040, skipping "
+                "--nuke. Hold BOOT while resetting and use an RP2350 flash nuke "
+                "(or picotool erase) if a full wipe is needed.", args.output)
+        return flash_dir
     if not NUKE_FILE.exists():
         log_msg(f"Warning: nuke file not found at {NUKE_FILE}, skipping",
                 args.output)
@@ -224,7 +252,6 @@ BOOT_FLAG_MAGIC = 0x57424743
 UF2_MAGIC0 = 0x0A324655
 UF2_MAGIC1 = 0x9E5D5157
 UF2_MAGIC_END = 0x0AB16F30
-UF2_FAMILY_RP2040 = 0xE48BFF56
 UF2_FLAGS = 0x2000
 
 
@@ -242,18 +269,23 @@ def mark_webconfig_uf2(uf2_path):
     num_blocks = len(data) // 512
     blocks = [data[i * 512:(i + 1) * 512] for i in range(num_blocks)]
 
-    # Every block must end with the RP2040 magic_end field or the bootrom
-    # rejects it and never flashes (and never reboots).
+    # Every block must end with the magic_end field or the bootrom rejects it
+    # and never flashes (and never reboots).
     for i, blk in enumerate(blocks):
         if struct.unpack('<I', blk[508:512])[0] != UF2_MAGIC_END:
             raise ValueError(f"{uf2_path} block {i} missing magic_end field")
+
+    # Use the family the linker/picotool stamped into the built UF2 (RP2040,
+    # RP2350 arm-s, ...). Hardcoding RP2040 makes the bootrom reject the
+    # appended block on RP2350 boards.
+    family = struct.unpack('<I', blocks[0][28:32])[0]
 
     # Page payload: magic dword + erased (0xFF) fill for the rest of the page.
     payload = bytearray(b'\xff' * 256)
     payload[0:4] = struct.pack('<I', BOOT_FLAG_MAGIC)
     marker = struct.pack('<8I', UF2_MAGIC0, UF2_MAGIC1, UF2_FLAGS,
                          BOOT_FLAG_ADDR, 256, num_blocks, num_blocks + 1,
-                         UF2_FAMILY_RP2040) + bytes(payload) + bytes(220) \
+                         family) + bytes(payload) + bytes(220) \
         + struct.pack('<I', UF2_MAGIC_END)
 
     out = []
@@ -270,8 +302,14 @@ def mark_webconfig_uf2(uf2_path):
 
 def find_existing_uf2(board):
     """Return the most recently built UF2 for `board`, or None."""
-    matches = sorted(glob.glob(
-        str(REPO_ROOT / "build" / f"MP2040_*_{board}.uf2")))
+    # Prefer the flat build/ artifact (the documented output path); per-board
+    # CMake trees are only a fallback for builds that predate the copy step.
+    flat = glob.glob(str(REPO_ROOT / "build" / f"MP2040_*_{board}.uf2"))
+    if flat:
+        flat.sort(key=os.path.getmtime)
+        return Path(flat[-1])
+    matches = glob.glob(str(REPO_ROOT / "build" / "*" / f"MP2040_*_{board}.uf2"))
+    matches.sort(key=os.path.getmtime)
     return Path(matches[-1]) if matches else None
 
 
@@ -284,11 +322,16 @@ def build_firmware(args):
     if fsdata.exists():
         fsdata.unlink()
 
+    # One CMake build tree per board. RP2040 and RP2350 boards select different
+    # platforms/toolchains, and the SDK cannot switch PICO_PLATFORM in an
+    # existing build directory. The finished UF2 is copied up to build/ so the
+    # flat artifact path stays the same.
+    build_dir = f"build/{args.board}"
     log_msg("Configuring...", args.output)
     build_cmd = (
-        'cmake -B build -DCMAKE_BUILD_TYPE=Release '
+        f'cmake -B {build_dir} -DCMAKE_BUILD_TYPE=Release '
         '-DMP2040_BOARDCONFIG=$MP2040_BOARDCONFIG '
-        '&& cmake --build build --parallel'
+        f'&& cmake --build {build_dir} --parallel'
     )
     ret = run_docker(args.image, build_cmd,
                      extra_args=["-e", f"MP2040_BOARDCONFIG={args.board}"],
@@ -299,9 +342,16 @@ def build_firmware(args):
             log_msg(f"Build failed (exit {ret}). Log: {args.output}")
         sys.exit(ret)
 
-    matches = sorted(glob.glob(str(REPO_ROOT / "build" / f"MP2040_*_{args.board}.uf2")))
+    build_dir = REPO_ROOT / "build" / args.board
+    matches = sorted(glob.glob(str(build_dir / f"MP2040_*_{args.board}.uf2")),
+                     key=os.path.getmtime)
     uf2 = Path(matches[-1]) if matches else None
     if uf2:
+        # Keep the documented flat output path (build/MP2040_....uf2) while
+        # leaving the per-board CMake tree and its other artifacts in place.
+        flat = REPO_ROOT / "build" / uf2.name
+        shutil.copy2(uf2, flat)
+        uf2 = flat
         log_msg(f"Build complete! → {uf2.name}", args.output)
     else:
         log_msg("Build complete!", args.output)
@@ -315,14 +365,20 @@ def remove_stale_artifacts(board, uf2, log_file=None):
     build's outputs (the UF2 plus its bin/hex/elf/dis/elf.map siblings)."""
     patterns = [f"MP2040_*_{board}.*", f"MP2040_*_{board}_webconfig.uf2"]
     removed = []
-    for pattern in patterns:
-        for path in glob.glob(str(REPO_ROOT / "build" / pattern)):
-            if path == str(uf2):
-                continue
-            if Path(path).name.startswith(uf2.stem + "."):
-                continue
-            Path(path).unlink()
-            removed.append(Path(path).name)
+    for base in (REPO_ROOT / "build", REPO_ROOT / "build" / board):
+        for pattern in patterns:
+            for path in glob.glob(str(base / pattern)):
+                p = Path(path)
+                if p.resolve() == Path(uf2).resolve():
+                    continue
+                # Keep the current build's siblings (elf/bin/hex/...) in the
+                # per-board tree; only the UF2 is copied to build/.
+                if p.parent == base and p.name.startswith(Path(uf2).stem + "."):
+                    continue
+                if p.parent == base and p.name == Path(uf2).name:
+                    continue
+                p.unlink()
+                removed.append(str(p.relative_to(REPO_ROOT / "build")))
     if removed:
         log_msg(f"Removed {len(removed)} stale artifact(s) for {board}:",
                 log_file)

@@ -8,6 +8,7 @@
 #include "leds/LedLayout.h"
 #include "types.h"
 #include "keymask.h"
+#include "display/KeypadDisplay.h"
 
 class Neopixel;
 struct LedPreview;
@@ -108,6 +109,16 @@ private:
 
     Neopixel* neopixel;
     Neopixel* statusLed;
+    // Screen-keypad output used instead of a WS2812 strip on boards whose
+    // "LEDs" are the on-screen buttons. Exactly one of neopixel/keypad is set,
+    // unless the board has neither.
+    KeypadDisplay* keypad = nullptr;
+
+    // Theme renderers write through these so a color goes to either output.
+    void setLedPixel(uint32_t index, uint8_t r, uint8_t g, uint8_t b);
+    void showLeds();
+    void ledsOff();
+
     uint32_t lastStatusColor; // last color shown on the status LED
     bool statusLedEnabled;    // user toggle: false = mode indicator off
     // Mode indicator LED never dims below this (0-255) while enabled, so it

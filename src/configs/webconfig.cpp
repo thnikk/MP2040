@@ -412,6 +412,14 @@ std::string getOptions()
     const DisplayOptions& display = Storage::getInstance().getDisplayOptions();
     doc["display"]["enabled"] = display.enabled;
     doc["display"]["hasDisplay"] = Storage::getInstance().getDisplayOptions().sdaPin >= 0;
+    // Board property: the display is a color touch keypad whose cells are the
+    // board's "LEDs". The web UI uses the LED color fields for button colors
+    // even though there is no addressable strip (dataPin < 0).
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+    doc["display"]["colorKeypad"] = true;
+#else
+    doc["display"]["colorKeypad"] = false;
+#endif
     doc["display"]["size"] = display.size;
     doc["display"]["flip"] = display.flip;
     doc["display"]["invert"] = display.invert;

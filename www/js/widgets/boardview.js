@@ -266,7 +266,10 @@ class BoardView {
   // presence alone can't gate. Unknown options default to true. The mode
   // indicator (board-led) is independent and always handled.
   hasStrip() {
-    return !this.options || (this.options.led?.dataPin ?? -1) >= 0;
+    // A color keypad has no addressable strip, but its cells are driven from
+    // the same per-key LED colors, so the LED slots/simulation stay enabled.
+    return !this.options || (this.options.led?.dataPin ?? -1) >= 0 ||
+      this.options.display?.colorKeypad === true;
   }
 
   // Hide the per-key LED slots on boards without a strip. Toggle, not
@@ -887,11 +890,27 @@ class BoardView {
       if (!el) return;
 
       const isHeld = this.heldPins.has(pinNumber);
+      // On a color keypad the cell fill comes from the LED simulation (the
+      // authored #ledN rectangles behind the key shapes), so keep the key
+      // fill transparent and use only the stroke for hover/held feedback.
+      const colorKeypad = this.options?.display?.colorKeypad === true;
 
       // All buttons get the same base fill (mapping is shown by the label
       // text); only held pins are highlighted differently.
       shapesOf(el).forEach((shape) => {
         const s = shape;
+        if (colorKeypad) {
+          s.style.setProperty('fill', 'transparent', 'important');
+          s.style.removeProperty('fill-opacity');
+          if (isHeld) {
+            s.style.setProperty('stroke', 'var(--nord13)', 'important');
+            s.style.setProperty('stroke-width', '3', 'important');
+          } else {
+            s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+            s.style.setProperty('stroke-width', '2', 'important');
+          }
+          return;
+        }
         if (isHeld) {
           s.style.setProperty('fill', 'var(--bg-2)', 'important');
           s.style.setProperty('fill-opacity', '0.6', 'important');

@@ -8,6 +8,10 @@
 
 #include "storagemanager.h"
 
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+#include "touch/TouchKeypad.h"
+#endif
+
 // Per-row settle time in microseconds. Must be long enough for a pressed
 // column to fully reach the active level through its switch + diode. Overridable
 // in BoardConfig.h for boards with slow (high-capacitance) matrices.
@@ -33,6 +37,11 @@
 // Returns an empty mask when the board is not in matrix mode.
 static inline KeyMask matrixScanKeys()
 {
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+    // The grid is drawn on a touchscreen, not wired as a switch matrix. The
+    // touch driver synthesizes the same linear key indices this scanner would.
+    return TouchKeypad::getInstance().scan();
+#else
     const uint8_t rows = Storage::getInstance().getMatrixRows();
     const uint8_t cols = Storage::getInstance().getMatrixCols();
     if (rows == 0 || cols == 0)
@@ -74,6 +83,7 @@ static inline KeyMask matrixScanKeys()
         busy_wait_us(MATRIX_SETTLE_US);
     }
     return state;
+#endif
 }
 
 #endif

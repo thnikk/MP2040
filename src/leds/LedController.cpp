@@ -140,6 +140,7 @@ static void hsvToRgb(uint8_t h, uint8_t s, uint8_t v, uint8_t& r, uint8_t& g, ui
 LedController::LedController() :
     neopixel(nullptr),
     statusLed(nullptr),
+    keypad(nullptr),
     lastStatusColor(0xFFFFFFFF),
     statusLedEnabled(true),
     statusLedBrightnessMinimum(0),
@@ -201,7 +202,7 @@ void LedController::setup()
 
 uint32_t LedController::getLedCount()
 {
-    return neopixel != nullptr ? neopixel->getLedCount() : 0;
+    return stripCount;
 }
 
 int32_t LedController::getLedAt(uint32_t row, uint32_t col)
@@ -209,6 +210,30 @@ int32_t LedController::getLedAt(uint32_t row, uint32_t col)
     if (row >= LED_GRID_ROWS || col >= LED_GRID_COLS)
         return -1;
     return BOARD_LED_GRID[row][col];
+}
+
+void LedController::setLedPixel(uint32_t index, uint8_t r, uint8_t g, uint8_t b)
+{
+    if (neopixel)
+        neopixel->setPixel(index, r, g, b);
+    else if (keypad)
+        keypad->setPixel(index, r, g, b);
+}
+
+void LedController::showLeds()
+{
+    if (neopixel)
+        neopixel->show();
+    else if (keypad)
+        keypad->show();
+}
+
+void LedController::ledsOff()
+{
+    if (neopixel)
+        neopixel->off();
+    else if (keypad)
+        keypad->off();
 }
 
 void LedController::configure()
@@ -299,6 +324,7 @@ void LedController::configure()
 
     delete neopixel;
     neopixel = nullptr;
+    keypad = nullptr;
 
     // The mode indicator LED is independent of the theme strip, so build it
     // even when there's no main strip (boards without a status LED define
@@ -320,12 +346,24 @@ void LedController::configure()
         statusLed->off();
     }
 
-    if (!isValidPin(dataPin) || total == 0)
+    if (total == 0)
+        return;
+
+    // Boards whose "strip" is the on-screen keypad have no LED data pin; the
+    // LED controller still computes the same per-LED colors and hands them to
+    // KeypadDisplay instead of a WS2812 driver.
+    if (!isValidPin(dataPin) && KeypadDisplay::getInstance().isPresent())
+        keypad = &KeypadDisplay::getInstance();
+
+    if (!isValidPin(dataPin) && keypad == nullptr)
         return;
 
     stripCount = total;
-    neopixel = new Neopixel(dataPin, stripCount, ledFormat);
-    neopixel->off();
+    if (!keypad)
+    {
+        neopixel = new Neopixel(dataPin, stripCount, ledFormat);
+        neopixel->off();
+    }
 
     delete[] pressedLeds;
     delete[] ledSat;
@@ -363,7 +401,7 @@ void LedController::update()
     // it stays lit during the inactivity timeout and when there's no strip.
     updateStatusLed();
 
-    if (neopixel == nullptr) return;
+    if (neopixel == nullptr && keypad == nullptr) return;
 
     // Apply any live LED options pushed from the web config (core 0).
     // Static scratch buffer: LedPreview is ~1KB (per-key color arrays), too
@@ -430,7 +468,7 @@ void LedController::update()
             {
                 ledDim = 0;
                 ledState = LedState::OFF;
-                neopixel->off();
+                ledsOff();
                 prevKeyState = keyState; // stay consistent for wake-up
                 return;
             }
@@ -934,7 +972,7 @@ void LedController::renderCustom()
 
     // Unmapped LEDs show Custom mode's normal color.
     for (uint32_t i = 0; i < stripCount; i++)
-        neopixel->setPixel(i, nr, ng, nb);
+        setLedPixel(i, nr, ng, nb);
 
     const uint32_t keyCount = Storage::getInstance().getKeyCount();
     const uint32_t pressedColor = currentPressedColor();
@@ -960,12 +998,12 @@ void LedController::renderCustom()
             uint32_t i = idx + l;
             if (i >= stripCount) break;
             if (pressedLeds[i])
-                neopixel->setPixel(i, pR, pG, pB);
+                setLedPixel(i, pR, pG, pB);
             else
-                neopixel->setPixel(i, kR, kG, kB);
+                setLedPixel(i, kR, kG, kB);
         }
     }
-    neopixel->show();
+    showLeds();
 }
 
 // Cycle: rainbow wheel, each LED offset by index; pressed LEDs flash white.
@@ -976,16 +1014,16 @@ void LedController::renderCycle()
     {
         if (pressedLeds[i])
         {
-            neopixel->setPixel(i, brightness, brightness, brightness);
+            setLedPixel(i, brightness, brightness, brightness);
         }
         else
         {
             uint8_t r, g, b;
             hsvToRgb(static_cast<uint8_t>(hue + i * 20), 255, brightness, r, g, b);
-            neopixel->setPixel(i, r, g, b);
+            setLedPixel(i, r, g, b);
         }
     }
-    neopixel->show();
+    showLeds();
 }
 
 // Reactive: unpressed LEDs fade white -> rainbow -> off; pressed LEDs flash white.
@@ -996,9 +1034,9 @@ void LedController::renderReactive()
         uint8_t r, g, b;
         hsvToRgb(static_cast<uint8_t>(hue + i * 50), ledSat[i],
                  ledVal[i] * effBrightness() / 255, r, g, b);
-        neopixel->setPixel(i, r, g, b);
+        setLedPixel(i, r, g, b);
     }
-    neopixel->show();
+    showLeds();
 }
 
 // BPS: color reflects keypress rate; pressed LEDs flash white.
@@ -1035,16 +1073,16 @@ void LedController::renderBps()
     {
         if (pressedLeds[i])
         {
-            neopixel->setPixel(i, brightness, brightness, brightness);
+            setLedPixel(i, brightness, brightness, brightness);
         }
         else
         {
             uint8_t r, g, b;
             hsvToRgb(static_cast<uint8_t>(finalColor + 100), 255, brightness, r, g, b);
-            neopixel->setPixel(i, r, g, b);
+            setLedPixel(i, r, g, b);
         }
     }
-    neopixel->show();
+    showLeds();
 }
 
 // Largest Chebyshev ring a ripple can reach before it leaves the grid.
@@ -1132,13 +1170,13 @@ void LedController::renderRipple()
                 if (rt > t) t = rt;
             }
 
-            neopixel->setPixel(idx,
+            setLedPixel(idx,
                 static_cast<uint8_t>(nr + (static_cast<int32_t>(pr - nr) * t) / 255),
                 static_cast<uint8_t>(ng + (static_cast<int32_t>(pg - ng) * t) / 255),
                 static_cast<uint8_t>(nb + (static_cast<int32_t>(pb - nb) * t) / 255));
         }
     }
-    neopixel->show();
+    showLeds();
 }
 
 // xorshift32 PRNG for random drop selection and fire flicker. Deterministic
@@ -1183,18 +1221,18 @@ void LedController::renderRain()
     {
         if (pressedLeds[i])
         {
-            neopixel->setPixel(i, pr, pg, pb);
+            setLedPixel(i, pr, pg, pb);
         }
         else
         {
             uint32_t v = ledVal[i] > 0 ? static_cast<uint32_t>(ledVal[i]) : 0;
-            neopixel->setPixel(i,
+            setLedPixel(i,
                 static_cast<uint8_t>(nr * v / 255),
                 static_cast<uint8_t>(ng * v / 255),
                 static_cast<uint8_t>(nb * v / 255));
         }
     }
-    neopixel->show();
+    showLeds();
 }
 
 // Fire: each LED is an ember whose heat (reused ledVal[]) is set to a random
@@ -1217,15 +1255,15 @@ void LedController::renderFire()
     {
         if (pressedLeds[i])
         {
-            neopixel->setPixel(i, pr, pg, pb);
+            setLedPixel(i, pr, pg, pb);
             continue;
         }
         // t = heat (0-255): 0 = off, 255 = full brightness.
         const int32_t t = ledVal[i] > 0 ? ledVal[i] : 0;
-        neopixel->setPixel(i,
+        setLedPixel(i,
             static_cast<uint8_t>(nr * t / 255),
             static_cast<uint8_t>(ng * t / 255),
             static_cast<uint8_t>(nb * t / 255));
     }
-    neopixel->show();
+    showLeds();
 }

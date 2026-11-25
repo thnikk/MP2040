@@ -47,11 +47,12 @@ function updateModalMode() {
   document.getElementById('gamepad-settings').hidden = !gamepadMode;
   // The Nintendo layout toggle only applies to Switch Pro.
   document.getElementById('nintendo-layout-wrap').hidden = mode !== 4;
+  const withColor = currentOptions?.display?.colorKeypad ? ', and its color' : '';
   document.getElementById('board-hint').textContent = midiMode
-    ? 'Click a button on the board to set its MIDI note and velocity.'
+    ? `Click a button on the board to set its MIDI note and velocity${withColor}.`
     : gamepadMode
-      ? 'Click a button on the board to set its gamepad button or direction.'
-      : 'Click a button on the board to set its key and modifiers.';
+      ? `Click a button on the board to set its gamepad button or direction${withColor}.`
+      : `Click a button on the board to set its key and modifiers${withColor}.`;
   syncModeIcons(gamepadMode);
 }
 
@@ -91,6 +92,72 @@ function initBoard(options) {
   boardView.setOptions(options);
 }
 
+// ---- per-key button colors (color keypad boards) -------------------------
+//
+// On a color keypad the on-screen cells are the board's "LEDs", so the existing
+// per-key Custom-mode LED colors are the button fills. Edit them directly in
+// the key modal instead of hunting for small LED swatches on the board view.
+
+function keyColorFallback(kind) {
+  const led = currentOptions.led || {};
+  const mode = Number(document.getElementById('led-mode')?.value ?? led.ledMode ?? 0) || 0;
+  const colors = getModeLedColors();
+  const arr = kind === 'pressed' ? colors.pressed : colors.normal;
+  return arr[mode] ?? (kind === 'pressed' ? 0xffffff : 0x00ff00);
+}
+
+function ensureLedColorArray(name) {
+  if (!currentOptions.led) currentOptions.led = {};
+  const keyCount = Math.max(
+    (currentOptions.keycodes || []).length,
+    Array.isArray(currentOptions.led[name]) ? currentOptions.led[name].length : 0,
+  );
+  const arr = Array.isArray(currentOptions.led[name])
+    ? currentOptions.led[name].slice()
+    : [];
+  while (arr.length < keyCount) arr.push(0);
+  currentOptions.led[name] = arr;
+  return arr;
+}
+
+function initKeyColorPickers(display) {
+  if (display.colorKeypad !== true) return;
+  const normalEl = document.getElementById('key-color-normal');
+  const pressedEl = document.getElementById('key-color-pressed');
+  if (!normalEl || !pressedEl) return;
+
+  keyColorNormalPicker = createColorPicker(normalEl, {
+    label: 'Normal',
+    value: intToColor(keyColorFallback('normal')),
+    onChange: (value) => {
+      if (editingPin < 0) return;
+      ensureLedColorArray('ledNormalColors')[editingPin] = colorToInt(value);
+      previewLedDebounced();
+    },
+  });
+  keyColorPressedPicker = createColorPicker(pressedEl, {
+    label: 'Pressed',
+    value: intToColor(keyColorFallback('pressed')),
+    onChange: (value) => {
+      if (editingPin < 0) return;
+      ensureLedColorArray('ledPressedColors')[editingPin] = colorToInt(value);
+      previewLedDebounced();
+    },
+  });
+}
+
+// Load the selected key's colors into the modal; hidden on other boards.
+function syncKeyColorSection(pin) {
+  const colorKeypad = currentOptions?.display?.colorKeypad === true;
+  const wrap = document.getElementById('key-modal-color');
+  if (wrap) wrap.hidden = !colorKeypad;
+  if (!colorKeypad || !keyColorNormalPicker || !keyColorPressedPicker) return;
+  const normal = currentOptions.led?.ledNormalColors?.[pin] || keyColorFallback('normal');
+  const pressed = currentOptions.led?.ledPressedColors?.[pin] || keyColorFallback('pressed');
+  keyColorNormalPicker.setValue(intToColor(normal));
+  keyColorPressedPicker.setValue(intToColor(pressed));
+}
+
 function openKeyModal(pin) {
   editingPin = pin;
   const keycode = Number(currentOptions.keycodes[pin] || 0);
@@ -104,6 +171,7 @@ function openKeyModal(pin) {
   midiKeyboard.setVelocity(Number(currentOptions.midiVelocities?.[pin] || 0));
   gamepadSelect.setGroupMask('gamepad', gamepadMask);
   if (gamepadWidget) gamepadWidget.setMask(gamepadMask);
+  syncKeyColorSection(pin);
   closeLedColorPopover();
   setModalTab(currentOptions.defaultInputMode ?? 1);
   document.getElementById('key-modal').hidden = false;

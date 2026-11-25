@@ -23,7 +23,7 @@ to work with and focus on usability over runtime board configuration.
 
 ## Supported Boards
 
-All boards require an RP2040 microcontroller. Existing boards using the SAMD21 are __NOT__ compatible.
+All boards use an RP2040 or RP2350 microcontroller. Existing boards using the SAMD21 are __NOT__ compatible.
 
 <!-- SUPPORTED-BOARDS:START -->
 <picture>

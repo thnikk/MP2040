@@ -171,6 +171,9 @@ def board_category(config_text):
     """Classify a board from its BoardConfig.h. Touch beats controller."""
     if re.search(r"#define\s+TOUCH_GP\d+\s+1", config_text):
         return "touch"
+    # LCD keypads scanned from a touch controller are touch boards too.
+    if re.search(r"#define\s+MATRIX_TOUCH_KEYPAD\s+1", config_text):
+        return "touch"
     if re.search(r"#define\s+DEFAULT_INPUT_MODE\b", config_text):
         return "controller"
     return "keypad"

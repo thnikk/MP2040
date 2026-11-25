@@ -236,6 +236,7 @@ function defaultOptions() {
     display: {
       enabled: board?.display?.enabled ?? false,
       hasDisplay: board?.display?.hasDisplay ?? false,
+      colorKeypad: !!board?.display?.colorKeypad,
       size: board?.display?.size ?? 3,
       flip: board?.display?.flip ?? 0,
       invert: board?.display?.invert ?? false,

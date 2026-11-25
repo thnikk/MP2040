@@ -1384,6 +1384,36 @@ html[data-theme="light"] .ms-caret {
   display: none;
 }
 
+/* Button color section for boards whose "LEDs" are on-screen keys. It lives in
+   the modal action row so it never shrinks the keyboard/MIDI/gamepad picker. */
+.key-modal-color {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.key-modal-color[hidden] {
+  display: none;
+}
+
+.key-modal-color > .led-mode-label {
+  white-space: nowrap;
+}
+
+#key-modal .modal-actions {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.key-modal-buttons {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
 .midi-kb {
   display: flex;
   flex-direction: column;

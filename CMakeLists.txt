@@ -4,6 +4,23 @@ include(CMakePrintHelpers)
 # enable compile commands for use by IDE autocompletion
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Board config must be known before the SDK is imported: a board may select a
+# different chip (e.g. RP2350 instead of RP2040) and pico_sdk_import.cmake
+# configures the platform and toolchain before project() runs.
+if(DEFINED ENV{MP2040_BOARDCONFIG})
+  set(MP2040_BOARDCONFIG $ENV{MP2040_BOARDCONFIG} CACHE STRING "MP2040 board config directory" FORCE)
+elseif(NOT DEFINED MP2040_BOARDCONFIG)
+  set(MP2040_BOARDCONFIG MacroPad CACHE STRING "MP2040 board config directory")
+endif()
+set(MP2040_BOARD_DIR ${CMAKE_CURRENT_LIST_DIR}/configs/${MP2040_BOARDCONFIG})
+
+# Optional per-board platform selection. Boards on RP2350 set PICO_BOARD /
+# PICO_PLATFORM / PICO_BOARD_HEADER_DIRS here; RP2040 boards omit the file and
+# use the SDK defaults (PICO_BOARD=pico, rp2040).
+if(EXISTS ${MP2040_BOARD_DIR}/board.cmake)
+  include(${MP2040_BOARD_DIR}/board.cmake)
+endif()
+
 # initialize the SDK based on PICO_SDK_PATH
 # note: this must happen before project()
 include(pico_sdk_import.cmake)
@@ -53,12 +70,6 @@ project(MP2040 LANGUAGES C CXX ASM VERSION ${CMAKE_GIT_REPO_VERSION})
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
-if(DEFINED ENV{MP2040_BOARDCONFIG})
-  set(MP2040_BOARDCONFIG $ENV{MP2040_BOARDCONFIG})
-elseif(NOT DEFINED MP2040_BOARDCONFIG)
-  set(MP2040_BOARDCONFIG MacroPad)
-endif()
-
 find_package(Git)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
@@ -70,8 +81,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
         message("Submodules updated")
     endif()
 endif()
-
-set(PICO_BOARD_HEADER_DIRS ${CMAKE_SOURCE_DIR}/configs/${MP2040_BOARDCONFIG})
 
 include(FetchContent)
 FetchContent_Declare(ArduinoJson
@@ -193,6 +202,9 @@ src/leds/LedController.cpp
 src/display/GPGFX.cpp
 src/display/tiny_ssd1306.cpp
 src/display/DisplayController.cpp
+src/display/LCD35.cpp
+src/display/KeypadDisplay.cpp
+src/display/inputlabels.cpp
 src/display/GPGFX_UI.cpp
 src/display/ui/layoutmanager.cpp
 src/display/ui/elements/GPButton.cpp
@@ -210,6 +222,8 @@ src/display/ui/screens/RemapScreen.cpp
 src/display/ui/screens/SplashScreen.cpp
 src/touch/TouchGpio.cpp
 src/touch/TouchRing.cpp
+src/touch/FT6336U.cpp
+src/touch/TouchKeypad.cpp
 ${PROTO_OUTPUT_DIR}/enums.pb.c
 ${PROTO_OUTPUT_DIR}/config.pb.c
 )
@@ -239,6 +253,9 @@ lwip-port
 ws2812
 hardware_pio
 hardware_i2c
+hardware_spi
+hardware_dma
+hardware_pwm
 nanopb
 )
 
