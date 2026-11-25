@@ -439,9 +439,10 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	if (w == 0 || h == 0 || w * h > MAX_CELL_PIXELS)
 		return;
 
-	// Black background (the gap around the rounded button).
+	// Screen background (the gap around the rounded button).
+	const uint16_t screenBg = swap16(rgb565(RGB(0x1C, 0x1F, 0x26)));
 	for (uint32_t i = 0; i < w * h; i++)
-		pixelBuf[i] = 0;
+		pixelBuf[i] = screenBg;
 
 	const float outerX0 = (float)CELL_GAP;
 	const float outerY0 = (float)CELL_GAP;
@@ -501,7 +502,7 @@ void KeypadDisplay::drawFooter()
 		return;
 
 	const uint32_t footerY = LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT;
-	const uint32_t bg888 = RGB(0x10, 0x14, 0x1A);
+	const uint32_t bg888 = RGB(0x1C, 0x1F, 0x26);
 	const uint16_t bg = swap16(rgb565(bg888));
 	for (uint32_t y = 0; y < KEYPAD_FOOTER_HEIGHT; y++)
 	{

@@ -4242,6 +4242,18 @@ void Storage::init() {
         for (uint32_t i = 0; i < 7; i++)
             config.ledOptions.colorPressedByMode[i] = config.ledOptions.colorPressed;
     }
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+    // ScreenPad's idle fill used to default to 0x20242C. Move that exact
+    // legacy value to the new board default; a different chosen color is left
+    // alone.
+    if (config.ledOptions.colorNormal == 0x20242C)
+        config.ledOptions.colorNormal = LED_COLOR_NORMAL;
+    for (uint32_t i = 0; i < config.ledOptions.colorNormalByMode_count; i++)
+    {
+        if (config.ledOptions.colorNormalByMode[i] == 0x20242C)
+            config.ledOptions.colorNormalByMode[i] = LED_COLOR_NORMAL;
+    }
+#endif
     // Per-mode brightness: seed all modes from the legacy brightnessMaximum on
     // configs that predate the per-mode array, clamping to the 0-255 range.
     if (config.ledOptions.brightnessByMode_count == 0)
