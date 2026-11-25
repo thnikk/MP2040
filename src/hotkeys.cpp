@@ -115,6 +115,22 @@ void HotkeyController::dispatch(HotkeyAction action)
 	s.save(true);
 }
 
+void HotkeyController::cycleProfile(int8_t step)
+{
+	Storage& s = Storage::getInstance();
+	const uint32_t count = s.getProfileCount();
+	if (count < 2 || step == 0)
+		return;
+	const uint32_t current = s.getActiveProfile() % count;
+	const uint32_t next = step > 0
+		? (current + 1) % count
+		: (current + count - 1) % count;
+	if (next == current)
+		return;
+	loadProfile(next);
+	s.save(true);
+}
+
 void HotkeyController::loadProfile(uint32_t index)
 {
 	Storage& s = Storage::getInstance();

@@ -412,6 +412,15 @@ void MP2040::run() {
 		// Publish the current key state for the other core (and drivers)
 		Storage::getInstance().publishKeyState(debouncedGpio);
 
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+		// Swiping the bottom status bar switches profiles. The touch driver
+		// reports the gesture; apply it through the normal profile path, but
+		// only while the keypad is actually in use.
+		const int8_t profileStep = TouchKeypad::getInstance().takeProfileSwipe();
+		if (profileStep != 0 && !configMode && !Storage::getInstance().GetMenuActive())
+			HotkeyController::getInstance().cycleProfile(profileStep);
+#endif
+
 		// Update the touch ring. In config mode the ring powers the live
 		// pressed-position preview in the web config's board view; outside it
 		// the active input driver consumes the contact point. The ring reads

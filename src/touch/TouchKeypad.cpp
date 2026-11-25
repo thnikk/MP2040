@@ -24,6 +24,12 @@ constexpr uint32_t ROWS = MATRIX_ROWS;
 constexpr uint32_t COLS = MATRIX_COLS;
 constexpr uint32_t AREA_H = LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT;
 
+// Horizontal travel that turns a footer touch into a profile swipe. Roughly an
+// eighth of the panel width: far enough that finger jitter can't trigger it.
+constexpr int32_t SWIPE_MIN_DISTANCE = 40;
+
+inline int32_t abs32(int32_t v) { return v < 0 ? -v : v; }
+
 uint16_t transformAxis(uint16_t raw, uint16_t rawMax, uint16_t outMax, bool invert)
 {
 	uint32_t v = raw;
@@ -94,12 +100,50 @@ KeyMask TouchKeypad::scan()
 	for (uint8_t i = 0; i < count; i++)
 		pointToDisplay(points[i], xs[i], ys[i]);
 
-	KeyMask next;
-	for (uint8_t i = 0; i < count; i++)
+	// The footer is a gesture bar, not part of the key grid. A touch that
+	// starts there is tracked as a horizontal swipe and its points are kept
+	// out of the key mask until it lifts, so dragging up into the keys can't
+	// press them along the way.
+	if (count == 0)
 	{
-		const int32_t cell = cellAt(xs[i], ys[i]);
-		if (cell >= 0)
-			next.set((uint32_t)cell);
+		swipeActive = false;
+		swipeTriggered = false;
+	}
+	else if (!swipeActive)
+	{
+		for (uint8_t i = 0; i < count; i++)
+		{
+			if (ys[i] < AREA_H)
+				continue;
+			swipeActive = true;
+			swipeTriggered = false;
+			swipeStartX = xs[i];
+			swipeStartY = ys[i];
+			break;
+		}
+	}
+
+	if (swipeActive && count > 0 && !swipeTriggered)
+	{
+		const int32_t dx = (int32_t)xs[0] - (int32_t)swipeStartX;
+		const int32_t dy = (int32_t)ys[0] - (int32_t)swipeStartY;
+		if (abs32(dx) >= SWIPE_MIN_DISTANCE && abs32(dx) >= abs32(dy))
+		{
+			// Left = next profile, right = previous.
+			pendingProfileStep = dx < 0 ? 1 : -1;
+			swipeTriggered = true;
+		}
+	}
+
+	KeyMask next;
+	if (!swipeActive)
+	{
+		for (uint8_t i = 0; i < count; i++)
+		{
+			const int32_t cell = cellAt(xs[i], ys[i]);
+			if (cell >= 0)
+				next.set((uint32_t)cell);
+		}
 	}
 
 	// Release hysteresis: a cell that is already held stays pressed until every
@@ -128,6 +172,13 @@ KeyMask TouchKeypad::scan()
 
 	state = next;
 	return state;
+}
+
+int8_t TouchKeypad::takeProfileSwipe()
+{
+	const int8_t step = pendingProfileStep;
+	pendingProfileStep = 0;
+	return step;
 }
 
 #endif // MATRIX_TOUCH_KEYPAD

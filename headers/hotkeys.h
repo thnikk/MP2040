@@ -32,6 +32,11 @@ public:
 
 	void process();
 
+	// Move to the next (+1) or previous (-1) profile, wrapping around. Used by
+	// the touch bottom bar; the change is live and persisted like a profile
+	// hotkey.
+	void cycleProfile(int8_t step);
+
 private:
 	HotkeyController() : prevComboHeld(0) {}
 

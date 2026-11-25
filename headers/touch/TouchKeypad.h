@@ -26,6 +26,12 @@ public:
 	// Current pressed-cell mask, throttled to the controller's report rate.
 	KeyMask scan();
 
+	// A horizontal swipe on the bottom status bar requests a profile change:
+	// +1 for a left swipe (next profile), -1 for a right swipe (previous), and
+	// 0 when there is nothing pending. The caller consumes and applies it so
+	// profile changes still go through the normal hotkey path.
+	int8_t takeProfileSwipe();
+
 	bool isPresent() const { return initialized; }
 
 private:
@@ -34,6 +40,13 @@ private:
 	KeyMask state;
 	uint32_t lastScanUs = 0;
 	bool initialized = false;
+	// Bottom-bar gesture tracking. A touch that starts in the footer owns the
+	// gesture until it lifts, and its points are kept out of the key grid.
+	bool swipeActive = false;
+	bool swipeTriggered = false;
+	uint16_t swipeStartX = 0;
+	uint16_t swipeStartY = 0;
+	int8_t pendingProfileStep = 0;
 };
 
 #endif
