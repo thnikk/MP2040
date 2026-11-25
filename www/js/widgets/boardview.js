@@ -99,6 +99,13 @@ function intToCss(value) {
   return '#' + value.toString(16).padStart(6, '0');
 }
 
+// Per-key label/icon color, mirroring KeypadDisplay::drawCell: the panel picks
+// black or white from the cell fill's luminance (same integer threshold).
+function labelColorForRgb(c) {
+  const lum = Math.floor((c[0] * 299 + c[1] * 587 + c[2] * 114) / 1000);
+  return lum > 140 ? '#000000' : '#ffffff';
+}
+
 // Mode indicator LED color for the active input mode, mirroring the firmware's
 // defaults (LedController::updateStatusLed): keyboard=yellow, MIDI=amber,
 // XInput=green, Switch Pro=red, Xbox One=green.
@@ -222,6 +229,7 @@ class BoardView {
     this.options = null;
     this.svgRoot = null;
     this.pinElements = [];
+    this.pinLabelEls = new Map();
     this.ringElement = null;
     this.ringShapes = [];
     this.ringGeometry = null;
@@ -511,6 +519,8 @@ class BoardView {
   updateLabels() {
     if (!this.svgRoot) return;
 
+    this.pinLabelEls = new Map();
+
     // Scale factor from SVG user units to screen pixels (horizontal). The
     // board SVG is scaled responsively, so SVG text (which uses user units)
     // would grow/shrink with it. Counter-scale the label so it stays a
@@ -550,6 +560,7 @@ class BoardView {
       // Counter-scale the font so the label stays ~24px on screen regardless
       // of the board's CSS scale factor (labelScale = screen px / user unit).
       labelEl.setAttribute('font-size', String(24 / labelScale));
+      this.pinLabelEls.set(pinNumber, labelEl);
 
       const keycode = Number(this.options?.keycodes?.[pinNumber] || 0);
       const mask = Number(this.options?.modifierMasks?.[pinNumber] || 0);
@@ -847,6 +858,27 @@ class BoardView {
         s.style.setProperty('fill', rgb, 'important');
       });
     });
+    this.updatePinLabelColors(colors);
+  }
+
+  // Match the panel's per-key text/icon color: the firmware picks black or
+  // white from each cell's fill, so the preview has to do the same instead of
+  // inheriting the theme's text color.
+  updatePinLabelColors(colors) {
+    if (this.options?.display?.colorKeypad !== true || !colors) return;
+    const pinLeds = this.ledSim?.pinLedIndices || [];
+    for (const { pinNumber } of this.pinElements) {
+      const labelEl = this.pinLabelEls.get(pinNumber);
+      if (!labelEl) continue;
+      const ledIndex = pinLeds[pinNumber];
+      if (ledIndex == null || ledIndex < 0) continue;
+      const c = colors[ledIndex];
+      if (!c) continue;
+      const fill = labelColorForRgb(c);
+      if (labelEl.dataset.autoFill === fill) continue;
+      labelEl.dataset.autoFill = fill;
+      labelEl.style.setProperty('fill', fill, 'important');
+    }
   }
 
   // ---- pin styling / highlight ------------------------------------------
