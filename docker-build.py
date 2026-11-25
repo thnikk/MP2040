@@ -54,28 +54,63 @@ def board_uses_rp2350(board):
         return False
 
 
+FLASH_MOUNT_NAMES = ("RPI-RP2", "RP2350")
+
+
+def is_flash_mount(path):
+    """True for a BOOTSEL drive (either chip name, or a custom mount with a
+    UF2 info file)."""
+    if not path.is_dir():
+        return False
+    return path.name in FLASH_MOUNT_NAMES or (path / "INFO_UF2.TXT").is_file()
+
+
 def resolve_flash_path(path_str):
-    """Expand $VAR references in the flash mount path."""
+    """Expand $VAR references and find the current BOOTSEL mount.
+
+    The RP2350 BOOTSEL drive can appear as "RP2350" instead of "RPI-RP2"
+    (some boards/OTP configs keep the RP2040 name). Accept either an exact
+    mount, a mount that changed names, or a parent directory to search.
+    """
     path = Path(os.path.expandvars(path_str))
-    if path.is_dir():
+
+    # An exact/custom mount wins.
+    if is_flash_mount(path):
         return path
-    # The RP2350 BOOTSEL drive can appear as "RP2350" instead of "RPI-RP2"
-    # (some boards/OTP configs keep the RP2040 name). Fall back to whichever
-    # sibling mount exists so the default path works on both chips.
-    for name in ("RPI-RP2", "RP2350"):
+
+    # A parent directory (e.g. -p /run/media/$USER): look inside it. If it is
+    # just an ordinary directory, keep polling under the default name instead
+    # of treating the parent as the drive.
+    if path.is_dir():
+        for name in FLASH_MOUNT_NAMES:
+            candidate = path / name
+            if is_flash_mount(candidate):
+                return candidate
+        return path / FLASH_MOUNT_NAMES[0]
+
+    # The usual case: the configured path is stale/missing because the drive
+    # mounted under the other chip's name.
+    for name in FLASH_MOUNT_NAMES:
         candidate = path.parent / name
-        if candidate.is_dir():
+        if is_flash_mount(candidate):
             return candidate
     return path
 
 
-def wait_for_mount(path, timeout, log_file=None):
-    """Poll for up to `timeout` seconds until the flash drive appears."""
-    for _ in range(timeout):
+def wait_for_flash_dir(args):
+    """Poll until a BOOTSEL mount appears, resolving either chip's name.
+
+    Resolution happens on every poll (not once at startup), so a board that is
+    plugged in after the build starts is still found.
+    """
+    deadline = time.monotonic() + max(0, args.timeout)
+    while True:
+        path = resolve_flash_path(args.path)
         if path.is_dir():
-            return True
+            return path
+        if time.monotonic() >= deadline:
+            return None
         time.sleep(1)
-    return path.is_dir()
 
 
 def log_msg(msg, log_file=None):
@@ -172,28 +207,25 @@ def run_docker(image, command, extra_args=None, log_file=None, verbose=False):
 
 #  Build pipeline steps
 
-def nuke_flash(args, flash_dir):
-    """Flash the nuke UF2 to wipe flash, or warn. Returns the flash dir
-    (or None if the drive never mounted, so the later flash step can skip)."""
+def nuke_flash(args):
+    """Flash the nuke UF2 to wipe flash, or warn."""
     if not args.nuke:
-        return flash_dir
+        return
     if board_uses_rp2350(args.board):
         log_msg("RP2350 board: the bundled nuke image targets RP2040, skipping "
                 "--nuke. Hold BOOT while resetting and use an RP2350 flash nuke "
                 "(or picotool erase) if a full wipe is needed.", args.output)
-        return flash_dir
+        return
     if not NUKE_FILE.exists():
         log_msg(f"Warning: nuke file not found at {NUKE_FILE}, skipping",
                 args.output)
-        return flash_dir
-    if not flash_dir.is_dir():
-        log_msg(f"Waiting {args.timeout}s for {flash_dir} to mount...",
-                args.output)
-        if not wait_for_mount(flash_dir, args.timeout, args.output):
-            log_msg(f"Warning: flash path {flash_dir} not found "
-                    f"after {args.timeout}s, skipping nuke",
-                    args.output)
-            return None
+        return
+    log_msg(f"Waiting {args.timeout}s for a BOOTSEL mount...", args.output)
+    flash_dir = wait_for_flash_dir(args)
+    if flash_dir is None:
+        log_msg(f"Warning: no BOOTSEL mount found after {args.timeout}s, "
+                f"skipping nuke", args.output)
+        return
     dst = flash_dir / "flash_nuke.uf2"
     log_msg(f"Nuking board: {NUKE_FILE} -> {dst}", args.output)
     try:
@@ -201,7 +233,6 @@ def nuke_flash(args, flash_dir):
         log_msg("Nuke sent", args.output)
     except Exception as e:
         log_msg(f"Warning: nuke failed: {e}", args.output)
-    return flash_dir
 
 
 def ensure_builder_image(args):
@@ -386,25 +417,18 @@ def remove_stale_artifacts(board, uf2, log_file=None):
             log_msg(f"  {name}", log_file)
 
 
-def flash_firmware(uf2, args, flash_dir):
+def flash_firmware(uf2, args):
     """Wait for the board mount and copy the built UF2 onto it."""
     if not args.flash:
         return
     if uf2 is None:
         log_msg("Warning: no UF2 found, skipping flash", args.output)
         return
+    log_msg(f"Waiting {args.timeout}s for a BOOTSEL mount...", args.output)
+    flash_dir = wait_for_flash_dir(args)
     if flash_dir is None:
-        log_msg(f"Warning: flash path not available, skipping flash",
-                args.output)
-        return
-    if not flash_dir.is_dir():
-        log_msg(f"Waiting {args.timeout}s for {flash_dir} to mount...",
-                args.output)
-        wait_for_mount(flash_dir, args.timeout, args.output)
-    if not flash_dir.is_dir():
-        log_msg(f"Warning: flash path {flash_dir} not found "
-                f"after {args.timeout}s, skipping flash",
-                args.output)
+        log_msg(f"Warning: no BOOTSEL mount found after {args.timeout}s, "
+                f"skipping flash", args.output)
         return
     dst = flash_dir / uf2.name
     log_msg(f"Flashing: {uf2.name} -> {dst}", args.output)
@@ -445,7 +469,8 @@ def parse_args(valid_boards):
     parser.add_argument("-w", "--webconfig", action="store_true",
                         help="Flash a UF2 that boots once into web config mode")
     parser.add_argument("-p", "--path", default=DEFAULT_FLASH_PATH,
-                        help=f"RPI-RP2 mount point (default: {DEFAULT_FLASH_PATH})")
+                        help="RPI-RP2/RP2350 mount point or parent directory "
+                             f"(default: {DEFAULT_FLASH_PATH})")
     parser.add_argument("-t", "--timeout", type=int, default=30,
                         help="Seconds to wait for mount (default: 30)")
     return parser.parse_args()
@@ -470,10 +495,8 @@ def main():
 
     validate_board(args.board, valid_boards)
 
-    flash_dir = Path(resolve_flash_path(args.path))
-
     # 1. Wipe flash (optional)
-    flash_dir = nuke_flash(args, flash_dir)
+    nuke_flash(args)
 
     # 2. Use an existing UF2 instead of building (optional)
     skip_build = False
@@ -503,7 +526,7 @@ def main():
             uf2 = mark_webconfig_uf2(uf2)
             log_msg(f"Web config boot flag added → {uf2.name}", args.output)
     # 8. Copy the UF2 to the board (optional)
-    flash_firmware(uf2, args, flash_dir)
+    flash_firmware(uf2, args)
 
 
 if __name__ == "__main__":
