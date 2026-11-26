@@ -61,6 +61,9 @@ private:
 	uint32_t pending[CELL_COUNT] = {};
 	uint32_t shown[CELL_COUNT] = {};
 	uint32_t iconIds[CELL_COUNT] = {};
+	uint32_t fgCurrent[CELL_COUNT] = {};
+	bool fgAnimating[CELL_COUNT] = {};
+	bool fgInit[CELL_COUNT] = {};
 	bool dirty[CELL_COUNT] = {};
 	std::string labels[CELL_COUNT];
 	std::string footerLeft;

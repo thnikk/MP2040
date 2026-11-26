@@ -56,6 +56,21 @@ inline uint32_t luminance(uint32_t c)
 	return (r * 299 + g * 587 + b * 114) / 1000;
 }
 
+// Foreground transition step per frame (~160 ms at 50 Hz).
+constexpr uint32_t FG_STEP = 32;
+
+inline uint32_t stepFg(uint32_t current, uint32_t target)
+{
+	auto move = [](uint32_t v, uint32_t t) {
+		if (v < t) return (t - v <= FG_STEP) ? t : v + FG_STEP;
+		if (v > t) return (v - t <= FG_STEP) ? t : v - FG_STEP;
+		return v;
+	};
+	return RGB((uint8_t)move((current >> 16) & 0xFF, (target >> 16) & 0xFF),
+		(uint8_t)move((current >> 8) & 0xFF, (target >> 8) & 0xFF),
+		(uint8_t)move(current & 0xFF, target & 0xFF));
+}
+
 inline uint32_t blend(uint32_t a, uint32_t b, uint32_t cover)
 {
 	const uint32_t ar = (a >> 16) & 0xFF, ag = (a >> 8) & 0xFF, ab = a & 0xFF;
@@ -436,6 +451,10 @@ void KeypadDisplay::off()
 	{
 		pending[i] = 0;
 		dirty[i] = true;
+		// The LEDs-off screen is a hard state, not an animation target.
+		fgInit[i] = true;
+		fgCurrent[i] = 0xFFFFFF;
+		fgAnimating[i] = false;
 	}
 	show();
 }
@@ -567,7 +586,7 @@ void KeypadDisplay::show()
 
 	for (uint32_t cell = 0; cell < CELL_COUNT; cell++)
 	{
-		if (!dirty[cell] && pending[cell] == shown[cell])
+		if (!dirty[cell] && pending[cell] == shown[cell] && !fgAnimating[cell])
 			continue;
 		drawCell(cell, pending[cell]);
 	}
@@ -603,7 +622,19 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	const uint32_t innerH = (uint32_t)(innerY1 - innerY0);
 	const uint32_t maxTextW = innerW > 2 * LABEL_PAD ? innerW - 2 * LABEL_PAD : innerW;
 	const uint32_t maxTextH = innerH > 2 * LABEL_PAD ? innerH - 2 * LABEL_PAD : innerH;
-	const uint32_t textColor = luminance(color888) > 140 ? 0x000000 : 0xFFFFFF;
+
+	// The automatic black/white foreground fades instead of flipping abruptly.
+	const uint32_t targetFg = luminance(color888) > 140 ? 0x000000 : 0xFFFFFF;
+	if (!fgInit[cell])
+	{
+		fgInit[cell] = true;
+		fgCurrent[cell] = targetFg;
+	}
+	else if (fgCurrent[cell] != targetFg)
+	{
+		fgCurrent[cell] = stepFg(fgCurrent[cell], targetFg);
+	}
+	const uint32_t textColor = fgCurrent[cell];
 
 	const std::string& label = labels[cell];
 	bool drewIcon = false;
@@ -632,6 +663,7 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	LCD35::getInstance().setWindow((uint16_t)x0, (uint16_t)y0, (uint16_t)w, (uint16_t)h);
 	LCD35::getInstance().writePixels(pixelBuf, w * h);
 
+	fgAnimating[cell] = fgCurrent[cell] != targetFg;
 	shown[cell] = color888;
 	dirty[cell] = false;
 }
