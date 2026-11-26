@@ -610,38 +610,50 @@ void KeypadDisplay::drawFooter()
 
 	if (!footerRight.empty())
 	{
-		// Input mode badge on the left, profile on the right. The badge takes
-		// the Nord color for the current mode and is sized from the glyph ink
-		// bounds so its padding is even around the text.
+		// Input mode and profile badges. They share a common height and outer
+		// margins; each is sized from its glyph ink bounds so the horizontal
+		// padding is even.
 		const InkBounds mb = textInkBounds(footerLeft, KeypadFontNunito16);
-		const int32_t rectW = (mb.maxX - mb.minX) + 2 * MODE_PAD;
-		const int32_t rectH = (mb.maxY - mb.minY) + 2 * MODE_PAD;
-		// Match the badge's top/bottom margin to its left margin; the profile
-		// text mirrors that same margin on the right.
-		const float margin =
-			((float)KEYPAD_FOOTER_HEIGHT - (float)rectH) / 2.0f;
-		const float rectX0 = margin;
-		const float rectY0 = margin;
+		const InkBounds pb = textInkBounds(footerRight, KeypadFontNunito16);
+		const int32_t modeInkW = mb.maxX - mb.minX;
+		const int32_t modeInkH = mb.maxY - mb.minY;
+		const int32_t profileInkW = pb.maxX - pb.minX;
+		const int32_t profileInkH = pb.maxY - pb.minY;
+		const int32_t modeBoxH = modeInkH + 2 * MODE_PAD;
+		const int32_t profileBoxH = profileInkH + 2 * MODE_PAD;
+		const int32_t boxH = modeBoxH > profileBoxH ? modeBoxH : profileBoxH;
+		const float boxY = ((float)KEYPAD_FOOTER_HEIGHT - (float)boxH) / 2.0f;
+		const float boxX = boxY;
+
 		const uint32_t modeColor =
 			inputModeColor(Storage::getInstance().getDefaultInputMode());
 		const uint32_t modeTextColor =
 			luminance(modeColor) > 140 ? 0x000000 : 0xFFFFFF;
+		const uint32_t profileColor = RGB(0x4C, 0x56, 0x6A); // Nord3
+		const uint32_t profileTextColor =
+			luminance(profileColor) > 140 ? 0x000000 : 0xFFFFFF;
 
+		const int32_t modeBoxW = modeInkW + 2 * MODE_PAD;
 		fillRounded(pixelBuf, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
-			rectX0, rectY0, rectX0 + (float)rectW, rectY0 + (float)rectH,
+			boxX, boxY, boxX + (float)modeBoxW, boxY + (float)boxH,
 			MODE_RADIUS, modeColor);
 		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
-			(int32_t)(rectX0 - (float)mb.minX + (float)MODE_PAD),
-			(int32_t)(rectY0 - (float)mb.minY + (float)MODE_PAD),
+			(int32_t)(boxX - (float)mb.minX + (float)MODE_PAD),
+			(int32_t)(boxY - (float)mb.minY +
+				(float)(boxH - modeInkH) / 2.0f),
 			footerLeft, KeypadFontNunito16, modeTextColor, modeColor);
 
-		const InkBounds pb = textInkBounds(footerRight, KeypadFontNunito16);
-		const int32_t profileY = (int32_t)KEYPAD_FOOTER_HEIGHT / 2 -
-			(pb.minY + pb.maxY) / 2;
+		const int32_t profileBoxW = profileInkW + 2 * MODE_PAD;
+		const float profileX =
+			(float)LCD_WIDTH - boxX - (float)profileBoxW;
+		fillRounded(pixelBuf, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+			profileX, boxY, profileX + (float)profileBoxW, boxY + (float)boxH,
+			MODE_RADIUS, profileColor);
 		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
-			(int32_t)((float)LCD_WIDTH - margin - (float)MODE_PAD -
-				(float)pb.maxX), profileY,
-			footerRight, KeypadFontNunito16, textColor, barColor);
+			(int32_t)(profileX - (float)pb.minX + (float)MODE_PAD),
+			(int32_t)(boxY - (float)pb.minY +
+				(float)(boxH - profileInkH) / 2.0f),
+			footerRight, KeypadFontNunito16, profileTextColor, profileColor);
 
 		if (!footerCenter.empty())
 		{
