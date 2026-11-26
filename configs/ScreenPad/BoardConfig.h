@@ -88,6 +88,10 @@
 #define PIN_WEBCONFIG 0
 #define PIN_BOOT -1
 
+// Hold the third on-screen key (matrix key 2) during the boot window to show
+// the runtime FPS overlay.
+#define KEYPAD_FPS_KEY 2
+
 // ---------------------------------------------------------------------------
 // ST7796 LCD (SPI0)
 // ---------------------------------------------------------------------------

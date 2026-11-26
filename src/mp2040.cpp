@@ -358,7 +358,7 @@ void MP2040::run() {
 			// as normal key operation.
 			debounceGpioGetAll();
 #if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
-			const bool fpsHeld = (debouncedGpio & keyMaskBit(2)).any();
+			const bool fpsHeld = (debouncedGpio & keyMaskBit(KEYPAD_FPS_KEY)).any();
 			if (fpsHeld)
 			{
 				const uint32_t now = getMillis();

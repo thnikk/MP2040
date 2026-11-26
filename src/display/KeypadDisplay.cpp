@@ -26,6 +26,10 @@ constexpr uint32_t CELL_GAP = 2;
 constexpr float CELL_RADIUS = 10.0f;
 constexpr uint32_t LABEL_PAD = 2;
 
+// Boot-window function icons (Font Awesome Free solid).
+constexpr uint32_t BOOT_WEB_CONFIG_ICON = 0xF013; // gear
+constexpr uint32_t BOOT_FPS_ICON = 0xF188;        // bug
+
 constexpr uint32_t RGB(uint8_t r, uint8_t g, uint8_t b)
 {
 	return ((uint32_t)r << 16) | ((uint32_t)g << 8) | b;
@@ -389,6 +393,7 @@ uint32_t KeypadDisplay::labelHash() const
 	};
 	mix((uint32_t)s.getDefaultInputMode());
 	mix(s.getUseNintendoLayout() ? 1u : 0u);
+	mix(s.getBootWindowActive() ? 1u : 0u);
 	const Config& cfg = s.getConfig();
 	const KeyMapping& km = s.getKeyMapping();
 	for (uint32_t pin = 0; pin < CELL_COUNT; pin++)
@@ -416,6 +421,7 @@ void KeypadDisplay::updateLabels(bool force)
 	const KeyMapping& km = s.getKeyMapping();
 	const InputMode mode = s.getDefaultInputMode();
 	const bool nintendo = s.getUseNintendoLayout();
+	const bool booting = s.getBootWindowActive();
 	for (uint32_t pin = 0; pin < CELL_COUNT; pin++)
 	{
 		labels[pin] = inputLabelForPin(pin, mode, nintendo);
@@ -425,6 +431,19 @@ void KeypadDisplay::updateLabels(bool force)
 #else
 		iconIds[pin] = 0;
 #endif
+		if (booting)
+		{
+			// Only the two boot functions have a visible key: web config on
+			// the first key and the FPS toggle on the third.
+			labels[pin].clear();
+			iconIds[pin] = 0;
+#if defined(MP2040_KEYPAD_ICONS) && MP2040_KEYPAD_ICONS
+			if (pin == (uint32_t)PIN_WEBCONFIG)
+				iconIds[pin] = BOOT_WEB_CONFIG_ICON;
+			else if (pin == (uint32_t)KEYPAD_FPS_KEY)
+				iconIds[pin] = BOOT_FPS_ICON;
+#endif
+		}
 		dirty[pin] = true;
 	}
 }
