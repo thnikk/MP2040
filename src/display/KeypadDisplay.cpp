@@ -84,8 +84,45 @@ void blendPixel(uint16_t* buf, uint32_t index, uint32_t color, uint32_t cover)
 	buf[index] = swap16(rgb565(blend(old888, color, cover)));
 }
 
-// Filled rounded rectangle with horizontal anti-aliasing. The vertical edges
-// are 1px-stepped, which is imperceptible at the 10px radius used here.
+bool insideRounded(float px, float py, float x0, float y0,
+	float x1, float y1, float radius)
+{
+	if (px < x0 || px > x1 || py < y0 || py > y1)
+		return false;
+	const bool left = px < x0 + radius;
+	const bool right = px > x1 - radius;
+	const bool top = py < y0 + radius;
+	const bool bottom = py > y1 - radius;
+	if ((!left && !right) || (!top && !bottom))
+		return true;
+	const float cx = left ? x0 + radius : x1 - radius;
+	const float cy = top ? y0 + radius : y1 - radius;
+	const float dx = px - cx;
+	const float dy = py - cy;
+	return dx * dx + dy * dy <= radius * radius;
+}
+
+// 2x2 subpixel coverage for a corner pixel.
+uint32_t cornerCoverage(int32_t x, int32_t y, float x0, float y0,
+	float x1, float y1, float radius)
+{
+	uint32_t count = 0;
+	for (uint32_t sy = 0; sy < 2; sy++)
+	{
+		for (uint32_t sx = 0; sx < 2; sx++)
+		{
+			const float px = (float)x + 0.25f + 0.5f * (float)sx;
+			const float py = (float)y + 0.25f + 0.5f * (float)sy;
+			if (insideRounded(px, py, x0, y0, x1, y1, radius))
+				count++;
+		}
+	}
+	return count * 255 / 4;
+}
+
+// Filled rounded rectangle. Rows sample at their pixel center so the top and
+// bottom corners match; corner pixels use 2x2 subpixel coverage while the
+// straight edges keep the cheap horizontal blend.
 void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
 	float x0, float y0, float x1, float y1, float radius, uint32_t color)
 {
@@ -95,7 +132,8 @@ void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
 	{
 		if (y < 0 || y >= (int32_t)h)
 			continue;
-		const float dy = fminf((float)y - y0, y1 - (float)y);
+		const float rowCenter = (float)y + 0.5f;
+		const float dy = fminf(rowCenter - y0, y1 - rowCenter);
 		float inset = 0.0f;
 		if (dy < radius)
 		{
@@ -114,15 +152,34 @@ void fillRounded(uint16_t* buf, uint32_t w, uint32_t h,
 		for (int32_t x = fullStart; x <= fullEnd; x++)
 			buf[(uint32_t)y * w + x] = swap16(rgb565(color));
 
-		// Partial pixels at the curved left/right boundary.
 		const int32_t li = (int32_t)floorf(left);
-		const float lcov = 1.0f - (left - (float)li);
-		if (li >= 0 && li < (int32_t)w && lcov > 0.0f)
-			blendPixel(buf, (uint32_t)y * w + li, color, (uint32_t)(lcov * 255.0f));
 		const int32_t ri = (int32_t)floorf(right);
-		const float rcov = right - (float)ri;
-		if (ri >= 0 && ri < (int32_t)w && rcov > 0.0f)
-			blendPixel(buf, (uint32_t)y * w + ri, color, (uint32_t)(rcov * 255.0f));
+		if (dy < radius)
+		{
+			// Curved corner rows: area-sample the partial left/right pixels.
+			if (li >= 0 && li < (int32_t)w)
+			{
+				const uint32_t cov = cornerCoverage(li, y, x0, y0, x1, y1, radius);
+				if (cov)
+					blendPixel(buf, (uint32_t)y * w + li, color, cov);
+			}
+			if (ri != li && ri >= 0 && ri < (int32_t)w)
+			{
+				const uint32_t cov = cornerCoverage(ri, y, x0, y0, x1, y1, radius);
+				if (cov)
+					blendPixel(buf, (uint32_t)y * w + ri, color, cov);
+			}
+		}
+		else
+		{
+			// Straight rows: horizontal edge coverage.
+			const float lcov = 1.0f - (left - (float)li);
+			if (li >= 0 && li < (int32_t)w && lcov > 0.0f)
+				blendPixel(buf, (uint32_t)y * w + li, color, (uint32_t)(lcov * 255.0f));
+			const float rcov = right - (float)ri;
+			if (ri >= 0 && ri < (int32_t)w && rcov > 0.0f)
+				blendPixel(buf, (uint32_t)y * w + ri, color, (uint32_t)(rcov * 255.0f));
+		}
 	}
 }
 
