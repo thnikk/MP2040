@@ -1,6 +1,7 @@
 #include "touch/TouchKeypad.h"
 
 #include "BoardConfig.h"
+#include "storagemanager.h"
 
 #if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
 #include "touch/FT6336U.h"
@@ -95,6 +96,8 @@ KeyMask TouchKeypad::scan()
 
 	Ft6336Point points[2] = {};
 	const uint8_t count = FT6336U::getInstance().read(points);
+	// Any touch on the panel (keys, gaps, or the top bar) wakes the LEDs.
+	Storage::getInstance().setTouchActive(count > 0);
 
 	uint16_t xs[2] = {};
 	uint16_t ys[2] = {};

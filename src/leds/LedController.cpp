@@ -414,15 +414,20 @@ void LedController::update()
     nextRunTime = make_timeout_time_ms(20);
 
     const KeyMask keyState = Storage::getInstance().getKeyState();
+    // Any touch on the panel (including the top bar and gaps) counts as
+    // activity, so it wakes the LEDs and resets the inactivity timeout.
+    const bool activity =
+        keyState.any() || Storage::getInstance().getTouchActive();
 
-    // Inactivity timeout: any held key keeps the LEDs on; once the last key
-    // is released the strip fades out after ledTimeoutMs and a fresh press
-    // fades it back in. While fully off we skip rendering entirely (no show()
-    // calls), so the only per-tick work is the timestamp bookkeeping below.
+    // Inactivity timeout: any held key or panel touch keeps the LEDs on; once
+    // the last one ends the strip fades out after ledTimeoutMs and a fresh
+    // press/touch fades it back in. While fully off we skip rendering entirely
+    // (no show() calls), so the only per-tick work is the timestamp
+    // bookkeeping below.
     const uint32_t now = to_ms_since_boot(get_absolute_time());
     if (ledTimeoutMs > 0)
     {
-        if (keyState.any())
+        if (activity)
             ledLastActivityMillis = now;
 
         switch (ledState)
@@ -433,13 +438,13 @@ void LedController::update()
                 break;
 
             case LedState::FADING_OUT:
-                // A press mid-fade cancels the suspend and ramps back up.
-                if (keyState.any())
+                // A press/touch mid-fade cancels the suspend and ramps back up.
+                if (activity)
                     ledState = LedState::FADING_IN;
                 break;
 
             case LedState::OFF:
-                if (keyState.any())
+                if (activity)
                 {
                     ledState = LedState::FADING_IN;
                     ledDim = 0;
