@@ -19,8 +19,7 @@
 
 namespace
 {
-constexpr uint32_t BORDER = 2;
-constexpr uint32_t CELL_GAP = 4;
+constexpr uint32_t CELL_GAP = 2;
 constexpr float CELL_RADIUS = 10.0f;
 constexpr uint32_t LABEL_PAD = 2;
 
@@ -48,23 +47,6 @@ inline uint32_t luminance(uint32_t c)
 	const uint32_t g = (c >> 8) & 0xFF;
 	const uint32_t b = c & 0xFF;
 	return (r * 299 + g * 587 + b * 114) / 1000;
-}
-
-uint32_t borderColor(uint32_t c)
-{
-	if (luminance(c) > 140)
-	{
-		const uint32_t r = ((c >> 16) & 0xFF) * 3 / 5;
-		const uint32_t g = ((c >> 8) & 0xFF) * 3 / 5;
-		const uint32_t b = (c & 0xFF) * 3 / 5;
-		return RGB((uint8_t)r, (uint8_t)g, (uint8_t)b);
-	}
-	const uint32_t r = ((c >> 16) & 0xFF) + 48;
-	const uint32_t g = ((c >> 8) & 0xFF) + 48;
-	const uint32_t b = (c & 0xFF) + 48;
-	return RGB((uint8_t)(r > 255 ? 255 : r),
-		(uint8_t)(g > 255 ? 255 : g),
-		(uint8_t)(b > 255 ? 255 : b));
 }
 
 inline uint32_t blend(uint32_t a, uint32_t b, uint32_t cover)
@@ -150,6 +132,45 @@ uint32_t textWidth(const std::string& text, const KeypadFont& font)
 	return width;
 }
 
+struct InkBounds
+{
+	int32_t minX;
+	int32_t maxX;
+	int32_t minY;
+	int32_t maxY;
+};
+
+// Visual bounds of the drawn ink relative to the text pen/line origin. Used
+// for the mode badge so its padding is even around the glyphs, not the line box.
+InkBounds textInkBounds(const std::string& text, const KeypadFont& font)
+{
+	int32_t penX = 0;
+	int32_t minX = 0x7FFFFFFF, maxX = -0x7FFFFFFF;
+	int32_t minY = 0x7FFFFFFF, maxY = -0x7FFFFFFF;
+	for (char c : text)
+	{
+		const uint8_t ch = (uint8_t)c;
+		if (ch < 32 || ch > 126)
+			continue;
+		const KeypadGlyph& glyph = font.glyphs[ch - 32];
+		if (glyph.width != 0 && glyph.height != 0)
+		{
+			const int32_t gx0 = penX + glyph.xoff;
+			const int32_t gx1 = gx0 + glyph.width;
+			const int32_t gy0 = glyph.yoff;
+			const int32_t gy1 = gy0 + glyph.height;
+			if (gx0 < minX) minX = gx0;
+			if (gx1 > maxX) maxX = gx1;
+			if (gy0 < minY) minY = gy0;
+			if (gy1 > maxY) maxY = gy1;
+		}
+		penX += glyph.advance;
+	}
+	if (minX > maxX || minY > maxY)
+		return {0, 0, 0, 0};
+	return {minX, maxX, minY, maxY};
+}
+
 void drawText(uint16_t* buf, uint32_t stride, uint32_t maxW, uint32_t maxH,
 	int32_t x, int32_t y, const std::string& text, const KeypadFont& font,
 	uint32_t textColor, uint32_t fillColor)
@@ -220,6 +241,24 @@ const char* inputModeName(InputMode mode)
 		case INPUT_MODE_PS5: return "PS5";
 		case INPUT_MODE_KEYBOARD:
 		default: return "HID-KB";
+	}
+}
+
+// Nord-palette colors for the top-bar input-mode badge. These are softer than
+// the status LED's per-mode colors, which stay unchanged for the LED itself.
+uint32_t inputModeColor(InputMode mode)
+{
+	switch (mode)
+	{
+		case INPUT_MODE_MIDI: return 0xD08770;        // Nord12 orange
+		case INPUT_MODE_XINPUT: return 0xA3BE8C;      // Nord14 green
+		case INPUT_MODE_SWITCH_PRO: return 0xBF616A;  // Nord11 red
+		case INPUT_MODE_XBOX_ONE: return 0xB48EAD;    // Nord15 purple
+		case INPUT_MODE_PS3: return 0x5E81AC;         // Nord10 dark blue
+		case INPUT_MODE_PS4: return 0x88C0D0;         // Nord8 light blue
+		case INPUT_MODE_PS5: return 0x81A1C1;         // Nord9 blue
+		case INPUT_MODE_KEYBOARD:
+		default: return 0xEBCB8B;                     // Nord13 yellow
 	}
 }
 
@@ -433,9 +472,11 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	const uint32_t row = cell / COLS;
 	const uint32_t col = cell % COLS;
 	const uint32_t x0 = col * LCD_WIDTH / COLS;
-	const uint32_t y0 = row * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / ROWS;
+	const uint32_t areaY0 = row * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / ROWS;
+	const uint32_t areaY1 = (row + 1) * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / ROWS;
+	const uint32_t y0 = KEYPAD_FOOTER_HEIGHT + areaY0;
 	const uint32_t w = (col + 1) * LCD_WIDTH / COLS - x0;
-	const uint32_t h = (row + 1) * (LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT) / ROWS - y0;
+	const uint32_t h = areaY1 - areaY0;
 	if (w == 0 || h == 0 || w * h > MAX_CELL_PIXELS)
 		return;
 
@@ -444,20 +485,13 @@ void KeypadDisplay::drawCell(uint32_t cell, uint32_t color888)
 	for (uint32_t i = 0; i < w * h; i++)
 		pixelBuf[i] = screenBg;
 
-	const float outerX0 = (float)CELL_GAP;
-	const float outerY0 = (float)CELL_GAP;
-	const float outerX1 = (float)w - CELL_GAP;
-	const float outerY1 = (float)h - CELL_GAP;
-	const float innerInset = (float)(CELL_GAP + BORDER);
-	const float innerX0 = innerInset;
-	const float innerY0 = innerInset;
-	const float innerX1 = (float)w - innerInset;
-	const float innerY1 = (float)h - innerInset;
+	const float innerX0 = (float)CELL_GAP;
+	const float innerY0 = (float)CELL_GAP;
+	const float innerX1 = (float)w - CELL_GAP;
+	const float innerY1 = (float)h - CELL_GAP;
 
-	fillRounded(pixelBuf, w, h, outerX0, outerY0, outerX1, outerY1,
-		CELL_RADIUS, borderColor(color888));
 	fillRounded(pixelBuf, w, h, innerX0, innerY0, innerX1, innerY1,
-		CELL_RADIUS - BORDER, color888);
+		CELL_RADIUS, color888);
 
 	const uint32_t innerW = (uint32_t)(innerX1 - innerX0);
 	const uint32_t innerH = (uint32_t)(innerY1 - innerY0);
@@ -501,7 +535,7 @@ void KeypadDisplay::drawFooter()
 	if (!present)
 		return;
 
-	const uint32_t footerY = LCD_HEIGHT - KEYPAD_FOOTER_HEIGHT;
+	const uint32_t footerY = 0;
 	const uint32_t bg888 = RGB(0x1C, 0x1F, 0x26);
 	const uint16_t bg = swap16(rgb565(bg888));
 	for (uint32_t y = 0; y < KEYPAD_FOOTER_HEIGHT; y++)
@@ -511,20 +545,54 @@ void KeypadDisplay::drawFooter()
 			line[x] = bg;
 	}
 
+	// Floating status bar, inset from the screen edges.
+	const uint32_t barColor = RGB(0x2B, 0x30, 0x3B);
+	constexpr float BAR_MARGIN = 4.0f;
+	constexpr float BAR_RADIUS = 12.0f;
+	fillRounded(pixelBuf, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+		BAR_MARGIN, BAR_MARGIN, (float)LCD_WIDTH - BAR_MARGIN,
+		(float)KEYPAD_FOOTER_HEIGHT - BAR_MARGIN, BAR_RADIUS, barColor);
+
 	const uint32_t textColor = RGB(0xD8, 0xDE, 0xE9);
 	const uint32_t th = KeypadFontNunito16.lineHeight;
 	const int32_t ty = (int32_t)(KEYPAD_FOOTER_HEIGHT - th) / 2;
-	constexpr int32_t PAD = 8;
+	constexpr int32_t MODE_PAD = 6;
+	constexpr float MODE_RADIUS = 8.0f;
 
 	if (!footerRight.empty())
 	{
-		// Normal keypad: input mode on the left, profile on the right.
+		// Input mode badge on the left, profile on the right. The badge takes
+		// the Nord color for the current mode and is sized from the glyph ink
+		// bounds so its padding is even around the text.
+		const InkBounds mb = textInkBounds(footerLeft, KeypadFontNunito16);
+		const int32_t rectW = (mb.maxX - mb.minX) + 2 * MODE_PAD;
+		const int32_t rectH = (mb.maxY - mb.minY) + 2 * MODE_PAD;
+		// Match the badge's top/bottom margin to its left margin; the profile
+		// text mirrors that same margin on the right.
+		const float margin =
+			((float)KEYPAD_FOOTER_HEIGHT - (float)rectH) / 2.0f;
+		const float rectX0 = margin;
+		const float rectY0 = margin;
+		const uint32_t modeColor =
+			inputModeColor(Storage::getInstance().getDefaultInputMode());
+		const uint32_t modeTextColor =
+			luminance(modeColor) > 140 ? 0x000000 : 0xFFFFFF;
+
+		fillRounded(pixelBuf, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+			rectX0, rectY0, rectX0 + (float)rectW, rectY0 + (float)rectH,
+			MODE_RADIUS, modeColor);
 		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
-			PAD, ty, footerLeft, KeypadFontNunito16, textColor, bg888);
-		const uint32_t rw = textWidth(footerRight, KeypadFontNunito16);
+			(int32_t)(rectX0 - (float)mb.minX + (float)MODE_PAD),
+			(int32_t)(rectY0 - (float)mb.minY + (float)MODE_PAD),
+			footerLeft, KeypadFontNunito16, modeTextColor, modeColor);
+
+		const InkBounds pb = textInkBounds(footerRight, KeypadFontNunito16);
+		const int32_t profileY = (int32_t)KEYPAD_FOOTER_HEIGHT / 2 -
+			(pb.minY + pb.maxY) / 2;
 		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
-			(int32_t)(LCD_WIDTH - PAD - (int32_t)rw), ty, footerRight,
-			KeypadFontNunito16, textColor, bg888);
+			(int32_t)((float)LCD_WIDTH - margin - (float)MODE_PAD -
+				(float)pb.maxX), profileY,
+			footerRight, KeypadFontNunito16, textColor, barColor);
 	}
 	else if (!footerLeft.empty())
 	{
@@ -532,7 +600,7 @@ void KeypadDisplay::drawFooter()
 		const uint32_t tw = textWidth(footerLeft, KeypadFontNunito16);
 		drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
 			(int32_t)(LCD_WIDTH - tw) / 2, ty, footerLeft,
-			KeypadFontNunito16, textColor, bg888);
+			KeypadFontNunito16, textColor, barColor);
 	}
 
 	LCD35::getInstance().setWindow(0, (uint16_t)footerY, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT);

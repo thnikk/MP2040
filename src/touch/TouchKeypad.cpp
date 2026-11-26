@@ -61,10 +61,10 @@ void pointToDisplay(const Ft6336Point& p, uint16_t& x, uint16_t& y)
 // cell's drawn area and its hit area always agree.
 int32_t cellAt(uint16_t x, uint16_t y)
 {
-	if (y >= AREA_H)
+	if (y < KEYPAD_FOOTER_HEIGHT)
 		return -1;
 	const uint32_t col = (uint32_t)x * COLS / LCD_WIDTH;
-	const uint32_t row = (uint32_t)y * ROWS / AREA_H;
+	const uint32_t row = (uint32_t)(y - KEYPAD_FOOTER_HEIGHT) * ROWS / AREA_H;
 	if (col >= COLS || row >= ROWS)
 		return -1;
 	return (int32_t)(row * COLS + col);
@@ -100,9 +100,9 @@ KeyMask TouchKeypad::scan()
 	for (uint8_t i = 0; i < count; i++)
 		pointToDisplay(points[i], xs[i], ys[i]);
 
-	// The footer is a gesture bar, not part of the key grid. A touch that
+	// The top bar is a gesture area, not part of the key grid. A touch that
 	// starts there is tracked as a horizontal swipe and its points are kept
-	// out of the key mask until it lifts, so dragging up into the keys can't
+	// out of the key mask until it lifts, so dragging down into the keys can't
 	// press them along the way.
 	if (count == 0)
 	{
@@ -113,7 +113,7 @@ KeyMask TouchKeypad::scan()
 	{
 		for (uint8_t i = 0; i < count; i++)
 		{
-			if (ys[i] < AREA_H)
+			if (ys[i] >= KEYPAD_FOOTER_HEIGHT)
 				continue;
 			swipeActive = true;
 			swipeTriggered = false;
@@ -156,9 +156,11 @@ KeyMask TouchKeypad::scan()
 		const uint32_t row = idx / COLS;
 		const uint32_t col = idx % COLS;
 		const int32_t x0 = (int32_t)(col * LCD_WIDTH / COLS) - TOUCH_KEYPAD_RELEASE_MARGIN;
-		const int32_t y0 = (int32_t)(row * AREA_H / ROWS) - TOUCH_KEYPAD_RELEASE_MARGIN;
+		const int32_t y0 = (int32_t)KEYPAD_FOOTER_HEIGHT +
+			(int32_t)(row * AREA_H / ROWS) - TOUCH_KEYPAD_RELEASE_MARGIN;
 		const int32_t x1 = (int32_t)((col + 1) * LCD_WIDTH / COLS) + TOUCH_KEYPAD_RELEASE_MARGIN;
-		const int32_t y1 = (int32_t)((row + 1) * AREA_H / ROWS) + TOUCH_KEYPAD_RELEASE_MARGIN;
+		const int32_t y1 = (int32_t)KEYPAD_FOOTER_HEIGHT +
+			(int32_t)((row + 1) * AREA_H / ROWS) + TOUCH_KEYPAD_RELEASE_MARGIN;
 		for (uint8_t i = 0; i < count; i++)
 		{
 			if ((int32_t)xs[i] >= x0 && (int32_t)xs[i] < x1 &&

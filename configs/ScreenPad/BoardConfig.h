@@ -103,9 +103,9 @@
 #define LCD_HEIGHT 480
 #define LCD_BACKLIGHT_PERCENT 70
 
-// Status/footer strip at the bottom of the screen (input mode, profile, web
-// config address, boot-window hint). Keys stop above it.
-#define KEYPAD_FOOTER_HEIGHT 24
+// Status strip at the top of the screen (input mode, profile, web config
+// address, boot-window hint). Keys start below it.
+#define KEYPAD_FOOTER_HEIGHT 54
 
 // ---------------------------------------------------------------------------
 // FT6336 touch controller (I2C1)

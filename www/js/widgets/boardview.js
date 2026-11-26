@@ -786,12 +786,17 @@ class BoardView {
       ? intToCss(led.colorNormalByMode[mode])
       : (led?.colorNormal != null ? intToCss(led.colorNormal) : '#4caf50');
 
+    const colorKeypad = this.options?.display?.colorKeypad === true;
     ledElements(this.container).forEach((led) => {
       shapesOf(led).forEach((s) => {
         s.style.setProperty('fill', color, 'important');
         s.style.setProperty('opacity', '0.85', 'important');
-        s.style.setProperty('stroke', 'var(--bg-4)', 'important');
-        s.style.setProperty('stroke-width', '1.5', 'important');
+        if (colorKeypad) {
+          s.style.setProperty('stroke', 'none', 'important');
+        } else {
+          s.style.setProperty('stroke', 'var(--bg-4)', 'important');
+          s.style.setProperty('stroke-width', '1.5', 'important');
+        }
       });
     });
   }
@@ -860,6 +865,7 @@ class BoardView {
   paintLedSim() {
     if (!this.ledSim) return;
     const colors = this.ledSim.tick();
+    const colorKeypad = this.options?.display?.colorKeypad === true;
     ledElements(this.container).forEach((el) => {
       const idx = parseInt(el.id.replace(/^led-?/, ''), 10);
       const c = colors[idx];
@@ -867,6 +873,7 @@ class BoardView {
       const rgb = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
       shapesOf(el).forEach((s) => {
         s.style.setProperty('fill', rgb, 'important');
+        if (colorKeypad) s.style.setProperty('stroke', 'none', 'important');
       });
     });
     // @SCREENPAD_START@
@@ -966,7 +973,7 @@ class BoardView {
       const isHeld = this.heldPins.has(pinNumber);
       // On a color keypad the cell fill comes from the LED simulation (the
       // authored #ledN rectangles behind the key shapes), so keep the key
-      // fill transparent and use only the stroke for hover/held feedback.
+      // fill and stroke transparent — the device draws no border either.
       const colorKeypad = this.options?.display?.colorKeypad === true;
 
       // All buttons get the same base fill (mapping is shown by the label
@@ -976,13 +983,8 @@ class BoardView {
         if (colorKeypad) {
           s.style.setProperty('fill', 'transparent', 'important');
           s.style.removeProperty('fill-opacity');
-          if (isHeld) {
-            s.style.setProperty('stroke', 'var(--nord13)', 'important');
-            s.style.setProperty('stroke-width', '3', 'important');
-          } else {
-            s.style.setProperty('stroke', 'var(--bg-4)', 'important');
-            s.style.setProperty('stroke-width', '2', 'important');
-          }
+          s.style.setProperty('stroke', 'none', 'important');
+          s.style.setProperty('stroke-width', '0', 'important');
           return;
         }
         if (isHeld) {

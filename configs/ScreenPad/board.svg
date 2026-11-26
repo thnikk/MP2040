@@ -49,44 +49,44 @@
        key outlines and labels draw on top; a color-keypad board lets the LED
        fill show through. Indices are row-major, matching the 4x3 touch grid. -->
   <g inkscape:label="leds" fill="#2b303b">
-    <rect id="led0"  x="8.301"  y="11.394" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led1"  x="24.620" y="11.394" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led2"  x="40.940" y="11.394" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led3"  x="8.301"  y="28.929" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led4"  x="24.620" y="28.929" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led5"  x="40.940" y="28.929" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led6"  x="8.301"  y="46.464" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led7"  x="24.620" y="46.464" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led8"  x="40.940" y="46.464" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led9"  x="8.301"  y="63.999" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led10" x="24.620" y="63.999" width="14.799" height="15.997" rx="1.447" />
-    <rect id="led11" x="40.940" y="63.999" width="14.799" height="15.997" rx="1.447" />
+    <rect id="led0"  x="7.661" y="19.301" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led1"  x="23.981" y="19.301" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led2"  x="40.301" y="19.301" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led3"  x="7.661" y="35.621" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led4"  x="23.981" y="35.621" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led5"  x="40.301" y="35.621" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led6"  x="7.661" y="51.941" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led7"  x="23.981" y="51.941" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led8"  x="40.301" y="51.941" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led9"  x="7.661" y="68.261" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led10" x="23.981" y="68.261" width="15.708" height="15.708" rx="1.447" />
+    <rect id="led11" x="40.301" y="68.261" width="15.708" height="15.708" rx="1.447" />
   </g>
 
   <!-- Key hit areas / label anchors (linear matrix key index). -->
   <g inkscape:label="buttons" fill="none">
-    <rect id="key0"  x="8.301"  y="11.394" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key1"  x="24.620" y="11.394" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key2"  x="40.940" y="11.394" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key3"  x="8.301"  y="28.929" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key4"  x="24.620" y="28.929" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key5"  x="40.940" y="28.929" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key6"  x="8.301"  y="46.464" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key7"  x="24.620" y="46.464" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key8"  x="40.940" y="46.464" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key9"  x="8.301"  y="63.999" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key10" x="24.620" y="63.999" width="14.799" height="15.997" rx="1.447" />
-    <rect id="key11" x="40.940" y="63.999" width="14.799" height="15.997" rx="1.447" />
+    <rect id="key0"  x="7.661" y="19.301" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key1"  x="23.981" y="19.301" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key2"  x="40.301" y="19.301" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key3"  x="7.661" y="35.621" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key4"  x="23.981" y="35.621" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key5"  x="40.301" y="35.621" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key6"  x="7.661" y="51.941" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key7"  x="23.981" y="51.941" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key8"  x="40.301" y="51.941" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key9"  x="7.661" y="68.261" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key10" x="23.981" y="68.261" width="15.708" height="15.708" rx="1.447" />
+    <rect id="key11" x="40.301" y="68.261" width="15.708" height="15.708" rx="1.447" />
   </g>
 
-  <!-- Status/footer strip at the bottom of the panel. -->
+  <!-- Floating status bar at the top of the panel. -->
   <rect
      id="screen-footer"
      inkscape:label="ignore"
-     x="7.355"
-     y="80.584"
-     width="48.96"
-     height="3.692"
-     rx="0.559"
-     fill="#1c1f26" />
+     x="7.967"
+     y="11.447"
+     width="47.736"
+     height="6.936"
+     rx="1.836"
+     fill="#2b303b" />
 </svg>

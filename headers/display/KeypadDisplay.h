@@ -44,6 +44,11 @@ private:
 	static constexpr uint32_t MAX_CELL_W = (LCD_WIDTH + COLS - 1) / COLS;
 	static constexpr uint32_t MAX_CELL_H = (AREA_H + ROWS - 1) / ROWS;
 	static constexpr uint32_t MAX_CELL_PIXELS = MAX_CELL_W * MAX_CELL_H;
+	// drawFooter reuses the pixel buffer, and the footer can be larger than a
+	// single cell now that the buttons are square and the bar takes the rest.
+	static constexpr uint32_t FOOTER_PIXELS = LCD_WIDTH * KEYPAD_FOOTER_HEIGHT;
+	static constexpr uint32_t BUFFER_PIXELS =
+		MAX_CELL_PIXELS > FOOTER_PIXELS ? MAX_CELL_PIXELS : FOOTER_PIXELS;
 
 	void updateLabels(bool force);
 	void updateFooter(bool force);
@@ -51,7 +56,7 @@ private:
 	void drawCell(uint32_t cell, uint32_t color888);
 	void drawFooter();
 
-	uint16_t pixelBuf[MAX_CELL_PIXELS] = {};
+	uint16_t pixelBuf[BUFFER_PIXELS] = {};
 	int32_t ledToCell[256] = {};
 	uint32_t pending[CELL_COUNT] = {};
 	uint32_t shown[CELL_COUNT] = {};
