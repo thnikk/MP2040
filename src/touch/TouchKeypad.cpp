@@ -91,6 +91,7 @@ KeyMask TouchKeypad::scan()
 	if (now - lastScanUs < TOUCH_KEYPAD_SCAN_INTERVAL_US)
 		return state;
 	lastScanUs = now;
+	scanCount++;
 
 	Ft6336Point points[2] = {};
 	const uint8_t count = FT6336U::getInstance().read(points);

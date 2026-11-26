@@ -101,6 +101,10 @@ public:
 	// hint in its footer while it is open.
 	void setBootWindowActive(bool active) { bootWindowActive = active; }
 	bool getBootWindowActive() { return bootWindowActive; }
+	// Runtime-only FPS overlay, armed by holding the third on-screen key during
+	// the touch boot window. Not persisted.
+	void setShowFps(bool show) { showFps = show; }
+	bool getShowFps() { return showFps; }
 	// One-shot "toggle the on-device menu" request from a core-0 "toggle menu"
 	// hotkey. Consumed (and cleared) by the core-1 DisplayController, which
 	// flips between the layout and the menu. A volatile bool suffices: a press
@@ -364,6 +368,7 @@ private:
 	volatile bool menuActive = false; // on-device menu showing (set by core 1)
 	volatile bool menuToggleRequested = false; // core-0 hotkey -> core-1 toggle
 	volatile bool bootWindowActive = false; // touch config boot hint window
+	volatile bool showFps = false; // runtime FPS overlay (third key at boot)
 };
 
 #endif

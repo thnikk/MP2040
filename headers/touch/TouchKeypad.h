@@ -34,11 +34,16 @@ public:
 
 	bool isPresent() const { return initialized; }
 
+	// Number of actual controller reads (after the 2 ms throttle). Used by the
+	// runtime FPS overlay to show the touch polling rate.
+	uint32_t getScanCount() const { return scanCount; }
+
 private:
 	TouchKeypad() {}
 
 	KeyMask state;
 	uint32_t lastScanUs = 0;
+	uint32_t scanCount = 0;
 	bool initialized = false;
 	// Bottom-bar gesture tracking. A touch that starts in the footer owns the
 	// gesture until it lifts, and its points are kept out of the key grid.

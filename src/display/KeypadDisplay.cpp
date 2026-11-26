@@ -12,6 +12,9 @@
 #include "helper.h"
 #include "leds/LedLayout.h"
 #include "storagemanager.h"
+#include "touch/TouchKeypad.h"
+
+#include "pico/time.h"
 
 #include <math.h>
 
@@ -434,6 +437,7 @@ void KeypadDisplay::updateFooter(bool force)
 	Storage& s = Storage::getInstance();
 	std::string left;
 	std::string right;
+	std::string center;
 	if (s.getBootWindowActive())
 		left = "HOLD KEY 1 FOR WEB CONFIG";
 	else if (s.GetConfigMode())
@@ -442,12 +446,17 @@ void KeypadDisplay::updateFooter(bool force)
 	{
 		left = inputModeName(s.getDefaultInputMode());
 		right = "Profile " + std::to_string(s.getActiveProfile() + 1);
+		if (s.getShowFps())
+			center = std::to_string(renderFps) + " FPS  " +
+				std::to_string(inputFps) + " Hz";
 	}
 
-	if (!force && left == footerLeft && right == footerRight)
+	if (!force && left == footerLeft && right == footerRight &&
+		center == footerCenter)
 		return;
 	footerLeft = left;
 	footerRight = right;
+	footerCenter = center;
 	drawFooter();
 }
 
@@ -455,6 +464,27 @@ void KeypadDisplay::show()
 {
 	if (!present)
 		return;
+
+	if (Storage::getInstance().getShowFps())
+	{
+		const uint32_t now = to_ms_since_boot(get_absolute_time());
+		++fpsFrames;
+		if (fpsLastMs == 0)
+		{
+			fpsLastMs = now;
+			lastScanCount = TouchKeypad::getInstance().getScanCount();
+		}
+		else if (now - fpsLastMs >= 1000)
+		{
+			const uint32_t elapsed = now - fpsLastMs;
+			renderFps = fpsFrames * 1000 / elapsed;
+			const uint32_t scans = TouchKeypad::getInstance().getScanCount();
+			inputFps = (scans - lastScanCount) * 1000 / elapsed;
+			lastScanCount = scans;
+			fpsFrames = 0;
+			fpsLastMs = now;
+		}
+	}
 
 	updateLabels(false);
 	updateFooter(false);
@@ -593,6 +623,17 @@ void KeypadDisplay::drawFooter()
 			(int32_t)((float)LCD_WIDTH - margin - (float)MODE_PAD -
 				(float)pb.maxX), profileY,
 			footerRight, KeypadFontNunito16, textColor, barColor);
+
+		if (!footerCenter.empty())
+		{
+			const InkBounds cb = textInkBounds(footerCenter, KeypadFontNunito16);
+			const int32_t cx = (int32_t)(LCD_WIDTH / 2) -
+				(cb.minX + cb.maxX) / 2;
+			const int32_t cy = (int32_t)(KEYPAD_FOOTER_HEIGHT / 2) -
+				(cb.minY + cb.maxY) / 2;
+			drawText(pixelBuf, LCD_WIDTH, LCD_WIDTH, KEYPAD_FOOTER_HEIGHT,
+				cx, cy, footerCenter, KeypadFontNunito16, textColor, barColor);
+		}
 	}
 	else if (!footerLeft.empty())
 	{

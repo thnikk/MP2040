@@ -346,11 +346,38 @@ void MP2040::run() {
 		bool seenBoot = false;
 		uint32_t seenWcAt = 0;
 		uint32_t seenBootAt = 0;
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+		// Third on-screen key (matrix index 2) toggles the runtime FPS overlay.
+		bool seenFps = false;
+		bool fpsEnabled = false;
+		uint32_t seenFpsAt = 0;
+#endif
 		while (getMillis() < bootTouchDeadline)
 		{
 			// Debounce so the touch goes through the same hysteresis and settle
 			// as normal key operation.
 			debounceGpioGetAll();
+#if defined(MATRIX_TOUCH_KEYPAD) && MATRIX_TOUCH_KEYPAD
+			const bool fpsHeld = (debouncedGpio & keyMaskBit(2)).any();
+			if (fpsHeld)
+			{
+				const uint32_t now = getMillis();
+				if (!seenFps)
+				{
+					seenFps = true;
+					seenFpsAt = now;
+				}
+				else if (!fpsEnabled && now - seenFpsAt >= 40)
+				{
+					Storage::getInstance().setShowFps(true);
+					fpsEnabled = true;
+				}
+			}
+			else
+			{
+				seenFps = false;
+			}
+#endif
 			const bool wcHeld = wcPin >= 0 && (debouncedGpio & keyMaskBit(wcPin)).any();
 			const bool bootHeld = bootPin >= 0 && (debouncedGpio & keyMaskBit(bootPin)).any();
 			// Holding both pins is ambiguous (a large palm press): boot normally.

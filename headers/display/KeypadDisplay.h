@@ -65,6 +65,12 @@ private:
 	std::string labels[CELL_COUNT];
 	std::string footerLeft;
 	std::string footerRight;
+	std::string footerCenter;
+	uint32_t fpsFrames = 0;
+	uint32_t fpsLastMs = 0;
+	uint32_t renderFps = 0;
+	uint32_t inputFps = 0;
+	uint32_t lastScanCount = 0;
 	uint32_t lastLabelHash = 0xFFFFFFFFu;
 	bool present = false;
 };
