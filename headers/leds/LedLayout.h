@@ -13,10 +13,7 @@
 //
 // Example (3x3 grid, serpentine strip):
 //   #define BOARD_LED_POSITION_COLS 3
-//   #define BOARD_LED_POSITIONS \
-//       { 0, 1, 2 }, \
-//       { 5, 4, 3 }, \
-//       { 6, 7, 8 }
+//   #define BOARD_LED_POSITIONS { 0, 1, 2 }, { 5, 4, 3 }, { 6, 7, 8 }
 #ifndef BOARD_LED_POSITION_COLS
 #define BOARD_LED_POSITION_COLS 1
 #endif

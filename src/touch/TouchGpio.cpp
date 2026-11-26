@@ -149,7 +149,12 @@ TouchGpio::TouchGpio()
 
 void TouchGpio::setup(GpioMask touchMask, bool useStored)
 {
-    mask = touchMask & ((1u << NUM_BANK0_GPIOS) - 1u);
+    // GpioMask is 32-bit; RP2350 exposes more GPIOs, but high pins can't be
+    // represented. The ScreenPad uses the FT6336 controller instead of PIO
+    // touch pads. Only mask off bits beyond a smaller RP2040 bank.
+    mask = touchMask;
+    if constexpr (NUM_BANK0_GPIOS < 32)
+        mask &= (GpioMask)((1u << NUM_BANK0_GPIOS) - 1u);
     if (mask == 0) return;
 
     const Config& config = Storage::getInstance().getConfig();
@@ -233,14 +238,22 @@ void TouchGpio::calibrate()
     // properties and don't need storing. save() only commits to flash when
     // the config actually changed, so a stable calibration is a no-op.
     Config& config = Storage::getInstance().getConfig();
+    // The proto stores at most 30 baselines, while RP2350 boards expose more
+    // GPIOs. Clamp the storage loops to the array so high pins can't write
+    // past the config; those pads simply won't persist their baseline.
+    constexpr uint32_t TOUCH_BASELINE_SLOTS =
+        sizeof(((Config*)nullptr)->touchBaselines) / sizeof(uint32_t);
+    constexpr uint32_t TOUCH_PIN_LIMIT =
+        (uint32_t)NUM_BANK0_GPIOS < TOUCH_BASELINE_SLOTS
+            ? (uint32_t)NUM_BANK0_GPIOS : TOUCH_BASELINE_SLOTS;
     config.touchBaselines_count = 0;
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)TOUCH_PIN_LIMIT; pin++)
     {
         // Clear stale entries first so a pad that is no longer active (e.g.
         // saturated / missing) doesn't keep an outdated stored baseline.
         config.touchBaselines[pin] = 0;
     }
-    for (Pin_t pin = 0; pin < (Pin_t)NUM_BANK0_GPIOS; pin++)
+    for (Pin_t pin = 0; pin < (Pin_t)TOUCH_PIN_LIMIT; pin++)
     {
         if (smForPin[pin] == 0xFF || !active[pin]) continue;
         if (defaultTouchThresholds[pin] > 0) continue;
